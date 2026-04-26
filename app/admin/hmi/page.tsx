@@ -207,7 +207,7 @@ function MachineImage({ category, machineName, status, className = '', liveData,
 
   return (
     <div className={`relative overflow-hidden ${className}`}
-      style={{ background: 'transparent' }}>
+      style={{ background: '#0a1628' }}>
 
       {/* SCADA image — object-contain, transparent bg so no letterbox */}
       <img
@@ -215,7 +215,7 @@ function MachineImage({ category, machineName, status, className = '', liveData,
         alt={machineName}
         style={{
           width: '100%', height: '100%',
-          objectFit: 'contain',
+          objectFit: 'cover',
           objectPosition: 'center',
           display: 'block',
           filter: isBreakdown
@@ -224,7 +224,6 @@ function MachineImage({ category, machineName, status, className = '', liveData,
             ? 'grayscale(0.2) brightness(0.8) sepia(0.1)'
             : 'brightness(1.0) saturate(1.1)',
           transition: 'filter 0.5s ease',
-          background: 'transparent',
         }}
         onError={(e) => {
           (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
@@ -522,7 +521,7 @@ function MachineDetailPanel({ machine, onClose, onSim, onStatusChange }: {
 
         <div className="p-5 space-y-5">
           {/* Machine SCADA Image — full width, prominent */}
-          <div className={`rounded-xl border ${currentCfg.border} overflow-hidden`}>
+          <div className={`rounded-xl border ${currentCfg.border} overflow-hidden`} style={{ background: '#0a1628' }}>
             <MachineImage category={machine.category} machineName={machine.name} status={currentStatus} className="w-full h-80" liveData={isOp ? { temp, load, rpm, pressure } : undefined} />
           </div>
 
@@ -748,7 +747,7 @@ function MachineCard({ machine, onSelect }: { machine: HMIMachine; onSelect: () 
           )}
         </div>
 
-        <MachineImage category={machine.category} machineName={machine.name} status={machine.status} className="w-full h-40 mb-2 rounded-lg" liveData={isOp ? { temp, load, rpm: rpmCard, pressure: pressureCard } : undefined} compact={true} />
+        <div style={{ background: '#0a1628', borderRadius: 8, overflow: 'hidden' }} className="mb-2"><MachineImage category={machine.category} machineName={machine.name} status={machine.status} className="w-full h-40" liveData={isOp ? { temp, load, rpm: rpmCard, pressure: pressureCard } : undefined} compact={true} /></div>
 
         <h3 style={{ color: 'var(--text-primary)' }} className="font-semibold text-xs mb-0.5 truncate">{machine.name}</h3>
         <p className="text-[var(--text-muted)] text-[10px] mb-1.5 truncate">{machine.location || '—'}</p>

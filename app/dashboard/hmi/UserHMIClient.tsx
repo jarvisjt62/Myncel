@@ -161,19 +161,18 @@ function MachineImage({ category, machineName, status, className = '', liveData,
   const loadColor = liveData && liveData.load > 90 ? '#ef4444' : liveData && liveData.load > 70 ? '#fbbf24' : '#635bff';
 
   return (
-    <div className={`relative overflow-hidden ${className}`} style={{ background: 'transparent' }}>
+    <div className={`relative overflow-hidden ${className}`} style={{ background: '#0a1628' }}>
       <img
         src={imgUrl}
         alt={machineName}
         style={{
           width: '100%', height: '100%',
-          objectFit: 'contain', objectPosition: 'center', display: 'block',
+          objectFit: 'cover', objectPosition: 'center', display: 'block',
           filter: isBreakdown
             ? 'grayscale(0.4) brightness(0.65) sepia(0.3) saturate(2) hue-rotate(-10deg)'
             : isMaintenance ? 'grayscale(0.2) brightness(0.8) sepia(0.1)'
             : 'brightness(1.0) saturate(1.1)',
           transition: 'filter 0.5s ease',
-          background: 'transparent',
         }}
         onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80'; }}
       />
@@ -474,7 +473,7 @@ function MachineCard({ machine, onClick }: { machine: Machine; onClick: () => vo
         </div>
 
         {/* Machine SCADA Image */}
-        <div className="w-full h-40 mb-1.5 rounded-lg overflow-hidden">
+        <div className="w-full h-40 mb-1.5 rounded-lg overflow-hidden" style={{ background: '#0a1628' }}>
           <MachineImage category={machine.category} machineName={machine.name} status={machine.status} className="w-full h-full" liveData={isOp ? { temp, load, rpm: rpmCard, pressure: pressCard } : undefined} compact={true} />
         </div>
 
@@ -648,7 +647,7 @@ function MachinePanel({
         </div>
 
         {/* Full-width SCADA image at top of detail panel */}
-        <div className={`mx-4 mt-0 rounded-xl border overflow-hidden ${currentCfg.border}`}>
+        <div className={`mx-4 mt-0 rounded-xl border overflow-hidden ${currentCfg.border}`} style={{ background: '#0a1628' }}>
           <MachineImage category={machine.category} machineName={machine.name} status={currentStatus} className="w-full h-80" liveData={live ? { temp, load, rpm, pressure } : undefined} />
         </div>
 
