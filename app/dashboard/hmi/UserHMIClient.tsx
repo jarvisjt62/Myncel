@@ -76,25 +76,62 @@ function getMachineImageUrl(category: string, machineName: string): string {
   }
 }
 
-function MachineImage({ category, machineName, status, className = '' }: {
+function MachineImage({ category, machineName, status, className = '', liveData }: {
   category: string; machineName: string; status: string; className?: string;
+  liveData?: { temp: number; load: number; rpm: number; pressure: number };
 }) {
   const imgUrl = getMachineImageUrl(category, machineName);
   const isBreakdown = status === 'BREAKDOWN';
   const isMaintenance = status === 'MAINTENANCE';
+  const isOp = status === 'OPERATIONAL';
   return (
-    <div className={`relative overflow-hidden rounded-lg ${className}`} style={{ background: '#111' }}>
+    <div className={`relative overflow-hidden rounded-lg ${className}`} style={{ background: '#0a1628' }}>
       <img src={imgUrl} alt={machineName} className="w-full h-full object-cover"
         style={{
           filter: isBreakdown ? 'grayscale(0.4) brightness(0.7) sepia(0.3) saturate(2) hue-rotate(-10deg)'
             : isMaintenance ? 'grayscale(0.2) brightness(0.85) sepia(0.2)'
-            : 'brightness(0.9) saturate(1.1)',
+            : 'brightness(1.0) saturate(1.15)',
+          transition: 'filter 0.5s ease',
         }}
         onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80'; }}
       />
+
+      {/* Live sensor HUD overlay */}
+      {liveData && isOp && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1.5 left-1.5 bg-black/70 border border-cyan-500/40 rounded px-1.5 py-0.5 flex items-center gap-1">
+            <span style={{ color: liveData.temp > 90 ? '#f87171' : liveData.temp > 78 ? '#fbbf24' : '#34d399', fontSize: 9, fontFamily: 'monospace', fontWeight: 700 }}>
+              {liveData.temp.toFixed(0)}°C
+            </span>
+            <span style={{ color: '#67e8f9', fontSize: 8, opacity: 0.7 }}>TEMP</span>
+          </div>
+          <div className="absolute top-1.5 right-1.5 bg-black/70 border border-cyan-500/40 rounded px-1.5 py-0.5 flex items-center gap-1">
+            <span style={{ color: '#93c5fd', fontSize: 9, fontFamily: 'monospace', fontWeight: 700 }}>
+              {liveData.rpm.toFixed(0)}
+            </span>
+            <span style={{ color: '#67e8f9', fontSize: 8, opacity: 0.7 }}>RPM</span>
+          </div>
+          <div className="absolute bottom-1.5 left-1.5 right-1.5 bg-black/70 border border-cyan-500/30 rounded px-1.5 py-1">
+            <div className="flex justify-between items-center mb-0.5">
+              <span style={{ color: '#67e8f9', fontSize: 8, opacity: 0.8 }}>LOAD</span>
+              <span style={{ color: liveData.load > 90 ? '#f87171' : '#a78bfa', fontSize: 9, fontFamily: 'monospace', fontWeight: 700 }}>{liveData.load.toFixed(0)}%</span>
+              <span style={{ color: '#67e8f9', fontSize: 8, opacity: 0.8 }}>PSI {liveData.pressure.toFixed(0)}</span>
+            </div>
+            <div style={{ width: '100%', height: 3, backgroundColor: 'rgba(100,116,139,0.4)', borderRadius: 2 }}>
+              <div style={{ width: `${liveData.load}%`, height: 3, borderRadius: 2, backgroundColor: liveData.load > 90 ? '#ef4444' : liveData.load > 70 ? '#fbbf24' : '#635bff', boxShadow: `0 0 4px ${liveData.load > 90 ? '#ef4444' : '#635bff'}`, transition: 'width 0.7s ease' }} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {isBreakdown && (
         <div className="absolute inset-0 flex items-center justify-center bg-red-900/40">
-          <span className="text-red-300 text-[10px] font-bold bg-red-900/80 px-2 py-1 rounded animate-pulse">FAULT</span>
+          <span className="text-red-300 text-[10px] font-bold bg-red-900/80 px-2 py-1 rounded animate-pulse">⚠ FAULT</span>
+        </div>
+      )}
+      {isMaintenance && (
+        <div className="absolute inset-0 flex items-center justify-center bg-yellow-900/30">
+          <span className="text-yellow-300 text-[10px] font-bold bg-yellow-900/70 px-2 py-1 rounded">🔧 MAINT</span>
         </div>
       )}
     </div>
@@ -293,8 +330,10 @@ function MachineCard({ machine, onClick }: { machine: Machine; onClick: () => vo
   const isB  = machine.status === 'BREAKDOWN';
   const isM  = machine.status === 'MAINTENANCE';
   const [pulse, setPulse] = useState(false);
-  const [temp, setTemp]   = useState(isB ? 102 : 72);
-  const [load, setLoad]   = useState(isOp ? 60 : 0);
+  const [temp, setTemp]         = useState(isB ? 102 : 72);
+  const [load, setLoad]         = useState(isOp ? 60 : 0);
+  const [rpmCard, setRpmCard]   = useState(isOp ? 1800 : 0);
+  const [pressCard, setPressCard] = useState(isOp ? 65 : 0);
 
   useEffect(() => {
     if (!isB) return;
@@ -307,6 +346,8 @@ function MachineCard({ machine, onClick }: { machine: Machine; onClick: () => vo
     const iv = setInterval(() => {
       setTemp(t => Math.max(55, Math.min(98, t + (Math.random() - 0.5) * 2)));
       setLoad(l => Math.max(20, Math.min(99, l + (Math.random() - 0.5) * 5)));
+      setRpmCard(r => Math.max(800, Math.min(3200, r + (Math.random() - 0.5) * 80)));
+      setPressCard(p => Math.max(40, Math.min(100, p + (Math.random() - 0.5) * 3)));
     }, 1500);
     return () => clearInterval(iv);
   }, [isOp]);
@@ -338,9 +379,9 @@ function MachineCard({ machine, onClick }: { machine: Machine; onClick: () => vo
           )}
         </div>
 
-        {/* Machine SVG */}
-        <div className="w-full h-16 mb-1.5">
-          <MachineImage category={machine.category} machineName={machine.name} status={machine.status} className="w-full h-full" />
+        {/* Machine SCADA Image */}
+        <div className="w-full h-40 mb-1.5 rounded-lg overflow-hidden">
+          <MachineImage category={machine.category} machineName={machine.name} status={machine.status} className="w-full h-full" liveData={isOp ? { temp, load, rpm: rpmCard, pressure: pressCard } : undefined} />
         </div>
 
         {/* Name */}
@@ -403,6 +444,7 @@ function MachinePanel({
   const [temp, setTemp]         = useState(isB ? 102 : 72);
   const [load, setLoad]         = useState(isOp ? 60 : 0);
   const [rpm,  setRpm]          = useState(isOp ? 1800 : 0);
+  const [pressure, setPressure] = useState(isOp ? 65 : 0);
   const [vibration, setVibration] = useState(isB ? 8.5 : 0.5);
   const [tempHist, setTempHist] = useState<number[]>([]);
   const [loadHist, setLoadHist] = useState<number[]>([]);
@@ -416,13 +458,14 @@ function MachinePanel({
   // Live sensor simulation when machine is OPERATIONAL
   useEffect(() => {
     if (!live) {
-      setLoad(0); setRpm(0); setVibration(0);
+      setLoad(0); setRpm(0); setVibration(0); setPressure(0);
       return;
     }
     const iv = setInterval(() => {
       setTemp(t => { const v = Math.max(55, Math.min(98, t + (Math.random() - 0.5) * 3)); setTempHist(h => [...h.slice(-19), v]); return v; });
       setLoad(l => { const v = Math.max(20, Math.min(99, l + (Math.random() - 0.5) * 6)); setLoadHist(h => [...h.slice(-19), v]); return v; });
       setRpm(r => Math.max(800, Math.min(3200, r + (Math.random() - 0.5) * 120)));
+      setPressure(p => Math.max(40, Math.min(100, p + (Math.random() - 0.5) * 4)));
       setVibration(v => Math.max(0, Math.min(5, v + (Math.random() - 0.5) * 0.2)));
     }, 1000);
     return () => clearInterval(iv);
@@ -510,12 +553,14 @@ function MachinePanel({
           </div>
         </div>
 
+        {/* Full-width SCADA image at top of detail panel */}
+        <div className={`mx-4 mt-0 rounded-xl border overflow-hidden ${currentCfg.border}`} style={{ background: '#0a1628' }}>
+          <MachineImage category={machine.category} machineName={machine.name} status={currentStatus} className="w-full h-64" liveData={live ? { temp, load, rpm, pressure } : undefined} />
+        </div>
+
         <div className="p-4 grid md:grid-cols-3 gap-4">
           {/* Visual column */}
           <div className={`rounded-xl border ${currentCfg.border} ${currentCfg.bg} p-4 flex flex-col items-center gap-3`}>
-            <div className="w-full h-32">
-              <MachineImage category={machine.category} machineName={machine.name} status={currentStatus} className="w-full h-full" />
-            </div>
             {currentStatus === 'BREAKDOWN' && (
               <div className="w-full bg-red-500/10 border border-red-500/30 rounded-lg p-2 text-center">
                 <p className="text-red-400 text-xs font-bold animate-pulse">⚠ BREAKDOWN</p>
