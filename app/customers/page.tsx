@@ -2,18 +2,60 @@ import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Customer Stories — Real Manufacturers Using Myncel',
-  description: 'See how 200+ small manufacturers use Myncel to prevent breakdowns, reduce downtime costs, and build better maintenance programs. Real results, real ROI.',
+  description: 'See how manufacturers use Myncel to prevent breakdowns, reduce downtime costs, and build better maintenance programs.',
   alternates: { canonical: 'https://myncel.com/customers' },
   openGraph: {
-    title: 'Myncel Customer Stories — 200+ Manufacturers Can\'t Be Wrong',
-    description: 'Real stories from real manufacturers. See how Myncel helped them save $2.4M+ in downtime costs.',
+    title: 'Myncel Customer Stories',
+    description: 'Real stories from real manufacturers.',
     url: 'https://myncel.com/customers',
   },
+};
+
+async function getFeatureFlags() {
+  try {
+    const fs = await import('fs/promises');
+    const data = await fs.readFile('/tmp/myncel-feature-flags.json', 'utf8');
+    return JSON.parse(data);
+  } catch {
+    return { customersPageEnabled: false, changelogEnabled: false, changelogNote: '' };
+  }
 }
 
-export default function Customers() {
+export default async function Customers() {
+  const flags = await getFeatureFlags();
+
+  if (!flags.customersPageEnabled) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Navbar />
+        <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
+          <div className="w-16 h-16 rounded-full bg-[#f0f4f8] flex items-center justify-center mb-6">
+            <svg className="w-8 h-8 text-[#8898aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold text-[#0a2540] mb-3">Customer Stories Coming Soon</h1>
+          <p className="text-[#425466] max-w-md mb-8 leading-relaxed">
+            We're collecting verified case studies from our manufacturing customers. Check back soon to read real results from real factories.
+          </p>
+          <div className="flex gap-4">
+            <Link href="/signup" className="bg-[#635bff] text-white font-semibold px-6 py-3 rounded-lg hover:bg-[#4f46e5] transition-colors">
+              Start free trial
+            </Link>
+            <Link href="/" className="border border-[#e6ebf1] text-[#425466] font-semibold px-6 py-3 rounded-lg hover:bg-[#f6f9fc] transition-colors">
+              Back to home
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   const stories = [
     {
       company: 'Precision Parts Co.',
@@ -97,7 +139,7 @@ export default function Customers() {
       <div className="bg-amber-50 border-b border-amber-200 py-3">
         <div className="max-w-6xl mx-auto px-6">
           <p className="text-sm text-amber-800 text-center">
-            <strong>Note:</strong> The customer stories and testimonials shown below are illustrative examples representing typical results from manufacturers using CMMS software. 
+            <strong>Note:</strong> The customer stories and testimonials shown below are illustrative examples representing typical results from manufacturers using CMMS software.
             Actual customer testimonials and detailed case studies coming soon.
           </p>
         </div>
@@ -119,7 +161,6 @@ export default function Customers() {
             <p className="text-xl text-[#425466] leading-relaxed mb-8">
               See how maintenance teams at small and mid-size manufacturers use Myncel to prevent breakdowns, reduce costs, and keep their factories running.
             </p>
-            {/* Aggregate stats */}
             <div className="flex justify-center gap-12 py-8 border-t border-b border-[#e6ebf1] mt-8">
               {[
                 { val: '200+', label: 'manufacturers using Myncel' },
@@ -142,7 +183,6 @@ export default function Customers() {
           <div className="grid md:grid-cols-2 gap-6">
             {stories.map((s, i) => (
               <div key={i} className="bg-white border border-[#e6ebf1] rounded-2xl overflow-hidden hover:shadow-xl transition-all group">
-                {/* Top bar */}
                 <div className={`h-2 ${s.color}`} />
                 <div className="p-8">
                   <div className="flex items-center gap-3 mb-5">
@@ -160,7 +200,6 @@ export default function Customers() {
                   </blockquote>
                   <div className="text-sm font-semibold text-[#0a2540]">{s.author}</div>
                   <div className="text-xs text-[#8898aa] mb-5">{s.role}</div>
-                  {/* Stats */}
                   <div className="flex gap-6 pt-4 border-t border-[#f6f9fc]">
                     {s.stats.map(stat => (
                       <div key={stat.label}>

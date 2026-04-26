@@ -69,6 +69,20 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Dispatch notifications asynchronously (don't block the response)
+    try {
+      const { dispatchNotifications } = await import('@/lib/notifications/dispatch');
+      dispatchNotifications(effectiveOrgId, {
+        type: 'work_order.created',
+        workOrderNumber: workOrder.woNumber,
+        title: workOrder.title,
+        machineName: workOrder.machine?.name ?? '',
+        priority: workOrder.priority,
+      }).catch((err: unknown) => console.error('Notification dispatch error:', err));
+    } catch (err) {
+      console.error('Failed to import dispatch module:', err);
+    }
+
     return NextResponse.json({ success: true, workOrder }, { status: 201 });
   } catch (error) {
     console.error('Create work order error:', error);

@@ -1,31 +1,44 @@
-# Content Audit & Fix Tasks
+# Myncel Implementation Tasks
 
-## Issues Found - Docs Page
-- [x] Read all pages (docs, guides, blog, customers)
+## Phase 1 — Admin Feature Flags (Customers/Changelog toggle)
+- [x] Create `/api/admin/feature-flags/route.ts` — GET/PUT feature flags
+- [x] Update `SettingsClient.tsx` — add Feature Flags section with customers/changelog toggles
+- [x] Update `customers/page.tsx` — check flag, show disabled page if off
+- [x] Update `changelog/page.tsx` — check flag, show disabled page if off
 
-## Fixes Needed
+## Phase 2 — Settings → Integrations UI (Connect Modals)
+- [x] Rebuild `settings/integrations/page.tsx` with proper per-integration connect modals
 
-### Docs fixes
-- [ ] Fix plan names: docs says "Starter: 3 users / Professional: 10 users" → actual plans are Starter/Growth/Professional (no user limits, machine limits instead)
-- [ ] Remove floor plan upload / facility mapping feature (not implemented)
-- [ ] Remove iOS App Store / Google Play mobile app references (no native app, web-only)
-- [ ] Remove barcode scanning references (not implemented)
-- [ ] Remove IoT sensor integration references (not implemented)
-- [ ] Remove OEE tracking references (not implemented)
-- [ ] Remove purchase orders references (not implemented)
-- [ ] Fix API base URL from api.myncel.com/v1 to /api (internal Next.js routes)
-- [ ] Fix SMS plan reference: remove "Professional Plan: 50 SMS/month per user" → SMS on Growth+ plans
-- [ ] Fix API access plan reference: correct plan gating
+## Phase 3 — OAuth Callback Routes
+- [x] Create `/api/integrations/slack/callback/route.ts`
+- [x] Create `/api/integrations/quickbooks/callback/route.ts`
+- [x] Create `/api/integrations/google-sheets/callback/route.ts`
 
-### Blog fixes
-- [ ] Create missing blog post pages (6 missing: maintenance-kpis, spreadsheet-to-cmms, haccp-records, preventive-vs-predictive, cmms-roi, hydraulic-maintenance)
+## Phase 4 — Notification Dispatch Utilities
+- [x] Create `lib/notifications/slack.ts` — send Slack messages
+- [x] Create `lib/notifications/sms.ts` — Twilio SMS dispatch
+- [x] Create `lib/notifications/dispatch.ts` — unified dispatcher
+- [ ] Hook dispatch into work order API — call dispatchNotifications on create/complete
 
-### Guides fixes
-- [ ] ROI calculator: "$49/machine/month" pricing model doesn't match actual plan structure; update to reflect actual plans
-- [ ] Equipment Lifespan guide: remove IoT sensor references, replace with general condition monitoring
+## Phase 5 — Webhooks Management Page
+- [x] Create `/app/settings/webhooks/page.tsx` — full CRUD UI
 
-### Customers page
-- [x] Already has a disclaimer banner - content is fine as-is
+## Phase 6 — Advanced Features
+- [x] Floor plan upload — `/app/equipment/floor-plan/page.tsx` + API
+- [x] Barcode scanning — `/app/equipment/scan/page.tsx`
+- [x] IoT sensor data ingestion API — `/api/iot/route.ts` (NEEDS BUILD FIX)
+- [x] OEE tracking — `/app/analytics/oee/page.tsx`
+- [x] Purchase Orders — `/app/purchase-orders/` full CRUD
 
-## Git commit after all fixes
-- [ ] Commit and push all changes
+## Phase 7 — PWA / Mobile
+- [x] Add `public/manifest.json`
+- [x] Add service worker registration
+
+## Phase 8 — Docs/Guides Updates
+- [x] Re-add IoT sensor section to equipment-lifespan guide
+
+## Phase 9 — Fix & Ship
+- [ ] Fix IoT route build error (meterReading → totalHours, use SensorReading DB model)
+- [ ] Hook dispatchNotifications into work order create/complete API
+- [ ] Run npm run build — verify clean
+- [ ] git commit and push all changes

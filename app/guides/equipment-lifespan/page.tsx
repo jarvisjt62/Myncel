@@ -259,16 +259,34 @@ export default function EquipmentLifespanGuide() {
           </div>
 
           <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-100">
-            <h3 className="text-xl font-bold text-[#0a2540] mb-3">3. Monitor Equipment Conditions</h3>
+            <h3 className="text-xl font-bold text-[#0a2540] mb-3">3. Monitor Equipment Conditions & IoT Sensors</h3>
             <p className="text-gray-600 mb-4">
               Condition monitoring allows you to detect problems early and address them before they cause major damage or unplanned downtime.
+              Whether you use manual checks or IoT sensors, consistent monitoring is the cornerstone of predictive maintenance.
             </p>
-            <ul className="text-sm text-gray-600 space-y-2">
-              <li>• Use vibration analysis for rotating equipment</li>
-              <li>• Perform regular oil analysis for hydraulic systems</li>
-              <li>• Monitor temperature and pressure trends</li>
+            <ul className="text-sm text-gray-600 space-y-2 mb-4">
+              <li>• Use vibration analysis for rotating equipment — elevated vibration often precedes bearing failure by days or weeks</li>
+              <li>• Perform regular oil analysis for hydraulic systems — particle counts reveal internal wear before visible symptoms appear</li>
+              <li>• Monitor temperature trends — thermal sensors catch overheating motors and friction points early</li>
+              <li>• Track pressure readings in pneumatic and hydraulic systems to catch slow leaks</li>
+              <li>• Record current draw (amps) on electric motors — rising current indicates mechanical resistance or insulation breakdown</li>
               <li>• Set up regular condition monitoring checks in Myncel to track trends over time</li>
             </ul>
+            <div className="bg-white rounded-lg p-4 border border-purple-200 mt-2">
+              <p className="text-sm font-semibold text-purple-800 mb-1">🔌 IoT Sensor Monitoring with Myncel</p>
+              <p className="text-sm text-purple-700 mb-2">
+                Connect IoT sensors directly to Myncel using the sensor data API. Supported readings include temperature, vibration,
+                runtime hours, cycle counts, pressure, current draw, and oil level. When a reading exceeds your configured threshold,
+                Myncel automatically creates an alert and notifies your team via SMS or Slack — no manual checking required.
+              </p>
+              <ul className="text-xs text-purple-600 space-y-1">
+                <li>• <strong>Temperature sensors</strong> — alert when motors exceed 75°C (warning) or 90°C (critical)</li>
+                <li>• <strong>Vibration sensors</strong> — detect bearing wear before audible symptoms appear</li>
+                <li>• <strong>Oil level sensors</strong> — automatic low-oil alerts for hydraulic systems</li>
+                <li>• <strong>Runtime hour meters</strong> — automatically advance PM schedules based on actual usage</li>
+                <li>• <strong>Cycle counters</strong> — trigger maintenance at exact cycle milestones, not calendar dates</li>
+              </ul>
+            </div>
           </div>
 
           <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-6 border border-orange-100">

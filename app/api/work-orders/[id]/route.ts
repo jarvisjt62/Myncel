@@ -72,6 +72,22 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       },
     });
 
+    // Dispatch notification when work order is completed
+    if (body.status === 'COMPLETED') {
+      try {
+        const { dispatchNotifications } = await import('@/lib/notifications/dispatch');
+        dispatchNotifications(updated.organizationId, {
+          type: 'work_order.completed',
+          workOrderNumber: updated.woNumber,
+          title: updated.title,
+          machineName: updated.machine?.name ?? '',
+          completedBy: session.user.name ?? session.user.email ?? 'Unknown',
+        }).catch((err: unknown) => console.error('Completion notification error:', err));
+      } catch (err) {
+        console.error('Failed to import dispatch module:', err);
+      }
+    }
+
     return NextResponse.json({ success: true, workOrder: updated });
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });

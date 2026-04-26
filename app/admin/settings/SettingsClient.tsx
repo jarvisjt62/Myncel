@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTheme, ThemeToggle } from '../../components/ThemeProvider'
 
@@ -10,12 +10,70 @@ interface SettingsClientProps {
   hasData: boolean
 }
 
+interface FeatureFlags {
+  customersPageEnabled: boolean
+  changelogEnabled: boolean
+  changelogNote: string
+}
+
 export default function SettingsClient({ organizationId, canCleanup, hasData }: SettingsClientProps) {
   const router = useRouter()
   const { theme, isDark } = useTheme()
   const [isDeleting, setIsDeleting] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  const [flags, setFlags] = useState<FeatureFlags>({
+    customersPageEnabled: false,
+    changelogEnabled: false,
+    changelogNote: '',
+  })
+  const [flagsLoading, setFlagsLoading] = useState(true)
+  const [flagsSaving, setFlagsSaving] = useState(false)
+  const [flagsMsg, setFlagsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  useEffect(() => {
+    fetchFlags()
+  }, [])
+
+  const fetchFlags = async () => {
+    try {
+      const res = await fetch('/api/admin/feature-flags')
+      if (res.ok) {
+        const data = await res.json()
+        setFlags(data.flags)
+      }
+    } catch (e) {
+      console.error('Failed to fetch feature flags:', e)
+    } finally {
+      setFlagsLoading(false)
+    }
+  }
+
+  const saveFlags = async (newFlags: Partial<FeatureFlags>) => {
+    setFlagsSaving(true)
+    setFlagsMsg(null)
+    const updated = { ...flags, ...newFlags }
+    setFlags(updated)
+    try {
+      const res = await fetch('/api/admin/feature-flags', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ flags: updated }),
+      })
+      if (res.ok) {
+        setFlagsMsg({ type: 'success', text: 'Settings saved.' })
+        setTimeout(() => setFlagsMsg(null), 3000)
+      } else {
+        const d = await res.json()
+        setFlagsMsg({ type: 'error', text: d.error || 'Failed to save.' })
+      }
+    } catch {
+      setFlagsMsg({ type: 'error', text: 'Failed to save settings.' })
+    } finally {
+      setFlagsSaving(false)
+    }
+  }
 
   const handleCleanup = async () => {
     setIsDeleting(true)
@@ -71,6 +129,104 @@ export default function SettingsClient({ organizationId, canCleanup, hasData }: 
         </div>
       </div>
 
+      {/* ── Public Page Visibility ──────────────────────────────────── */}
+      {canCleanup && (
+        <div className="rounded-xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Public Page Visibility</h2>
+            {flagsSaving && (
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Saving…</span>
+            )}
+          </div>
+          <p className="text-sm mb-5" style={{ color: 'var(--text-secondary)' }}>
+            Control which public-facing pages are visible to website visitors. Disabled pages show a "coming soon" message.
+          </p>
+
+          {flagsMsg && (
+            <div className={`p-3 rounded-lg mb-4 text-sm font-medium ${
+              flagsMsg.type === 'success'
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                : 'bg-red-500/10 text-red-400 border border-red-500/20'
+            }`}>
+              {flagsMsg.text}
+            </div>
+          )}
+
+          {flagsLoading ? (
+            <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</div>
+          ) : (
+            <div className="space-y-4">
+              {/* Customers page toggle */}
+              <div className="flex items-center justify-between p-4 rounded-lg" style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)' }}>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Customer Stories Page</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                    Show illustrative customer stories at <span className="font-mono">/customers</span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => saveFlags({ customersPageEnabled: !flags.customersPageEnabled })}
+                  disabled={flagsSaving}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-50 ${
+                    flags.customersPageEnabled ? 'bg-emerald-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                      flags.customersPageEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Changelog page toggle */}
+              <div className="flex items-center justify-between p-4 rounded-lg" style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)' }}>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Changelog Page</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                    Show product changelog at <span className="font-mono">/changelog</span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => saveFlags({ changelogEnabled: !flags.changelogEnabled })}
+                  disabled={flagsSaving}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-50 ${
+                    flags.changelogEnabled ? 'bg-emerald-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                      flags.changelogEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Changelog announcement note */}
+              {flags.changelogEnabled && (
+                <div className="p-4 rounded-lg" style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)' }}>
+                  <label className="block text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-secondary)' }}>
+                    Changelog Announcement Banner (optional)
+                  </label>
+                  <textarea
+                    value={flags.changelogNote}
+                    onChange={e => setFlags(f => ({ ...f, changelogNote: e.target.value }))}
+                    onBlur={() => saveFlags({ changelogNote: flags.changelogNote })}
+                    placeholder="e.g. 🎉 Version 2.5 is here! Check out the new IoT sensor dashboard."
+                    rows={2}
+                    className="w-full text-sm px-3 py-2 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                  />
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                    This text appears as a banner on the changelog page to highlight the latest update.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Data Management ────────────────────────────────────────── */}
       <div className="rounded-xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
         <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Data Management</h2>
@@ -102,36 +258,29 @@ export default function SettingsClient({ organizationId, canCleanup, hasData }: 
               <button
                 onClick={() => setShowConfirm(true)}
                 disabled={!hasData}
-                className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                  hasData
-                    ? 'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20'
-                    : 'border text-sm cursor-not-allowed opacity-40'
-                }`}
-                style={!hasData ? { borderColor: 'var(--border)', color: 'var(--text-muted)' } : {}}
+                className="px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-40"
+                style={hasData ? { background: 'rgb(239 68 68 / 0.1)', color: 'rgb(239 68 68)', border: '1px solid rgb(239 68 68 / 0.2)' } : { background: 'var(--bg-surface-2)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
               >
                 {hasData ? 'Clear All Data' : 'No Data to Clear'}
               </button>
             ) : (
-              <div className="space-y-4">
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-                  <p className="text-red-400 text-sm font-medium">Are you sure you want to delete all data?</p>
-                  <p className="text-red-400/70 text-xs mt-1">
-                    This will permanently delete all machines, work orders, alerts, and maintenance tasks.
-                  </p>
-                </div>
+              <div className="p-4 rounded-lg" style={{ background: 'rgb(239 68 68 / 0.05)', border: '1px solid rgb(239 68 68 / 0.2)' }}>
+                <p className="text-sm font-medium mb-3" style={{ color: 'rgb(239 68 68)' }}>
+                  Are you sure? This will permanently delete all your organization's data.
+                </p>
                 <div className="flex gap-3">
                   <button
                     onClick={handleCleanup}
                     disabled={isDeleting}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+                    className="px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors disabled:opacity-50"
+                    style={{ background: 'rgb(239 68 68)' }}
                   >
-                    {isDeleting ? 'Deleting...' : 'Yes, Delete All Data'}
+                    {isDeleting ? 'Deleting…' : 'Yes, Delete Everything'}
                   </button>
                   <button
                     onClick={() => setShowConfirm(false)}
-                    disabled={isDeleting}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
-                    style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+                    className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                    style={{ background: 'var(--bg-surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
                   >
                     Cancel
                   </button>

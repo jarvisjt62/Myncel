@@ -2,18 +2,32 @@ import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
-  title: 'Changelog — What\'s New in Myncel',
-  description: 'Stay up to date with the latest Myncel features, improvements, and bug fixes. We ship new updates every two weeks based on feedback from real manufacturers.',
+  title: "Changelog — What's New in Myncel",
+  description: 'Stay up to date with the latest Myncel features, improvements, and bug fixes.',
   alternates: { canonical: 'https://myncel.com/changelog' },
   openGraph: {
-    title: 'Myncel Changelog — Latest Features & Updates',
-    description: 'New features, improvements, and fixes shipped every two weeks. See what\'s new in Myncel.',
+    title: "Myncel Changelog — Latest Features & Updates",
+    description: "New features, improvements, and fixes shipped regularly.",
     url: 'https://myncel.com/changelog',
   },
+};
+
+async function getFeatureFlags() {
+  try {
+    const fs = await import('fs/promises');
+    const data = await fs.readFile('/tmp/myncel-feature-flags.json', 'utf8');
+    return JSON.parse(data);
+  } catch {
+    return { customersPageEnabled: false, changelogEnabled: false, changelogNote: '' };
+  }
 }
 
-export default function Changelog() {
+export default async function Changelog() {
+  const flags = await getFeatureFlags();
+
   const releases = [
     {
       version: '2.4.0',
@@ -53,12 +67,11 @@ export default function Changelog() {
       typeColor: 'bg-blue-100 text-blue-700',
       highlights: ['Multi-facility support', 'Technician roles', 'API v2'],
       changes: [
-        { type: 'new', text: 'Multi-facility support — manage equipment across up to 3 locations (Growth) or unlimited locations (Professional)' },
-        { type: 'new', text: 'Technician role — new user type that only sees their assigned work orders, no sensitive company data' },
+        { type: 'new', text: 'Multi-facility support — manage equipment across multiple locations' },
+        { type: 'new', text: 'Technician role — new user type that only sees their assigned work orders' },
         { type: 'new', text: 'API v2 — faster, more consistent REST API with webhook support for all major events' },
         { type: 'new', text: 'Equipment QR codes — print QR codes for machines that link directly to their work order creation page' },
         { type: 'improved', text: 'Schedule templates — save and reuse maintenance schedule templates across multiple machines' },
-        { type: 'improved', text: 'Notifications redesigned — clearer subject lines and action buttons in all email alerts' },
         { type: 'fixed', text: 'Fixed an edge case where deleting a machine would not delete its associated open work orders' },
       ],
     },
@@ -71,7 +84,7 @@ export default function Changelog() {
       changes: [
         { type: 'new', text: 'SMS notifications — get text alerts for overdue tasks and critical equipment events' },
         { type: 'new', text: 'Downtime tracking — log unplanned stoppages and link them to equipment for root-cause analysis' },
-        { type: 'new', text: 'CSV import — bulk import equipment from a spreadsheet to get set up even faster' },
+        { type: 'new', text: 'CSV import — bulk import equipment from a spreadsheet' },
         { type: 'new', text: 'Maintenance cost tracking — attach parts and labor costs to work orders for per-machine cost reports' },
         { type: 'improved', text: 'Dashboard redesigned with separate Equipment Status and Open Work Orders panels' },
       ],
@@ -95,11 +108,11 @@ export default function Changelog() {
       date: 'September 1, 2025',
       type: 'Major Release',
       typeColor: 'bg-violet-100 text-violet-700',
-      highlights: ['Complete UI redesign', 'Mobile app beta', 'New pricing plans'],
+      highlights: ['Complete UI redesign', 'Mobile web app', 'New pricing plans'],
       changes: [
         { type: 'new', text: 'Complete UI redesign — cleaner, faster interface based on feedback from 150+ customers' },
-        { type: 'new', text: 'Mobile app beta — progressive web app experience for technicians on the shop floor' },
-        { type: 'new', text: 'New pricing plans — Starter ($79), Growth ($149), Professional ($299) replacing legacy plans' },
+        { type: 'new', text: 'Mobile web app — progressive web app experience for technicians on the shop floor' },
+        { type: 'new', text: 'New pricing plans — Starter ($79), Growth ($149), Professional ($299)' },
         { type: 'new', text: 'Analytics module — uptime tracking, work order trends, and team performance metrics' },
         { type: 'improved', text: 'Navigation completely redesigned with faster access to all major features' },
         { type: 'fixed', text: 'Dozens of bug fixes and performance improvements from the v1.x series' },
@@ -113,9 +126,46 @@ export default function Changelog() {
     fixed: 'bg-rose-50 text-rose-700 border-rose-200',
   };
 
+  if (!flags.changelogEnabled) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Navbar />
+        <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
+          <div className="w-16 h-16 rounded-full bg-[#f0f4f8] flex items-center justify-center mb-6">
+            <svg className="w-8 h-8 text-[#8898aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold text-[#0a2540] mb-3">Changelog Coming Soon</h1>
+          <p className="text-[#425466] max-w-md mb-8 leading-relaxed">
+            We're preparing detailed release notes for each version. Check back soon for a full history of features, improvements, and bug fixes.
+          </p>
+          <div className="flex gap-4">
+            <Link href="/docs" className="bg-[#635bff] text-white font-semibold px-6 py-3 rounded-lg hover:bg-[#4f46e5] transition-colors">
+              View documentation
+            </Link>
+            <Link href="/" className="border border-[#e6ebf1] text-[#425466] font-semibold px-6 py-3 rounded-lg hover:bg-[#f6f9fc] transition-colors">
+              Back to home
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
+
+      {/* Admin announcement banner */}
+      {flags.changelogNote && (
+        <div className="bg-violet-50 border-b border-violet-200 py-3">
+          <div className="max-w-6xl mx-auto px-6">
+            <p className="text-sm text-violet-800 text-center">{flags.changelogNote}</p>
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <section className="bg-[#f6f9fc] border-b border-[#e6ebf1] py-16">
@@ -127,9 +177,6 @@ export default function Changelog() {
               <p className="text-[#425466]">New features, improvements, and bug fixes — shipped regularly.</p>
             </div>
             <div className="flex gap-3">
-              <a href="#" className="btn-stripe-secondary text-sm">
-                Subscribe to updates
-              </a>
               <Link href="/docs" className="btn-stripe-primary text-sm">View docs →</Link>
             </div>
           </div>
@@ -157,14 +204,13 @@ export default function Changelog() {
         <div className="max-w-4xl mx-auto px-6 space-y-10">
           {releases.map((release, i) => (
             <div key={i} className="border border-[#e6ebf1] rounded-2xl overflow-hidden">
-              {/* Release header */}
               <div className="bg-[#f6f9fc] px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[#e6ebf1]">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl font-bold text-[#0a2540]">v{release.version}</span>
                   <span className={`text-xs font-bold px-3 py-1 rounded-full ${release.typeColor}`}>{release.type}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {release.highlights.map(h => (
                       <span key={h} className="text-xs text-[#425466] bg-white border border-[#e6ebf1] px-2.5 py-1 rounded-full">{h}</span>
                     ))}
@@ -172,7 +218,6 @@ export default function Changelog() {
                   <span className="text-sm text-[#8898aa] whitespace-nowrap">{release.date}</span>
                 </div>
               </div>
-              {/* Changes */}
               <div className="px-6 py-5">
                 <ul className="space-y-3">
                   {release.changes.map((change, j) => (
