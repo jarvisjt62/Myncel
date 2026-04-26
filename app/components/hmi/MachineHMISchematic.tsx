@@ -1041,29 +1041,45 @@ export function MachineHMISchematic({
   if (category === 'CONVEYOR' || name.includes('conveyor'))
     return <Conveyor speed={rpm*0.00028} count={Math.floor(load*0.5)} load={load} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;
 
-  if (name.includes('laser'))
+  // Category-based routing for all enum values
+  if (category === 'LASER_CUTTER' || name.includes('laser'))
     return <LaserCutter laserPower={load*60} cuttingSpeed={rpm*0.01} gasFlow={15+load*0.1} temp={temp} load={load} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;
 
-  if (name.includes('plasma'))
+  if (category === 'PLASMA_CUTTER' || name.includes('plasma'))
     return <PlasmaCutter arcCurrent={pres*2} cuttingSpeed={rpm*0.008} gasFlow={18+load*0.08} temp={temp} load={load} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;
 
-  if (name.includes('grind'))
+  if (category === 'GRINDER' || name.includes('grind'))
     return <Grinder wheelRpm={rpm*1.5} feedRate={load*0.03} depth={load*0.01} temp={temp} load={load} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;
 
-  if (name.includes('drill'))
+  if (category === 'DRILL_PRESS' || name.includes('drill'))
     return <DrillPress rpm={rpm} depth={load*0.3} torque={pres*2} temp={temp} load={load} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;
 
-  if (name.includes('punch'))
+  if (category === 'PUNCH_PRESS' || name.includes('punch'))
     return <PunchPress strokes={rpm*0.02} force={pres*8} speed={load} temp={temp} load={load} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;
 
-  if (name.includes('pump'))
+  if (category === 'PUMP' || name.includes('pump'))
     return <Pump flow={load*0.8} pressure={pres*0.9} temp={temp} load={load} rpm={rpm} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;
 
-  if (name.includes('boiler') || name.includes('furnace') || name.includes('oven') || name.includes('kiln'))
+  if (category === 'BOILER' || category === 'HEAT_TREATMENT' || name.includes('boiler') || name.includes('furnace') || name.includes('oven') || name.includes('kiln') || name.includes('heat treat'))
     return <Boiler setpoint={temp*1.5+100} actual={temp*1.2} pressure={pres*0.5} burnerLoad={load} temp={temp} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;
 
-  if (name.includes('generat'))
+  if (category === 'GENERATOR' || name.includes('generat'))
     return <Generator frequency={50+load*0.1} voltage={380+load*0.5} loadKw={load*8} rpm={rpm} temp={temp} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;
+
+  if (category === 'ROBOT' || (name.includes('robot') && !name.includes('weld') && !name.includes('assembly')))
+    return <AsmRobot axis1={45+load*0.3} axis2={-60+rpm*0.01} payload={load*0.1} speed={load} cycleTime={20-load*0.1} load={load} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;
+
+  if (category === 'CRANE' || name.includes('crane') || name.includes('hoist') || name.includes('overhead'))
+    return <Generic machineName={machineName} rpm={rpm} load={load} temp={temp} pressure={pres} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;
+
+  if (category === 'MEASURING' || name.includes('cmm') || name.includes('measur') || name.includes('coordinate'))
+    return <Generic machineName={machineName} rpm={rpm} load={load} temp={temp} pressure={pres} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;
+
+  if (category === 'PACKAGING' || name.includes('packag') || name.includes('wrap') || name.includes('seal'))
+    return <Conveyor speed={rpm*0.00028} count={Math.floor(load*0.5)} load={load} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;
+
+  if (category === 'FORKLIFT' || name.includes('forklift') || name.includes('agv') || name.includes('lift truck'))
+    return <Generic machineName={machineName} rpm={rpm} load={load} temp={temp} pressure={pres} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;
 
   if (name.includes('press') || name.includes('hydraulic'))
     return <PressBrake force={pres*9.2} angle={45+load*0.3} stroke={load*2.5} thickness={5+load*0.05} temp={temp} load={load} pressure={pres} status={s} isDark={isDark} compact={compact} onCommand={onCommand}/>;

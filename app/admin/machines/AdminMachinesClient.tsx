@@ -34,9 +34,15 @@ const criticalityColors: Record<string, string> = {
 };
 
 const categoryLabels: Record<string, string> = {
-  CNC_MILL: 'CNC Mill', CNC_LATHE: 'CNC Lathe', PRESS: 'Press',
-  HYDRAULIC: 'Hydraulic', COMPRESSOR: 'Compressor', CONVEYOR: 'Conveyor',
-  WELDER: 'Welder', INJECTION_MOLD: 'Injection Mold', ASSEMBLY: 'Assembly', OTHER: 'Other',
+  CNC_MILL: 'CNC Mill', CNC_LATHE: 'CNC Lathe', PRESS: 'Press / Brake',
+  HYDRAULIC: 'Hydraulic System', COMPRESSOR: 'Compressor', CONVEYOR: 'Conveyor',
+  WELDER: 'Welder', INJECTION_MOLD: 'Injection Mold', ASSEMBLY: 'Assembly Line',
+  LASER_CUTTER: 'Laser Cutter', PLASMA_CUTTER: 'Plasma Cutter',
+  GRINDER: 'Grinder', DRILL_PRESS: 'Drill Press', PUNCH_PRESS: 'Punch Press',
+  PUMP: 'Pump / Fluid System', BOILER: 'Boiler / Furnace', GENERATOR: 'Generator',
+  CRANE: 'Crane / Hoist', ROBOT: 'Industrial Robot', HEAT_TREATMENT: 'Heat Treatment',
+  MEASURING: 'CMM / Measuring', PACKAGING: 'Packaging', FORKLIFT: 'Forklift / AGV',
+  OTHER: 'Other',
 };
 
 const statusDot: Record<string, string> = {

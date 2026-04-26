@@ -1589,16 +1589,44 @@ function DashboardClientInner({ user, data }: Props) {
             <div>
               <label className={labelClass}>Category</label>
               <select value={machineForm.category} onChange={e => setMachineForm({...machineForm, category: e.target.value})} className={selectClass}>
-                <option value="CNC_MILL">⚙️ CNC Mill</option>
-                <option value="CNC_LATHE">🔄 CNC Lathe</option>
-                <option value="PRESS">🔨 Press</option>
-                <option value="HYDRAULIC">💧 Hydraulic</option>
-                <option value="COMPRESSOR">🌀 Compressor</option>
-                <option value="CONVEYOR">📦 Conveyor</option>
-                <option value="WELDER">🔧 Welder</option>
-                <option value="INJECTION_MOLD">🧪 Injection Mold</option>
-                <option value="ASSEMBLY">🏭 Assembly</option>
-                <option value="OTHER">🔩 Other</option>
+                <optgroup label="CNC / Machining">
+                  <option value="CNC_MILL">⚙️ CNC Mill</option>
+                  <option value="CNC_LATHE">🔄 CNC Lathe</option>
+                  <option value="DRILL_PRESS">🔩 Drill Press</option>
+                  <option value="GRINDER">🔵 Grinder / Surface Grinder</option>
+                  <option value="PUNCH_PRESS">🔲 Punch Press / Turret Punch</option>
+                </optgroup>
+                <optgroup label="Cutting">
+                  <option value="LASER_CUTTER">🔴 Laser Cutter</option>
+                  <option value="PLASMA_CUTTER">⚡ Plasma Cutter</option>
+                  <option value="PRESS">🔨 Press / Brake</option>
+                </optgroup>
+                <optgroup label="Fabrication">
+                  <option value="WELDER">🔧 Welder / Welding Robot</option>
+                  <option value="INJECTION_MOLD">🧪 Injection Mold</option>
+                  <option value="HYDRAULIC">💧 Hydraulic System</option>
+                </optgroup>
+                <optgroup label="Automation & Assembly">
+                  <option value="ROBOT">🤖 Industrial Robot</option>
+                  <option value="ASSEMBLY">🏭 Assembly Line</option>
+                  <option value="CONVEYOR">📦 Conveyor / Belt System</option>
+                </optgroup>
+                <optgroup label="Utilities & Infrastructure">
+                  <option value="COMPRESSOR">🌀 Compressor / Air System</option>
+                  <option value="PUMP">💦 Pump / Fluid System</option>
+                  <option value="BOILER">🔥 Boiler / Furnace</option>
+                  <option value="GENERATOR">⚡ Generator / Power Unit</option>
+                  <option value="CRANE">🏗️ Crane / Hoist / Overhead</option>
+                  <option value="HEAT_TREATMENT">🌡️ Heat Treatment / Oven</option>
+                </optgroup>
+                <optgroup label="Quality & Logistics">
+                  <option value="MEASURING">📐 CMM / Measuring Equipment</option>
+                  <option value="PACKAGING">📦 Packaging / Wrapping</option>
+                  <option value="FORKLIFT">🚜 Forklift / AGV</option>
+                </optgroup>
+                <optgroup label="Other">
+                  <option value="OTHER">🔩 Other / Unclassified</option>
+                </optgroup>
               </select>
             </div>
           </div>
