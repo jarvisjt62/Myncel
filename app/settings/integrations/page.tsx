@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 
@@ -53,8 +55,18 @@ export default function IntegrationsPage() {
       if (res.ok) {
         const data = await res.json();
         const map: Record<string, IntegrationData> = {};
-        (data.integrations || []).forEach((i: IntegrationData) => {
-          map[i.type.toLowerCase()] = i;
+        (data.integrations || []).forEach((i: any) => {
+          // API returns { id: 'slack', connected: true, integrationId: '...' }
+          map[i.id] = {
+            id: i.integrationId || i.id,
+            type: i.id,
+            name: i.name,
+            status: i.connected ? 'CONNECTED' : (i.status || 'PENDING'),
+            connectedAt: i.connectedAt,
+            config: i.config,
+            apiKey: i.apiKey,
+            webhookUrl: i.webhookUrl,
+          };
         });
         setIntegrations(map);
       }
@@ -132,7 +144,8 @@ export default function IntegrationsPage() {
         showToast('error', 'Integration not found');
         return;
       }
-      const res = await fetch(`/api/integrations/${integ.id}/disconnect`, { method: 'POST' });
+      // Use the integration type name (e.g. 'slack') not the DB id
+      const res = await fetch(`/api/integrations/${id}/disconnect`, { method: 'POST' });
       if (res.ok) {
         showToast('success', `${INTEGRATION_META[id]?.name || id} disconnected.`);
         fetchIntegrations();

@@ -45,3 +45,9 @@
 - [x] Hook dispatchNotifications into work order create/complete API
 - [x] Run npm run build — ✓ Compiled successfully
 - [x] git commit and push all changes
+
+## Phase 10 — Vercel Prerender Fixes
+- [x] Fix 'window is not defined' on /equipment/scan — split into page.tsx + ScanContent.tsx with dynamic ssr:false
+- [x] Add force-dynamic to floor-plan, oee, purchase-orders, webhooks pages
+- [x] Verified: 0 TypeScript errors, 0 prerender errors, 0 Export encountered errors
+- [x] Commit f6f810c pushed to master

@@ -176,7 +176,8 @@ export async function GET(
       null
     );
 
-    return NextResponse.redirect(authUrl.toString());
+    // Return the auth URL as JSON so the client can redirect (avoids CORS issues)
+    return NextResponse.json({ authUrl: authUrl.toString() });
   } catch (error) {
     console.error('Error initiating OAuth:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
