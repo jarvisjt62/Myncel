@@ -36,13 +36,13 @@ function DB({ label, value, unit, max, color, isDark }: {
   const c = useTC(isDark);
   const pct = Math.min(100, Math.max(0, (value / max) * 100));
   return (
-    <div style={{ marginBottom: 4 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-        <span style={{ color: c.textSecond, fontSize: 8, textTransform: 'uppercase', letterSpacing: 0.8 }}>{label}</span>
-        <span style={{ color, fontSize: 9, fontWeight: 700 }}>{value.toFixed(1)}{unit}</span>
+    <div style={{ marginBottom: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+        <span style={{ color: c.textSecond, fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.8 }}>{label}</span>
+        <span style={{ color, fontSize: 11, fontWeight: 700 }}>{value.toFixed(1)}{unit}</span>
       </div>
-      <div style={{ background: isDark ? '#1e293b' : '#e2e8f0', borderRadius: 2, height: 4 }}>
-        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 2, transition: 'width 0.6s' }}/>
+      <div style={{ background: isDark ? '#1e293b' : '#e2e8f0', borderRadius: 3, height: 6 }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 3, transition: 'width 0.6s' }}/>
       </div>
     </div>
   );
@@ -53,7 +53,7 @@ function HBtn({ label, color, onClick }: { label: string; color: string; onClick
   return (
     <button onMouseDown={() => setP(true)} onMouseUp={() => { setP(false); onClick(); }} onMouseLeave={() => setP(false)}
       style={{ background: p ? color : 'transparent', border: `1.5px solid ${color}`, color: p ? '#000' : color,
-        borderRadius: 3, padding: '3px 7px', fontSize: 8, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.7,
+        borderRadius: 3, padding: '4px 9px', fontSize: 9, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.7,
         textTransform: 'uppercase', transition: 'all 0.1s', fontFamily: 'monospace', whiteSpace: 'nowrap' }}
     >{label}</button>
   );
@@ -65,7 +65,7 @@ function ES({ onClick }: { onClick: () => void }) {
   return (
     <button onClick={onClick}
       style={{ background: b ? '#ef4444' : '#7f1d1d', border: '2px solid #ef4444', color: '#fff',
-        borderRadius: 3, padding: '3px 8px', fontSize: 8, fontWeight: 900, cursor: 'pointer',
+        borderRadius: 3, padding: '4px 10px', fontSize: 9, fontWeight: 900, cursor: 'pointer',
         letterSpacing: 1, fontFamily: 'monospace', boxShadow: '0 0 8px #ef444480' }}>E-STOP</button>
   );
 }
@@ -76,16 +76,16 @@ function Panel({ isDark, compact, title, sc, sl, children }: {
   const c = useTC(isDark);
   return (
     <div style={{ background: c.bg, fontFamily: 'monospace', width: '100%', height: '100%',
-      minHeight: compact ? 130 : 400, border: `1px solid ${c.panelBorder}`, borderRadius: 8, overflow: 'hidden',
+      minHeight: compact ? 160 : 520, border: `1px solid ${c.panelBorder}`, borderRadius: 10, overflow: 'hidden',
       display: 'flex', flexDirection: 'column' }}>
       <div style={{ background: c.headerBg, borderBottom: `1px solid ${c.panelBorder}`,
         padding: compact ? '3px 8px' : '5px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ color: c.textPrimary, fontSize: compact ? 8 : 10, fontWeight: 700, letterSpacing: 1.2 }}>
+        <span style={{ color: c.textPrimary, fontSize: compact ? 9 : 11, fontWeight: 700, letterSpacing: 1.2 }}>
           MYNCEL | {title.toUpperCase()}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ color: sc, fontSize: 7, letterSpacing: 1 }}>{sl}</span>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: sc, boxShadow: `0 0 5px ${sc}`, display: 'inline-block' }}/>
+          <span style={{ color: sc, fontSize: 8, letterSpacing: 1 }}>{sl}</span>
+          <span style={{ width: 9, height: 9, borderRadius: '50%', background: sc, boxShadow: `0 0 6px ${sc}`, display: 'inline-block' }}/>
         </div>
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>{children}</div>
@@ -103,12 +103,12 @@ function CNCLathe({ isDark, compact, status, rpm, feed, xPos, zPos, temp, load, 
     <Panel isDark={isDark} compact={compact} title="CNC LATHE" sc={sc} sl={status}>
       <div style={{ display: 'flex', flex: 1 }}>
         <div style={{ flex: 1, padding: compact ? 4 : 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width: '100%', height: compact ? 90 : 200 }}>
+          <svg viewBox="0 0 200 140" style={{ width: '100%', height: compact ? 120 : 300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="10" y="100" width="180" height="12" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
             <rect x="12" y="55" width="45" height="50" rx="3" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1.2"/>
-            <text x="34" y="75" textAnchor="middle" fill={c.textPrimary} fontSize="7" fontWeight="700">HEAD</text>
-            <text x="34" y="85" textAnchor="middle" fill={c.textPrimary} fontSize="6">STOCK</text>
+            <text x="34" y="75" textAnchor="middle" fill={c.textPrimary} fontSize="9" fontWeight="700">HEAD</text>
+            <text x="34" y="85" textAnchor="middle" fill={c.textPrimary} fontSize="8">STOCK</text>
             <circle cx="57" cy="78" r="14" fill="none" stroke={c.mStroke} strokeWidth="1.5"/>
             <circle cx="57" cy="78" r="9" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
             {[0,120,240].map((a,i) => { const r=(a*Math.PI)/180; return <rect key={i} x={57+Math.cos(r)*5-2} y={78+Math.sin(r)*5-3} width="4" height="6" rx="1" fill={c.machineBlue} stroke={c.mStroke} strokeWidth="0.5" transform={`rotate(${a} ${57+Math.cos(r)*5} ${78+Math.sin(r)*5})`}/>; })}
@@ -116,14 +116,14 @@ function CNCLathe({ isDark, compact, status, rpm, feed, xPos, zPos, temp, load, 
             <rect x="140" y="62" width="30" height="40" rx="2" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1"/>
             <line x1="140" y1="78" x2="120" y2="78" stroke={c.mStroke} strokeWidth="1.5" strokeDasharray="3,2"/>
             <polygon points="110,72 120,76 110,80" fill={isDark?'#f59e0b':'#d97706'} stroke="#f59e0b" strokeWidth="0.5"/>
-            <text x="90" y="58" fill={c.textSecond} fontSize="7">X:{(xPos??0).toFixed(1)}mm Z:{(zPos??0).toFixed(1)}mm</text>
-            <text x="10" y="130" fill={c.textSecond} fontSize="7">FEED:{(feed??0).toFixed(0)}mm/min</text>
-            <text x="130" y="130" fill={c.textPrimary} fontSize="7" fontWeight="700">RPM:{(rpm??0).toFixed(0)}</text>
+            <text x="90" y="58" fill={c.textSecond} fontSize="9">X:{(xPos??0).toFixed(1)}mm Z:{(zPos??0).toFixed(1)}mm</text>
+            <text x="10" y="130" fill={c.textSecond} fontSize="9">FEED:{(feed??0).toFixed(0)}mm/min</text>
+            <text x="130" y="130" fill={c.textPrimary} fontSize="9" fontWeight="700">RPM:{(rpm??0).toFixed(0)}</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="RPM" value={rpm??0} unit="" max={4000} color="#22d3ee" isDark={isDark}/>
             <DB label="Load %" value={load??0} unit="%" max={100} color="#a78bfa" isDark={isDark}/>
             <DB label="Temp C" value={temp??0} unit="C" max={120} color={(temp??0)>90?'#ef4444':'#f59e0b'} isDark={isDark}/>
@@ -153,7 +153,7 @@ function CNCMill({ isDark, compact, status, rpm, feed, xPos, yPos, zPos, temp, l
     <Panel isDark={isDark} compact={compact} title="CNC MILL" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="150" y="10" width="35" height="115" rx="3" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1.2"/>
             <rect x="110" y="15" width="50" height="35" rx="3" fill={c.metalFill} stroke={c.mStroke} strokeWidth="1.2"/>
@@ -165,13 +165,13 @@ function CNCMill({ isDark, compact, status, rpm, feed, xPos, yPos, zPos, temp, l
             <rect x="20" y="105" width="110" height="18" rx="2" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1"/>
             {[35,60,85,110].map((x,i)=><line key={i} x1={x} y1="105" x2={x} y2="123" stroke={c.metalStroke} strokeWidth="1"/>)}
             <rect x="50" y="88" width="60" height="8" rx="1" fill={isDark?'#374151':'#bfdbfe'} stroke={c.mStroke} strokeWidth="0.8"/>
-            <text x="10" y="135" fill={c.textSecond} fontSize="7">X:{(xPos??0).toFixed(1)} Y:{(yPos??0).toFixed(1)} Z:{(zPos??0).toFixed(1)}</text>
-            <text x="155" y="135" fill={c.textPrimary} fontSize="7" fontWeight="700">RPM:{(rpm??0).toFixed(0)}</text>
+            <text x="10" y="135" fill={c.textSecond} fontSize="9">X:{(xPos??0).toFixed(1)} Y:{(yPos??0).toFixed(1)} Z:{(zPos??0).toFixed(1)}</text>
+            <text x="155" y="135" fill={c.textPrimary} fontSize="9" fontWeight="700">RPM:{(rpm??0).toFixed(0)}</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="RPM" value={rpm??0} unit="" max={8000} color="#22d3ee" isDark={isDark}/>
             <DB label="Load %" value={load??0} unit="%" max={100} color="#a78bfa" isDark={isDark}/>
             <DB label="Temp C" value={temp??0} unit="C" max={120} color={(temp??0)>90?'#ef4444':'#f59e0b'} isDark={isDark}/>
@@ -201,7 +201,7 @@ function PressBrake({ isDark, compact, status, force, angle, stroke, temp, load,
     <Panel isDark={isDark} compact={compact} title="PRESS BRAKE" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="10" y="10" width="20" height="120" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1.2"/>
             <rect x="170" y="10" width="20" height="120" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1.2"/>
@@ -213,13 +213,13 @@ function PressBrake({ isDark, compact, status, force, angle, stroke, temp, load,
             <polygon points={`90,${ramY+14} 110,${ramY+14} 100,${ramY+22}`} fill={isDark?'#f59e0b':'#d97706'} stroke="#f59e0b" strokeWidth="0.8"/>
             <rect x="35" y="105" width="130" height="5" rx="1" fill={isDark?'#60a5fa':'#bfdbfe'} stroke={c.mStroke} strokeWidth="0.8"/>
             <path d="M50,110 L80,110 L90,120 L110,120 L120,110 L150,110 L150,118 L50,118 Z" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
-            <text x="10" y="133" fill={c.textSecond} fontSize="7">FORCE:{(force??0).toFixed(0)}kN ANGLE:{(angle??0).toFixed(1)}deg</text>
-            <text x="150" y="133" fill={c.textPrimary} fontSize="7" fontWeight="700">P:{(pressure??0).toFixed(0)}bar</text>
+            <text x="10" y="133" fill={c.textSecond} fontSize="9">FORCE:{(force??0).toFixed(0)}kN ANGLE:{(angle??0).toFixed(1)}deg</text>
+            <text x="150" y="133" fill={c.textPrimary} fontSize="9" fontWeight="700">P:{(pressure??0).toFixed(0)}bar</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="Force kN" value={force??0} unit="kN" max={1000} color="#22d3ee" isDark={isDark}/>
             <DB label="Pressure" value={pressure??0} unit="bar" max={200} color="#60a5fa" isDark={isDark}/>
             <DB label="Load %" value={load??0} unit="%" max={100} color="#a78bfa" isDark={isDark}/>
@@ -248,7 +248,7 @@ function Welder({ isDark, compact, status, current, voltage, wireSpeed, gasFlow,
     <Panel isDark={isDark} compact={compact} title="WELDING ROBOT" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="70" y="110" width="40" height="15" rx="3" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
             <rect x="80" y="88" width="20" height="25" rx="3" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1.2"/>
@@ -266,15 +266,15 @@ function Welder({ isDark, compact, status, current, voltage, wireSpeed, gasFlow,
             <circle cx="25" cy="35" r="18" fill="none" stroke={c.mStroke} strokeWidth="1.5"/>
             <circle cx="25" cy="35" r="10" fill={c.darkSurf} stroke={c.metalStroke} strokeWidth="1"/>
             <circle cx="25" cy="35" r="4" fill={c.machineBlue} stroke={c.mStroke} strokeWidth="0.8"/>
-            <text x="25" y="62" textAnchor="middle" fill={c.textSecond} fontSize="6">WIRE</text>
+            <text x="25" y="62" textAnchor="middle" fill={c.textSecond} fontSize="8">WIRE</text>
             <path d="M43,35 Q70,20 93,48" fill="none" stroke={c.metalStroke} strokeWidth="1.5" strokeDasharray="3,2"/>
             <rect x="8" y="70" width="14" height="40" rx="4" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1"/>
-            <text x="10" y="133" fill={c.textSecond} fontSize="7">A:{(current??0).toFixed(0)} V:{(voltage??0).toFixed(0)} Wire:{(wireSpeed??0).toFixed(1)}m/min</text>
+            <text x="10" y="133" fill={c.textSecond} fontSize="9">A:{(current??0).toFixed(0)} V:{(voltage??0).toFixed(0)} Wire:{(wireSpeed??0).toFixed(1)}m/min</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="Current A" value={current??0} unit="A" max={400} color="#fbbf24" isDark={isDark}/>
             <DB label="Voltage V" value={voltage??0} unit="V" max={50} color="#22d3ee" isDark={isDark}/>
             <DB label="Wire m/min" value={wireSpeed??0} unit="m/min" max={20} color="#a78bfa" isDark={isDark}/>
@@ -304,7 +304,7 @@ function InjMold({ isDark, compact, status, injPressure, clampForce, meltTemp, c
     <Panel isDark={isDark} compact={compact} title="INJECTION MOLD" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="8" y="60" width="184" height="8" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
             <rect x="8" y="80" width="184" height="8" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
@@ -317,13 +317,13 @@ function InjMold({ isDark, compact, status, injPressure, clampForce, meltTemp, c
             {[158,170,180].map((x,i)=><rect key={i} x={x} y="62" width="6" height="24" rx="1" fill={isOp?'#ef4444':(isDark?'#374151':'#cbd5e1')} stroke={c.metalStroke} strokeWidth="0.5" opacity="0.7"/>)}
             <path d="M170,45 L185,45 L181,62 L174,62 Z" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
             {isOp && [173,178,175,180,172].map((x,i)=><circle key={i} cx={x} cy={50+i*2} r="1.5" fill={isDark?'#60a5fa':'#3b82f6'} opacity="0.8"/>)}
-            <text x="10" y="118" fill={c.textSecond} fontSize="7">CLAMP:{(clampForce??0).toFixed(0)}kN MELT:{(meltTemp??0).toFixed(0)}C</text>
-            <text x="10" y="128" fill={c.textSecond} fontSize="7">INJ:{(injPressure??0).toFixed(0)}bar CYCLE:{(cycleTime??0).toFixed(1)}s</text>
+            <text x="10" y="118" fill={c.textSecond} fontSize="9">CLAMP:{(clampForce??0).toFixed(0)}kN MELT:{(meltTemp??0).toFixed(0)}C</text>
+            <text x="10" y="128" fill={c.textSecond} fontSize="9">INJ:{(injPressure??0).toFixed(0)}bar CYCLE:{(cycleTime??0).toFixed(1)}s</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="Inj Pressure" value={injPressure??0} unit="bar" max={2000} color="#22d3ee" isDark={isDark}/>
             <DB label="Clamp kN" value={clampForce??0} unit="kN" max={5000} color="#60a5fa" isDark={isDark}/>
             <DB label="Melt Temp C" value={meltTemp??0} unit="C" max={350} color="#ef4444" isDark={isDark}/>
@@ -358,10 +358,10 @@ function AsmRobot({ isDark, compact, status, axis1, axis2, payload, speed, cycle
     <Panel isDark={isDark} compact={compact} title="ASSEMBLY ROBOT" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="8" y="8" width="185" height="125" rx="4" fill="none" stroke={isDark?'#1e3a5f':'#bfdbfe'} strokeWidth="1" strokeDasharray="6,4"/>
-            <text x="10" y="18" fill={isDark?'#1e3a5f':'#bfdbfe'} fontSize="6" letterSpacing="2">SAFETY ZONE</text>
+            <text x="10" y="18" fill={isDark?'#1e3a5f':'#bfdbfe'} fontSize="8" letterSpacing="2">SAFETY ZONE</text>
             <rect x="130" y="95" width="55" height="6" rx="1" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="0.8"/>
             <rect x="135" y="88" width="12" height="8" rx="1" fill={isDark?'#60a5fa':'#3b82f6'} stroke={c.mStroke} strokeWidth="0.5"/>
             <rect x="152" y="88" width="12" height="8" rx="1" fill={isDark?'#a78bfa':'#7c3aed'} stroke={c.mStroke} strokeWidth="0.5" opacity="0.7"/>
@@ -377,13 +377,13 @@ function AsmRobot({ isDark, compact, status, axis1, axis2, payload, speed, cycle
             <line x1={j3x-3} y1={j3y+4} x2={j3x-5} y2={j3y+10} stroke={c.mStroke} strokeWidth="2" strokeLinecap="round"/>
             <line x1={j3x+3} y1={j3y+4} x2={j3x+5} y2={j3y+10} stroke={c.mStroke} strokeWidth="2" strokeLinecap="round"/>
             {isOp && <circle cx={j3x} cy={j3y} r="8" fill="none" stroke="#22d3ee" strokeWidth="0.5" opacity="0.5"><animate attributeName="r" values="5;12;5" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.5;0;0.5" dur="2s" repeatCount="indefinite"/></circle>}
-            <text x="12" y="118" fill={c.textSecond} fontSize="7">J1:{(axis1??0).toFixed(0)}deg J2:{(axis2??0).toFixed(0)}deg</text>
-            <text x="12" y="128" fill={c.textSecond} fontSize="7">SPD:{(speed??0).toFixed(0)}% CYC:{(cycleTime??0).toFixed(1)}s</text>
+            <text x="12" y="118" fill={c.textSecond} fontSize="9">J1:{(axis1??0).toFixed(0)}deg J2:{(axis2??0).toFixed(0)}deg</text>
+            <text x="12" y="128" fill={c.textSecond} fontSize="9">SPD:{(speed??0).toFixed(0)}% CYC:{(cycleTime??0).toFixed(1)}s</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="Speed %" value={speed??0} unit="%" max={100} color="#22d3ee" isDark={isDark}/>
             <DB label="Payload kg" value={payload??0} unit="kg" max={20} color="#60a5fa" isDark={isDark}/>
             <DB label="Cycle Time" value={cycleTime??0} unit="s" max={30} color="#a78bfa" isDark={isDark}/>
@@ -414,7 +414,7 @@ function Compressor({ isDark, compact, status, pressure, flow, temp, load, onCom
     <Panel isDark={isDark} compact={compact} title="COMPRESSOR" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <ellipse cx="150" cy="74" rx="12" ry="35" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1.2"/>
             <rect x="138" y="40" width="24" height="68" fill={c.metalFill} stroke="none"/>
@@ -422,7 +422,7 @@ function Compressor({ isDark, compact, status, pressure, flow, temp, load, onCom
             <ellipse cx="150" cy="109" rx="12" ry="5" fill={c.darkSurf} stroke={c.metalStroke} strokeWidth="1.2"/>
             <circle cx="162" cy="60" r="10" fill={c.panelBg} stroke={c.mStroke} strokeWidth="1"/>
             <line x1="162" y1="60" x2={162+5*Math.cos(gAngle)} y2={60+5*Math.sin(gAngle)} stroke="#ef4444" strokeWidth="1.2" strokeLinecap="round"/>
-            <text x="162" y="74" textAnchor="middle" fill={c.textSecond} fontSize="5">bar</text>
+            <text x="162" y="74" textAnchor="middle" fill={c.textSecond} fontSize="7">bar</text>
             <rect x="15" y="55" width="75" height="40" rx="4" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1.2"/>
             <rect x="22" y="62" width="16" height="26" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
             <rect x="45" y="62" width="16" height="26" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
@@ -431,15 +431,15 @@ function Compressor({ isDark, compact, status, pressure, flow, temp, load, onCom
             </circle>
             <circle cx="67" cy="74" r="3" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="0.8"/>
             <ellipse cx="20" cy="74" rx="6" ry="12" fill={c.machineBlue} stroke={c.mStroke} strokeWidth="1.2"/>
-            <text x="20" y="78" textAnchor="middle" fill={c.textPrimary} fontSize="6" fontWeight="700">M</text>
+            <text x="20" y="78" textAnchor="middle" fill={c.textPrimary} fontSize="10" fontWeight="700">M</text>
             <path d="M90,74 Q110,74 138,74" fill="none" stroke={c.mStroke} strokeWidth="2.5"/>
-            <text x="100" y="70" fill={c.textSecond} fontSize="6">{(flow??0).toFixed(1)}m3/h</text>
-            <text x="10" y="128" fill={c.textSecond} fontSize="7">P:{(pressure??0).toFixed(1)}bar T:{(temp??0).toFixed(0)}C L:{(load??0).toFixed(0)}%</text>
+            <text x="100" y="70" fill={c.textSecond} fontSize="8">{(flow??0).toFixed(1)}m3/h</text>
+            <text x="10" y="128" fill={c.textSecond} fontSize="9">P:{(pressure??0).toFixed(1)}bar T:{(temp??0).toFixed(0)}C L:{(load??0).toFixed(0)}%</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="Pressure bar" value={pressure??0} unit="bar" max={14} color="#22d3ee" isDark={isDark}/>
             <DB label="Flow m3/h" value={flow??0} unit="m3/h" max={30} color="#60a5fa" isDark={isDark}/>
             <DB label="Temp C" value={temp??0} unit="C" max={120} color={(temp??0)>90?'#ef4444':'#f59e0b'} isDark={isDark}/>
@@ -469,7 +469,7 @@ function Conveyor({ isDark, compact, status, speed, count, load, onCommand }: an
     <Panel isDark={isDark} compact={compact} title="CONVEYOR" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             {[25,85,145].map((x,i)=><g key={i}><line x1={x} y1="90" x2={x-8} y2="115" stroke={c.metalStroke} strokeWidth="2"/><line x1={x} y1="90" x2={x+8} y2="115" stroke={c.metalStroke} strokeWidth="2"/></g>)}
             <ellipse cx="25" cy="75" rx="12" ry="12" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1.2">
@@ -487,13 +487,13 @@ function Conveyor({ isDark, compact, status, speed, count, load, onCommand }: an
               </rect>
             ))}
             <rect x="8" y="80" width="18" height="20" rx="2" fill={c.machineBlue} stroke={c.mStroke} strokeWidth="1"/>
-            <text x="17" y="93" textAnchor="middle" fill={c.textPrimary} fontSize="6" fontWeight="700">M</text>
-            <text x="10" y="128" fill={c.textSecond} fontSize="7">SPEED:{(speed??0).toFixed(2)}m/s COUNT:{(count??0).toFixed(0)}</text>
+            <text x="17" y="93" textAnchor="middle" fill={c.textPrimary} fontSize="10" fontWeight="700">M</text>
+            <text x="10" y="128" fill={c.textSecond} fontSize="9">SPEED:{(speed??0).toFixed(2)}m/s COUNT:{(count??0).toFixed(0)}</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="Speed m/s" value={speed??0} unit="m/s" max={5} color="#22d3ee" isDark={isDark}/>
             <DB label="Load %" value={load??0} unit="%" max={100} color="#a78bfa" isDark={isDark}/>
             <div style={{marginTop:6,display:'flex',flexWrap:'wrap',gap:4}}>
@@ -521,7 +521,7 @@ function LaserCutter({ isDark, compact, status, laserPower, cuttingSpeed, gasFlo
     <Panel isDark={isDark} compact={compact} title="LASER CUTTER" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="10" y="10" width="180" height="110" rx="4" fill="none" stroke={c.mStroke} strokeWidth="1.5"/>
             <rect x="15" y="25" width="170" height="6" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
@@ -546,15 +546,15 @@ function LaserCutter({ isDark, compact, status, laserPower, cuttingSpeed, gasFlo
             </>}
             <rect x="20" y="90" width="160" height="22" rx="1" fill={isDark?'#374151':'#bfdbfe'} stroke={c.mStroke} strokeWidth="0.8"/>
             <rect x="165" y="10" width="22" height="16" rx="2" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1"/>
-            <text x="176" y="21" textAnchor="middle" fill={isDark?'#ef4444':'#dc2626'} fontSize="7" fontWeight="700">LASER</text>
+            <text x="176" y="21" textAnchor="middle" fill={isDark?'#ef4444':'#dc2626'} fontSize="9" fontWeight="700">LASER</text>
             <rect x="165" y="30" width="22" height="12" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="0.8"/>
-            <text x="176" y="39" textAnchor="middle" fill={c.textSecond} fontSize="6">N2/O2</text>
-            <text x="10" y="128" fill={c.textSecond} fontSize="7">PWR:{(laserPower??0).toFixed(0)}W SPD:{(cuttingSpeed??0).toFixed(0)}mm/s GAS:{(gasFlow??0).toFixed(1)}L/min</text>
+            <text x="176" y="39" textAnchor="middle" fill={c.textSecond} fontSize="8">N2/O2</text>
+            <text x="10" y="128" fill={c.textSecond} fontSize="9">PWR:{(laserPower??0).toFixed(0)}W SPD:{(cuttingSpeed??0).toFixed(0)}mm/s GAS:{(gasFlow??0).toFixed(1)}L/min</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="Laser Power" value={laserPower??0} unit="W" max={6000} color="#ef4444" isDark={isDark}/>
             <DB label="Cut Speed" value={cuttingSpeed??0} unit="mm/s" max={200} color="#22d3ee" isDark={isDark}/>
             <DB label="Assist Gas" value={gasFlow??0} unit="L/min" max={30} color="#60a5fa" isDark={isDark}/>
@@ -584,7 +584,7 @@ function PlasmaCutter({ isDark, compact, status, arcCurrent, cuttingSpeed, gasFl
     <Panel isDark={isDark} compact={compact} title="PLASMA CUTTER" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="10" y="85" width="170" height="25" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1.2"/>
             {[20,40,60,80,100,120,140,160].map((x,i)=><line key={i} x1={x} y1="85" x2={x} y2="110" stroke={c.metalStroke} strokeWidth="0.5" opacity="0.5"/>)}
@@ -602,17 +602,17 @@ function PlasmaCutter({ isDark, compact, status, arcCurrent, cuttingSpeed, gasFl
               <animate attributeName="opacity" values="0.9;0.5;0.9" dur="0.08s" repeatCount="indefinite"/>
             </line>}
             <rect x="10" y="10" width="55" height="30" rx="3" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1.2"/>
-            <text x="37" y="22" textAnchor="middle" fill={c.textPrimary} fontSize="7" fontWeight="700">PLASMA</text>
-            <text x="37" y="32" textAnchor="middle" fill={isDark?'#a78bfa':'#7c3aed'} fontSize="8" fontWeight="700">{(arcCurrent??0).toFixed(0)}A</text>
+            <text x="37" y="22" textAnchor="middle" fill={c.textPrimary} fontSize="9" fontWeight="700">PLASMA</text>
+            <text x="37" y="32" textAnchor="middle" fill={isDark?'#a78bfa':'#7c3aed'} fontSize="10" fontWeight="700">{(arcCurrent??0).toFixed(0)}A</text>
             <rect x="170" y="10" width="16" height="40" rx="5" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1"/>
             <rect x="173" y="6" width="10" height="6" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="0.8"/>
-            <text x="10" y="120" fill={c.textSecond} fontSize="7">ARC:{(arcCurrent??0).toFixed(0)}A SPD:{(cuttingSpeed??0).toFixed(0)}mm/s</text>
-            <text x="10" y="130" fill={c.textSecond} fontSize="7">GAS:{(gasFlow??0).toFixed(1)}L/min T:{(temp??0).toFixed(0)}C</text>
+            <text x="10" y="120" fill={c.textSecond} fontSize="9">ARC:{(arcCurrent??0).toFixed(0)}A SPD:{(cuttingSpeed??0).toFixed(0)}mm/s</text>
+            <text x="10" y="130" fill={c.textSecond} fontSize="9">GAS:{(gasFlow??0).toFixed(1)}L/min T:{(temp??0).toFixed(0)}C</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="Arc Current" value={arcCurrent??0} unit="A" max={200} color="#a78bfa" isDark={isDark}/>
             <DB label="Cut Speed" value={cuttingSpeed??0} unit="mm/s" max={150} color="#22d3ee" isDark={isDark}/>
             <DB label="Gas Flow" value={gasFlow??0} unit="L/min" max={30} color="#60a5fa" isDark={isDark}/>
@@ -642,7 +642,7 @@ function Grinder({ isDark, compact, status, wheelRpm, feedRate, depth, temp, loa
     <Panel isDark={isDark} compact={compact} title="GRINDER" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="15" y="100" width="160" height="20" rx="3" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1.2"/>
             <rect x="140" y="15" width="30" height="90" rx="3" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1.2"/>
@@ -655,12 +655,12 @@ function Grinder({ isDark, compact, status, wheelRpm, feedRate, depth, temp, loa
             <rect x="85" y="82" width="40" height="8" rx="1" fill={isDark?'#60a5fa':'#3b82f6'} stroke={c.mStroke} strokeWidth="0.8">
               {isOp && <animate attributeName="x" values="20;100;20" dur="3s" repeatCount="indefinite"/>}
             </rect>
-            <text x="10" y="128" fill={c.textSecond} fontSize="7">RPM:{(wheelRpm??0).toFixed(0)} DOC:{(depth??0).toFixed(2)}mm L:{(load??0).toFixed(0)}%</text>
+            <text x="10" y="128" fill={c.textSecond} fontSize="9">RPM:{(wheelRpm??0).toFixed(0)} DOC:{(depth??0).toFixed(2)}mm L:{(load??0).toFixed(0)}%</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="Wheel RPM" value={wheelRpm??0} unit="" max={3600} color="#22d3ee" isDark={isDark}/>
             <DB label="Feed Rate" value={feedRate??0} unit="mm/s" max={5} color="#60a5fa" isDark={isDark}/>
             <DB label="Depth mm" value={depth??0} unit="mm" max={2} color="#fbbf24" isDark={isDark}/>
@@ -691,13 +691,13 @@ function DrillPress({ isDark, compact, status, rpm, depth, torque, temp, load, o
     <Panel isDark={isDark} compact={compact} title="DRILL PRESS" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="88" y="10" width="14" height="115" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1.2"/>
             <ellipse cx="95" cy="125" rx="40" ry="10" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1.2"/>
             <rect x="60" y="10" width="70" height="28" rx="4" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1.2"/>
             <ellipse cx="115" cy="22" rx="14" ry="10" fill={c.machineBlue} stroke={c.mStroke} strokeWidth="1.2"/>
-            <text x="115" y="25" textAnchor="middle" fill={c.textPrimary} fontSize="7" fontWeight="700">M</text>
+            <text x="115" y="25" textAnchor="middle" fill={c.textPrimary} fontSize="9" fontWeight="700">M</text>
             <line x1="101" y1="18" x2="80" y2="18" stroke={c.metalStroke} strokeWidth="2"/>
             <line x1="101" y1="26" x2="80" y2="26" stroke={c.metalStroke} strokeWidth="2"/>
             <rect x="82" y="38" width="26" height="20" rx="3" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1.2"/>
@@ -708,12 +708,12 @@ function DrillPress({ isDark, compact, status, rpm, depth, torque, temp, load, o
             <polygon points={`91,${drillY+5} 99,${drillY+5} 95,${drillY+12}`} fill={isDark?'#f59e0b':'#d97706'} stroke="#f59e0b" strokeWidth="0.5"/>
             <rect x="50" y="100" width="90" height="8" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
             <rect x="70" y="93" width="50" height="10" rx="1" fill={isDark?'#374151':'#bfdbfe'} stroke={c.mStroke} strokeWidth="0.8"/>
-            <text x="10" y="128" fill={c.textSecond} fontSize="7">RPM:{(rpm??0).toFixed(0)} DOC:{(depth??0).toFixed(1)}mm TQ:{(torque??0).toFixed(0)}Nm</text>
+            <text x="10" y="128" fill={c.textSecond} fontSize="9">RPM:{(rpm??0).toFixed(0)} DOC:{(depth??0).toFixed(1)}mm TQ:{(torque??0).toFixed(0)}Nm</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="Spindle RPM" value={rpm??0} unit="" max={3000} color="#22d3ee" isDark={isDark}/>
             <DB label="Depth mm" value={depth??0} unit="mm" max={50} color="#fbbf24" isDark={isDark}/>
             <DB label="Torque Nm" value={torque??0} unit="Nm" max={100} color="#a78bfa" isDark={isDark}/>
@@ -742,7 +742,7 @@ function PunchPress({ isDark, compact, status, strokes, force, speed, temp, load
     <Panel isDark={isDark} compact={compact} title="PUNCH PRESS" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="15" y="10" width="15" height="120" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1.2"/>
             <rect x="170" y="10" width="15" height="120" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1.2"/>
@@ -763,12 +763,12 @@ function PunchPress({ isDark, compact, status, strokes, force, speed, temp, load
             <rect x="35" y="98" width="130" height="5" rx="1" fill={isDark?'#374151':'#bfdbfe'} stroke={c.mStroke} strokeWidth="0.8"/>
             <rect x="70" y="103" width="50" height="12" rx="2" fill={c.metalFill} stroke={c.mStroke} strokeWidth="1.2"/>
             <rect x="82" y="103" width="26" height="12" rx="1" fill={c.svgBg} stroke={c.mStroke} strokeWidth="0.5"/>
-            <text x="10" y="128" fill={c.textSecond} fontSize="7">SPM:{(strokes??0).toFixed(0)} FORCE:{(force??0).toFixed(0)}kN L:{(load??0).toFixed(0)}%</text>
+            <text x="10" y="128" fill={c.textSecond} fontSize="9">SPM:{(strokes??0).toFixed(0)} FORCE:{(force??0).toFixed(0)}kN L:{(load??0).toFixed(0)}%</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="Strokes/min" value={strokes??0} unit="spm" max={200} color="#22d3ee" isDark={isDark}/>
             <DB label="Force kN" value={force??0} unit="kN" max={2000} color="#f59e0b" isDark={isDark}/>
             <DB label="Speed %" value={speed??0} unit="%" max={100} color="#a78bfa" isDark={isDark}/>
@@ -799,10 +799,10 @@ function Pump({ isDark, compact, status, flow, pressure, temp, load, rpm, onComm
     <Panel isDark={isDark} compact={compact} title="PUMP SYSTEM" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="8" y="70" width="35" height="8" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1.2"/>
-            <text x="10" y="68" fill={c.textSecond} fontSize="6">INLET</text>
+            <text x="10" y="68" fill={c.textSecond} fontSize="8">INLET</text>
             <circle cx="83" cy="74" r="28" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1.5"/>
             <circle cx="83" cy="74" r="18" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
             {[0,60,120,180,240,300].map((a,i)=>{
@@ -813,19 +813,19 @@ function Pump({ isDark, compact, status, flow, pressure, temp, load, rpm, onComm
             })}
             <circle cx="83" cy="74" r="4" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="0.8"/>
             <rect x="111" y="70" width="40" height="8" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1.2"/>
-            <text x="125" y="68" fill={c.textSecond} fontSize="6">OUTLET</text>
+            <text x="125" y="68" fill={c.textSecond} fontSize="8">OUTLET</text>
             <rect x="147" y="30" width="8" height="42" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
             <circle cx="170" cy="65" r="12" fill={c.panelBg} stroke={c.mStroke} strokeWidth="1"/>
             <line x1="170" y1="65" x2={170+6*Math.cos(gAngle)} y2={65+6*Math.sin(gAngle)} stroke="#ef4444" strokeWidth="1.2" strokeLinecap="round"/>
-            <text x="170" y="82" textAnchor="middle" fill={c.textSecond} fontSize="5">bar</text>
+            <text x="170" y="82" textAnchor="middle" fill={c.textSecond} fontSize="7">bar</text>
             <rect x="60" y="108" width="46" height="22" rx="3" fill={c.machineBlue} stroke={c.mStroke} strokeWidth="1.2"/>
-            <text x="83" y="122" textAnchor="middle" fill={c.textPrimary} fontSize="8" fontWeight="700">MOTOR</text>
-            <text x="10" y="128" fill={c.textSecond} fontSize="7">FLOW:{(flow??0).toFixed(1)}m3/h P:{(pressure??0).toFixed(1)}bar T:{(temp??0).toFixed(0)}C</text>
+            <text x="83" y="122" textAnchor="middle" fill={c.textPrimary} fontSize="10" fontWeight="700">MOTOR</text>
+            <text x="10" y="128" fill={c.textSecond} fontSize="9">FLOW:{(flow??0).toFixed(1)}m3/h P:{(pressure??0).toFixed(1)}bar T:{(temp??0).toFixed(0)}C</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="Flow m3/h" value={flow??0} unit="m3/h" max={100} color="#22d3ee" isDark={isDark}/>
             <DB label="Pressure bar" value={pressure??0} unit="bar" max={20} color="#60a5fa" isDark={isDark}/>
             <DB label="RPM" value={rpm??0} unit="" max={3600} color="#a78bfa" isDark={isDark}/>
@@ -858,7 +858,7 @@ function Boiler({ isDark, compact, status, setpoint, actual, pressure, burnerLoa
     <Panel isDark={isDark} compact={compact} title="BOILER / FURNACE" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="40" y="20" width="100" height="90" rx="8" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1.5"/>
             {[35,55,75,95].map((y,i)=><rect key={i} x="40" y={y} width="100" height="6" fill={isDark?'#1e3a5f':'#dbeafe'} stroke={c.panelBorder} strokeWidth="0.5" opacity="0.5"/>)}
@@ -875,15 +875,15 @@ function Boiler({ isDark, compact, status, setpoint, actual, pressure, burnerLoa
             <rect x="42" y={110-heatPct*80} width="96" height={heatPct*80} rx="4" fill={`rgba(${isOp?'239,68,68':'59,130,246'},0.15)`}/>
             <circle cx="165" cy="45" r="14" fill={c.panelBg} stroke={c.mStroke} strokeWidth="1"/>
             <line x1="165" y1="45" x2={165+8*Math.cos(gAngle)} y2={45+8*Math.sin(gAngle)} stroke="#ef4444" strokeWidth="1.2" strokeLinecap="round"/>
-            <text x="165" y="63" textAnchor="middle" fill={c.textSecond} fontSize="5">bar</text>
+            <text x="165" y="63" textAnchor="middle" fill={c.textSecond} fontSize="7">bar</text>
             <rect x="90" y="8" width="10" height="16" rx="2" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
-            <text x="10" y="120" fill={c.textSecond} fontSize="7">SETPT:{(setpoint??0).toFixed(0)}C ACTUAL:{(actual??0).toFixed(0)}C</text>
-            <text x="10" y="130" fill={c.textSecond} fontSize="7">PRESS:{(pressure??0).toFixed(1)}bar LOAD:{(burnerLoad??0).toFixed(0)}%</text>
+            <text x="10" y="120" fill={c.textSecond} fontSize="9">SETPT:{(setpoint??0).toFixed(0)}C ACTUAL:{(actual??0).toFixed(0)}C</text>
+            <text x="10" y="130" fill={c.textSecond} fontSize="9">PRESS:{(pressure??0).toFixed(1)}bar LOAD:{(burnerLoad??0).toFixed(0)}%</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="Actual Temp" value={actual??0} unit="C" max={setpoint??500} color="#ef4444" isDark={isDark}/>
             <DB label="Pressure bar" value={pressure??0} unit="bar" max={20} color="#60a5fa" isDark={isDark}/>
             <DB label="Burner Load" value={burnerLoad??0} unit="%" max={100} color="#f97316" isDark={isDark}/>
@@ -912,31 +912,31 @@ function Generator({ isDark, compact, status, frequency, voltage, loadKw, rpm, t
     <Panel isDark={isDark} compact={compact} title="GENERATOR" sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="10" y="40" width="180" height="65" rx="6" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1.5"/>
             <rect x="15" y="45" width="70" height="55" rx="4" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
-            <text x="50" y="65" textAnchor="middle" fill={c.textPrimary} fontSize="8" fontWeight="700">ENGINE</text>
+            <text x="50" y="65" textAnchor="middle" fill={c.textPrimary} fontSize="10" fontWeight="700">ENGINE</text>
             <circle cx="50" cy="78" r="12" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1">
               {isOp && <animateTransform attributeName="transform" type="rotate" from="0 50 78" to="360 50 78" dur={`${Math.max(0.2,2-(rpm??0)/3000)}s`} repeatCount="indefinite"/>}
             </circle>
             <circle cx="50" cy="78" r="5" fill={c.machineBlue} stroke={c.mStroke} strokeWidth="0.8"/>
             <rect x="95" y="45" width="90" height="55" rx="4" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
-            <text x="140" y="60" textAnchor="middle" fill={c.textPrimary} fontSize="8" fontWeight="700">ALTERNATOR</text>
+            <text x="140" y="60" textAnchor="middle" fill={c.textPrimary} fontSize="10" fontWeight="700">ALTERNATOR</text>
             {[70,75,80,85].map((y,i)=><path key={i} d={`M100,${y} Q105,${y-4} 110,${y} Q115,${y+4} 120,${y}`} fill="none" stroke={isOp?'#fbbf24':c.metalStroke} strokeWidth="1.2" opacity={isOp?0.8:0.3}/>)}
             <text x="140" y="85" textAnchor="middle" fill={c.textSecond} fontSize="9" fontWeight="700">{(voltage??0).toFixed(0)}V</text>
-            <text x="140" y="95" textAnchor="middle" fill={c.textSecond} fontSize="7">{(frequency??0).toFixed(1)}Hz</text>
+            <text x="140" y="95" textAnchor="middle" fill={c.textSecond} fontSize="9">{(frequency??0).toFixed(1)}Hz</text>
             <line x1="85" y1="72" x2="95" y2="72" stroke={c.mStroke} strokeWidth="2.5" strokeLinecap="round"/>
             <rect x="10" y="10" width="60" height="28" rx="3" fill={c.panelBg} stroke={c.mStroke} strokeWidth="1"/>
-            <text x="40" y="22" textAnchor="middle" fill={c.textPrimary} fontSize="7" fontWeight="700">CONTROL</text>
-            <text x="40" y="32" textAnchor="middle" fill={isOp?'#22c55e':'#ef4444'} fontSize="7">{isOp?'ON-LINE':'OFF-LINE'}</text>
-            <text x="10" y="120" fill={c.textSecond} fontSize="7">RPM:{(rpm??0).toFixed(0)} V:{(voltage??0).toFixed(0)} Hz:{(frequency??0).toFixed(1)}</text>
-            <text x="10" y="130" fill={c.textSecond} fontSize="7">LOAD:{(loadKw??0).toFixed(0)}kW T:{(temp??0).toFixed(0)}C</text>
+            <text x="40" y="22" textAnchor="middle" fill={c.textPrimary} fontSize="9" fontWeight="700">CONTROL</text>
+            <text x="40" y="32" textAnchor="middle" fill={isOp?'#22c55e':'#ef4444'} fontSize="9">{isOp?'ON-LINE':'OFF-LINE'}</text>
+            <text x="10" y="120" fill={c.textSecond} fontSize="9">RPM:{(rpm??0).toFixed(0)} V:{(voltage??0).toFixed(0)} Hz:{(frequency??0).toFixed(1)}</text>
+            <text x="10" y="130" fill={c.textSecond} fontSize="9">LOAD:{(loadKw??0).toFixed(0)}kW T:{(temp??0).toFixed(0)}C</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="Voltage V" value={voltage??0} unit="V" max={480} color="#fbbf24" isDark={isDark}/>
             <DB label="Frequency" value={frequency??0} unit="Hz" max={60} color="#22d3ee" isDark={isDark}/>
             <DB label="Load kW" value={loadKw??0} unit="kW" max={1000} color="#a78bfa" isDark={isDark}/>
@@ -966,7 +966,7 @@ function Generic({ isDark, compact, status, machineName, rpm, load, temp, pressu
     <Panel isDark={isDark} compact={compact} title={machineName||'MACHINE'} sc={sc} sl={status}>
       <div style={{ display:'flex', flex:1 }}>
         <div style={{ flex:1, padding:compact?4:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?90:200 }}>
+          <svg viewBox="0 0 200 140" style={{ width:'100%', height:compact?120:300 }}>
             <rect x="0" y="0" width="200" height="140" fill={c.svgBg} rx="4"/>
             <rect x="20" y="20" width="160" height="90" rx="6" fill={c.darkSurf} stroke={c.mStroke} strokeWidth="1.5"/>
             <rect x="30" y="28" width="140" height="30" rx="3" fill={c.metalFill} stroke={c.metalStroke} strokeWidth="1"/>
@@ -977,16 +977,16 @@ function Generic({ isDark, compact, status, machineName, rpm, load, temp, pressu
             <circle cx="75" cy="73" r="5" fill={c.machineBlue} stroke={c.mStroke} strokeWidth="0.8"/>
             {[0,60,120,180,240,300].map((a,i)=>{const r2=(a*Math.PI)/180;return <line key={i} x1={75+Math.cos(r2)*7} y1={73+Math.sin(r2)*7} x2={75+Math.cos(r2)*14} y2={73+Math.sin(r2)*14} stroke={c.mStroke} strokeWidth="1.5" strokeLinecap="round"/>;}) }
             <rect x="110" y="58" width="60" height="30" rx="3" fill={c.panelBg} stroke={c.panelBorder} strokeWidth="1"/>
-            <text x="140" y="70" textAnchor="middle" fill={c.textPrimary} fontSize="8" fontWeight="700">{(rpm??0).toFixed(0)}</text>
-            <text x="140" y="80" textAnchor="middle" fill={c.textSecond} fontSize="6">RPM</text>
+            <text x="140" y="70" textAnchor="middle" fill={c.textPrimary} fontSize="10" fontWeight="700">{(rpm??0).toFixed(0)}</text>
+            <text x="140" y="80" textAnchor="middle" fill={c.textSecond} fontSize="8">RPM</text>
             {isB && <><line x1="88" y1="60" x2="62" y2="86" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round"/><line x1="62" y1="60" x2="88" y2="86" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round"/></>}
-            <text x="10" y="125" fill={c.textSecond} fontSize="7">RPM:{(rpm??0).toFixed(0)} LOAD:{(load??0).toFixed(0)}%</text>
-            <text x="10" y="134" fill={c.textSecond} fontSize="7">TEMP:{(temp??0).toFixed(0)}C P:{(pressure??0).toFixed(1)}bar</text>
+            <text x="10" y="125" fill={c.textSecond} fontSize="9">RPM:{(rpm??0).toFixed(0)} LOAD:{(load??0).toFixed(0)}%</text>
+            <text x="10" y="134" fill={c.textSecond} fontSize="9">TEMP:{(temp??0).toFixed(0)}C P:{(pressure??0).toFixed(1)}bar</text>
             <circle cx="188" cy="12" r="5" fill={sc} style={{filter:`drop-shadow(0 0 4px ${sc})`}}/>
           </svg>
         </div>
         {!compact && (
-          <div style={{ width:120, padding:8, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
+          <div style={{ width:150, padding:10, borderLeft:`1px solid ${c.panelBorder}`, display:'flex', flexDirection:'column', gap:4 }}>
             <DB label="RPM" value={rpm??0} unit="" max={3000} color="#22d3ee" isDark={isDark}/>
             <DB label="Load %" value={load??0} unit="%" max={100} color="#a78bfa" isDark={isDark}/>
             <DB label="Temp C" value={temp??0} unit="C" max={120} color="#f59e0b" isDark={isDark}/>
