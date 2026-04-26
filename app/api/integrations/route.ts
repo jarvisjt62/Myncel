@@ -208,4 +208,4 @@ function generateApiKey(): string {
   return prefix + key;
 }
 
-export { INTEGRATION_TYPES };
+// Note: INTEGRATION_TYPES is used internally only - not exported as it conflicts with Next.js Route types

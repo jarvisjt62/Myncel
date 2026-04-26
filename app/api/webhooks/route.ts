@@ -266,4 +266,4 @@ function generateWebhookSecret(): string {
   return prefix + secret;
 }
 
-export { WEBHOOK_EVENTS };
+// Note: WEBHOOK_EVENTS is used internally only - not exported as it conflicts with Next.js Route types

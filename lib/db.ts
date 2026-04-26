@@ -72,3 +72,13 @@ export const db =
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+
+// Safe query wrapper - returns defaultValue on error instead of throwing
+export async function safeQuery<T>(query: Promise<T>, defaultValue?: T | null): Promise<T | null> {
+  try {
+    return await query;
+  } catch (error) {
+    console.error('[DB] Query error:', error);
+    return defaultValue !== undefined ? defaultValue : null;
+  }
+}
