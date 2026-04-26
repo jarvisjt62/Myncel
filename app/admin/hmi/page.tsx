@@ -79,45 +79,45 @@ function getMachineImageUrl(category: string, machineName: string): string {
   const name = machineName.toLowerCase();
   // Specific name matches first
   if (name.includes('press brake') || name.includes('pressbrake'))
-    return 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=80';
-  if (name.includes('hydraulic press') || (name.includes('press') && name.includes('hydraulic')))
-    return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
-  if (name.includes('injection mold') || name.includes('injection molding'))
-    return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
-  if (name.includes('laser'))
-    return 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80';
-  if (name.includes('robot'))
-    return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&q=80';
+    return '/machines/press-brake.png';
+  if (name.includes('injection mold') || name.includes('injection molding') || name.includes('inject'))
+    return '/machines/injection-mold.png';
+  if (name.includes('robot') || name.includes('assembly'))
+    return '/machines/assembly.png';
+  if (name.includes('weld'))
+    return '/machines/welder.png';
+  if (name.includes('lathe'))
+    return '/machines/cnc-lathe.png';
+  if (name.includes('mill') || name.includes('milling'))
+    return '/machines/cnc-mill.png';
+  if (name.includes('press') || name.includes('hydraulic'))
+    return '/machines/press-brake.png';
+  if (name.includes('compressor'))
+    return '/machines/compressor.png';
+  if (name.includes('conveyor'))
+    return '/machines/conveyor.png';
 
   // Category fallbacks
   switch (category) {
     case 'CNC_MILL':
+      return '/machines/cnc-mill.png';
     case 'CNC_LATHE':
-      if (name.includes('lathe'))
-        return 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
-      return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
+      return '/machines/cnc-lathe.png';
     case 'PRESS':
     case 'HYDRAULIC':
-      return 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=80';
+      return '/machines/press-brake.png';
     case 'COMPRESSOR':
-      return 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80';
+      return '/machines/compressor.png';
     case 'CONVEYOR':
-      return 'https://images.unsplash.com/photo-1563906267088-b029e7101114?w=400&q=80';
+      return '/machines/conveyor.png';
     case 'WELDER':
-      return 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
+      return '/machines/welder.png';
     case 'INJECTION_MOLD':
-      return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
+      return '/machines/injection-mold.png';
     case 'ASSEMBLY':
-      return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&q=80';
+      return '/machines/assembly.png';
     default:
-      // For OTHER, infer from name
-      if (name.includes('lathe'))   return 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
-      if (name.includes('mill'))    return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
-      if (name.includes('press'))   return 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=80';
-      if (name.includes('weld'))    return 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
-      if (name.includes('compressor')) return 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80';
-      if (name.includes('inject') || name.includes('mold')) return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
-      return 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
+      return '/machines/other.png';
   }
 }
 
