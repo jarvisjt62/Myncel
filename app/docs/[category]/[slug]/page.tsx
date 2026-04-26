@@ -312,13 +312,14 @@ Change a team member's role at any time:
 
 Their work order history is preserved, but they'll no longer have access.
 
-### Team Size Limits
+### Plan Limits
 
-- **Starter Plan**: Up to 3 users
-- **Professional Plan**: Up to 10 users
-- **Enterprise Plan**: Unlimited users
+- **Starter Plan**: Up to 10 machines, unlimited technician accounts
+- **Growth Plan**: Up to 30 machines, unlimited technician accounts
+- **Professional Plan**: Unlimited machines, unlimited technician accounts
+- **Enterprise Plan**: Custom limits — multiple facilities, dedicated support
 
-Need more users? [Upgrade your plan](/pricing) or contact sales@myncel.com.
+Need to track more machines? [Upgrade your plan](/pricing) or contact sales@myncel.com.
 `
       },
       'dashboard-overview': {
@@ -651,17 +652,16 @@ Building B
 - **View location dashboards** with equipment in that area
 - **Generate location reports** for area managers
 
-### Equipment Mapping View
+### Equipment Location View
 
-Visualize equipment on a floor plan:
+Organize and filter equipment by location:
 
-1. Go to **Equipment** → **Map View**
-2. Upload a floor plan image
-3. Drag equipment markers to their positions
-4. Save the map
+1. Go to **Equipment** → **Filter by Location**
+2. Assign a location to each machine (e.g., Building A, Line 1)
+3. Use location filters to view equipment in a specific area
 
-The map view shows:
-- Equipment locations
+The location view shows:
+- Equipment grouped by location
 - Status indicators (healthy, needs attention, at risk)
 - Open work orders per equipment
 
@@ -871,7 +871,7 @@ Use when:
 **How it works:**
 Work orders generate when operating hours reach the threshold. Requires:
 - Equipment has an operating hours meter
-- Hours are logged regularly (manually or via IoT)
+- Hours are logged regularly when completing work orders
 
 ### Combining Both Types
 
@@ -894,7 +894,7 @@ Convert a schedule type:
 For hour-based schedules, track hours via:
 - **Manual entry**: Technician logs reading
 - **Meter reading**: Regular check-ins
-- **IoT integration**: Automatic hour tracking
+- **Manual entry**: Log hours regularly when completing work orders
 - **Estimation**: Based on production schedule
 
 ### Best Practices
@@ -1214,17 +1214,17 @@ Configure notifications in **Settings** → **Notifications**.
         content: `
 ## Mobile Work Order Completion
 
-Complete work orders from anywhere using the Myncel mobile app.
+Complete work orders from anywhere using Myncel on your mobile browser.
 
-### Getting the Mobile App
+### Accessing Myncel on Mobile
 
-- **iOS**: Download from the App Store
-- **Android**: Download from Google Play
-- **Web**: Access from any browser at app.myncel.com
+- **iOS & Android**: Open your mobile browser and go to **myncel.com** — no app download required
+- **Works on**: Safari (iOS), Chrome (Android), and all modern mobile browsers
+- **Add to home screen**: For quick access, use your browser's "Add to Home Screen" option
 
 ### Viewing Assigned Work
 
-1. Open the mobile app
+1. Open Myncel in your mobile browser
 2. Log in with your credentials
 3. See your assigned work orders on the home screen
 4. Filter by status, priority, or due date
@@ -1255,7 +1255,7 @@ Document your work with photos:
 
 Record parts used:
 1. Tap **Add Parts**
-2. Search or scan a barcode
+2. Search by name or part number
 3. Enter quantity used
 4. Parts are deducted from inventory
 
@@ -1268,7 +1268,7 @@ Leave information for the record:
 
 ### Working Offline
 
-The mobile app works offline:
+Myncel is designed to work on any device through your mobile browser:
 - View assigned work orders
 - Complete tasks
 - Add notes and photos
@@ -1598,7 +1598,7 @@ Get critical alerts via text message for urgent matters.
 ### SMS Requirements
 
 SMS notifications require:
-- A paid Myncel plan (Professional or higher)
+- A Myncel Professional or Enterprise plan (API access is included)
 - Valid phone number in your profile
 - Phone number verification
 
@@ -1622,7 +1622,7 @@ Recommended for SMS:
 
 ### SMS Limits
 
-- Professional Plan: 50 SMS/month per user
+- Growth Plan and above: SMS notifications included
 - Enterprise Plan: Unlimited SMS
 
 ### Opting Out
@@ -1874,7 +1874,7 @@ Managers can receive team digests:
 
 ### Mobile Digest
 
-View digest in the mobile app:
+View digest on any device:
 - Daily summary on home screen
 - Tap to expand sections
 - Quick actions from digest view
@@ -1921,7 +1921,7 @@ Understand what each metric means and how to use it to improve your maintenance 
 - Address root causes
 - Upgrade aging equipment
 
-#### Overall Equipment Effectiveness (OEE)
+#### Equipment Uptime Rate
 **Definition**: Availability × Performance × Quality
 **Target**: 85%+ world class
 **Components**:
@@ -1943,7 +1943,7 @@ Understand what each metric means and how to use it to improve your maintenance 
 - Completion rate increasing
 - MTBF increasing
 - MTTR decreasing
-- OEE increasing
+- Equipment uptime improving over time
 
 #### Declining Trends ⚠️
 - More overdue work orders
@@ -2096,7 +2096,7 @@ When equipment goes down:
 
 ### Automatic Downtime Logging
 
-Connect IoT sensors for automatic tracking:
+Track equipment conditions through regular manual checks:
 - Equipment running status
 - Operating hours
 - Cycle counts
@@ -2286,7 +2286,7 @@ Configure in **Settings** → **Roles & Permissions**.
 Create dashboards for leadership:
 1. **Dashboards** → **Create Dashboard**
 2. Add key metrics:
-   - OEE summary
+   - Uptime summary
    - Cost trends
    - Compliance score
    - Top issues
@@ -2390,15 +2390,15 @@ Import multiple parts at once:
 4. Upload the file
 5. Review and confirm
 
-### Barcode Scanning
+### Adding Parts by Part Number
 
-Add parts by scanning barcodes:
-1. Click **Scan Barcode** in inventory
-2. Scan manufacturer barcode
-3. Enter part details
+Add parts using the part number search:
+1. Click **Add Part** in inventory
+2. Enter the manufacturer part number
+3. Fill in part details
 4. Save
 
-Use barcodes for:
+Use part numbers for:
 - Adding new parts
 - Finding parts
 - Checking out parts
@@ -2515,7 +2515,7 @@ Link parts to equipment for better planning and faster work orders.
 1. Open equipment details
 2. Click **Spare Parts** tab
 3. Click **Add Part**
-4. Search or scan part barcode
+4. Search by name or part number
 5. Set quantity typically needed
 6. Save
 
@@ -2592,7 +2592,7 @@ Track inventory automatically as parts are used on work orders.
 Technicians add parts during work:
 1. Open work order
 2. Click **Add Parts**
-3. Search by name, number, or scan barcode
+3. Search by name or part number
 4. Enter quantity used
 5. Parts are listed on work order
 
@@ -2706,24 +2706,23 @@ Track supplier metrics:
 
 View in **Reports** → **Supplier Performance**
 
-### Creating Purchase Orders
+### Creating Parts Requests
 
-1. **Inventory** → **Purchase Orders**
-2. Click **Create PO**
-3. Select supplier
-4. Add parts to order
-5. Set quantities
-6. Submit for approval
-7. Send to supplier
+When you need to reorder parts:
 
-### Receiving Orders
+1. **Inventory** → **Low Stock** (parts below minimum quantity)
+2. Click **Request Reorder** on the part
+3. Enter the quantity needed and preferred supplier
+4. Submit the request
+
+### Receiving Parts
 
 When parts arrive:
-1. Open the purchase order
-2. Click **Receive**
+1. Open the reorder request
+2. Click **Mark Received**
 3. Verify quantities
-4. Add to inventory
-5. Update costs if changed
+4. Update inventory count
+5. Update unit cost if changed
 
 ### Supplier Reports
 
@@ -2766,7 +2765,7 @@ API access is available on Professional and Enterprise plans.
 All API requests require authentication via Bearer token:
 
 \`\`\`bash
-curl -X GET "https://api.myncel.com/v1/equipment" \\
+curl -X GET "https://myncel.com/api/equipment" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json"
 \`\`\`
@@ -2774,7 +2773,7 @@ curl -X GET "https://api.myncel.com/v1/equipment" \\
 ### API Base URL
 
 \`\`\`
-https://api.myncel.com/v1
+https://myncel.com/api
 \`\`\`
 
 ### Available Endpoints
@@ -2806,7 +2805,8 @@ https://api.myncel.com/v1
 
 ### Rate Limits
 
-- Professional: 1,000 requests/hour
+- Professional: 500 requests/hour
+   - Enterprise: 2,000 requests/hour
 - Enterprise: 10,000 requests/hour
 
 Rate limit headers are included in responses:
@@ -3058,13 +3058,12 @@ Map Myncel categories to QuickBooks accounts:
 | Contractors | Contract Services |
 | Consumables | Maintenance Supplies |
 
-### Purchase Orders
+### Parts Cost Sync
 
-Sync parts purchase orders:
-1. Create PO in Myncel
-2. Receive the order
-3. Bill is created in QuickBooks
-4. Match to PO for tracking
+Sync parts costs with QuickBooks:
+1. Parts expenses are logged in Myncel when work orders are completed
+2. Costs sync to the mapped QuickBooks expense account
+3. Review in QuickBooks under the appropriate expense category
 
 ### Cost Reports
 

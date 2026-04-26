@@ -267,7 +267,7 @@ export default function EquipmentLifespanGuide() {
               <li>• Use vibration analysis for rotating equipment</li>
               <li>• Perform regular oil analysis for hydraulic systems</li>
               <li>• Monitor temperature and pressure trends</li>
-              <li>• Consider IoT sensors for real-time monitoring</li>
+              <li>• Set up regular condition monitoring checks in Myncel to track trends over time</li>
             </ul>
           </div>
 

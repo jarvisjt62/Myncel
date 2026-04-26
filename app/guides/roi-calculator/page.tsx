@@ -48,8 +48,9 @@ export default function ROICalculator() {
   
   const totalAnnualSavings = downtimeSavings + repairSavings + deferredCapex
   
-  // Myncel cost estimate (based on machines)
-  const myncelMonthlyCost = formData.machines * 49 // $49 per machine per month average
+  // Myncel cost estimate (based on plan tiers)
+  // Starter: $79/mo up to 10 machines, Growth: $149/mo up to 30, Professional: $299/mo unlimited
+  const myncelMonthlyCost = formData.machines <= 10 ? 79 : formData.machines <= 30 ? 149 : 299
   const myncelAnnualCost = myncelMonthlyCost * 12
   
   const annualROI = ((totalAnnualSavings - myncelAnnualCost) / myncelAnnualCost) * 100
@@ -235,7 +236,7 @@ export default function ROICalculator() {
                   <span className="text-2xl font-bold">${myncelAnnualCost.toLocaleString()}</span>
                   <span className="text-purple-200 text-sm">/year</span>
                 </div>
-                <div className="text-xs text-purple-300 mt-1">Based on {formData.machines} machines at ~$49/machine/month</div>
+                <div className="text-xs text-purple-300 mt-1">{formData.machines <= 10 ? 'Starter' : formData.machines <= 30 ? 'Growth' : 'Professional'} plan — ${myncelMonthlyCost}/month flat rate</div>
               </div>
 
               <Link
