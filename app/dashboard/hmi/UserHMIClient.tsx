@@ -168,6 +168,26 @@ function MachineImage({ category, machineName, status, className = '', liveData,
   );
 }
 
+interface Machine {
+  id: string;
+  name: string;
+  model: string | null;
+  manufacturer: string | null;
+  serialNumber: string | null;
+  location: string | null;
+  category: string;
+  criticality: string;
+  status: string;
+  totalHours: number;
+  lastServiceAt: string | null;
+  yearInstalled: number | null;
+  notes: string | null;
+  organizationId: string;
+  organization?: { id: string; name: string; plan: string } | null;
+  alerts: { id: string; title: string; severity: string }[];
+  _count: { workOrders: number; alerts: number; maintenanceTasks: number };
+}
+
 const ORG_COLOURS = [
   { text: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/30' },
   { text: 'text-cyan-400',   bg: 'bg-cyan-500/10',   border: 'border-cyan-500/30'   },
