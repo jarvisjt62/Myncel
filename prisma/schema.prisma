@@ -1,0 +1,667 @@
+// Myncel — Full Production Schema
+// PostgreSQL via Prisma ORM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== AUTH =====
+
+model User {
+  id                String    @id @default(cuid())
+  name              String?
+  email             String    @unique
+  emailVerified     DateTime?
+  password          String?   // hashed with bcrypt
+  image             String?
+  role              UserRole  @default(MEMBER)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Two-Factor Authentication
+  twoFactorEnabled  Boolean   @default(false)
+  twoFactorSecret   String?   // TOTP secret (encrypted)
+  twoFactorBackupCodes String? // JSON array of hashed backup codes
+  
+  // Account Security
+  failedLoginAttempts Int     @default(0)
+  lockedUntil       DateTime? // Account lockout timestamp
+  lastLoginAt       DateTime?
+  lastLoginIp       String?
+
+  // Relations
+  organizationId    String?
+  organization      Organization? @relation(fields: [organizationId], references: [id])
+  accounts          Account[]
+  sessions          Session[]
+  workOrders        WorkOrder[]   @relation("AssignedTo")
+  createdWorkOrders WorkOrder[]   @relation("CreatedBy")
+  passwordResets    PasswordReset[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Enhanced Session Tracking
+  ipAddress    String?
+  userAgent    String?
+  deviceName   String?  // e.g., "Chrome on Windows"
+  lastActivity DateTime @default(now())
+  isActive     Boolean  @default(true)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  token     String   @unique @default(cuid())
+  userId    String
+  expires   DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_resets")
+}
+
+// ===== ORGANIZATION =====
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  industry    Industry @default(OTHER)
+  size        OrgSize  @default(SMALL)
+  plan        Plan     @default(TRIAL)
+  trialEndsAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users        User[]
+  machines     Machine[]
+  workOrders   WorkOrder[]
+  maintenanceTasks MaintenanceTask[]
+  alerts       Alert[]
+  parts        Part[]
+  auditLogs    AuditLog[]
+  integrations Integration[]
+  webhooks     Webhook[]
+  notificationSettings NotificationSetting?
+
+  @@map("organizations")
+}
+
+// ===== MACHINES =====
+
+model Machine {
+  id             String        @id @default(cuid())
+  name           String
+  model          String?
+  manufacturer   String?
+  serialNumber   String?
+  yearInstalled  Int?
+  location       String?
+  category       MachineCategory @default(OTHER)
+  status         MachineStatus @default(OPERATIONAL)
+  criticality    Criticality   @default(MEDIUM)
+  notes          String?       @db.Text
+  imageUrl       String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Runtime tracking
+  totalHours     Float         @default(0)
+  lastServiceAt  DateTime?
+
+  // Relations
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  maintenanceTasks MaintenanceTask[]
+  workOrders     WorkOrder[]
+  alerts         Alert[]
+  sensorReadings SensorReading[]
+
+  @@map("machines")
+}
+
+// ===== MAINTENANCE TASKS (PM Schedules) =====
+
+model MaintenanceTask {
+  id              String          @id @default(cuid())
+  title           String
+  description     String?         @db.Text
+  taskType        TaskType        @default(PREVENTIVE)
+  frequency       Frequency       @default(MONTHLY)
+  intervalDays    Int?            // for custom intervals
+  intervalHours   Float?          // for hour-based intervals
+  estimatedMinutes Int?
+  priority        Priority        @default(MEDIUM)
+  isActive        Boolean         @default(true)
+  nextDueAt       DateTime?
+  lastCompletedAt DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  machineId      String
+  machine        Machine         @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workOrders     WorkOrder[]
+
+  @@map("maintenance_tasks")
+}
+
+// ===== WORK ORDERS =====
+
+model WorkOrder {
+  id              String          @id @default(cuid())
+  woNumber        String          @unique // e.g. WO-2026-0042
+  title           String
+  description     String?         @db.Text
+  type            WorkOrderType   @default(PREVENTIVE)
+  status          WorkOrderStatus @default(OPEN)
+  priority        Priority        @default(MEDIUM)
+  scheduledAt     DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  dueAt           DateTime?
+  estimatedMinutes Int?
+  actualMinutes   Int?
+  laborCost       Float?
+  partsCost       Float?
+  totalCost       Float?
+  notes           String?         @db.Text
+  completionNotes String?         @db.Text
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  machineId        String
+  machine          Machine         @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  organizationId   String
+  organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignedToId     String?
+  assignedTo       User?           @relation("AssignedTo", fields: [assignedToId], references: [id])
+  createdById      String?
+  createdBy        User?           @relation("CreatedBy", fields: [createdById], references: [id])
+  maintenanceTaskId String?
+  maintenanceTask  MaintenanceTask? @relation(fields: [maintenanceTaskId], references: [id])
+  parts            WorkOrderPart[]
+
+  @@map("work_orders")
+}
+
+// ===== PARTS INVENTORY =====
+
+model Part {
+  id             String    @id @default(cuid())
+  name           String
+  partNumber     String?
+  description    String?
+  quantity       Int       @default(0)
+  minQuantity    Int       @default(1)  // reorder point
+  unitCost       Float?
+  supplier       String?
+  location       String?   // shelf/bin location
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workOrders     WorkOrderPart[]
+
+  @@map("parts")
+}
+
+model WorkOrderPart {
+  id          String    @id @default(cuid())
+  quantity    Int       @default(1)
+  unitCost    Float?
+
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  partId      String
+  part        Part      @relation(fields: [partId], references: [id])
+
+  @@map("work_order_parts")
+}
+
+// ===== ALERTS =====
+
+model Alert {
+  id             String      @id @default(cuid())
+  type           AlertType
+  title          String
+  message        String      @db.Text
+  severity       Severity    @default(MEDIUM)
+  isRead         Boolean     @default(false)
+  isResolved     Boolean     @default(false)
+  resolvedAt     DateTime?
+  createdAt      DateTime    @default(now())
+
+  machineId      String?
+  machine        Machine?    @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("alerts")
+}
+
+// ===== SENSOR READINGS =====
+
+model SensorReading {
+  id         String   @id @default(cuid())
+  type       String   // temperature, vibration, pressure, etc.
+  value      Float
+  unit       String   // °C, mm/s, PSI, etc.
+  recordedAt DateTime @default(now())
+
+  machineId  String
+  machine    Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  @@map("sensor_readings")
+}
+
+// ===== NOTIFICATIONS =====
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  priority  NotificationPriority @default(NORMAL)
+  isRead    Boolean          @default(false)
+  link      String?          // URL to related resource
+  createdAt DateTime         @default(now())
+  readAt    DateTime?
+
+  // Relations
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Polymorphic relation data
+  relatedType  String?       // 'work_order', 'machine', 'alert', etc.
+  relatedId    String?       // ID of the related entity
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// ===== AUDIT LOGS =====
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // CREATE, UPDATE, DELETE, LOGIN, etc.
+  entity    String   // Model name (User, Machine, WorkOrder, etc.)
+  entityId  String?  // ID of the affected entity
+  changes   Json?    // Before/after values for updates
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+// ===== ENUMS =====
+
+enum UserRole {
+  OWNER
+  ADMIN
+  TECHNICIAN
+  MEMBER
+}
+
+enum Plan {
+  TRIAL
+  STARTER
+  GROWTH
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum Industry {
+  METAL_FABRICATION
+  PLASTICS
+  FOOD_BEVERAGE
+  AUTO_PARTS
+  ELECTRONICS
+  WOODWORKING
+  OTHER
+}
+
+enum OrgSize {
+  SMALL
+  GROWING
+  MIDSIZE
+  LARGE
+}
+
+enum MachineCategory {
+  CNC_MILL
+  CNC_LATHE
+  PRESS
+  HYDRAULIC
+  COMPRESSOR
+  CONVEYOR
+  WELDER
+  INJECTION_MOLD
+  ASSEMBLY
+  OTHER
+}
+
+enum MachineStatus {
+  OPERATIONAL
+  MAINTENANCE
+  BREAKDOWN
+  RETIRED
+}
+
+enum Criticality {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TaskType {
+  PREVENTIVE
+  PREDICTIVE
+  CORRECTIVE
+  INSPECTION
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  BIANNUAL
+  ANNUAL
+  CUSTOM
+  BY_HOURS
+}
+
+enum Priority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum WorkOrderType {
+  PREVENTIVE
+  CORRECTIVE
+  EMERGENCY
+  INSPECTION
+  PROJECT
+}
+
+enum WorkOrderStatus {
+  OPEN
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum AlertType {
+  MAINTENANCE_DUE
+  MAINTENANCE_OVERDUE
+  MACHINE_BREAKDOWN
+  LOW_PARTS
+  SENSOR_THRESHOLD
+  WORK_ORDER_ASSIGNED
+  WORK_ORDER_OVERDUE
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum NotificationType {
+  WORK_ORDER_ASSIGNED
+  WORK_ORDER_UPDATED
+  WORK_ORDER_COMPLETED
+  WORK_ORDER_OVERDUE
+  MAINTENANCE_DUE
+  MAINTENANCE_OVERDUE
+  MACHINE_ALERT
+  PARTS_LOW
+  SYSTEM_ANNOUNCEMENT
+  MENTION
+}
+
+enum NotificationPriority {
+  URGENT
+  HIGH
+  NORMAL
+  LOW
+}
+
+// ===== LIVE CHAT =====
+
+model ChatSession {
+  id            String        @id @default(cuid())
+  status        ChatStatus    @default(OPEN)
+  userName      String?
+  userEmail     String?
+  userId        String?
+  subject       String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  closedAt      DateTime?
+  
+  // Relations
+  organizationId String?
+  messages       ChatMessage[]
+  
+  @@index([status, createdAt])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id           String      @id @default(cuid())
+  content      String      @db.Text
+  senderType   SenderType
+  senderName   String?
+  isRead       Boolean     @default(false)
+  readAt       DateTime?
+  createdAt    DateTime    @default(now())
+  
+  // Relations
+  sessionId    String
+  session      ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@index([sessionId, createdAt])
+  @@map("chat_messages")
+}
+
+enum ChatStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+enum SenderType {
+  USER
+  ADMIN
+  SYSTEM
+}
+
+// ===== INTEGRATIONS =====
+
+model Integration {
+  id              String          @id @default(cuid())
+  type            IntegrationType
+  name            String
+  status          IntegrationStatus @default(PENDING)
+  
+  // Configuration (encrypted where sensitive)
+  config          Json?           // Integration-specific configuration
+  
+  // OAuth tokens (encrypted)
+  accessToken     String?         @db.Text
+  refreshToken    String?         @db.Text
+  tokenExpiresAt  DateTime?
+  
+  // API Keys
+  apiKey          String?         // For Zapier, API access
+  apiSecret       String?         @db.Text
+  
+  // Webhook/Callback URLs
+  webhookUrl      String?
+  callbackUrl     String?
+  
+  // Timestamps
+  connectedAt     DateTime?
+  disconnectedAt  DateTime?
+  lastSyncAt      DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Relations
+  organizationId  String
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  webhooks        Webhook[]
+  
+  @@unique([organizationId, type])
+  @@map("integrations")
+}
+
+model Webhook {
+  id              String          @id @default(cuid())
+  name            String
+  url             String
+  secret          String?         // For signature verification
+  events          Json            // Array of event types to trigger on
+  isActive        Boolean         @default(true)
+  lastTriggeredAt DateTime?
+  failureCount    Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Relations
+  organizationId  String
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  integrationId   String?
+  integration     Integration?    @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+  
+  @@index([organizationId, isActive])
+  @@map("webhooks")
+}
+
+model NotificationSetting {
+  id              String          @id @default(cuid())
+  
+  // Email notifications
+  emailWorkOrders Boolean         @default(true)
+  emailAlerts     Boolean         @default(true)
+  emailReports    Boolean         @default(true)
+  emailDigest     EmailDigestFrequency @default(WEEKLY)
+  
+  // SMS notifications
+  smsEnabled      Boolean         @default(false)
+  smsWorkOrders   Boolean         @default(false)
+  smsAlerts       Boolean         @default(false)
+  smsCriticalOnly Boolean         @default(true)
+  phoneNumber     String?
+  
+  // Slack notifications
+  slackEnabled    Boolean         @default(false)
+  slackWorkOrders Boolean         @default(false)
+  slackAlerts     Boolean         @default(false)
+  slackChannel    String?
+  
+  // Timestamps
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Relations
+  organizationId  String
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@unique([organizationId])
+  @@map("notification_settings")
+}
+
+enum IntegrationType {
+  SLACK
+  QUICKBOOKS
+  ZAPIER
+  TWILIO
+  GOOGLE_SHEETS
+  WEBHOOKS
+}
+
+enum IntegrationStatus {
+  PENDING
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
+enum EmailDigestFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  NEVER
+}

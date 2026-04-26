@@ -1,0 +1,951 @@
+'use client';
+
+import '../../components/theme.css';
+import { useState, useEffect, useCallback } from 'react';
+import { ThemeProvider, useTheme } from '../../components/ThemeProvider';
+
+const SECRET = 'myncel-simulate-2024';
+
+interface HMIOrg {
+  id: string;
+  name: string;
+}
+
+interface HMIMachine {
+  id: string;
+  name: string;
+  status: string;
+  criticality: string;
+  category: string;
+  location: string | null;
+  totalHours: number;
+  organizationId: string;
+  organization: HMIOrg | null;
+  _count: { workOrders: number; alerts: number };
+}
+
+const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string; dot: string; label: string; glow: string; textColor: string }> = {
+  OPERATIONAL: { color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/40', dot: 'bg-emerald-400', label: 'OPERATIONAL', glow: 'shadow-emerald-500/20', textColor: '#34d399' },
+  MAINTENANCE:  { color: 'text-yellow-400',  bg: 'bg-yellow-500/10',  border: 'border-yellow-500/40',  dot: 'bg-yellow-400',  label: 'MAINTENANCE',  glow: 'shadow-yellow-500/20',  textColor: '#fbbf24' },
+  BREAKDOWN:    { color: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/50',     dot: 'bg-red-400',     label: 'BREAKDOWN',    glow: 'shadow-red-500/30',    textColor: '#f87171' },
+  RETIRED:      { color: 'text-gray-500',    bg: 'bg-gray-500/5',     border: 'border-gray-500/20',    dot: 'bg-gray-500',    label: 'RETIRED',      glow: '',                     textColor: '#6b7280' },
+};
+
+// Org badge colour palette — cycles through distinct colours per org name
+const ORG_COLOURS = [
+  { text: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-violet-500/30' },
+  { text: 'text-cyan-400',    bg: 'bg-cyan-500/10',    border: 'border-cyan-500/30'   },
+  { text: 'text-orange-400',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30' },
+  { text: 'text-pink-400',    bg: 'bg-pink-500/10',    border: 'border-pink-500/30'   },
+  { text: 'text-teal-400',    bg: 'bg-teal-500/10',    border: 'border-teal-500/30'   },
+  { text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/30'  },
+  { text: 'text-indigo-400',  bg: 'bg-indigo-500/10',  border: 'border-indigo-500/30' },
+  { text: 'text-rose-400',    bg: 'bg-rose-500/10',    border: 'border-rose-500/30'   },
+];
+
+// Stable colour assignment based on org name hash
+function getOrgColour(orgName: string) {
+  let hash = 0;
+  for (let i = 0; i < orgName.length; i++) hash = (hash * 31 + orgName.charCodeAt(i)) & 0xffffffff;
+  return ORG_COLOURS[Math.abs(hash) % ORG_COLOURS.length];
+}
+
+// ── SVG Gauge ─────────────────────────────────────────────────────────────────
+function RadialGauge({ value, max, label, unit, color, size = 80 }: {
+  value: number; max: number; label: string; unit: string; color: string; size?: number;
+}) {
+  const pct = Math.min(1, Math.max(0, value / max));
+  const r = (size - 16) / 2;
+  const cx = size / 2;
+  const cy = size / 2 + 6;
+  const startAngle = -210;
+  const sweepAngle = 240;
+  const angle = startAngle + pct * sweepAngle;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const arcX = (deg: number) => cx + r * Math.cos(toRad(deg));
+  const arcY = (deg: number) => cy + r * Math.sin(toRad(deg));
+  const largeArc = pct * sweepAngle > 180 ? 1 : 0;
+
+  const trackPath = `M ${arcX(startAngle)} ${arcY(startAngle)} A ${r} ${r} 0 1 1 ${arcX(startAngle + sweepAngle)} ${arcY(startAngle + sweepAngle)}`;
+  const fillPath = pct > 0
+    ? `M ${arcX(startAngle)} ${arcY(startAngle)} A ${r} ${r} 0 ${largeArc} 1 ${arcX(angle)} ${arcY(angle)}`
+    : '';
+
+  return (
+    <div className="flex flex-col items-center">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <path d={trackPath} fill="none" stroke="var(--gauge-track)" strokeWidth="6" strokeLinecap="round" />
+        {fillPath && <path d={fillPath} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round" style={{ filter: `drop-shadow(0 0 4px ${color})` }} />}
+        <text x={cx} y={cy + 4} textAnchor="middle" fill="var(--text-primary)" fontSize="11" fontWeight="700" fontFamily="monospace">
+          {value.toFixed(0)}{unit}
+        </text>
+      </svg>
+      <span className="text-[9px] uppercase tracking-widest -mt-1" style={{ color: 'var(--text-muted)' }}>{label}</span>
+    </div>
+  );
+}
+
+// ── Sparkline ─────────────────────────────────────────────────────────────────
+function Sparkline({ data, color }: { data: number[]; color: string }) {
+  if (data.length < 2) return null;
+  const w = 80; const h = 24;
+  const min = Math.min(...data); const max = Math.max(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * (h - 4) - 2}`).join(' ');
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" opacity="0.8" />
+    </svg>
+  );
+}
+
+// ── SVG Machine Body per Category ─────────────────────────────────────────────
+function MachineSVG({ category, status, svgBase, svgSurface, svgPanel, svgStroke }: { category: string; status: string; svgBase: string; svgSurface: string; svgPanel: string; svgStroke: string; }) {
+  const isBreakdown = status === 'BREAKDOWN';
+  const isMaintenance = status === 'MAINTENANCE';
+  const isOp = status === 'OPERATIONAL';
+  const mainColor = isBreakdown ? '#ef4444' : isMaintenance ? '#f59e0b' : '#635bff';
+  const glowColor = isBreakdown ? '#ef444460' : isMaintenance ? '#f59e0b60' : '#635bff40';
+
+  if (category === 'CNC_MILL' || category === 'CNC_LATHE') {
+    return (
+      <svg viewBox="0 0 100 80" className="w-full h-full">
+        <rect x="10" y="55" width="80" height="18" rx="3" fill={svgBase} stroke={svgStroke} strokeWidth="1"/>
+        <rect x="20" y="20" width="20" height="37" rx="2" fill={svgSurface} stroke={mainColor} strokeWidth="0.8" opacity="0.9"/>
+        <rect x="15" y="48" width="70" height="8" rx="2" fill={svgBase} stroke={svgStroke} strokeWidth="0.8"/>
+        <rect x="28" y="14" width="30" height="16" rx="2" fill={svgBase} stroke={mainColor} strokeWidth="1.2" style={{ filter: isOp ? `drop-shadow(0 0 4px ${glowColor})` : 'none' }}/>
+        <rect x="39" y="30" width="8" height="18" rx="1" fill={mainColor} opacity="0.8" style={{ filter: `drop-shadow(0 0 3px ${glowColor})` }}/>
+        <rect x="68" y="22" width="14" height="22" rx="2" fill={svgPanel} stroke={svgStroke} strokeWidth="0.8"/>
+        <circle cx="75" cy="28" r="2" fill={isOp ? '#34d399' : isBreakdown ? '#ef4444' : '#f59e0b'} style={{ filter: 'drop-shadow(0 0 3px currentColor)' }}/>
+        {isOp && [0,1,2].map(i => <circle key={i} cx={32 + i * 8} cy="52" r="1.5" fill={mainColor} opacity="0.5"/>)}
+        {isBreakdown && <>
+          <line x1="42" y1="16" x2="52" y2="28" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round"/>
+          <line x1="52" y1="16" x2="42" y2="28" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round"/>
+        </>}
+      </svg>
+    );
+  }
+
+  if (category === 'PRESS' || category === 'HYDRAULIC') {
+    return (
+      <svg viewBox="0 0 100 80" className="w-full h-full">
+        <rect x="15" y="10" width="12" height="60" rx="2" fill={svgSurface} stroke={mainColor} strokeWidth="0.8"/>
+        <rect x="73" y="10" width="12" height="60" rx="2" fill={svgSurface} stroke={mainColor} strokeWidth="0.8"/>
+        <rect x="15" y="10" width="70" height="10" rx="2" fill={svgBase} stroke={mainColor} strokeWidth="1"/>
+        <rect x="32" y={isOp ? "24" : "38"} width="36" height="16" rx="2" fill={mainColor} opacity="0.8" style={{ filter: `drop-shadow(0 0 5px ${glowColor})` }}/>
+        <rect x="20" y="65" width="60" height="7" rx="2" fill={svgBase} stroke={svgStroke} strokeWidth="0.8"/>
+        <circle cx="84" cy="16" r="3" fill={isOp ? '#34d399' : isBreakdown ? '#ef4444' : '#f59e0b'} style={{ filter: 'drop-shadow(0 0 3px currentColor)' }}/>
+        {isBreakdown && <text x="50" y="58" textAnchor="middle" fill="#ef4444" fontSize="8" fontWeight="bold">FAULT</text>}
+      </svg>
+    );
+  }
+
+  if (category === 'CONVEYOR') {
+    return (
+      <svg viewBox="0 0 100 80" className="w-full h-full">
+        <rect x="8" y="35" width="84" height="12" rx="2" fill={svgBase} stroke={mainColor} strokeWidth="1"/>
+        {[12, 28, 44, 60, 76, 88].map((x, i) => (
+          <circle key={i} cx={x} cy="41" r="6" fill={svgSurface} stroke={mainColor} strokeWidth="0.8"/>
+        ))}
+        <rect x="80" y="20" width="16" height="14" rx="2" fill={svgPanel} stroke={mainColor} strokeWidth="1" style={{ filter: isOp ? `drop-shadow(0 0 4px ${glowColor})` : 'none' }}/>
+        <circle cx="88" cy="27" r="4" fill={mainColor} opacity="0.6"/>
+        <rect x="15" y="47" width="6" height="20" rx="1" fill={svgSurface} stroke={svgStroke} strokeWidth="0.8"/>
+        <rect x="79" y="47" width="6" height="20" rx="1" fill={svgSurface} stroke={svgStroke} strokeWidth="0.8"/>
+        {isOp && [20, 45, 65].map((x, i) => <rect key={i} x={x} y="28" width="10" height="8" rx="1" fill={mainColor} opacity="0.5"/>)}
+        <circle cx="10" cy="42" r="3" fill={isOp ? '#34d399' : isBreakdown ? '#ef4444' : '#f59e0b'} style={{ filter: 'drop-shadow(0 0 3px currentColor)' }}/>
+      </svg>
+    );
+  }
+
+  if (category === 'WELDER') {
+    return (
+      <svg viewBox="0 0 100 80" className="w-full h-full">
+        <rect x="20" y="20" width="35" height="45" rx="3" fill={svgSurface} stroke={mainColor} strokeWidth="1"/>
+        <rect x="22" y="22" width="31" height="20" rx="2" fill={svgPanel} stroke={svgStroke} strokeWidth="0.5"/>
+        <circle cx="30" cy="32" r="5" fill="none" stroke={mainColor} strokeWidth="1" opacity="0.7"/>
+        <circle cx="45" cy="32" r="5" fill="none" stroke={mainColor} strokeWidth="1" opacity="0.7"/>
+        <circle cx="70" cy="35" r="15" fill={svgBase} stroke={svgStroke} strokeWidth="1"/>
+        <circle cx="70" cy="35" r="8" fill={svgSurface} stroke={mainColor} strokeWidth="0.8"/>
+        <circle cx="70" cy="35" r="3" fill={svgPanel} stroke={mainColor} strokeWidth="0.5"/>
+        <line x1="22" y1="55" x2="8" y2="68" stroke={mainColor} strokeWidth="2.5" strokeLinecap="round"/>
+        {isOp && <>
+          <circle cx="8" cy="68" r="3" fill="#fbbf24" opacity="0.9" style={{ filter: 'drop-shadow(0 0 4px #fbbf24)' }}/>
+          <line x1="6" y1="66" x2="4" y2="64" stroke="#fbbf24" strokeWidth="1" opacity="0.8"/>
+          <line x1="10" y1="66" x2="13" y2="63" stroke="#fbbf24" strokeWidth="1" opacity="0.8"/>
+        </>}
+        <circle cx="55" cy="28" r="3" fill={isOp ? '#34d399' : isBreakdown ? '#ef4444' : '#f59e0b'} style={{ filter: 'drop-shadow(0 0 3px currentColor)' }}/>
+      </svg>
+    );
+  }
+
+  if (category === 'COMPRESSOR') {
+    return (
+      <svg viewBox="0 0 100 80" className="w-full h-full">
+        <ellipse cx="55" cy="50" rx="30" ry="18" fill={svgSurface} stroke={mainColor} strokeWidth="1.2" style={{ filter: isOp ? `drop-shadow(0 0 5px ${glowColor})` : 'none' }}/>
+        <rect x="10" y="35" width="22" height="22" rx="3" fill={svgBase} stroke={mainColor} strokeWidth="1"/>
+        <circle cx="21" cy="46" r="7" fill={svgSurface} stroke={mainColor} strokeWidth="1"/>
+        <circle cx="21" cy="46" r="3" fill={mainColor} opacity="0.6"/>
+        <rect x="32" y="44" width="8" height="4" rx="1" fill={mainColor} opacity="0.7"/>
+        <circle cx="55" cy="38" r="6" fill={svgPanel} stroke={mainColor} strokeWidth="1"/>
+        <rect x="32" y="65" width="5" height="10" rx="1" fill={svgSurface} stroke={svgStroke} strokeWidth="0.5"/>
+        <rect x="72" y="65" width="5" height="10" rx="1" fill={svgSurface} stroke={svgStroke} strokeWidth="0.5"/>
+        <circle cx="85" cy="42" r="3" fill={isOp ? '#34d399' : isBreakdown ? '#ef4444' : '#f59e0b'} style={{ filter: 'drop-shadow(0 0 3px currentColor)' }}/>
+      </svg>
+    );
+  }
+
+  if (category === 'INJECTION_MOLD') {
+    return (
+      <svg viewBox="0 0 100 80" className="w-full h-full">
+        <rect x="10" y="40" width="38" height="28" rx="2" fill={svgSurface} stroke={mainColor} strokeWidth="1"/>
+        <rect x="52" y="40" width="38" height="28" rx="2" fill={svgBase} stroke={mainColor} strokeWidth="1"/>
+        <rect x="10" y="38" width="80" height="4" rx="1" fill={mainColor} opacity="0.6" style={{ filter: `drop-shadow(0 0 3px ${glowColor})` }}/>
+        <rect x="35" y="10" width="30" height="30" rx="2" fill={svgPanel} stroke={mainColor} strokeWidth="1" style={{ filter: isOp ? `drop-shadow(0 0 4px ${glowColor})` : 'none' }}/>
+        <rect x="42" y="18" width="16" height="14" rx="1" fill={mainColor} opacity="0.3"/>
+        <circle cx="82" cy="46" r="3" fill={isOp ? '#34d399' : isBreakdown ? '#ef4444' : '#f59e0b'} style={{ filter: 'drop-shadow(0 0 3px currentColor)' }}/>
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 100 80" className="w-full h-full">
+      <rect x="15" y="15" width="70" height="50" rx="4" fill={svgSurface} stroke={mainColor} strokeWidth="1.2" style={{ filter: isOp ? `drop-shadow(0 0 6px ${glowColor})` : 'none' }}/>
+      <rect x="22" y="22" width="56" height="25" rx="2" fill={svgPanel} stroke={svgStroke} strokeWidth="0.5"/>
+      <circle cx="35" cy="52" r="5" fill="none" stroke={mainColor} strokeWidth="1.2"/>
+      <circle cx="65" cy="52" r="5" fill="none" stroke={mainColor} strokeWidth="1.2"/>
+      <circle cx="50" cy="34" r="8" fill="none" stroke={mainColor} strokeWidth="1" opacity="0.5"/>
+      <line x1="50" y1="34" x2="55" y2="30" stroke={mainColor} strokeWidth="1.5" strokeLinecap="round" opacity="0.8"/>
+      <circle cx="85" cy="20" r="3.5" fill={isOp ? '#34d399' : isBreakdown ? '#ef4444' : '#f59e0b'} style={{ filter: 'drop-shadow(0 0 4px currentColor)' }}/>
+      {isBreakdown && <>
+        <line x1="38" y1="38" x2="46" y2="46" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="46" y1="38" x2="38" y2="46" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+      </>}
+    </svg>
+  );
+}
+
+// ── Toast Notification ────────────────────────────────────────────────────────
+function AdminToast({ msg, type, onDone }: { msg: string; type: 'success' | 'error' | 'info'; onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 3500);
+    return () => clearTimeout(t);
+  }, [onDone]);
+  const bg = type === 'success' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+           : type === 'error'   ? 'bg-red-500/20 border-red-500/40 text-red-300'
+           :                      'bg-blue-500/20 border-blue-500/40 text-blue-300';
+  return (
+    <div className={`fixed bottom-4 right-4 z-[200] px-4 py-3 rounded-xl border text-sm font-medium shadow-lg backdrop-blur-sm flex items-center gap-2 ${bg}`}>
+      <span>{type === 'success' ? '[OK]' : type === 'error' ? '[ERR]' : '[i]'}</span>
+      <span>{msg}</span>
+    </div>
+  );
+}
+
+// ── Org Badge ─────────────────────────────────────────────────────────────────
+function OrgBadge({ name, size = 'sm' }: { name: string; size?: 'xs' | 'sm' }) {
+  const c = getOrgColour(name);
+  const cls = size === 'xs'
+    ? `text-[9px] px-1.5 py-0.5 rounded-md font-semibold border ${c.text} ${c.bg} ${c.border}`
+    : `text-[10px] px-2 py-0.5 rounded-lg font-semibold border ${c.text} ${c.bg} ${c.border}`;
+  return <span className={cls}>{name}</span>;
+}
+
+// ── Machine Detail Panel ───────────────────────────────────────────────────────
+function MachineDetailPanel({ machine, onClose, onSim, onStatusChange }: {
+  machine: HMIMachine;
+  onClose: () => void;
+  onSim: (scenario: string) => void;
+  onStatusChange: (machineId: string, newStatus: string) => void;
+}) {
+  const { isDark } = useTheme();
+  const svgBase    = isDark ? '#1e2d4a' : '#dde8f5';
+  const svgSurface = isDark ? '#162035' : '#c8daf0';
+  const svgPanel   = isDark ? '#0d1426' : '#b0c8e8';
+  const svgStroke  = isDark ? '#2d3f5e' : '#94b8d8';
+
+  const [currentStatus, setCurrentStatus] = useState(machine.status);
+  const [cmdLoading, setCmdLoading]       = useState<string | null>(null);
+  const [cmdLog,     setCmdLog]           = useState<{ ts: string; text: string; ok: boolean }[]>([]);
+  const [toast,      setToast]            = useState<{ msg: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const currentCfg  = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.OPERATIONAL;
+  const isOp        = currentStatus === 'OPERATIONAL';
+  const isBreakdown = currentStatus === 'BREAKDOWN';
+
+  const [temp, setTemp] = useState(isBreakdown ? 102 : 72);
+  const [load, setLoad] = useState(isOp ? 60 : 0);
+  const [rpm, setRpm] = useState(isOp ? 1800 : 0);
+  const [pressure, setPressure] = useState(isOp ? 65 : 0);
+  const [vibration, setVibration] = useState(isBreakdown ? 8.5 : 0.5);
+  const [tempHistory, setTempHistory] = useState<number[]>([]);
+  const [loadHistory, setLoadHistory] = useState<number[]>([]);
+
+  const live = currentStatus === 'OPERATIONAL';
+
+  useEffect(() => {
+    if (!live) { setLoad(0); setRpm(0); setPressure(0); setVibration(0); return; }
+    const iv = setInterval(() => {
+      setTemp(t => { const v = Math.max(55, Math.min(98, t + (Math.random() - 0.5) * 3)); setTempHistory(h => [...h.slice(-19), v]); return v; });
+      setLoad(l => { const v = Math.max(20, Math.min(99, l + (Math.random() - 0.5) * 6)); setLoadHistory(h => [...h.slice(-19), v]); return v; });
+      setRpm(r => Math.max(800, Math.min(3200, r + (Math.random() - 0.5) * 100)));
+      setPressure(p => Math.max(40, Math.min(100, p + (Math.random() - 0.5) * 4)));
+      setVibration(v => Math.max(0, Math.min(5, v + (Math.random() - 0.5) * 0.2)));
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [live]);
+
+  const logCmd = (text: string, ok: boolean) => {
+    const ts = new Date().toLocaleTimeString();
+    setCmdLog(l => [{ ts, text, ok }, ...l.slice(0, 9)]);
+  };
+
+  const sendCommand = async (command: string, label: string) => {
+    setCmdLoading(command);
+    try {
+      const res = await fetch(`/api/machines/${machine.id}/command`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        logCmd(`${label} -> FAILED: ${data.error || res.statusText}`, false);
+        setToast({ msg: `Failed: ${data.error || 'Unknown error'}`, type: 'error' });
+      } else {
+        const newStatus = data.newStatus as string;
+        setCurrentStatus(newStatus);
+        logCmd(`${label} -> ${newStatus} OK`, true);
+        let msg = '';
+        if (command === 'REQUEST_MAINTENANCE') {
+          msg = `Maintenance requested. WO ${data.workOrder?.woNumber || ''} created. Status -> MAINTENANCE`;
+        } else if (command === 'EMERGENCY_STOP') {
+          msg = `Emergency Stop! Status -> BREAKDOWN. Alert & WO created.`;
+        } else if (command === 'START') {
+          msg = `Machine started. Status -> OPERATIONAL`;
+        } else if (command === 'PAUSE') {
+          msg = `Machine paused. Status -> MAINTENANCE`;
+        } else if (command === 'STOP') {
+          msg = `Machine stopped (parked). Status -> MAINTENANCE — press START to resume.`;
+        } else {
+          msg = `Command sent.`;
+        }
+        setToast({ msg, type: command === 'EMERGENCY_STOP' ? 'error' : 'success' });
+        onStatusChange(machine.id, newStatus);
+      }
+    } catch (err) {
+      logCmd(`${label} -> NETWORK ERROR`, false);
+      setToast({ msg: 'Network error — please try again', type: 'error' });
+    }
+    setCmdLoading(null);
+  };
+
+  const orgName = machine.organization?.name || 'Unknown Org';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
+      {toast && <AdminToast msg={toast.msg} type={toast.type} onDone={() => setToast(null)} />}
+      <div className="[background:var(--bg-surface-2)] border border-[var(--border)] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className={`p-5 border-b border-[var(--border)] flex items-center justify-between ${currentCfg.bg}`}>
+          <div className="flex items-center gap-3">
+            <div className={`w-3 h-3 rounded-full ${currentCfg.dot} ${isOp ? 'animate-pulse' : isBreakdown ? 'animate-ping' : ''}`}/>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>{machine.name}</h2>
+                {/* Organization badge in header */}
+                <OrgBadge name={orgName} size="sm" />
+              </div>
+              <p className="text-[var(--text-secondary)] text-xs mt-0.5">
+                {machine.category.replace(/_/g,' ')} &middot; {machine.location || 'No location'} &middot; {machine.totalHours.toLocaleString()}h runtime
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`text-xs font-bold px-3 py-1 rounded-full border ${currentCfg.bg} ${currentCfg.border} ${currentCfg.color}`}>{currentCfg.label}</span>
+            <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xl leading-none">&times;</button>
+          </div>
+        </div>
+
+        <div className="p-5 grid md:grid-cols-3 gap-5">
+          {/* Machine Visual */}
+          <div className={`rounded-xl border ${currentCfg.border} ${currentCfg.bg} p-4 flex flex-col items-center gap-3`}>
+            <div className="w-40 h-32">
+              <MachineSVG category={machine.category} status={currentStatus} svgBase={svgBase} svgSurface={svgSurface} svgPanel={svgPanel} svgStroke={svgStroke} />
+            </div>
+            {isBreakdown && (
+              <div className="w-full bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
+                <p className="text-red-400 text-xs font-bold animate-pulse">BREAKDOWN DETECTED</p>
+                <p className="text-red-400/70 text-[10px] mt-1">Immediate attention required</p>
+              </div>
+            )}
+            {currentStatus === 'MAINTENANCE' && (
+              <div className="w-full bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-center">
+                <p className="text-yellow-400 text-xs font-bold">IN MAINTENANCE</p>
+                <p className="text-yellow-400/70 text-[10px] mt-1">Scheduled service in progress</p>
+              </div>
+            )}
+            <div className="w-full space-y-1.5">
+              {[
+                { l: 'Organization', v: orgName, isOrg: true },
+                { l: 'Criticality',  v: machine.criticality, isOrg: false },
+                { l: 'Work Orders',  v: machine._count.workOrders, isOrg: false },
+                { l: 'Active Alerts', v: machine._count.alerts, isOrg: false },
+                { l: 'Current Status', v: currentStatus, isOrg: false },
+              ].map(f => (
+                <div key={f.l} className="flex justify-between items-center text-xs">
+                  <span className="text-[var(--text-muted)]">{f.l}</span>
+                  {f.isOrg
+                    ? <OrgBadge name={String(f.v)} size="xs" />
+                    : <span style={{ color: 'var(--text-primary)' }} className="font-medium">{f.v}</span>
+                  }
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Live Gauges */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">Live Sensor Data</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="[background:var(--bg-surface)] border border-[var(--border)] rounded-xl p-3 flex flex-col items-center">
+                <RadialGauge value={temp} max={120} label="TEMP" unit="°" color={temp > 95 ? '#ef4444' : temp > 80 ? '#fbbf24' : '#34d399'} size={80}/>
+                <Sparkline data={tempHistory} color={temp > 95 ? '#ef4444' : '#34d399'}/>
+              </div>
+              <div className="[background:var(--bg-surface)] border border-[var(--border)] rounded-xl p-3 flex flex-col items-center">
+                <RadialGauge value={load} max={100} label="LOAD" unit="%" color={load > 90 ? '#ef4444' : '#635bff'} size={80}/>
+                <Sparkline data={loadHistory} color="#635bff"/>
+              </div>
+              <div className="[background:var(--bg-surface)] border border-[var(--border)] rounded-xl p-3 flex flex-col items-center">
+                <RadialGauge value={rpm} max={4000} label="RPM" unit="" color="#60a5fa" size={80}/>
+              </div>
+              <div className="[background:var(--bg-surface)] border border-[var(--border)] rounded-xl p-3 flex flex-col items-center">
+                <RadialGauge value={vibration} max={10} label="VIB" unit="g" color={vibration > 5 ? '#ef4444' : vibration > 3 ? '#fbbf24' : '#a78bfa'} size={80}/>
+              </div>
+            </div>
+            {/* Pressure bar */}
+            <div className="[background:var(--bg-surface)] border border-[var(--border)] rounded-xl p-3">
+              <div className="flex justify-between text-xs mb-2">
+                <span className="text-[var(--text-muted)] uppercase tracking-wide">Pressure</span>
+                <span style={{ color: 'var(--text-primary)' }} className="font-mono font-bold">{pressure.toFixed(1)} PSI</span>
+              </div>
+              <div className="w-full bg-[var(--bar-bg)] rounded-full h-2">
+                <div className="h-2 rounded-full transition-all duration-700" style={{ width: `${pressure}%`, backgroundColor: pressure > 85 ? '#ef4444' : pressure > 70 ? '#fbbf24' : '#635bff', boxShadow: `0 0 6px ${pressure > 85 ? '#ef4444' : '#635bff'}` }}/>
+              </div>
+            </div>
+            {!live && (
+              <div className="rounded-lg px-3 py-2 text-[10px] text-center border" style={{ backgroundColor: 'var(--bg-surface)', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
+                Sensor data paused — machine not operational
+              </div>
+            )}
+          </div>
+
+          {/* Control Panel */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">Operator Controls</h3>
+            <div className="[background:var(--bg-surface)] border border-[var(--border)] rounded-xl p-4 space-y-2">
+
+              {/* START */}
+              <button
+                onClick={() => sendCommand('START', 'START')}
+                disabled={cmdLoading !== null || currentStatus === 'OPERATIONAL'}
+                className="w-full px-3 py-2.5 text-left text-xs font-semibold border border-emerald-500/40 rounded-lg hover:bg-emerald-500/20 text-emerald-400 transition-all disabled:opacity-40 flex items-center gap-2"
+              >
+                {cmdLoading === 'START' && <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"/>}
+                {'>>'} START MACHINE
+                {currentStatus === 'OPERATIONAL' && <span className="ml-auto text-[9px] opacity-50">(running)</span>}
+              </button>
+
+              {/* PAUSE */}
+              <button
+                onClick={() => sendCommand('PAUSE', 'PAUSE')}
+                disabled={cmdLoading !== null || currentStatus !== 'OPERATIONAL'}
+                className="w-full px-3 py-2.5 text-left text-xs font-semibold border border-yellow-500/40 rounded-lg hover:bg-yellow-500/20 text-yellow-400 transition-all disabled:opacity-40 flex items-center gap-2"
+              >
+                {cmdLoading === 'PAUSE' && <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"/>}
+                {'||'} PAUSE MACHINE
+              </button>
+
+              {/* STOP */}
+              <button
+                onClick={() => sendCommand('STOP', 'STOP')}
+                disabled={cmdLoading !== null || currentStatus !== 'OPERATIONAL'}
+                className="w-full px-3 py-2.5 text-left text-xs font-semibold border border-gray-500/40 rounded-lg hover:bg-gray-500/20 text-gray-300 transition-all disabled:opacity-40 flex items-center gap-2"
+              >
+                {cmdLoading === 'STOP' && <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"/>}
+                {'[.]'} STOP MACHINE
+                   {currentStatus === 'MAINTENANCE' && <span className="ml-auto text-[9px] opacity-50">(stopped)</span>}
+              </button>
+
+              {/* REQUEST MAINTENANCE */}
+              <button
+                onClick={() => sendCommand('REQUEST_MAINTENANCE', 'REQUEST MAINTENANCE')}
+                disabled={cmdLoading !== null || currentStatus === 'MAINTENANCE'}
+                className="w-full px-3 py-2.5 text-left text-xs font-semibold border border-blue-500/40 rounded-lg hover:bg-blue-500/20 text-blue-400 transition-all disabled:opacity-40 flex items-center gap-2"
+              >
+                {cmdLoading === 'REQUEST_MAINTENANCE' && <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"/>}
+                [W] REQUEST MAINTENANCE
+                {currentStatus === 'MAINTENANCE' && <span className="ml-auto text-[9px] opacity-50">(active)</span>}
+              </button>
+
+              {/* EMERGENCY STOP */}
+              <button
+                onClick={() => {
+                  if (confirm(`EMERGENCY STOP\n\nThis will set ${machine.name} to BREAKDOWN status and create a critical alert and work order.\n\nProceed?`)) {
+                    sendCommand('EMERGENCY_STOP', 'EMERGENCY STOP');
+                  }
+                }}
+                disabled={cmdLoading !== null || currentStatus === 'BREAKDOWN'}
+                className="w-full px-3 py-2.5 text-center text-xs font-bold border border-red-500/60 rounded-lg hover:bg-red-500/20 text-red-400 transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                {cmdLoading === 'EMERGENCY_STOP' && <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"/>}
+                [!!] EMERGENCY STOP
+                {currentStatus === 'BREAKDOWN' && <span className="text-[9px] opacity-50">(triggered)</span>}
+              </button>
+            </div>
+
+            {/* Command log */}
+            {cmdLog.length > 0 && (
+              <div className="[background:var(--bg-surface)] border border-[var(--border)] rounded-xl p-3">
+                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider mb-2">Command Log</p>
+                <div className="space-y-1 max-h-28 overflow-y-auto">
+                  {cmdLog.map((l, i) => (
+                    <p key={i} className={`text-[10px] font-mono ${l.ok ? 'text-emerald-400/80' : 'text-red-400/80'}`}>
+                      <span className="opacity-50">[{l.ts}]</span> {l.text}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <a href="/admin/machines" className="block w-full text-center px-3 py-2 text-xs font-semibold text-[#635bff] border border-[#635bff]/30 rounded-lg hover:bg-[#635bff]/10 transition-colors">
+              Open Machine Record &rarr;
+            </a>
+
+            <p className="text-[9px] text-center text-[var(--text-ultralow)]">
+              Status changes sync to both dashboards in real time
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Machine Card ───────────────────────────────────────────────────────────────
+function MachineCard({ machine, onSelect }: { machine: HMIMachine; onSelect: () => void }) {
+  const { isDark } = useTheme();
+  const svgBase    = isDark ? '#1e2d4a' : '#dde8f5';
+  const svgSurface = isDark ? '#162035' : '#c8daf0';
+  const svgPanel   = isDark ? '#0d1426' : '#b0c8e8';
+  const svgStroke  = isDark ? '#2d3f5e' : '#94b8d8';
+  const cfg = STATUS_CONFIG[machine.status] || STATUS_CONFIG.OPERATIONAL;
+  const isBreakdown = machine.status === 'BREAKDOWN';
+  const isMaintenance = machine.status === 'MAINTENANCE';
+  const isOp = machine.status === 'OPERATIONAL';
+  const [pulse, setPulse] = useState(false);
+  const [temp, setTemp] = useState(isBreakdown ? 102 : 72);
+  const [load, setLoad] = useState(isOp ? 60 : 0);
+
+  useEffect(() => {
+    if (isBreakdown) {
+      const iv = setInterval(() => setPulse(p => !p), 700);
+      return () => clearInterval(iv);
+    }
+  }, [isBreakdown]);
+
+  useEffect(() => {
+    if (!isOp) return;
+    const iv = setInterval(() => {
+      setTemp(t => Math.max(55, Math.min(98, t + (Math.random() - 0.5) * 2)));
+      setLoad(l => Math.max(20, Math.min(99, l + (Math.random() - 0.5) * 5)));
+    }, 1500);
+    return () => clearInterval(iv);
+  }, [isOp]);
+
+  const orgName = machine.organization?.name || 'Unknown';
+
+  return (
+    <div
+      onClick={onSelect}
+      className={`relative border rounded-xl cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg overflow-hidden ${cfg.border} ${cfg.bg} ${isBreakdown ? `shadow-md shadow-red-500/20 ${pulse ? 'border-red-400' : 'border-red-500/60'}` : ''}`}
+    >
+      <div className={`h-1 w-full ${isOp ? 'bg-emerald-500' : isBreakdown ? 'bg-red-500' : isMaintenance ? 'bg-yellow-500' : 'bg-gray-500'}`}
+        style={{ boxShadow: isOp ? '0 0 8px #10b981' : isBreakdown ? '0 0 8px #ef4444' : '' }}
+      />
+
+      <div className="p-3">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot} ${isBreakdown ? 'animate-ping' : isMaintenance ? 'animate-pulse' : ''}`}/>
+            <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wide truncate">{machine.category.replace(/_/g,' ')}</span>
+          </div>
+          {machine._count.alerts > 0 && (
+            <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">
+              {machine._count.alerts}!
+            </span>
+          )}
+        </div>
+
+        <div className="w-full h-20 mb-2">
+          <MachineSVG category={machine.category} status={machine.status} svgBase={svgBase} svgSurface={svgSurface} svgPanel={svgPanel} svgStroke={svgStroke} />
+        </div>
+
+        <h3 style={{ color: 'var(--text-primary)' }} className="font-semibold text-xs mb-0.5 truncate">{machine.name}</h3>
+        <p className="text-[var(--text-muted)] text-[10px] mb-1.5 truncate">{machine.location || '—'}</p>
+
+        {/* Org badge on card */}
+        <div className="mb-1.5">
+          <OrgBadge name={orgName} size="xs" />
+        </div>
+
+        <div className={`text-[9px] font-bold ${cfg.color} mb-2 uppercase tracking-wider`}>{cfg.label}</div>
+
+        {isOp && (
+          <div className="space-y-1">
+            <div className="flex justify-between items-center">
+              <span className="text-[9px] text-[var(--text-muted)]">TEMP</span>
+              <span className={`text-[9px] font-mono font-bold ${temp > 90 ? 'text-red-400' : temp > 78 ? 'text-yellow-400' : 'text-emerald-400'}`}>{temp.toFixed(0)}°C</span>
+            </div>
+            <div className="w-full bg-[var(--bar-bg)] rounded-full h-1">
+              <div className="h-1 rounded-full transition-all duration-700" style={{ width: `${load}%`, backgroundColor: load > 90 ? '#ef4444' : load > 70 ? '#fbbf24' : '#635bff' }}/>
+            </div>
+            <div className="flex justify-between text-[9px]">
+              <span className="text-[var(--text-muted)]">LOAD</span>
+              <span className="text-[var(--text-secondary)] font-mono">{load.toFixed(0)}%</span>
+            </div>
+          </div>
+        )}
+        {isBreakdown && (
+          <div className="text-center py-1">
+            <span className="text-red-400 text-[9px] font-bold animate-pulse">102°C FAULT DETECTED</span>
+          </div>
+        )}
+        {isMaintenance && (
+          <div className="text-center py-1">
+            <span className="text-yellow-400 text-[9px] font-medium">Service in progress</span>
+          </div>
+        )}
+
+        <div className="mt-2 pt-2 border-t border-[var(--card-border-b)] flex justify-between items-center">
+          <span className="text-[9px] text-[var(--text-ultralow)]">{machine.totalHours.toLocaleString()}h</span>
+          <span className="text-[9px] text-[var(--text-ultralow)]">WO:{machine._count.workOrders}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Org Overview Panel ─────────────────────────────────────────────────────────
+function OrgOverviewPanel({ machines }: { machines: HMIMachine[] }) {
+  // Group machines by org
+  const groups = machines.reduce((acc, m) => {
+    const name = m.organization?.name || 'Unknown';
+    if (!acc[name]) acc[name] = { name, total: 0, operational: 0, maintenance: 0, breakdown: 0 };
+    acc[name].total++;
+    if (m.status === 'OPERATIONAL') acc[name].operational++;
+    else if (m.status === 'MAINTENANCE') acc[name].maintenance++;
+    else if (m.status === 'BREAKDOWN') acc[name].breakdown++;
+    return acc;
+  }, {} as Record<string, { name: string; total: number; operational: number; maintenance: number; breakdown: number }>);
+
+  const sorted = Object.values(groups).sort((a, b) => b.total - a.total);
+
+  if (sorted.length === 0) return null;
+
+  return (
+    <div className="[background:var(--bg-surface)] border border-[var(--border)] rounded-xl p-4">
+      <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-widest mb-3">
+        Organizations ({sorted.length})
+      </h3>
+      <div className="space-y-2.5">
+        {sorted.map(g => {
+          const c = getOrgColour(g.name);
+          const availPct = g.total > 0 ? Math.round((g.operational / g.total) * 100) : 0;
+          return (
+            <div key={g.name} className={`rounded-lg border p-2.5 ${c.bg} ${c.border}`}>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className={`text-[10px] font-bold truncate ${c.text}`}>{g.name}</span>
+                <span className="text-[9px] text-[var(--text-muted)] ml-1 flex-shrink-0">{g.total} machine{g.total !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {g.operational > 0 && (
+                  <span className="text-[9px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 px-1.5 py-0.5 rounded font-medium">
+                    {g.operational} Op
+                  </span>
+                )}
+                {g.maintenance > 0 && (
+                  <span className="text-[9px] bg-yellow-500/15 text-yellow-400 border border-yellow-500/25 px-1.5 py-0.5 rounded font-medium">
+                    {g.maintenance} Maint
+                  </span>
+                )}
+                {g.breakdown > 0 && (
+                  <span className="text-[9px] bg-red-500/15 text-red-400 border border-red-500/25 px-1.5 py-0.5 rounded font-medium animate-pulse">
+                    {g.breakdown} Down
+                  </span>
+                )}
+              </div>
+              {/* Availability mini-bar */}
+              <div className="mt-2">
+                <div className="flex justify-between text-[9px] mb-1">
+                  <span className="text-[var(--text-muted)]">Availability</span>
+                  <span className={availPct >= 80 ? 'text-emerald-400' : availPct >= 50 ? 'text-yellow-400' : 'text-red-400'}>{availPct}%</span>
+                </div>
+                <div className="w-full bg-[var(--bar-bg)] rounded-full h-1">
+                  <div
+                    className="h-1 rounded-full transition-all duration-700"
+                    style={{
+                      width: `${availPct}%`,
+                      backgroundColor: availPct >= 80 ? '#34d399' : availPct >= 50 ? '#fbbf24' : '#ef4444',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Main HMI Page ──────────────────────────────────────────────────────────────
+function HMIPageInner() {
+  const [machines, setMachines] = useState<HMIMachine[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<HMIMachine | null>(null);
+  const [simRunning, setSimRunning] = useState<string | null>(null);
+  const [simLog, setSimLog] = useState<{ time: string; text: string; type: 'success' | 'error' | 'info' }[]>([]);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [filterOrg, setFilterOrg] = useState<string>('ALL');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchMachines = useCallback(async (showSpinner = false) => {
+    if (showSpinner) setRefreshing(true);
+    try {
+      const res = await fetch('/api/admin/hmi-data');
+      if (res.ok) {
+        const data = await res.json();
+        setMachines(data.machines || []);
+        setLastRefresh(new Date());
+      }
+    } catch (e) {
+      console.error('HMI fetch error:', e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchMachines(); }, [fetchMachines]);
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const iv = setInterval(fetchMachines, 5000);
+    return () => clearInterval(iv);
+  }, [autoRefresh, fetchMachines]);
+
+  // When operator changes machine status — update local state immediately + schedule refresh
+  const handleStatusChange = useCallback((machineId: string, newStatus: string) => {
+    setMachines(prev => prev.map(m =>
+      m.id === machineId ? { ...m, status: newStatus } : m
+    ));
+    setSelected(prev => prev && prev.id === machineId ? { ...prev, status: newStatus } : prev);
+    setTimeout(() => fetchMachines(), 1500);
+  }, [fetchMachines]);
+
+  const runSim = async (scenario: string) => {
+    setSimRunning(scenario);
+    try {
+      const res = await fetch('/api/admin/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret: SECRET, scenario }),
+      });
+      const data = await res.json();
+      const results: string[] = data.results || [data.error || 'Unknown'];
+      results.forEach(r => {
+        setSimLog(prev => [{ time: new Date().toLocaleTimeString(), text: r, type: data.error ? 'error' : 'success' }, ...prev.slice(0, 19)]);
+      });
+      await fetchMachines();
+    } catch (e) {
+      setSimLog(prev => [{ time: new Date().toLocaleTimeString(), text: `Error: ${e}`, type: 'error' }, ...prev]);
+    }
+    setSimRunning(null);
+  };
+
+  // Derive unique org names from machines list
+  const orgNames = Array.from(new Set(machines.map(m => m.organization?.name || 'Unknown'))).sort();
+
+  // Apply both status and org filters
+  const filtered = machines
+    .filter(m => filterStatus === 'ALL' || m.status === filterStatus)
+    .filter(m => filterOrg === 'ALL' || (m.organization?.name || 'Unknown') === filterOrg);
+
+  const operational = machines.filter(m => m.status === 'OPERATIONAL').length;
+  const breakdown = machines.filter(m => m.status === 'BREAKDOWN').length;
+  const maintenance = machines.filter(m => m.status === 'MAINTENANCE').length;
+  const oee = machines.length > 0 ? Math.round((operational / machines.length) * 100) : 0;
+
+  return (
+    <div className="space-y-5 max-w-7xl">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse"/>
+            <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>HMI Plant Floor Monitor</h1>
+          </div>
+          <p className="text-[var(--text-secondary)] mt-0.5 text-xs">Live equipment visualization — auto-refresh 5s · Last: {lastRefresh ? lastRefresh.toLocaleTimeString() : '—'}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setAutoRefresh(a => !a)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${autoRefresh ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-gray-500/10 border-gray-500/30 text-gray-400'}`}>
+            {autoRefresh ? 'Live' : 'Paused'}
+          </button>
+          <button onClick={() => fetchMachines(true)} disabled={refreshing} className="px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] border border-[var(--border)] bg-[var(--bg-surface)] rounded-lg hover:bg-[var(--bg-hover)] disabled:opacity-50 flex items-center gap-1.5 transition-opacity">
+            {refreshing ? <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <>&#x27f3;</>} Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {[
+          { label: 'Total Equipment', value: machines.length, color: 'text-[var(--text-primary)]' },
+          { label: 'Operational', value: operational, color: 'text-emerald-400' },
+          { label: 'Maintenance', value: maintenance, color: 'text-yellow-400' },
+          { label: 'Breakdown', value: breakdown, color: 'text-red-400' },
+          { label: 'Availability', value: `${oee}%`, color: oee >= 90 ? 'text-emerald-400' : oee >= 70 ? 'text-yellow-400' : 'text-red-400' },
+        ].map(k => (
+          <div key={k.label} className="[background:var(--bg-surface)] border border-[var(--border)] rounded-xl p-3 text-center">
+            <div className={`text-2xl font-bold ${k.color}`}>{k.value}</div>
+            <div className="text-[var(--text-secondary)] text-[10px] mt-0.5 uppercase tracking-wide">{k.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Status Filter pills */}
+      <div className="flex gap-2 flex-wrap">
+        {['ALL', 'OPERATIONAL', 'MAINTENANCE', 'BREAKDOWN', 'RETIRED'].map(s => (
+          <button key={s} onClick={() => setFilterStatus(s)}
+            className={`text-xs px-3 py-1.5 rounded-full font-semibold border transition-colors ${filterStatus === s ? (s === 'OPERATIONAL' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : s === 'BREAKDOWN' ? 'bg-red-500/20 border-red-500/40 text-red-400' : s === 'MAINTENANCE' ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400' : 'bg-[#635bff]/20 border-[#635bff]/40 text-[#635bff]') : 'bg-transparent border-[#2d3f5e] text-[var(--text-muted)] hover:border-[#635bff]/40 hover:text-[var(--text-secondary)]'}`}>
+            {s === 'ALL' ? `All (${machines.length})` : `${s.charAt(0) + s.slice(1).toLowerCase()} (${machines.filter(m => m.status === s).length})`}
+          </button>
+        ))}
+      </div>
+
+      {/* Org Filter pills — only shown when there are multiple orgs */}
+      {orgNames.length > 1 && (
+        <div className="flex gap-2 flex-wrap items-center">
+          <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-semibold mr-1">Org:</span>
+          <button
+            onClick={() => setFilterOrg('ALL')}
+            className={`text-xs px-3 py-1 rounded-full font-semibold border transition-colors ${filterOrg === 'ALL' ? 'bg-[#635bff]/20 border-[#635bff]/40 text-[#635bff]' : 'bg-transparent border-[#2d3f5e] text-[var(--text-muted)] hover:border-[#635bff]/40 hover:text-[var(--text-secondary)]'}`}
+          >
+            All orgs ({machines.length})
+          </button>
+          {orgNames.map(name => {
+            const c = getOrgColour(name);
+            const count = machines.filter(m => (m.organization?.name || 'Unknown') === name).length;
+            const isActive = filterOrg === name;
+            return (
+              <button
+                key={name}
+                onClick={() => setFilterOrg(name)}
+                className={`text-xs px-3 py-1 rounded-full font-semibold border transition-colors ${isActive ? `${c.bg} ${c.border} ${c.text}` : 'bg-transparent border-[#2d3f5e] text-[var(--text-muted)] hover:border-[#635bff]/40 hover:text-[var(--text-secondary)]'}`}
+              >
+                {name} ({count})
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="grid lg:grid-cols-3 gap-5">
+        {/* Machine Grid */}
+        <div className="lg:col-span-2 space-y-3">
+          <h2 className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
+            Equipment Status Grid — Click any machine to open HMI panel
+            {filterOrg !== 'ALL' && <span className="ml-2 normal-case font-normal">· Filtered: {filterOrg}</span>}
+          </h2>
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {[...Array(6)].map((_, i) => <div key={i} className="[background:var(--bg-surface)] border border-[var(--border)] rounded-xl h-44 animate-pulse"/>)}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="[background:var(--bg-surface)] border border-[var(--border)] rounded-xl p-10 text-center">
+              <p className="text-[var(--text-secondary)] text-sm">No machines found for this filter.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {filtered.map(m => <MachineCard key={m.id} machine={m} onSelect={() => setSelected(m)}/>)}
+            </div>
+          )}
+        </div>
+
+        {/* Right Panel */}
+        <div className="space-y-4">
+          {/* Org Overview — shown when multiple orgs exist */}
+          {orgNames.length > 1 && <OrgOverviewPanel machines={machines} />}
+
+          {/* Simulation Controls */}
+          <div className="[background:var(--bg-surface)] border border-[var(--border)] rounded-xl p-4">
+            <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-widest mb-3">Simulation Controls</h3>
+            <div className="space-y-2">
+              {[
+                { id: 'breakdown', label: 'Trigger Breakdown', color: 'border-red-500/40 hover:bg-red-500/10 text-red-300' },
+                { id: 'maintenance_due', label: 'Maintenance Overdue', color: 'border-yellow-500/40 hover:bg-yellow-500/10 text-yellow-300' },
+                { id: 'low_parts', label: 'Low Parts Alert', color: 'border-orange-500/40 hover:bg-orange-500/10 text-orange-300' },
+                { id: 'work_order_progress', label: 'Start Work Orders', color: 'border-blue-500/40 hover:bg-blue-500/10 text-blue-300' },
+                { id: 'complete_work_order', label: 'Complete Work Order', color: 'border-emerald-500/40 hover:bg-emerald-500/10 text-emerald-300' },
+                { id: 'random', label: 'Random Events', color: 'border-purple-500/40 hover:bg-purple-500/10 text-purple-300' },
+                { id: 'reset', label: 'Reset Everything', color: 'border-gray-500/40 hover:bg-gray-500/10 text-gray-300' },
+              ].map(btn => (
+                <button key={btn.id} onClick={() => runSim(btn.id)} disabled={!!simRunning}
+                  className={`w-full px-3 py-2 text-left text-xs font-semibold border rounded-lg transition-all disabled:opacity-40 ${btn.color}`}>
+                  {simRunning === btn.id ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                      Running...
+                    </span>
+                  ) : btn.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Event Log */}
+          <div className="[background:var(--bg-surface)] border border-[var(--border)] rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-widest">Event Log</h3>
+              {simLog.length > 0 && <button onClick={() => setSimLog([])} className="text-[10px] text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Clear</button>}
+            </div>
+            <div className="space-y-1.5 max-h-52 overflow-y-auto">
+              {simLog.length === 0 ? <p className="text-[var(--text-secondary)] text-xs italic">No events. Run a simulation.</p>
+                : simLog.map((log, i) => (
+                  <div key={i} className={`text-xs rounded px-2 py-1 ${log.type === 'error' ? 'bg-red-500/10 text-red-400' : log.type === 'info' ? 'bg-blue-500/10 text-blue-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                    <span className="opacity-50 mr-1">{log.time}</span>{log.text}
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Machine Detail Modal */}
+      {selected && (
+        <MachineDetailPanel
+          machine={selected}
+          onClose={() => setSelected(null)}
+          onSim={runSim}
+          onStatusChange={handleStatusChange}
+        />
+      )}
+    </div>
+  );
+}
+
+export default function AdminHMIPage() {
+  return <HMIPageInner />;
+}
