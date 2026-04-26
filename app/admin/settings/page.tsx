@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { safeQuery } from '@/lib/admin-helpers';
+import { safeQuery, getSuperAdminOrgId } from '@/lib/admin-helpers';
 import SettingsClient from './SettingsClient';
 
 // Force dynamic rendering to avoid caching
@@ -25,12 +25,21 @@ export default async function AdminSettingsPage() {
     redirect('/admin');
   }
 
-  // Get counts for data overview
+  // Detect if logged-in user is super admin (by org)
+  const superAdminOrgId = await getSuperAdminOrgId();
+  const isSuperAdmin = user.organization?.id === superAdminOrgId;
+
+  // Super admin sees totals across ALL client orgs (excluding super admin org)
+  // Regular admins see only their own org's data
+  const orgFilter = isSuperAdmin && superAdminOrgId
+    ? { organizationId: { not: superAdminOrgId } }
+    : { organizationId: user.organizationId };
+
   const [machineCount, workOrderCount, alertCount, taskCount] = await Promise.all([
-    safeQuery(db.machine.count({ where: { organizationId: user.organizationId } }), 0),
-    safeQuery(db.workOrder.count({ where: { organizationId: user.organizationId } }), 0),
-    safeQuery(db.alert.count({ where: { organizationId: user.organizationId } }), 0),
-    safeQuery(db.maintenanceTask.count({ where: { organizationId: user.organizationId } }), 0),
+    safeQuery(db.machine.count({ where: orgFilter }), 0),
+    safeQuery(db.workOrder.count({ where: orgFilter }), 0),
+    safeQuery(db.alert.count({ where: orgFilter }), 0),
+    safeQuery(db.maintenanceTask.count({ where: orgFilter }), 0),
   ]);
 
   return (
@@ -67,7 +76,14 @@ export default async function AdminSettingsPage() {
 
       {/* Data Overview */}
       <div className="rounded-xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-        <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Data Overview</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Data Overview</h2>
+          {isSuperAdmin && (
+            <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ background: 'var(--bg-surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+              All Organizations
+            </span>
+          )}
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Machines', value: machineCount },
