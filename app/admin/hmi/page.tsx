@@ -79,45 +79,45 @@ function getMachineImageUrl(category: string, machineName: string): string {
   const name = machineName.toLowerCase();
   // Specific name matches first
   if (name.includes('press brake') || name.includes('pressbrake'))
-    return '/machines/press-brake.png';
+    return '/machines/press-brake.png?v=2';
   if (name.includes('injection mold') || name.includes('injection molding') || name.includes('inject'))
-    return '/machines/injection-mold.png';
+    return '/machines/injection-mold.png?v=2';
   if (name.includes('robot') || name.includes('assembly'))
-    return '/machines/assembly.png';
+    return '/machines/assembly.png?v=2';
   if (name.includes('weld'))
-    return '/machines/welder.png';
+    return '/machines/welder.png?v=2';
   if (name.includes('lathe'))
-    return '/machines/cnc-lathe.png';
+    return '/machines/cnc-lathe.png?v=2';
   if (name.includes('mill') || name.includes('milling'))
-    return '/machines/cnc-mill.png';
+    return '/machines/cnc-mill.png?v=2';
   if (name.includes('press') || name.includes('hydraulic'))
-    return '/machines/press-brake.png';
+    return '/machines/press-brake.png?v=2';
   if (name.includes('compressor'))
-    return '/machines/compressor.png';
+    return '/machines/compressor.png?v=2';
   if (name.includes('conveyor'))
-    return '/machines/conveyor.png';
+    return '/machines/conveyor.png?v=2';
 
   // Category fallbacks
   switch (category) {
     case 'CNC_MILL':
-      return '/machines/cnc-mill.png';
+      return '/machines/cnc-mill.png?v=2';
     case 'CNC_LATHE':
-      return '/machines/cnc-lathe.png';
+      return '/machines/cnc-lathe.png?v=2';
     case 'PRESS':
     case 'HYDRAULIC':
-      return '/machines/press-brake.png';
+      return '/machines/press-brake.png?v=2';
     case 'COMPRESSOR':
-      return '/machines/compressor.png';
+      return '/machines/compressor.png?v=2';
     case 'CONVEYOR':
-      return '/machines/conveyor.png';
+      return '/machines/conveyor.png?v=2';
     case 'WELDER':
-      return '/machines/welder.png';
+      return '/machines/welder.png?v=2';
     case 'INJECTION_MOLD':
-      return '/machines/injection-mold.png';
+      return '/machines/injection-mold.png?v=2';
     case 'ASSEMBLY':
-      return '/machines/assembly.png';
+      return '/machines/assembly.png?v=2';
     default:
-      return '/machines/other.png';
+      return '/machines/other.png?v=2';
   }
 }
 
