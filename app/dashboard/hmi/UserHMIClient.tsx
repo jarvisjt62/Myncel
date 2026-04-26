@@ -34,45 +34,45 @@ function getMachineImageUrl(category: string, machineName: string): string {
   const name = machineName.toLowerCase();
   // Specific name matches first
   if (name.includes('press brake') || name.includes('pressbrake'))
-    return '/machines/press-brake.png?v=2';
+    return '/machines/press-brake.png?v=3';
   if (name.includes('injection mold') || name.includes('injection molding') || name.includes('inject'))
-    return '/machines/injection-mold.png?v=2';
+    return '/machines/injection-mold.png?v=3';
   if (name.includes('robot') || name.includes('assembly'))
-    return '/machines/assembly.png?v=2';
+    return '/machines/assembly.png?v=3';
   if (name.includes('weld'))
-    return '/machines/welder.png?v=2';
+    return '/machines/welder.png?v=3';
   if (name.includes('lathe'))
-    return '/machines/cnc-lathe.png?v=2';
+    return '/machines/cnc-lathe.png?v=3';
   if (name.includes('mill') || name.includes('milling'))
-    return '/machines/cnc-mill.png?v=2';
+    return '/machines/cnc-mill.png?v=3';
   if (name.includes('press') || name.includes('hydraulic'))
-    return '/machines/press-brake.png?v=2';
+    return '/machines/press-brake.png?v=3';
   if (name.includes('compressor'))
-    return '/machines/compressor.png?v=2';
+    return '/machines/compressor.png?v=3';
   if (name.includes('conveyor'))
-    return '/machines/conveyor.png?v=2';
+    return '/machines/conveyor.png?v=3';
 
   // Category fallbacks
   switch (category) {
     case 'CNC_MILL':
-      return '/machines/cnc-mill.png?v=2';
+      return '/machines/cnc-mill.png?v=3';
     case 'CNC_LATHE':
-      return '/machines/cnc-lathe.png?v=2';
+      return '/machines/cnc-lathe.png?v=3';
     case 'PRESS':
     case 'HYDRAULIC':
-      return '/machines/press-brake.png?v=2';
+      return '/machines/press-brake.png?v=3';
     case 'COMPRESSOR':
-      return '/machines/compressor.png?v=2';
+      return '/machines/compressor.png?v=3';
     case 'CONVEYOR':
-      return '/machines/conveyor.png?v=2';
+      return '/machines/conveyor.png?v=3';
     case 'WELDER':
-      return '/machines/welder.png?v=2';
+      return '/machines/welder.png?v=3';
     case 'INJECTION_MOLD':
-      return '/machines/injection-mold.png?v=2';
+      return '/machines/injection-mold.png?v=3';
     case 'ASSEMBLY':
-      return '/machines/assembly.png?v=2';
+      return '/machines/assembly.png?v=3';
     default:
-      return '/machines/other.png?v=2';
+      return '/machines/other.png?v=3';
   }
 }
 
@@ -167,7 +167,7 @@ function MachineImage({ category, machineName, status, className = '', liveData,
         alt={machineName}
         style={{
           width: '100%', height: '100%',
-          objectFit: 'cover', objectPosition: 'center', display: 'block',
+          objectFit: 'contain', objectPosition: 'center', display: 'block',
           filter: isBreakdown
             ? 'grayscale(0.4) brightness(0.65) sepia(0.3) saturate(2) hue-rotate(-10deg)'
             : isMaintenance ? 'grayscale(0.2) brightness(0.8) sepia(0.1)'
@@ -648,7 +648,7 @@ function MachinePanel({
 
         {/* Full-width SCADA image at top of detail panel */}
         <div className={`mx-4 mt-0 rounded-xl border overflow-hidden ${currentCfg.border}`} style={{ background: '#0a1628' }}>
-          <MachineImage category={machine.category} machineName={machine.name} status={currentStatus} className="w-full h-80" liveData={live ? { temp, load, rpm, pressure } : undefined} />
+          <MachineImage category={machine.category} machineName={machine.name} status={currentStatus} className="w-full h-96" liveData={live ? { temp, load, rpm, pressure } : undefined} />
         </div>
 
         <div className="p-4 grid md:grid-cols-3 gap-4">
