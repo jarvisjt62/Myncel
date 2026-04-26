@@ -232,7 +232,7 @@ function MachineImage({ category, machineName, status, className = '', liveData,
 
   return (
     <div className={`relative overflow-hidden ${className}`}
-      style={{ background: '#0a1628' }}>
+      style={{ background: 'transparent' }}>
 
       {/* SCADA image — object-contain, transparent bg so no letterbox */}
       <img
@@ -546,7 +546,7 @@ function MachineDetailPanel({ machine, onClose, onSim, onStatusChange }: {
 
         <div className="p-5 space-y-5">
           {/* Machine SCADA Image — full width, prominent */}
-          <div className={`rounded-xl border ${currentCfg.border} overflow-hidden`} style={{ background: '#0a1628' }}>
+          <div className={`rounded-xl border ${currentCfg.border} overflow-hidden`}>
             <MachineHMI category={machine.category} machineName={machine.name} status={currentStatus} className="w-full h-96" liveData={isOp ? { temp, load, rpm, pressure } : undefined} onCommand={sendCommand} />
           </div>
 
