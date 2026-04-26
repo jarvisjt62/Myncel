@@ -4,6 +4,7 @@ import '../../components/theme.css';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ThemeProvider, useTheme } from '../../components/ThemeProvider';
+import { MachineHMISchematic } from '../../components/hmi';
 
 // ── Category labels + smart inference ───────────────────────────────────────
 const CATEGORY_LABELS: Record<string, string> = {
@@ -144,113 +145,29 @@ function getCategoryReadouts(category: string, machineName: string, rpm: number,
 }
 
 // ── Machine Image Component ───────────────────────────────────────────────────
-function MachineImage({ category, machineName, status, className = '', liveData, compact = false }: {
+function MachineImage({ category, machineName, status, className = '', liveData, compact = false, onCommand }: {
   category: string; machineName: string; status: string; className?: string;
   liveData?: { temp: number; load: number; rpm: number; pressure: number };
   compact?: boolean;
+  onCommand?: (command: string, label: string) => void;
 }) {
-  const imgUrl = getMachineImageUrl(category, machineName);
-  const isBreakdown = status === 'BREAKDOWN';
-  const isMaintenance = status === 'MAINTENANCE';
-  const isOp = status === 'OPERATIONAL';
-  const readouts = liveData && isOp
-    ? getCategoryReadouts(category, machineName, liveData.rpm, liveData.load, liveData.pressure)
-    : [];
-
-  const tempColor = liveData && liveData.temp > 90 ? '#f87171' : liveData && liveData.temp > 78 ? '#fbbf24' : '#34d399';
-  const loadColor = liveData && liveData.load > 90 ? '#ef4444' : liveData && liveData.load > 70 ? '#fbbf24' : '#635bff';
-
+  const { isDark } = useTheme();
+  const machineStatus = (status || 'OPERATIONAL') as 'OPERATIONAL' | 'BREAKDOWN' | 'MAINTENANCE';
   return (
-    <div className={`relative overflow-hidden ${className}`} style={{ background: '#0a1628' }}>
-      <img
-        src={imgUrl}
-        alt={machineName}
-        style={{
-          width: '100%', height: '100%',
-          objectFit: 'contain', objectPosition: 'center', display: 'block',
-          filter: isBreakdown
-            ? 'grayscale(0.4) brightness(0.65) sepia(0.3) saturate(2) hue-rotate(-10deg)'
-            : isMaintenance ? 'grayscale(0.2) brightness(0.8) sepia(0.1)'
-            : 'brightness(1.0) saturate(1.1)',
-          transition: 'filter 0.5s ease',
-        }}
-        onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80'; }}
+    <div className={className}>
+      <MachineHMISchematic
+        category={category}
+        machineName={machineName}
+        status={machineStatus}
+        liveData={liveData}
+        compact={compact}
+        isDark={isDark}
+        onCommand={onCommand}
       />
-
-      {liveData && isOp && (
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: compact ? 4 : 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ background: 'rgba(0,12,28,0.85)', border: '1px solid rgba(0,210,255,0.4)', borderRadius: 4, padding: '2px 8px', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: tempColor, boxShadow: `0 0 5px ${tempColor}`, flexShrink: 0, display: 'inline-block' }} />
-              <span style={{ color: '#67e8f9', fontSize: compact ? 8 : 9, fontFamily: 'monospace' }}>TEMP</span>
-              <span style={{ color: tempColor, fontSize: compact ? 10 : 12, fontFamily: 'monospace', fontWeight: 800 }}>{liveData.temp.toFixed(0)}°C</span>
-            </div>
-            <div style={{ background: 'rgba(0,12,28,0.85)', border: '1px solid rgba(0,210,255,0.4)', borderRadius: 4, padding: '2px 8px', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ color: '#67e8f9', fontSize: compact ? 8 : 9, fontFamily: 'monospace' }}>RPM</span>
-              <span style={{ color: '#93c5fd', fontSize: compact ? 10 : 12, fontFamily: 'monospace', fontWeight: 800 }}>{liveData.rpm.toFixed(0)}</span>
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {!compact && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-                {readouts.map((r, i) => (
-                  <div key={i} style={{ background: 'rgba(0,12,28,0.88)', border: '1px solid rgba(0,210,255,0.3)', borderRadius: 4, padding: '3px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#67e8f9', fontSize: 9, fontFamily: 'monospace', opacity: 0.85 }}>{r.label}</span>
-                    <span style={{ color: '#e2f8ff', fontSize: 11, fontFamily: 'monospace', fontWeight: 700 }}>
-                      {r.value}<span style={{ color: '#67e8f9', fontSize: 8, marginLeft: 2, opacity: 0.75 }}>{r.unit}</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div style={{ background: 'rgba(0,12,28,0.88)', border: '1px solid rgba(0,210,255,0.3)', borderRadius: 4, padding: compact ? '2px 6px' : '4px 8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                <span style={{ color: '#67e8f9', fontSize: compact ? 8 : 9, fontFamily: 'monospace' }}>LOAD</span>
-                <span style={{ color: loadColor, fontSize: compact ? 10 : 11, fontFamily: 'monospace', fontWeight: 800 }}>{liveData.load.toFixed(0)}%</span>
-                <span style={{ color: '#67e8f9', fontSize: compact ? 8 : 9, fontFamily: 'monospace', opacity: 0.8 }}>PSI {liveData.pressure.toFixed(0)}</span>
-              </div>
-              <div style={{ width: '100%', height: compact ? 3 : 4, background: 'rgba(100,116,139,0.3)', borderRadius: 2 }}>
-                <div style={{ width: `${liveData.load}%`, height: '100%', borderRadius: 2, background: loadColor, boxShadow: `0 0 6px ${loadColor}`, transition: 'width 0.8s ease' }} />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isBreakdown && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(127,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span className="animate-pulse" style={{ color: '#fca5a5', fontSize: 12, fontWeight: 800, fontFamily: 'monospace', background: 'rgba(100,0,0,0.85)', padding: '4px 12px', borderRadius: 4, border: '1px solid rgba(239,68,68,0.7)' }}>⚠ FAULT DETECTED</span>
-        </div>
-      )}
-      {isMaintenance && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(80,60,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ color: '#fde68a', fontSize: 12, fontWeight: 700, fontFamily: 'monospace', background: 'rgba(80,55,0,0.85)', padding: '4px 12px', borderRadius: 4, border: '1px solid rgba(251,191,36,0.6)' }}>🔧 IN MAINTENANCE</span>
-        </div>
-      )}
     </div>
   );
 }
 
-
-interface MachineOrg { id: string; name: string; }
-interface Alert { id: string; title: string; severity: string; type: string; }
-interface Machine {
-  id: string; name: string; status: string; criticality: string; category: string;
-  location: string | null; totalHours: number; model: string | null; manufacturer: string | null;
-  organizationId: string;
-  organization: MachineOrg | null;
-  _count: { workOrders: number; alerts: number; maintenanceTasks: number };
-  alerts: Alert[];
-}
-
-const STATUS_CFG: Record<string, { color: string; bg: string; border: string; dot: string; label: string; barColor: string }> = {
-  OPERATIONAL: { color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/40', dot: 'bg-emerald-400', label: 'OPERATIONAL', barColor: '#10b981' },
-  MAINTENANCE:  { color: 'text-yellow-400',  bg: 'bg-yellow-500/10',  border: 'border-yellow-500/40',  dot: 'bg-yellow-400',  label: 'MAINTENANCE',  barColor: '#f59e0b' },
-  BREAKDOWN:    { color: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/50',     dot: 'bg-red-400',     label: 'BREAKDOWN',    barColor: '#ef4444' },
-  RETIRED:      { color: 'text-gray-500',    bg: 'bg-gray-500/5',     border: 'border-gray-500/20',    dot: 'bg-gray-500',    label: 'RETIRED',      barColor: '#6b7280' },
-};
-
-// Stable colour per org name
 const ORG_COLOURS = [
   { text: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/30' },
   { text: 'text-cyan-400',   bg: 'bg-cyan-500/10',   border: 'border-cyan-500/30'   },
@@ -473,7 +390,7 @@ function MachineCard({ machine, onClick }: { machine: Machine; onClick: () => vo
         </div>
 
         {/* Machine SCADA Image */}
-        <div className="w-full h-40 mb-1.5 rounded-lg overflow-hidden" style={{ background: '#0a1628' }}>
+        <div className="w-full h-40 mb-1.5 rounded-lg overflow-hidden" style={{ background: 'transparent' }}>
           <MachineImage category={machine.category} machineName={machine.name} status={machine.status} className="w-full h-full" liveData={isOp ? { temp, load, rpm: rpmCard, pressure: pressCard } : undefined} compact={true} />
         </div>
 
@@ -647,8 +564,8 @@ function MachinePanel({
         </div>
 
         {/* Full-width SCADA image at top of detail panel */}
-        <div className={`mx-4 mt-0 rounded-xl border overflow-hidden ${currentCfg.border}`} style={{ background: '#0a1628' }}>
-          <MachineImage category={machine.category} machineName={machine.name} status={currentStatus} className="w-full h-96" liveData={live ? { temp, load, rpm, pressure } : undefined} />
+        <div className={`mx-4 mt-0 rounded-xl border overflow-hidden ${currentCfg.border}`} style={{ background: 'transparent' }}>
+          <MachineImage category={machine.category} machineName={machine.name} status={currentStatus} className="w-full h-96" liveData={live ? { temp, load, rpm, pressure } : undefined} onCommand={sendCommand} />
         </div>
 
         <div className="p-4 grid md:grid-cols-3 gap-4">

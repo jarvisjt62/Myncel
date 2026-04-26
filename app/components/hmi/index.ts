@@ -1,3 +1,7 @@
+export { MachineHMISchematic } from './MachineHMISchematic';
+export type { HMISchematicProps } from './MachineHMISchematic';
+
+// Legacy individual exports kept for backward compatibility
 export { CNCLatheHMI } from './CNCLatheHMI';
 export { CNCMillHMI } from './CNCMillHMI';
 export { PressBrakeHMI } from './PressBrakeHMI';

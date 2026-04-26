@@ -3,17 +3,7 @@
 import '../../components/theme.css';
 import { useState, useEffect, useCallback } from 'react';
 import { ThemeProvider, useTheme } from '../../components/ThemeProvider';
-import {
-  CNCLatheHMI,
-  CNCMillHMI,
-  PressBrakeHMI,
-  InjectionMoldHMI,
-  CompressorHMI,
-  ConveyorHMI,
-  WelderHMI,
-  AssemblyRobotHMI,
-  GenericMachineHMI,
-} from '../../components/hmi';
+import { MachineHMISchematic } from '../../components/hmi';
 
 const SECRET = 'myncel-simulate-2024';
 
@@ -201,183 +191,29 @@ function getCategoryReadouts(category: string, machineName: string, rpm: number,
 
 
 // ── Machine HMI Component - Uses SVG-based interactive schematics ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-function MachineHMI({ category, machineName, status, className = '', liveData, compact = false }: {
+function MachineHMI({ category, machineName, status, className = '', liveData, compact = false, onCommand }: {
   category: string; machineName: string; status: string; className?: string;
   liveData?: { temp: number; load: number; rpm: number; pressure: number };
   compact?: boolean;
+  onCommand?: (command: string, label: string) => void;
 }) {
-  const machineStatus = status as 'OPERATIONAL' | 'BREAKDOWN' | 'MAINTENANCE';
-  const temp = liveData?.temp ?? 25;
-  const load = liveData?.load ?? 0;
-  const rpm = liveData?.rpm ?? 0;
-  const pressure = liveData?.pressure ?? 0;
-  const name = machineName.toLowerCase();
-
-  // Render appropriate HMI component based on category/name
-  if (category === 'CNC_LATHE' || name.includes('lathe')) {
-    return (
-      <div className={className}>
-        <CNCLatheHMI
-          rpm={rpm}
-          feed={rpm * 0.14}
-          xPos={50 + load * 0.3}
-          zPos={-(rpm * 0.065 + load * 0.3)}
-          temp={temp}
-          load={load}
-          pressure={pressure}
-          status={machineStatus}
-          compact={compact}
-        />
-      </div>
-    );
-  }
-
-  if (category === 'CNC_MILL' || name.includes('mill') || name.includes('milling')) {
-    return (
-      <div className={className}>
-        <CNCMillHMI
-          rpm={rpm}
-          feed={rpm * 0.12}
-          xPos={30 + load * 0.2}
-          yPos={15 + load * 0.1}
-          zPos={-(rpm * 0.05)}
-          temp={temp}
-          load={load}
-          status={machineStatus}
-          compact={compact}
-        />
-      </div>
-    );
-  }
-
-  if (name.includes('press brake') || name.includes('pressbrake') || category === 'PRESS' || category === 'HYDRAULIC' || name.includes('press') || name.includes('hydraulic')) {
-    return (
-      <div className={className}>
-        <PressBrakeHMI
-          force={pressure * 9.2}
-          angle={45 + load * 0.3}
-          stroke={load * 2.5}
-          thickness={5 + load * 0.05}
-          temp={temp}
-          load={load}
-          pressure={pressure}
-          status={machineStatus}
-          compact={compact}
-        />
-      </div>
-    );
-  }
-
-  if (category === 'COMPRESSOR' || name.includes('compressor')) {
-    return (
-      <div className={className}>
-        <CompressorHMI
-          pressure={pressure * 1.15}
-          flow={load * 0.85}
-          temp={temp}
-          runtime={rpm * 0.01}
-          load={load}
-          status={machineStatus}
-          compact={compact}
-        />
-      </div>
-    );
-  }
-
-  if (category === 'CONVEYOR' || name.includes('conveyor')) {
-    return (
-      <div className={className}>
-        <ConveyorHMI
-          speed={rpm * 0.00028}
-          count={Math.floor(load * 0.5)}
-          load={load}
-          runtime={rpm * 0.01}
-          status={machineStatus}
-          compact={compact}
-        />
-      </div>
-    );
-  }
-
-  if (category === 'WELDER' || name.includes('weld')) {
-    return (
-      <div className={className}>
-        <WelderHMI
-          voltage={20 + load * 0.08}
-          current={load * 2.2}
-          wireFeed={rpm * 0.004}
-          duty={load}
-          temp={temp}
-          load={load}
-          gasPressure={pressure * 0.5}
-          status={machineStatus}
-          compact={compact}
-        />
-      </div>
-    );
-  }
-
-  if (category === 'INJECTION_MOLD' || name.includes('inject') || name.includes('mold')) {
-    return (
-      <div className={className}>
-        <InjectionMoldHMI
-          injectPressure={pressure * 4.8}
-          moldTemp={180 + load * 0.7}
-          cycleTime={20 - load * 0.08}
-          shots={Math.floor(rpm * 0.1)}
-          temp={temp}
-          load={load}
-          status={machineStatus}
-          compact={compact}
-        />
-      </div>
-    );
-  }
-
-  if (category === 'ASSEMBLY' || name.includes('robot') || name.includes('assembly')) {
-    return (
-      <div className={className}>
-        <AssemblyRobotHMI
-          joint1={load * 1.8}
-          joint2={45 + pressure * 0.9}
-          joint3={-30 + load * 0.5}
-          joint4={load * 0.8}
-          joint5={15 + load * 0.3}
-          joint6={90 + load * 0.5}
-          gripper={load > 50 ? 'GRIPPING' : 'OPEN'}
-          cycleTime={12.5}
-          partsCount={Math.floor(rpm * 0.5)}
-          speed={load}
-          temp={temp}
-          load={load}
-          status={machineStatus}
-          compact={compact}
-        />
-      </div>
-    );
-  }
-
-  // Default: Generic machine HMI
+  const { isDark } = useTheme();
+  const machineStatus = (status || 'OPERATIONAL') as 'OPERATIONAL' | 'BREAKDOWN' | 'MAINTENANCE';
   return (
     <div className={className}>
-      <GenericMachineHMI
-        machineName={machineName.toUpperCase()}
-        machineType={category.replace(/_/g, ' ')}
-        speed={rpm}
-        feedRate={rpm * 0.1}
-        cycleTime={20}
-        partsCount={Math.floor(rpm * 0.5)}
-        efficiency={load}
-        temp={temp}
-        load={load}
+      <MachineHMISchematic
+        category={category}
+        machineName={machineName}
         status={machineStatus}
+        liveData={liveData}
         compact={compact}
+        isDark={isDark}
+        onCommand={onCommand}
       />
     </div>
   );
 }
 
-// ── Machine Image Component ───────────────────────────────────────────────────
 function MachineImage({ category, machineName, status, className = '', liveData, compact = false }: {
   category: string; machineName: string; status: string; className?: string;
   liveData?: { temp: number; load: number; rpm: number; pressure: number };
@@ -711,7 +547,7 @@ function MachineDetailPanel({ machine, onClose, onSim, onStatusChange }: {
         <div className="p-5 space-y-5">
           {/* Machine SCADA Image — full width, prominent */}
           <div className={`rounded-xl border ${currentCfg.border} overflow-hidden`} style={{ background: '#0a1628' }}>
-            <MachineHMI category={machine.category} machineName={machine.name} status={currentStatus} className="w-full h-96" liveData={isOp ? { temp, load, rpm, pressure } : undefined} />
+            <MachineHMI category={machine.category} machineName={machine.name} status={currentStatus} className="w-full h-96" liveData={isOp ? { temp, load, rpm, pressure } : undefined} onCommand={sendCommand} />
           </div>
 
           <div className="grid md:grid-cols-3 gap-5">
@@ -936,7 +772,7 @@ function MachineCard({ machine, onSelect }: { machine: HMIMachine; onSelect: () 
           )}
         </div>
 
-        <div style={{ background: '#0a1628', borderRadius: 8, overflow: 'hidden' }} className="mb-2"><MachineHMI category={machine.category} machineName={machine.name} status={machine.status} className="w-full h-40" liveData={isOp ? { temp, load, rpm: rpmCard, pressure: pressureCard } : undefined} compact={true} /></div>
+        <div className="mb-2 rounded-lg overflow-hidden"><MachineHMI category={machine.category} machineName={machine.name} status={machine.status} className="w-full h-40" liveData={isOp ? { temp, load, rpm: rpmCard, pressure: pressureCard } : undefined} compact={true} /></div>
 
         <h3 style={{ color: 'var(--text-primary)' }} className="font-semibold text-xs mb-0.5 truncate">{machine.name}</h3>
         <p className="text-[var(--text-muted)] text-[10px] mb-1.5 truncate">{machine.location || '—'}</p>
