@@ -171,22 +171,46 @@ function MachineImage({ category, machineName, status, className = '', liveData,
 interface Machine {
   id: string;
   name: string;
-  model: string | null;
-  manufacturer: string | null;
-  serialNumber: string | null;
-  location: string | null;
+  model?: string | null;
+  manufacturer?: string | null;
+  serialNumber?: string | null;
+  location?: string | null;
   category: string;
-  criticality: string;
+  criticality?: string;
   status: string;
   totalHours: number;
-  lastServiceAt: string | null;
-  yearInstalled: number | null;
-  notes: string | null;
-  organizationId: string;
-  organization?: { id: string; name: string; plan: string } | null;
-  alerts: { id: string; title: string; severity: string }[];
-  _count: { workOrders: number; alerts: number; maintenanceTasks: number };
+  lastServiceAt?: string | null;
+  yearInstalled?: number | null;
+  notes?: string | null;
+  organizationId?: string;
+  organization?: { id: string; name: string; plan?: string } | null;
+  alerts?: { id: string; title: string; severity: string; type?: string }[];
+  _count: { workOrders: number; alerts: number; maintenanceTasks?: number };
 }
+
+const STATUS_CFG: Record<string, { bg: string; border: string; dot: string; color: string; label: string }> = {
+  OPERATIONAL: {
+    bg:     'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    dot:    'bg-emerald-400',
+    color:  'text-emerald-400',
+    label:  'OPERATIONAL',
+  },
+  BREAKDOWN: {
+    bg:     'bg-red-500/10',
+    border: 'border-red-500/40',
+    dot:    'bg-red-400',
+    color:  'text-red-400',
+    label:  'BREAKDOWN',
+  },
+  MAINTENANCE: {
+    bg:     'bg-yellow-500/10',
+    border: 'border-yellow-500/30',
+    dot:    'bg-yellow-400',
+    color:  'text-yellow-400',
+    label:  'MAINTENANCE',
+  },
+};
 
 const ORG_COLOURS = [
   { text: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/30' },
