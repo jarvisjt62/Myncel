@@ -124,94 +124,71 @@ function getMachineImageUrl(category: string, machineName: string): string {
 // ── Get category-specific live readout labels ────────────────────────────────
 function getCategoryReadouts(category: string, machineName: string, rpm: number, load: number, pressure: number) {
   const name = machineName.toLowerCase();
-  // CNC Mill / Lathe
   if (category === 'CNC_MILL' || category === 'CNC_LATHE' || name.includes('lathe') || name.includes('mill')) {
-    const zPos = -(rpm * 0.065 + load * 0.3).toFixed(1);
-    const dia  = (50 + load * 0.35).toFixed(1);
-    const feed = (rpm * 0.14).toFixed(0);
     return [
-      { label: 'SPINDLE', value: `${rpm.toFixed(0)}`, unit: 'RPM' },
-      { label: 'FEED',    value: `${feed}`,            unit: 'mm/min' },
-      { label: 'Z POS',   value: `${zPos}`,            unit: 'mm' },
-      { label: 'PART Ø',  value: `${dia}`,             unit: 'mm' },
+      { label: 'SPINDLE', value: `${rpm.toFixed(0)}`,                              unit: 'RPM'    },
+      { label: 'FEED',    value: `${(rpm * 0.14).toFixed(0)}`,                     unit: 'mm/min' },
+      { label: 'Z POS',   value: `${-(rpm * 0.065 + load * 0.3).toFixed(1)}`,      unit: 'mm'     },
+      { label: 'PART Ø',  value: `${(50 + load * 0.35).toFixed(1)}`,               unit: 'mm'     },
     ];
   }
-  // Press / Hydraulic
   if (category === 'PRESS' || category === 'HYDRAULIC' || name.includes('press') || name.includes('hydraulic')) {
-    const force  = (pressure * 9.2).toFixed(0);
-    const stroke = (load * 2.5).toFixed(0);
     return [
-      { label: 'FORCE',  value: `${force}`,  unit: 'kN' },
-      { label: 'STROKE', value: `${stroke}`, unit: 'mm' },
-      { label: 'PRESS',  value: `${pressure.toFixed(1)}`, unit: 'bar' },
-      { label: 'CYCLES', value: `${(rpm * 0.1).toFixed(0)}`, unit: '/min' },
+      { label: 'FORCE',  value: `${(pressure * 9.2).toFixed(0)}`,  unit: 'kN'   },
+      { label: 'STROKE', value: `${(load * 2.5).toFixed(0)}`,      unit: 'mm'   },
+      { label: 'PRESS',  value: `${pressure.toFixed(1)}`,          unit: 'bar'  },
+      { label: 'CYCLES', value: `${(rpm * 0.1).toFixed(0)}`,       unit: '/min' },
     ];
   }
-  // Compressor
   if (category === 'COMPRESSOR' || name.includes('compressor')) {
-    const tankPsi = (pressure * 1.15).toFixed(1);
-    const flow    = (load * 0.85).toFixed(1);
     return [
-      { label: 'TANK',   value: `${tankPsi}`,           unit: 'PSI' },
-      { label: 'FLOW',   value: `${flow}`,              unit: 'cfm' },
-      { label: 'RPM',    value: `${rpm.toFixed(0)}`,    unit: 'RPM' },
-      { label: 'LOAD',   value: `${load.toFixed(0)}`,   unit: '%' },
+      { label: 'TANK',  value: `${(pressure * 1.15).toFixed(1)}`, unit: 'PSI' },
+      { label: 'FLOW',  value: `${(load * 0.85).toFixed(1)}`,     unit: 'cfm' },
+      { label: 'RPM',   value: `${rpm.toFixed(0)}`,               unit: 'RPM' },
+      { label: 'LOAD',  value: `${load.toFixed(0)}`,              unit: '%'   },
     ];
   }
-  // Conveyor
   if (category === 'CONVEYOR' || name.includes('conveyor')) {
-    const speed = (rpm * 0.00028).toFixed(3);
-    const parts = (load * 0.5).toFixed(0);
     return [
-      { label: 'SPEED',  value: `${speed}`,           unit: 'm/s' },
-      { label: 'PARTS',  value: `${parts}`,            unit: '/min' },
-      { label: 'LOAD',   value: `${load.toFixed(0)}`, unit: '%' },
-      { label: 'TEMP',   value: `${(40 + load * 0.2).toFixed(0)}`, unit: '°C' },
+      { label: 'SPEED', value: `${(rpm * 0.00028).toFixed(3)}`,   unit: 'm/s'  },
+      { label: 'PARTS', value: `${(load * 0.5).toFixed(0)}`,      unit: '/min' },
+      { label: 'LOAD',  value: `${load.toFixed(0)}`,              unit: '%'    },
+      { label: 'TEMP',  value: `${(40 + load * 0.2).toFixed(0)}`, unit: '°C'  },
     ];
   }
-  // Welder
   if (category === 'WELDER' || name.includes('weld')) {
-    const voltage = (20 + load * 0.08).toFixed(1);
-    const wire    = (rpm * 0.004).toFixed(1);
     return [
-      { label: 'VOLTAGE', value: `${voltage}`, unit: 'V' },
-      { label: 'WIRE',    value: `${wire}`,    unit: 'm/min' },
-      { label: 'CURRENT', value: `${(load * 2.2).toFixed(0)}`, unit: 'A' },
-      { label: 'DUTY',    value: `${load.toFixed(0)}`, unit: '%' },
+      { label: 'VOLTAGE', value: `${(20 + load * 0.08).toFixed(1)}`, unit: 'V'     },
+      { label: 'WIRE',    value: `${(rpm * 0.004).toFixed(1)}`,       unit: 'm/min' },
+      { label: 'CURRENT', value: `${(load * 2.2).toFixed(0)}`,        unit: 'A'     },
+      { label: 'DUTY',    value: `${load.toFixed(0)}`,                unit: '%'     },
     ];
   }
-  // Injection Mold
   if (category === 'INJECTION_MOLD' || name.includes('inject') || name.includes('mold')) {
-    const clamp = (pressure * 4.8).toFixed(0);
-    const temp2 = (180 + load * 0.7).toFixed(0);
     return [
-      { label: 'CLAMP',  value: `${clamp}`,  unit: 'T' },
-      { label: 'BARREL', value: `${temp2}`,  unit: '°C' },
-      { label: 'INJECT', value: `${(rpm * 0.06).toFixed(0)}`, unit: 'mm/s' },
-      { label: 'CYCLE',  value: `${(20 - load * 0.08).toFixed(1)}`, unit: 's' },
+      { label: 'CLAMP',  value: `${(pressure * 4.8).toFixed(0)}`,   unit: 'T'    },
+      { label: 'BARREL', value: `${(180 + load * 0.7).toFixed(0)}`, unit: '°C'   },
+      { label: 'INJECT', value: `${(rpm * 0.06).toFixed(0)}`,       unit: 'mm/s' },
+      { label: 'CYCLE',  value: `${(20 - load * 0.08).toFixed(1)}`, unit: 's'    },
     ];
   }
-  // Assembly / Robot
   if (category === 'ASSEMBLY' || name.includes('robot') || name.includes('assembly')) {
-    const reach = (load * 0.8).toFixed(0);
-    const speed2 = (rpm * 0.05).toFixed(0);
     return [
-      { label: 'AXIS J1', value: `${(load * 1.8).toFixed(1)}`, unit: '°' },
-      { label: 'AXIS J2', value: `${(pressure * 0.9).toFixed(1)}`, unit: '°' },
-      { label: 'REACH',   value: `${reach}`, unit: 'mm' },
-      { label: 'SPEED',   value: `${speed2}`, unit: 'mm/s' },
+      { label: 'AXIS J1', value: `${(load * 1.8).toFixed(1)}`,     unit: '°'    },
+      { label: 'AXIS J2', value: `${(pressure * 0.9).toFixed(1)}`, unit: '°'    },
+      { label: 'REACH',   value: `${(load * 0.8).toFixed(0)}`,     unit: 'mm'   },
+      { label: 'SPEED',   value: `${(rpm * 0.05).toFixed(0)}`,     unit: 'mm/s' },
     ];
   }
-  // Generic fallback
   return [
-    { label: 'RPM',      value: `${rpm.toFixed(0)}`,      unit: 'RPM' },
-    { label: 'LOAD',     value: `${load.toFixed(0)}`,     unit: '%' },
-    { label: 'PRESSURE', value: `${pressure.toFixed(0)}`, unit: 'PSI' },
-    { label: 'OUTPUT',   value: `${(load * 0.95).toFixed(0)}`, unit: '%' },
+    { label: 'RPM',      value: `${rpm.toFixed(0)}`,           unit: 'RPM' },
+    { label: 'LOAD',     value: `${load.toFixed(0)}`,          unit: '%'   },
+    { label: 'PRESSURE', value: `${pressure.toFixed(0)}`,      unit: 'PSI' },
+    { label: 'OUTPUT',   value: `${(load * 0.95).toFixed(0)}`, unit: '%'   },
   ];
 }
 
-// ── Machine Image Component (SCADA image + live data overlay) ─────────────────
+// ── Machine Image Component ───────────────────────────────────────────────────
 function MachineImage({ category, machineName, status, className = '', liveData, compact = false }: {
   category: string; machineName: string; status: string; className?: string;
   liveData?: { temp: number; load: number; rpm: number; pressure: number };
@@ -221,70 +198,93 @@ function MachineImage({ category, machineName, status, className = '', liveData,
   const isBreakdown = status === 'BREAKDOWN';
   const isMaintenance = status === 'MAINTENANCE';
   const isOp = status === 'OPERATIONAL';
-
   const readouts = liveData && isOp
     ? getCategoryReadouts(category, machineName, liveData.rpm, liveData.load, liveData.pressure)
     : [];
 
+  const tempColor = liveData && liveData.temp > 90 ? '#f87171' : liveData && liveData.temp > 78 ? '#fbbf24' : '#34d399';
+  const loadColor = liveData && liveData.load > 90 ? '#ef4444' : liveData && liveData.load > 70 ? '#fbbf24' : '#635bff';
+
   return (
-    <div className={`relative overflow-hidden rounded-lg ${className}`} style={{ background: '#0a1628' }}>
-      {/* SCADA image — object-contain so full image is always visible */}
+    <div className={`relative overflow-hidden ${className}`}
+      style={{ background: 'transparent' }}>
+
+      {/* SCADA image — object-contain, transparent bg so no letterbox */}
       <img
         src={imgUrl}
         alt={machineName}
-        className="w-full h-full"
         style={{
+          width: '100%', height: '100%',
           objectFit: 'contain',
+          objectPosition: 'center',
+          display: 'block',
           filter: isBreakdown
             ? 'grayscale(0.4) brightness(0.65) sepia(0.3) saturate(2) hue-rotate(-10deg)'
             : isMaintenance
-            ? 'grayscale(0.2) brightness(0.8) sepia(0.2) saturate(1.3) hue-rotate(10deg)'
-            : 'brightness(1.05) saturate(1.2)',
+            ? 'grayscale(0.2) brightness(0.8) sepia(0.1)'
+            : 'brightness(1.0) saturate(1.1)',
           transition: 'filter 0.5s ease',
+          background: 'transparent',
         }}
         onError={(e) => {
           (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
         }}
       />
 
-      {/* Live data overlay — only when OPERATIONAL and liveData provided */}
+      {/* Live data overlay — only OPERATIONAL */}
       {liveData && isOp && (
-        <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-2" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 35%, transparent 60%, rgba(0,0,0,0.55) 100%)' }}>
-          {/* TOP ROW — TEMP + STATUS indicator */}
-          <div className="flex justify-between items-start">
-            <div style={{ background: 'rgba(0,16,36,0.82)', border: '1px solid rgba(0,200,255,0.35)', borderRadius: 4, padding: '2px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: liveData.temp > 90 ? '#ef4444' : liveData.temp > 78 ? '#fbbf24' : '#34d399', boxShadow: `0 0 5px ${liveData.temp > 90 ? '#ef4444' : '#34d399'}`, display: 'inline-block' }} />
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          padding: compact ? 4 : 8,
+        }}>
+          {/* TOP ROW: TEMP left, RPM right */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ background: 'rgba(0,12,28,0.85)', border: '1px solid rgba(0,210,255,0.4)', borderRadius: 4, padding: '2px 8px', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: tempColor, boxShadow: `0 0 5px ${tempColor}`, flexShrink: 0, display: 'inline-block' }} />
               <span style={{ color: '#67e8f9', fontSize: compact ? 8 : 9, fontFamily: 'monospace' }}>TEMP</span>
-              <span style={{ color: liveData.temp > 90 ? '#f87171' : liveData.temp > 78 ? '#fbbf24' : '#34d399', fontSize: compact ? 9 : 11, fontFamily: 'monospace', fontWeight: 700 }}>{liveData.temp.toFixed(0)}°C</span>
+              <span style={{ color: tempColor, fontSize: compact ? 10 : 12, fontFamily: 'monospace', fontWeight: 800 }}>{liveData.temp.toFixed(0)}°C</span>
             </div>
-            <div style={{ background: 'rgba(0,16,36,0.82)', border: '1px solid rgba(0,200,255,0.35)', borderRadius: 4, padding: '2px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ background: 'rgba(0,12,28,0.85)', border: '1px solid rgba(0,210,255,0.4)', borderRadius: 4, padding: '2px 8px', display: 'flex', alignItems: 'center', gap: 5 }}>
               <span style={{ color: '#67e8f9', fontSize: compact ? 8 : 9, fontFamily: 'monospace' }}>RPM</span>
-              <span style={{ color: '#93c5fd', fontSize: compact ? 9 : 11, fontFamily: 'monospace', fontWeight: 700 }}>{liveData.rpm.toFixed(0)}</span>
+              <span style={{ color: '#93c5fd', fontSize: compact ? 10 : 12, fontFamily: 'monospace', fontWeight: 800 }}>{liveData.rpm.toFixed(0)}</span>
             </div>
           </div>
 
-          {/* BOTTOM — category-specific readouts grid + LOAD bar */}
-          <div>
-            {/* Readouts grid */}
+          {/* BOTTOM SECTION */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* 4 readouts grid — only in non-compact (detail panel) */}
             {!compact && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 6px', marginBottom: 5 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
                 {readouts.map((r, i) => (
-                  <div key={i} style={{ background: 'rgba(0,16,36,0.82)', border: '1px solid rgba(0,200,255,0.25)', borderRadius: 4, padding: '2px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#67e8f9', fontSize: 8, fontFamily: 'monospace', opacity: 0.8 }}>{r.label}</span>
-                    <span style={{ color: '#e2f0ff', fontSize: 10, fontFamily: 'monospace', fontWeight: 700 }}>{r.value}<span style={{ color: '#67e8f9', fontSize: 8, marginLeft: 2, opacity: 0.7 }}>{r.unit}</span></span>
+                  <div key={i} style={{
+                    background: 'rgba(0,12,28,0.88)', border: '1px solid rgba(0,210,255,0.3)',
+                    borderRadius: 4, padding: '3px 8px',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  }}>
+                    <span style={{ color: '#67e8f9', fontSize: 9, fontFamily: 'monospace', opacity: 0.85 }}>{r.label}</span>
+                    <span style={{ color: '#e2f8ff', fontSize: 11, fontFamily: 'monospace', fontWeight: 700 }}>
+                      {r.value}
+                      <span style={{ color: '#67e8f9', fontSize: 8, marginLeft: 2, opacity: 0.75 }}>{r.unit}</span>
+                    </span>
                   </div>
                 ))}
               </div>
             )}
-            {/* LOAD progress bar */}
-            <div style={{ background: 'rgba(0,16,36,0.85)', border: '1px solid rgba(0,200,255,0.3)', borderRadius: 4, padding: '3px 7px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                <span style={{ color: '#67e8f9', fontSize: compact ? 7 : 8, fontFamily: 'monospace' }}>LOAD</span>
-                <span style={{ color: liveData.load > 90 ? '#f87171' : liveData.load > 70 ? '#fbbf24' : '#a78bfa', fontSize: compact ? 9 : 10, fontFamily: 'monospace', fontWeight: 700 }}>{liveData.load.toFixed(0)}%</span>
-                <span style={{ color: '#67e8f9', fontSize: compact ? 7 : 8, fontFamily: 'monospace', opacity: 0.8 }}>PSI {liveData.pressure.toFixed(0)}</span>
+            {/* LOAD bar */}
+            <div style={{ background: 'rgba(0,12,28,0.88)', border: '1px solid rgba(0,210,255,0.3)', borderRadius: 4, padding: compact ? '2px 6px' : '4px 8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                <span style={{ color: '#67e8f9', fontSize: compact ? 8 : 9, fontFamily: 'monospace' }}>LOAD</span>
+                <span style={{ color: loadColor, fontSize: compact ? 10 : 11, fontFamily: 'monospace', fontWeight: 800 }}>{liveData.load.toFixed(0)}%</span>
+                <span style={{ color: '#67e8f9', fontSize: compact ? 8 : 9, fontFamily: 'monospace', opacity: 0.8 }}>PSI {liveData.pressure.toFixed(0)}</span>
               </div>
-              <div style={{ width: '100%', height: compact ? 2 : 3, background: 'rgba(100,116,139,0.35)', borderRadius: 2 }}>
-                <div style={{ width: `${liveData.load}%`, height: compact ? 2 : 3, borderRadius: 2, background: liveData.load > 90 ? '#ef4444' : liveData.load > 70 ? '#fbbf24' : '#635bff', boxShadow: `0 0 5px ${liveData.load > 90 ? '#ef4444' : '#635bff'}`, transition: 'width 0.8s ease' }} />
+              <div style={{ width: '100%', height: compact ? 3 : 4, background: 'rgba(100,116,139,0.3)', borderRadius: 2 }}>
+                <div style={{
+                  width: `${liveData.load}%`, height: '100%', borderRadius: 2,
+                  background: loadColor,
+                  boxShadow: `0 0 6px ${loadColor}`,
+                  transition: 'width 0.8s ease',
+                }} />
               </div>
             </div>
           </div>
@@ -293,14 +293,14 @@ function MachineImage({ category, machineName, status, className = '', liveData,
 
       {/* BREAKDOWN overlay */}
       {isBreakdown && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1" style={{ background: 'rgba(127,0,0,0.35)' }}>
-          <span style={{ color: '#fca5a5', fontSize: 11, fontWeight: 800, fontFamily: 'monospace', background: 'rgba(127,0,0,0.8)', padding: '3px 10px', borderRadius: 4, border: '1px solid rgba(239,68,68,0.6)' }} className="animate-pulse">⚠ FAULT DETECTED</span>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(127,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span className="animate-pulse" style={{ color: '#fca5a5', fontSize: 12, fontWeight: 800, fontFamily: 'monospace', background: 'rgba(100,0,0,0.85)', padding: '4px 12px', borderRadius: 4, border: '1px solid rgba(239,68,68,0.7)' }}>⚠ FAULT DETECTED</span>
         </div>
       )}
       {/* MAINTENANCE overlay */}
       {isMaintenance && (
-        <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(80,60,0,0.3)' }}>
-          <span style={{ color: '#fde68a', fontSize: 11, fontWeight: 700, fontFamily: 'monospace', background: 'rgba(80,60,0,0.8)', padding: '3px 10px', borderRadius: 4, border: '1px solid rgba(251,191,36,0.5)' }}>🔧 IN MAINTENANCE</span>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(80,60,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ color: '#fde68a', fontSize: 12, fontWeight: 700, fontFamily: 'monospace', background: 'rgba(80,55,0,0.85)', padding: '4px 12px', borderRadius: 4, border: '1px solid rgba(251,191,36,0.6)' }}>🔧 IN MAINTENANCE</span>
         </div>
       )}
     </div>
@@ -375,130 +375,6 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-// ── SVG Machine Body per Category ─────────────────────────────────────────────
-function MachineSVG({ category, status, svgBase, svgSurface, svgPanel, svgStroke }: { category: string; status: string; svgBase: string; svgSurface: string; svgPanel: string; svgStroke: string; }) {
-  const isBreakdown = status === 'BREAKDOWN';
-  const isMaintenance = status === 'MAINTENANCE';
-  const isOp = status === 'OPERATIONAL';
-  const mainColor = isBreakdown ? '#ef4444' : isMaintenance ? '#f59e0b' : '#635bff';
-  const glowColor = isBreakdown ? '#ef444460' : isMaintenance ? '#f59e0b60' : '#635bff40';
-
-  if (category === 'CNC_MILL' || category === 'CNC_LATHE') {
-    return (
-      <svg viewBox="0 0 100 80" className="w-full h-full">
-        <rect x="10" y="55" width="80" height="18" rx="3" fill={svgBase} stroke={svgStroke} strokeWidth="1"/>
-        <rect x="20" y="20" width="20" height="37" rx="2" fill={svgSurface} stroke={mainColor} strokeWidth="0.8" opacity="0.9"/>
-        <rect x="15" y="48" width="70" height="8" rx="2" fill={svgBase} stroke={svgStroke} strokeWidth="0.8"/>
-        <rect x="28" y="14" width="30" height="16" rx="2" fill={svgBase} stroke={mainColor} strokeWidth="1.2" style={{ filter: isOp ? `drop-shadow(0 0 4px ${glowColor})` : 'none' }}/>
-        <rect x="39" y="30" width="8" height="18" rx="1" fill={mainColor} opacity="0.8" style={{ filter: `drop-shadow(0 0 3px ${glowColor})` }}/>
-        <rect x="68" y="22" width="14" height="22" rx="2" fill={svgPanel} stroke={svgStroke} strokeWidth="0.8"/>
-        <circle cx="75" cy="28" r="2" fill={isOp ? '#34d399' : isBreakdown ? '#ef4444' : '#f59e0b'} style={{ filter: 'drop-shadow(0 0 3px currentColor)' }}/>
-        {isOp && [0,1,2].map(i => <circle key={i} cx={32 + i * 8} cy="52" r="1.5" fill={mainColor} opacity="0.5"/>)}
-        {isBreakdown && <>
-          <line x1="42" y1="16" x2="52" y2="28" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round"/>
-          <line x1="52" y1="16" x2="42" y2="28" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round"/>
-        </>}
-      </svg>
-    );
-  }
-
-  if (category === 'PRESS' || category === 'HYDRAULIC') {
-    return (
-      <svg viewBox="0 0 100 80" className="w-full h-full">
-        <rect x="15" y="10" width="12" height="60" rx="2" fill={svgSurface} stroke={mainColor} strokeWidth="0.8"/>
-        <rect x="73" y="10" width="12" height="60" rx="2" fill={svgSurface} stroke={mainColor} strokeWidth="0.8"/>
-        <rect x="15" y="10" width="70" height="10" rx="2" fill={svgBase} stroke={mainColor} strokeWidth="1"/>
-        <rect x="32" y={isOp ? "24" : "38"} width="36" height="16" rx="2" fill={mainColor} opacity="0.8" style={{ filter: `drop-shadow(0 0 5px ${glowColor})` }}/>
-        <rect x="20" y="65" width="60" height="7" rx="2" fill={svgBase} stroke={svgStroke} strokeWidth="0.8"/>
-        <circle cx="84" cy="16" r="3" fill={isOp ? '#34d399' : isBreakdown ? '#ef4444' : '#f59e0b'} style={{ filter: 'drop-shadow(0 0 3px currentColor)' }}/>
-        {isBreakdown && <text x="50" y="58" textAnchor="middle" fill="#ef4444" fontSize="8" fontWeight="bold">FAULT</text>}
-      </svg>
-    );
-  }
-
-  if (category === 'CONVEYOR') {
-    return (
-      <svg viewBox="0 0 100 80" className="w-full h-full">
-        <rect x="8" y="35" width="84" height="12" rx="2" fill={svgBase} stroke={mainColor} strokeWidth="1"/>
-        {[12, 28, 44, 60, 76, 88].map((x, i) => (
-          <circle key={i} cx={x} cy="41" r="6" fill={svgSurface} stroke={mainColor} strokeWidth="0.8"/>
-        ))}
-        <rect x="80" y="20" width="16" height="14" rx="2" fill={svgPanel} stroke={mainColor} strokeWidth="1" style={{ filter: isOp ? `drop-shadow(0 0 4px ${glowColor})` : 'none' }}/>
-        <circle cx="88" cy="27" r="4" fill={mainColor} opacity="0.6"/>
-        <rect x="15" y="47" width="6" height="20" rx="1" fill={svgSurface} stroke={svgStroke} strokeWidth="0.8"/>
-        <rect x="79" y="47" width="6" height="20" rx="1" fill={svgSurface} stroke={svgStroke} strokeWidth="0.8"/>
-        {isOp && [20, 45, 65].map((x, i) => <rect key={i} x={x} y="28" width="10" height="8" rx="1" fill={mainColor} opacity="0.5"/>)}
-        <circle cx="10" cy="42" r="3" fill={isOp ? '#34d399' : isBreakdown ? '#ef4444' : '#f59e0b'} style={{ filter: 'drop-shadow(0 0 3px currentColor)' }}/>
-      </svg>
-    );
-  }
-
-  if (category === 'WELDER') {
-    return (
-      <svg viewBox="0 0 100 80" className="w-full h-full">
-        <rect x="20" y="20" width="35" height="45" rx="3" fill={svgSurface} stroke={mainColor} strokeWidth="1"/>
-        <rect x="22" y="22" width="31" height="20" rx="2" fill={svgPanel} stroke={svgStroke} strokeWidth="0.5"/>
-        <circle cx="30" cy="32" r="5" fill="none" stroke={mainColor} strokeWidth="1" opacity="0.7"/>
-        <circle cx="45" cy="32" r="5" fill="none" stroke={mainColor} strokeWidth="1" opacity="0.7"/>
-        <circle cx="70" cy="35" r="15" fill={svgBase} stroke={svgStroke} strokeWidth="1"/>
-        <circle cx="70" cy="35" r="8" fill={svgSurface} stroke={mainColor} strokeWidth="0.8"/>
-        <circle cx="70" cy="35" r="3" fill={svgPanel} stroke={mainColor} strokeWidth="0.5"/>
-        <line x1="22" y1="55" x2="8" y2="68" stroke={mainColor} strokeWidth="2.5" strokeLinecap="round"/>
-        {isOp && <>
-          <circle cx="8" cy="68" r="3" fill="#fbbf24" opacity="0.9" style={{ filter: 'drop-shadow(0 0 4px #fbbf24)' }}/>
-          <line x1="6" y1="66" x2="4" y2="64" stroke="#fbbf24" strokeWidth="1" opacity="0.8"/>
-          <line x1="10" y1="66" x2="13" y2="63" stroke="#fbbf24" strokeWidth="1" opacity="0.8"/>
-        </>}
-        <circle cx="55" cy="28" r="3" fill={isOp ? '#34d399' : isBreakdown ? '#ef4444' : '#f59e0b'} style={{ filter: 'drop-shadow(0 0 3px currentColor)' }}/>
-      </svg>
-    );
-  }
-
-  if (category === 'COMPRESSOR') {
-    return (
-      <svg viewBox="0 0 100 80" className="w-full h-full">
-        <ellipse cx="55" cy="50" rx="30" ry="18" fill={svgSurface} stroke={mainColor} strokeWidth="1.2" style={{ filter: isOp ? `drop-shadow(0 0 5px ${glowColor})` : 'none' }}/>
-        <rect x="10" y="35" width="22" height="22" rx="3" fill={svgBase} stroke={mainColor} strokeWidth="1"/>
-        <circle cx="21" cy="46" r="7" fill={svgSurface} stroke={mainColor} strokeWidth="1"/>
-        <circle cx="21" cy="46" r="3" fill={mainColor} opacity="0.6"/>
-        <rect x="32" y="44" width="8" height="4" rx="1" fill={mainColor} opacity="0.7"/>
-        <circle cx="55" cy="38" r="6" fill={svgPanel} stroke={mainColor} strokeWidth="1"/>
-        <rect x="32" y="65" width="5" height="10" rx="1" fill={svgSurface} stroke={svgStroke} strokeWidth="0.5"/>
-        <rect x="72" y="65" width="5" height="10" rx="1" fill={svgSurface} stroke={svgStroke} strokeWidth="0.5"/>
-        <circle cx="85" cy="42" r="3" fill={isOp ? '#34d399' : isBreakdown ? '#ef4444' : '#f59e0b'} style={{ filter: 'drop-shadow(0 0 3px currentColor)' }}/>
-      </svg>
-    );
-  }
-
-  if (category === 'INJECTION_MOLD') {
-    return (
-      <svg viewBox="0 0 100 80" className="w-full h-full">
-        <rect x="10" y="40" width="38" height="28" rx="2" fill={svgSurface} stroke={mainColor} strokeWidth="1"/>
-        <rect x="52" y="40" width="38" height="28" rx="2" fill={svgBase} stroke={mainColor} strokeWidth="1"/>
-        <rect x="10" y="38" width="80" height="4" rx="1" fill={mainColor} opacity="0.6" style={{ filter: `drop-shadow(0 0 3px ${glowColor})` }}/>
-        <rect x="35" y="10" width="30" height="30" rx="2" fill={svgPanel} stroke={mainColor} strokeWidth="1" style={{ filter: isOp ? `drop-shadow(0 0 4px ${glowColor})` : 'none' }}/>
-        <rect x="42" y="18" width="16" height="14" rx="1" fill={mainColor} opacity="0.3"/>
-        <circle cx="82" cy="46" r="3" fill={isOp ? '#34d399' : isBreakdown ? '#ef4444' : '#f59e0b'} style={{ filter: 'drop-shadow(0 0 3px currentColor)' }}/>
-      </svg>
-    );
-  }
-
-  return (
-    <svg viewBox="0 0 100 80" className="w-full h-full">
-      <rect x="15" y="15" width="70" height="50" rx="4" fill={svgSurface} stroke={mainColor} strokeWidth="1.2" style={{ filter: isOp ? `drop-shadow(0 0 6px ${glowColor})` : 'none' }}/>
-      <rect x="22" y="22" width="56" height="25" rx="2" fill={svgPanel} stroke={svgStroke} strokeWidth="0.5"/>
-      <circle cx="35" cy="52" r="5" fill="none" stroke={mainColor} strokeWidth="1.2"/>
-      <circle cx="65" cy="52" r="5" fill="none" stroke={mainColor} strokeWidth="1.2"/>
-      <circle cx="50" cy="34" r="8" fill="none" stroke={mainColor} strokeWidth="1" opacity="0.5"/>
-      <line x1="50" y1="34" x2="55" y2="30" stroke={mainColor} strokeWidth="1.5" strokeLinecap="round" opacity="0.8"/>
-      <circle cx="85" cy="20" r="3.5" fill={isOp ? '#34d399' : isBreakdown ? '#ef4444' : '#f59e0b'} style={{ filter: 'drop-shadow(0 0 4px currentColor)' }}/>
-      {isBreakdown && <>
-        <line x1="38" y1="38" x2="46" y2="46" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
-        <line x1="46" y1="38" x2="38" y2="46" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
-      </>}
-    </svg>
-  );
-}
 
 // ── Toast Notification ────────────────────────────────────────────────────────
 function AdminToast({ msg, type, onDone }: { msg: string; type: 'success' | 'error' | 'info'; onDone: () => void }) {
@@ -646,8 +522,8 @@ function MachineDetailPanel({ machine, onClose, onSim, onStatusChange }: {
 
         <div className="p-5 space-y-5">
           {/* Machine SCADA Image — full width, prominent */}
-          <div className={`rounded-xl border ${currentCfg.border} overflow-hidden`} style={{ background: '#0a1628' }}>
-            <MachineImage category={machine.category} machineName={machine.name} status={currentStatus} className="w-full h-64 rounded-xl" liveData={isOp ? { temp, load, rpm, pressure } : undefined} />
+          <div className={`rounded-xl border ${currentCfg.border} overflow-hidden`}>
+            <MachineImage category={machine.category} machineName={machine.name} status={currentStatus} className="w-full h-80" liveData={isOp ? { temp, load, rpm, pressure } : undefined} />
           </div>
 
           <div className="grid md:grid-cols-3 gap-5">
