@@ -6,55 +6,73 @@ interface Org {
   id: string;
   name: string;
   plan: string;
-  _count: { machines: number; users: number };
+  _count: { machines: number; users: number; workOrders: number; alerts: number };
 }
 
 interface OverviewData {
   machineCount: number;
+  machineOperational: number;
+  machineMaintenance: number;
+  machineBreakdown: number;
   workOrderCount: number;
+  workOrderOpen: number;
+  workOrderInProgress: number;
+  workOrderCompleted: number;
   alertCount: number;
+  alertActive: number;
+  alertCritical: number;
   taskCount: number;
+  taskActive: number;
+  taskOverdue: number;
   isSuperAdmin: boolean;
   organizations: Org[];
   selectedOrgId: string;
+  syncedAt: string;
 }
 
-const REFRESH_INTERVAL = 30_000; // 30 seconds
+const REFRESH_INTERVAL = 30_000;
 
 function AnimatedNumber({ value }: { value: number }) {
   const [display, setDisplay] = useState(value);
   const prev = useRef(value);
-
   useEffect(() => {
     if (prev.current === value) return;
     const start = prev.current;
     const diff = value - start;
-    const duration = 600;
     const startTime = performance.now();
-
     const animate = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(Math.round(start + diff * eased));
-      if (progress < 1) requestAnimationFrame(animate);
+      const p = Math.min((now - startTime) / 500, 1);
+      const e = 1 - Math.pow(1 - p, 3);
+      setDisplay(Math.round(start + diff * e));
+      if (p < 1) requestAnimationFrame(animate);
     };
     requestAnimationFrame(animate);
     prev.current = value;
   }, [value]);
-
   return <>{display}</>;
 }
 
-export default function DataOverviewClient({ initialOrgId, isSuperAdmin: initialIsSuperAdmin }: {
+function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {
+  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+  return (
+    <div style={{ background: 'rgba(0,0,0,0.08)', borderRadius: 3, height: 4, overflow: 'hidden', marginTop: 2 }}>
+      <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 3, transition: 'width 0.7s ease' }} />
+    </div>
+  );
+}
+
+export default function DataOverviewClient({ initialOrgId, isSuperAdmin: initIsSuperAdmin }: {
   initialOrgId: string;
   isSuperAdmin: boolean;
 }) {
   const [data, setData] = useState<OverviewData | null>(null);
-  const [selectedOrgId, setSelectedOrgId] = useState(initialIsSuperAdmin ? 'all' : initialOrgId);
+  const [selectedOrgId, setSelectedOrgId] = useState(initIsSuperAdmin ? 'all' : initialOrgId);
   const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [forceSyncing, setForceSyncing] = useState(false);
+  const [syncLog, setSyncLog] = useState<string[]>([]);
+  const [showSyncLog, setShowSyncLog] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchData = useCallback(async (orgId: string, showSyncing = false) => {
@@ -74,157 +92,172 @@ export default function DataOverviewClient({ initialOrgId, isSuperAdmin: initial
     }
   }, []);
 
-  // Initial fetch
   useEffect(() => {
     fetchData(selectedOrgId);
   }, [selectedOrgId, fetchData]);
 
-  // Auto-refresh every 30s
   useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      fetchData(selectedOrgId, true);
-    }, REFRESH_INTERVAL);
+    intervalRef.current = setInterval(() => fetchData(selectedOrgId, true), REFRESH_INTERVAL);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [selectedOrgId, fetchData]);
 
   const handleOrgChange = (orgId: string) => {
     setSelectedOrgId(orgId);
+    setSyncLog([]);
+    setShowSyncLog(false);
     setLoading(true);
   };
 
-  const handleManualRefresh = () => {
-    // Reset interval timer
+  const handleRefresh = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     fetchData(selectedOrgId, true);
-    intervalRef.current = setInterval(() => {
-      fetchData(selectedOrgId, true);
-    }, REFRESH_INTERVAL);
+    intervalRef.current = setInterval(() => fetchData(selectedOrgId, true), REFRESH_INTERVAL);
   };
 
-  const formatTime = (d: Date) =>
-    d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const handleForceSync = async () => {
+    setForceSyncing(true);
+    setSyncLog([]);
+    setShowSyncLog(true);
+    try {
+      const res = await fetch(`/api/admin/settings-overview?orgId=${selectedOrgId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setSyncLog(json.actions || []);
+        // Refresh data after sync
+        await fetchData(selectedOrgId, false);
+        setLastUpdated(new Date());
+      } else {
+        setSyncLog([`Error: ${json.error}`]);
+      }
+    } catch (e) {
+      setSyncLog([`Error: ${String(e)}`]);
+    } finally {
+      setForceSyncing(false);
+    }
+  };
 
-  const stats = [
+  const fmt = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const selectedOrg = data?.organizations.find(o => o.id === selectedOrgId);
+
+  const statCards = data ? [
     {
       label: 'Machines',
-      value: data?.machineCount ?? 0,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-      ),
+      main: data.machineCount,
       color: '#3b82f6',
-      bg: 'rgba(59,130,246,0.08)',
-      border: 'rgba(59,130,246,0.2)',
+      bg: 'rgba(59,130,246,0.07)',
+      border: 'rgba(59,130,246,0.18)',
+      icon: '⚙️',
+      breakdown: [
+        { label: 'Operational', value: data.machineOperational, color: '#22c55e' },
+        { label: 'Maintenance', value: data.machineMaintenance, color: '#f59e0b' },
+        { label: 'Breakdown',   value: data.machineBreakdown,   color: '#ef4444' },
+      ],
     },
     {
       label: 'Work Orders',
-      value: data?.workOrderCount ?? 0,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-        </svg>
-      ),
+      main: data.workOrderCount,
       color: '#8b5cf6',
-      bg: 'rgba(139,92,246,0.08)',
-      border: 'rgba(139,92,246,0.2)',
+      bg: 'rgba(139,92,246,0.07)',
+      border: 'rgba(139,92,246,0.18)',
+      icon: '📋',
+      breakdown: [
+        { label: 'Open',        value: data.workOrderOpen,       color: '#f59e0b' },
+        { label: 'In Progress', value: data.workOrderInProgress, color: '#3b82f6' },
+        { label: 'Completed',   value: data.workOrderCompleted,  color: '#22c55e' },
+      ],
     },
     {
       label: 'Alerts',
-      value: data?.alertCount ?? 0,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-        </svg>
-      ),
+      main: data.alertCount,
       color: '#ef4444',
-      bg: 'rgba(239,68,68,0.08)',
-      border: 'rgba(239,68,68,0.2)',
+      bg: 'rgba(239,68,68,0.07)',
+      border: 'rgba(239,68,68,0.18)',
+      icon: '🔔',
+      breakdown: [
+        { label: 'Active',   value: data.alertActive,   color: '#ef4444' },
+        { label: 'Critical', value: data.alertCritical, color: '#dc2626' },
+        { label: 'Resolved', value: data.alertCount - data.alertActive, color: '#22c55e' },
+      ],
     },
     {
-      label: 'Maintenance Tasks',
-      value: data?.taskCount ?? 0,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-            d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/>
-        </svg>
-      ),
+      label: 'Maint. Tasks',
+      main: data.taskCount,
       color: '#f59e0b',
-      bg: 'rgba(245,158,11,0.08)',
-      border: 'rgba(245,158,11,0.2)',
+      bg: 'rgba(245,158,11,0.07)',
+      border: 'rgba(245,158,11,0.18)',
+      icon: '🔧',
+      breakdown: [
+        { label: 'Active',  value: data.taskActive,  color: '#22c55e' },
+        { label: 'Overdue', value: data.taskOverdue, color: '#ef4444' },
+        { label: 'Inactive', value: data.taskCount - data.taskActive, color: '#94a3b8' },
+      ],
     },
-  ];
+  ] : [];
 
   return (
     <div className="rounded-xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-      {/* Header row */}
+
+      {/* ── Header ── */}
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
-            Data Overview
-          </h2>
-          {/* Live indicator */}
+          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Data Overview</h2>
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium"
             style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', color: '#22c55e' }}>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"/>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
             LIVE
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Last updated */}
+        <div className="flex items-center gap-2 flex-wrap">
           {lastUpdated && (
             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Updated {formatTime(lastUpdated)}
+              Synced {fmt(lastUpdated)}
             </span>
           )}
 
-          {/* Manual refresh button */}
-          <button
-            onClick={handleManualRefresh}
-            disabled={syncing}
+          {/* Refresh */}
+          <button onClick={handleRefresh} disabled={syncing}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
-            style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
-            title="Refresh now"
-          >
+            style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
             <svg className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             {syncing ? 'Syncing…' : 'Refresh'}
           </button>
 
-          {/* Org selector dropdown — only for super admin */}
+          {/* Force Sync */}
+          <button onClick={handleForceSync} disabled={forceSyncing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50"
+            style={{ background: forceSyncing ? 'rgba(99,91,255,0.2)' : 'rgba(99,91,255,0.1)',
+              border: '1px solid rgba(99,91,255,0.35)', color: '#635bff' }}>
+            <svg className={`w-3.5 h-3.5 ${forceSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            {forceSyncing ? 'Syncing…' : 'Force Sync'}
+          </button>
+
+          {/* Org selector — super admin only */}
           {data?.isSuperAdmin && (
             <div className="relative">
-              <select
-                value={selectedOrgId}
-                onChange={e => handleOrgChange(e.target.value)}
-                className="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-xs font-medium cursor-pointer focus:outline-none focus:ring-2"
-                style={{
-                  background: 'var(--bg-surface-2)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-primary)',
-                  minWidth: 160,
-                }}
-              >
+              <select value={selectedOrgId} onChange={e => handleOrgChange(e.target.value)}
+                className="appearance-none pl-3 pr-8 py-1.5 rounded-lg text-xs font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-500"
+                style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)', minWidth: 170 }}>
                 <option value="all">🌐 All Organizations</option>
                 {data.organizations.map(org => (
                   <option key={org.id} value={org.id}>
-                    {org.name} ({org._count.machines} machines)
+                    {org.name} ({org._count.machines}m)
                   </option>
                 ))}
               </select>
-              {/* Dropdown arrow */}
               <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                   style={{ color: 'var(--text-secondary)' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
             </div>
@@ -232,61 +265,95 @@ export default function DataOverviewClient({ initialOrgId, isSuperAdmin: initial
         </div>
       </div>
 
-      {/* Selected org info badge */}
-      {data?.isSuperAdmin && selectedOrgId !== 'all' && (
-        <div className="mb-4 flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
+      {/* ── Selected org badge ── */}
+      {data?.isSuperAdmin && selectedOrgId !== 'all' && selectedOrg && (
+        <div className="mb-4 flex items-center gap-3 px-3 py-2 rounded-lg text-xs flex-wrap"
           style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-          </svg>
-          Viewing:&nbsp;
-          <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {data.organizations.find(o => o.id === selectedOrgId)?.name || selectedOrgId}
-          </span>
-          <span className="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold uppercase"
-            style={{ background: 'rgba(99,91,255,0.12)', color: '#635bff' }}>
-            {data.organizations.find(o => o.id === selectedOrgId)?.plan || 'PLAN'}
+          <span>🏢</span>
+          <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{selectedOrg.name}</span>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase"
+            style={{ background: 'rgba(99,91,255,0.12)', color: '#635bff' }}>{selectedOrg.plan}</span>
+          <span style={{ marginLeft: 'auto' }}>
+            {selectedOrg._count.machines} machines · {selectedOrg._count.users} users · {selectedOrg._count.workOrders} WOs · {selectedOrg._count.alerts} alerts
           </span>
         </div>
       )}
 
-      {/* Stats grid */}
+      {/* ── Stat cards ── */}
       {loading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[0,1,2,3].map(i => (
-            <div key={i} className="rounded-lg p-4 animate-pulse"
-              style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', height: 90 }}/>
+            <div key={i} className="rounded-xl animate-pulse"
+              style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', height: 130 }} />
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {stats.map(stat => (
-            <div key={stat.label} className="rounded-xl p-4 flex flex-col gap-2 transition-all hover:scale-[1.02]"
-              style={{ background: stat.bg, border: `1px solid ${stat.border}` }}>
+          {statCards.map(card => (
+            <div key={card.label} className="rounded-xl p-4 flex flex-col gap-3 transition-all hover:scale-[1.02]"
+              style={{ background: card.bg, border: `1px solid ${card.border}` }}>
+              {/* Header */}
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
-                  {stat.label}
+                  {card.label}
                 </p>
-                <div style={{ color: stat.color }}>{stat.icon}</div>
+                <span className="text-base">{card.icon}</span>
               </div>
-              <p className="text-3xl font-bold leading-none" style={{ color: stat.color }}>
-                <AnimatedNumber value={stat.value}/>
+              {/* Main number */}
+              <p className="text-3xl font-bold leading-none" style={{ color: card.color }}>
+                <AnimatedNumber value={card.main} />
               </p>
-              {/* Subtle trend bar */}
-              <div className="h-1 rounded-full mt-1" style={{ background: 'var(--bg-surface-2)' }}>
-                <div className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${Math.min(100, (stat.value / Math.max(1, stat.value)) * 100)}%`, background: stat.color, opacity: 0.6 }}/>
+              {/* Breakdown rows */}
+              <div className="space-y-1.5">
+                {card.breakdown.map(b => (
+                  <div key={b.label}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{b.label}</span>
+                      <span className="text-[10px] font-bold" style={{ color: b.color }}>{b.value}</span>
+                    </div>
+                    <MiniBar value={b.value} max={card.main} color={b.color} />
+                  </div>
+                ))}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Footer note */}
-      <p className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>
-        Auto-refreshes every 30 seconds · Click Refresh for immediate sync
-      </p>
+      {/* ── Sync log ── */}
+      {showSyncLog && syncLog.length > 0 && (
+        <div className="mt-4 rounded-xl p-4" style={{ background: 'rgba(99,91,255,0.06)', border: '1px solid rgba(99,91,255,0.2)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#635bff' }}>
+              ⚡ Force Sync Results
+            </span>
+            <button onClick={() => setShowSyncLog(false)}
+              className="text-xs" style={{ color: 'var(--text-muted)' }}>✕ close</button>
+          </div>
+          <ul className="space-y-1">
+            {syncLog.map((action, i) => (
+              <li key={i} className="text-xs flex items-start gap-2" style={{ color: 'var(--text-secondary)' }}>
+                <span style={{ color: action.startsWith('✅') ? '#22c55e' : action.startsWith('Error') ? '#ef4444' : '#635bff', flexShrink: 0 }}>
+                  {action.startsWith('✅') ? '✅' : action.startsWith('Error') ? '❌' : '→'}
+                </span>
+                <span>{action.replace(/^✅\s*/, '')}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* ── Footer ── */}
+      <div className="flex items-center justify-between mt-4 flex-wrap gap-2">
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          Auto-refreshes every 30s · Force Sync recalculates derived data from live DB
+        </p>
+        {data?.syncedAt && (
+          <p className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+            DB snapshot: {new Date(data.syncedAt).toLocaleTimeString()}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
