@@ -227,6 +227,99 @@ export default function SettingsClient({ organizationId, canCleanup, hasData }: 
         </div>
       )}
 
+      {/* ── Integrations ────────────────────────────────────────────── */}
+      <div className="rounded-xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Integrations</h2>
+        <p className="text-sm mb-5" style={{ color: 'var(--text-secondary)' }}>
+          Connect Sentinel with your existing tools and workflows.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Slack */}
+            <div className="rounded-xl border p-5 flex flex-col gap-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg" style={{ background: 'var(--bg-secondary)', color: '#4A154B' }}>S</div>
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Slack</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Team notifications</p>
+                </div>
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>Inactive</span>
+              </div>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Send alerts and work order updates directly to Slack channels.</p>
+              <a href="/settings/integrations" className="text-xs font-medium text-blue-500 hover:underline mt-auto">Configure →</a>
+            </div>
+            {/* SMS / Twilio */}
+            <div className="rounded-xl border p-5 flex flex-col gap-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg" style={{ background: 'var(--bg-secondary)', color: '#F22F46' }}>T</div>
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>SMS / Twilio</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Text message alerts</p>
+                </div>
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>Inactive</span>
+              </div>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Receive critical machine alerts via SMS using Twilio.</p>
+              <a href="/settings/integrations" className="text-xs font-medium text-blue-500 hover:underline mt-auto">Configure →</a>
+            </div>
+            {/* Zapier */}
+            <div className="rounded-xl border p-5 flex flex-col gap-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg" style={{ background: 'var(--bg-secondary)', color: '#FF4A00' }}>Z</div>
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Zapier</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Workflow automation</p>
+                </div>
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>Inactive</span>
+              </div>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Automate workflows by connecting Sentinel to 5,000+ apps.</p>
+              <a href="/settings/integrations" className="text-xs font-medium text-blue-500 hover:underline mt-auto">Configure →</a>
+            </div>
+            {/* QuickBooks */}
+            <div className="rounded-xl border p-5 flex flex-col gap-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg" style={{ background: 'var(--bg-secondary)', color: '#2CA01C' }}>Q</div>
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>QuickBooks</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Accounting sync</p>
+                </div>
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>Inactive</span>
+              </div>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Sync maintenance costs and work orders with QuickBooks.</p>
+              <a href="/settings/integrations" className="text-xs font-medium text-blue-500 hover:underline mt-auto">Configure →</a>
+            </div>
+            {/* Google Sheets */}
+            <div className="rounded-xl border p-5 flex flex-col gap-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg" style={{ background: 'var(--bg-secondary)', color: '#0F9D58' }}>G</div>
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Google Sheets</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Data export</p>
+                </div>
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>Inactive</span>
+              </div>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Export machine data and reports to Google Sheets automatically.</p>
+              <a href="/settings/integrations" className="text-xs font-medium text-blue-500 hover:underline mt-auto">Configure →</a>
+            </div>
+            {/* Webhooks */}
+            <div className="rounded-xl border p-5 flex flex-col gap-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg" style={{ background: 'var(--bg-secondary)', color: '#6366f1' }}>W</div>
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Webhooks</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Custom HTTP events</p>
+                </div>
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>Inactive</span>
+              </div>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Send real-time event data to any endpoint via HTTP webhooks.</p>
+              <a href="/settings/integrations" className="text-xs font-medium text-blue-500 hover:underline mt-auto">Configure →</a>
+            </div>
+          </div>
+          <div className="pt-2">
+            <a href="/settings/integrations" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white" style={{ background: 'var(--accent-blue)' }}>
+              Manage All Integrations →
+            </a>
+          </div>
+        </div>
+
       {/* ── Data Management ────────────────────────────────────────── */}
       <div className="rounded-xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
         <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Data Management</h2>

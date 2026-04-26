@@ -5,6 +5,93 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ThemeProvider, useTheme } from '../../components/ThemeProvider';
 
+// ── Category labels + smart inference ───────────────────────────────────────
+const CATEGORY_LABELS: Record<string, string> = {
+  CNC_MILL: 'CNC Mill', CNC_LATHE: 'CNC Lathe', PRESS: 'Press',
+  HYDRAULIC: 'Hydraulic Press', COMPRESSOR: 'Compressor', CONVEYOR: 'Conveyor',
+  WELDER: 'Welder', INJECTION_MOLD: 'Injection Mold', ASSEMBLY: 'Assembly', OTHER: 'Machine',
+};
+
+function getCategoryLabel(category: string, machineName: string): string {
+  if (category !== 'OTHER') return CATEGORY_LABELS[category] || category.replace(/_/g, ' ');
+  const name = machineName.toLowerCase();
+  if (name.includes('lathe'))   return 'CNC Lathe';
+  if (name.includes('mill') || name.includes('milling')) return 'CNC Mill';
+  if (name.includes('press brake')) return 'Press Brake';
+  if (name.includes('press'))   return 'Hydraulic Press';
+  if (name.includes('hydraulic')) return 'Hydraulic Unit';
+  if (name.includes('compressor')) return 'Compressor';
+  if (name.includes('conveyor')) return 'Conveyor';
+  if (name.includes('weld'))    return 'Welder';
+  if (name.includes('inject') || name.includes('mold')) return 'Injection Mold';
+  if (name.includes('robot'))   return 'Robot';
+  if (name.includes('laser'))   return 'Laser Cutter';
+  if (name.includes('drill'))   return 'Drill Press';
+  return 'Industrial Machine';
+}
+
+function getMachineImageUrl(category: string, machineName: string): string {
+  const name = machineName.toLowerCase();
+  if (name.includes('press brake') || name.includes('pressbrake'))
+    return 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=80';
+  if (name.includes('laser'))
+    return 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80';
+  if (name.includes('robot'))
+    return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&q=80';
+  switch (category) {
+    case 'CNC_MILL': case 'CNC_LATHE':
+      return name.includes('lathe')
+        ? 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80'
+        : 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
+    case 'PRESS': case 'HYDRAULIC':
+      return 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=80';
+    case 'COMPRESSOR':
+      return 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80';
+    case 'CONVEYOR':
+      return 'https://images.unsplash.com/photo-1563906267088-b029e7101114?w=400&q=80';
+    case 'WELDER':
+      return 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
+    case 'INJECTION_MOLD':
+      return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
+    case 'ASSEMBLY':
+      return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&q=80';
+    default:
+      if (name.includes('lathe'))   return 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
+      if (name.includes('mill'))    return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
+      if (name.includes('press'))   return 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=80';
+      if (name.includes('weld'))    return 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
+      if (name.includes('inject') || name.includes('mold'))
+        return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
+      return 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
+  }
+}
+
+function MachineImage({ category, machineName, status, className = '' }: {
+  category: string; machineName: string; status: string; className?: string;
+}) {
+  const imgUrl = getMachineImageUrl(category, machineName);
+  const isBreakdown = status === 'BREAKDOWN';
+  const isMaintenance = status === 'MAINTENANCE';
+  return (
+    <div className={`relative overflow-hidden rounded-lg ${className}`} style={{ background: '#111' }}>
+      <img src={imgUrl} alt={machineName} className="w-full h-full object-cover"
+        style={{
+          filter: isBreakdown ? 'grayscale(0.4) brightness(0.7) sepia(0.3) saturate(2) hue-rotate(-10deg)'
+            : isMaintenance ? 'grayscale(0.2) brightness(0.85) sepia(0.2)'
+            : 'brightness(0.9) saturate(1.1)',
+        }}
+        onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80'; }}
+      />
+      {isBreakdown && (
+        <div className="absolute inset-0 flex items-center justify-center bg-red-900/40">
+          <span className="text-red-300 text-[10px] font-bold bg-red-900/80 px-2 py-1 rounded animate-pulse">FAULT</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 interface MachineOrg { id: string; name: string; }
 interface Alert { id: string; title: string; severity: string; type: string; }
 interface Machine {
@@ -232,7 +319,7 @@ function MachineCard({ machine, onClick }: { machine: Machine; onClick: () => vo
         <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center gap-1.5 min-w-0">
             <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot} ${isB ? 'animate-ping' : isM ? 'animate-pulse' : ''}`}/>
-            <span className="text-[9px] uppercase tracking-wide truncate" style={{ color: 'var(--text-muted)' }}>{machine.category.replace(/_/g,' ')}</span>
+            <span className="text-[9px] uppercase tracking-wide truncate" style={{ color: 'var(--text-muted)' }}>{getCategoryLabel(machine.category, machine.name)}</span>
           </div>
           {machine._count.alerts > 0 && (
             <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">
@@ -243,7 +330,7 @@ function MachineCard({ machine, onClick }: { machine: Machine; onClick: () => vo
 
         {/* Machine SVG */}
         <div className="w-full h-16 mb-1.5">
-          <MachineVisual category={machine.category} status={machine.status} size="sm"/>
+          <MachineImage category={machine.category} machineName={machine.name} status={machine.status} className="w-full h-full" />
         </div>
 
         {/* Name */}
@@ -404,7 +491,7 @@ function MachinePanel({
                 <h2 className="font-bold" style={{ color: 'var(--text-primary)' }}>{machine.name}</h2>
                 <OrgBadge name={orgName} size="sm" />
               </div>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{machine.category.replace(/_/g,' ')} · {machine.location || '—'} · {machine.totalHours.toLocaleString()}h</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{getCategoryLabel(machine.category, machine.name)} · {machine.location || '—'} · {machine.totalHours.toLocaleString()}h</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -417,7 +504,7 @@ function MachinePanel({
           {/* Visual column */}
           <div className={`rounded-xl border ${currentCfg.border} ${currentCfg.bg} p-4 flex flex-col items-center gap-3`}>
             <div className="w-full h-32">
-              <MachineVisual category={machine.category} status={currentStatus} size="lg"/>
+              <MachineImage category={machine.category} machineName={machine.name} status={currentStatus} className="w-full h-full" />
             </div>
             {currentStatus === 'BREAKDOWN' && (
               <div className="w-full bg-red-500/10 border border-red-500/30 rounded-lg p-2 text-center">

@@ -31,6 +31,136 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string;
   RETIRED:      { color: 'text-gray-500',    bg: 'bg-gray-500/5',     border: 'border-gray-500/20',    dot: 'bg-gray-500',    label: 'RETIRED',      glow: '',                     textColor: '#6b7280' },
 };
 
+// ── Category display labels ─────────────────────────────────────────────────
+const CATEGORY_LABELS: Record<string, string> = {
+  CNC_MILL:       'CNC Mill',
+  CNC_LATHE:      'CNC Lathe',
+  PRESS:          'Press',
+  HYDRAULIC:      'Hydraulic Press',
+  COMPRESSOR:     'Compressor',
+  CONVEYOR:       'Conveyor',
+  WELDER:         'Welder',
+  INJECTION_MOLD: 'Injection Mold',
+  ASSEMBLY:       'Assembly',
+  OTHER:          'Machine',
+};
+
+// Infer a smart display label for OTHER category machines from their name
+function getCategoryLabel(category: string, machineName: string): string {
+  if (category !== 'OTHER') return CATEGORY_LABELS[category] || category.replace(/_/g, ' ');
+  const name = machineName.toLowerCase();
+  if (name.includes('lathe'))              return 'CNC Lathe';
+  if (name.includes('mill') || name.includes('milling')) return 'CNC Mill';
+  if (name.includes('press brake') || name.includes('pressbrake')) return 'Press Brake';
+  if (name.includes('press'))             return 'Hydraulic Press';
+  if (name.includes('hydraulic'))         return 'Hydraulic Unit';
+  if (name.includes('compressor'))        return 'Compressor';
+  if (name.includes('conveyor'))          return 'Conveyor';
+  if (name.includes('weld'))              return 'Welder';
+  if (name.includes('injection') || name.includes('molding') || name.includes('mold')) return 'Injection Mold';
+  if (name.includes('robot'))             return 'Robot';
+  if (name.includes('grind'))             return 'Grinder';
+  if (name.includes('drill'))             return 'Drill Press';
+  if (name.includes('saw') || name.includes('cut')) return 'Cutting Machine';
+  if (name.includes('punch'))             return 'Punch Press';
+  if (name.includes('laser'))             return 'Laser Cutter';
+  if (name.includes('plasma'))            return 'Plasma Cutter';
+  if (name.includes('pump'))              return 'Pump';
+  if (name.includes('fan') || name.includes('ventil')) return 'Ventilation';
+  if (name.includes('generat'))           return 'Generator';
+  if (name.includes('boiler'))            return 'Boiler';
+  if (name.includes('furnace') || name.includes('oven')) return 'Furnace';
+  if (name.includes('assem'))             return 'Assembly Station';
+  return 'Industrial Machine';
+}
+
+// ── Real machine photo URLs per category/name ────────────────────────────────
+function getMachineImageUrl(category: string, machineName: string): string {
+  const name = machineName.toLowerCase();
+  // Specific name matches first
+  if (name.includes('press brake') || name.includes('pressbrake'))
+    return 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=80';
+  if (name.includes('hydraulic press') || (name.includes('press') && name.includes('hydraulic')))
+    return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
+  if (name.includes('injection mold') || name.includes('injection molding'))
+    return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
+  if (name.includes('laser'))
+    return 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80';
+  if (name.includes('robot'))
+    return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&q=80';
+
+  // Category fallbacks
+  switch (category) {
+    case 'CNC_MILL':
+    case 'CNC_LATHE':
+      if (name.includes('lathe'))
+        return 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
+      return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
+    case 'PRESS':
+    case 'HYDRAULIC':
+      return 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=80';
+    case 'COMPRESSOR':
+      return 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80';
+    case 'CONVEYOR':
+      return 'https://images.unsplash.com/photo-1563906267088-b029e7101114?w=400&q=80';
+    case 'WELDER':
+      return 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
+    case 'INJECTION_MOLD':
+      return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
+    case 'ASSEMBLY':
+      return 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&q=80';
+    default:
+      // For OTHER, infer from name
+      if (name.includes('lathe'))   return 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
+      if (name.includes('mill'))    return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
+      if (name.includes('press'))   return 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=80';
+      if (name.includes('weld'))    return 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
+      if (name.includes('compressor')) return 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80';
+      if (name.includes('inject') || name.includes('mold')) return 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&q=80';
+      return 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
+  }
+}
+
+// ── Machine Image Component (real photo with status overlay) ─────────────────
+function MachineImage({ category, machineName, status, className = '' }: {
+  category: string; machineName: string; status: string; className?: string;
+}) {
+  const imgUrl = getMachineImageUrl(category, machineName);
+  const isBreakdown = status === 'BREAKDOWN';
+  const isMaintenance = status === 'MAINTENANCE';
+  return (
+    <div className={`relative overflow-hidden rounded-lg ${className}`} style={{ background: '#111' }}>
+      <img
+        src={imgUrl}
+        alt={machineName}
+        className="w-full h-full object-cover"
+        style={{
+          filter: isBreakdown
+            ? 'grayscale(0.4) brightness(0.7) sepia(0.3) saturate(2) hue-rotate(-10deg)'
+            : isMaintenance
+            ? 'grayscale(0.2) brightness(0.85) sepia(0.2) saturate(1.5) hue-rotate(10deg)'
+            : 'brightness(0.9) saturate(1.1)',
+          transition: 'filter 0.5s ease',
+        }}
+        onError={(e) => {
+          // Fallback to a generic industrial image
+          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80';
+        }}
+      />
+      {isBreakdown && (
+        <div className="absolute inset-0 flex items-center justify-center bg-red-900/40">
+          <span className="text-red-300 text-[10px] font-bold bg-red-900/80 px-2 py-1 rounded animate-pulse">FAULT</span>
+        </div>
+      )}
+      {isMaintenance && (
+        <div className="absolute inset-0 flex items-center justify-center bg-yellow-900/30">
+          <span className="text-yellow-300 text-[10px] font-bold bg-yellow-900/70 px-2 py-1 rounded">MAINT</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Org badge colour palette — cycles through distinct colours per org name
 const ORG_COLOURS = [
   { text: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-violet-500/30' },
@@ -356,7 +486,7 @@ function MachineDetailPanel({ machine, onClose, onSim, onStatusChange }: {
                 <OrgBadge name={orgName} size="sm" />
               </div>
               <p className="text-[var(--text-secondary)] text-xs mt-0.5">
-                {machine.category.replace(/_/g,' ')} &middot; {machine.location || 'No location'} &middot; {machine.totalHours.toLocaleString()}h runtime
+                {getCategoryLabel(machine.category, machine.name)} &middot; {machine.location || 'No location'} &middot; {machine.totalHours.toLocaleString()}h runtime
               </p>
             </div>
           </div>
@@ -369,9 +499,7 @@ function MachineDetailPanel({ machine, onClose, onSim, onStatusChange }: {
         <div className="p-5 grid md:grid-cols-3 gap-5">
           {/* Machine Visual */}
           <div className={`rounded-xl border ${currentCfg.border} ${currentCfg.bg} p-4 flex flex-col items-center gap-3`}>
-            <div className="w-40 h-32">
-              <MachineSVG category={machine.category} status={currentStatus} svgBase={svgBase} svgSurface={svgSurface} svgPanel={svgPanel} svgStroke={svgStroke} />
-            </div>
+            <MachineImage category={machine.category} machineName={machine.name} status={currentStatus} className="w-40 h-32 rounded-xl" />
             {isBreakdown && (
               <div className="w-full bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
                 <p className="text-red-400 text-xs font-bold animate-pulse">BREAKDOWN DETECTED</p>
@@ -577,7 +705,7 @@ function MachineCard({ machine, onSelect }: { machine: HMIMachine; onSelect: () 
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-1.5 min-w-0">
             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot} ${isBreakdown ? 'animate-ping' : isMaintenance ? 'animate-pulse' : ''}`}/>
-            <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wide truncate">{machine.category.replace(/_/g,' ')}</span>
+            <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wide truncate">{getCategoryLabel(machine.category, machine.name)}</span>
           </div>
           {machine._count.alerts > 0 && (
             <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">
@@ -586,9 +714,7 @@ function MachineCard({ machine, onSelect }: { machine: HMIMachine; onSelect: () 
           )}
         </div>
 
-        <div className="w-full h-20 mb-2">
-          <MachineSVG category={machine.category} status={machine.status} svgBase={svgBase} svgSurface={svgSurface} svgPanel={svgPanel} svgStroke={svgStroke} />
-        </div>
+        <MachineImage category={machine.category} machineName={machine.name} status={machine.status} className="w-full h-20 mb-2" />
 
         <h3 style={{ color: 'var(--text-primary)' }} className="font-semibold text-xs mb-0.5 truncate">{machine.name}</h3>
         <p className="text-[var(--text-muted)] text-[10px] mb-1.5 truncate">{machine.location || '—'}</p>
