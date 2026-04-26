@@ -342,7 +342,7 @@ export default function AdminMachinesClient({ machines: initial }: { machines: M
         {/* Scrollable container with max height */}
         <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
           <table className="w-full min-w-[800px]">
-            <thead className="sticky top-0 z-10 bg-[#0a1120] border-b border-[#1e2d4a]">
+            <thead className="sticky top-0 z-10 bg-[#0d1831] border-b border-[#1e2d4a]">
               <tr>
                 <th className={thCls} onClick={() => handleSort('name')}>
                   Machine <SortIcon col="name"/>
@@ -432,15 +432,15 @@ export default function AdminMachinesClient({ machines: initial }: { machines: M
 
         {/* ── Pagination ─────────────────────────────────────── */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-[#1e2d4a] bg-[#0a1120]">
-            <p className="text-xs text-[#8892a4]">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-[#1e2d4a] bg-[#0d1831]">
+            <p className="text-xs text-[#c8d3e8]">
               Showing {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, processed.length)} of {processed.length} machines
             </p>
             <div className="flex items-center gap-1">
               <button onClick={() => setPage(1)} disabled={safePage === 1}
-                className="px-2 py-1 rounded text-xs text-[#8892a4] hover:text-white hover:bg-[#1e2d4a] disabled:opacity-30 transition-colors">«</button>
+                className="px-2 py-1 rounded text-xs text-[#c8d3e8] hover:text-white hover:bg-[#1e2d4a] disabled:opacity-30 transition-colors">«</button>
               <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
-                className="px-2 py-1 rounded text-xs text-[#8892a4] hover:text-white hover:bg-[#1e2d4a] disabled:opacity-30 transition-colors">‹ Prev</button>
+                className="px-2 py-1 rounded text-xs text-[#c8d3e8] hover:text-white hover:bg-[#1e2d4a] disabled:opacity-30 transition-colors">‹ Prev</button>
 
               {/* Page number buttons — show up to 7 pages */}
               {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -450,25 +450,25 @@ export default function AdminMachinesClient({ machines: initial }: { machines: M
                   acc.push(p); return acc;
                 }, [])
                 .map((p, i) => p === '...'
-                  ? <span key={`ellipsis-${i}`} className="px-2 py-1 text-xs text-[#4a5a7a]">…</span>
+                  ? <span key={`ellipsis-${i}`} className="px-2 py-1 text-xs text-[#c8d3e8]">…</span>
                   : <button key={p} onClick={() => setPage(p as number)}
-                      className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${safePage === p ? 'bg-[#635bff] text-white' : 'text-[#8892a4] hover:text-white hover:bg-[#1e2d4a]'}`}>
+                      className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${safePage === p ? 'bg-[#635bff] text-white' : 'text-[#c8d3e8] hover:text-white hover:bg-[#1e2d4a]'}`}>
                       {p}
                     </button>
                 )}
 
               <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
-                className="px-2 py-1 rounded text-xs text-[#8892a4] hover:text-white hover:bg-[#1e2d4a] disabled:opacity-30 transition-colors">Next ›</button>
+                className="px-2 py-1 rounded text-xs text-[#c8d3e8] hover:text-white hover:bg-[#1e2d4a] disabled:opacity-30 transition-colors">Next ›</button>
               <button onClick={() => setPage(totalPages)} disabled={safePage === totalPages}
-                className="px-2 py-1 rounded text-xs text-[#8892a4] hover:text-white hover:bg-[#1e2d4a] disabled:opacity-30 transition-colors">»</button>
+                className="px-2 py-1 rounded text-xs text-[#c8d3e8] hover:text-white hover:bg-[#1e2d4a] disabled:opacity-30 transition-colors">»</button>
             </div>
           </div>
         )}
 
         {/* Row count when only 1 page */}
         {totalPages === 1 && processed.length > 0 && (
-          <div className="px-4 py-2.5 border-t border-[#1e2d4a] bg-[#0a1120]">
-            <p className="text-xs text-[#8892a4]">{processed.length} machine{processed.length !== 1 ? 's' : ''} shown</p>
+          <div className="px-4 py-2.5 border-t border-[#1e2d4a] bg-[#0d1831]">
+            <p className="text-xs text-[#c8d3e8]">{processed.length} machine{processed.length !== 1 ? 's' : ''} shown</p>
           </div>
         )}
       </div>
@@ -492,21 +492,21 @@ export default function AdminMachinesClient({ machines: initial }: { machines: M
                     <button onClick={() => setConfirmDelete(selected)} className="text-xs text-red-400 border border-red-500/40 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors">🗑️ Delete</button>
                   </div>
                 )}
-                <button onClick={closeDetail} className="text-[#8892a4] hover:text-white">
+                <button onClick={closeDetail} className="text-[#c8d3e8] hover:text-white">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>
             </div>
 
             <div className="p-5 space-y-5">
-              {loadingDetail && <p className="text-sm text-[#8892a4] animate-pulse">Loading full details…</p>}
+              {loadingDetail && <p className="text-sm text-[#c8d3e8] animate-pulse">Loading full details…</p>}
 
               {editMode ? (
                 <div className="space-y-4">
                   <h4 className="text-sm font-semibold text-white">Edit Machine Details</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-[#8892a4] uppercase tracking-wide mb-1">Status</label>
+                      <label className="block text-xs font-semibold text-[#c8d3e8] uppercase tracking-wide mb-1">Status</label>
                       <select value={editForm.status} onChange={e => setEditForm({...editForm, status: e.target.value})}
                         className="w-full bg-[#1e2d4a] border border-[#2d3f5e] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#635bff]">
                         <option value="OPERATIONAL">✅ OPERATIONAL</option>
@@ -516,7 +516,7 @@ export default function AdminMachinesClient({ machines: initial }: { machines: M
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#8892a4] uppercase tracking-wide mb-1">Criticality</label>
+                      <label className="block text-xs font-semibold text-[#c8d3e8] uppercase tracking-wide mb-1">Criticality</label>
                       <select value={editForm.criticality} onChange={e => setEditForm({...editForm, criticality: e.target.value})}
                         className="w-full bg-[#1e2d4a] border border-[#2d3f5e] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#635bff]">
                         <option value="HIGH">🔴 HIGH</option>
@@ -525,29 +525,29 @@ export default function AdminMachinesClient({ machines: initial }: { machines: M
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#8892a4] uppercase tracking-wide mb-1">Manufacturer</label>
+                      <label className="block text-xs font-semibold text-[#c8d3e8] uppercase tracking-wide mb-1">Manufacturer</label>
                       <input value={editForm.manufacturer} onChange={e => setEditForm({...editForm, manufacturer: e.target.value})}
                         placeholder="e.g. Haas" className="w-full bg-[#1e2d4a] border border-[#2d3f5e] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#635bff]"/>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#8892a4] uppercase tracking-wide mb-1">Model</label>
+                      <label className="block text-xs font-semibold text-[#c8d3e8] uppercase tracking-wide mb-1">Model</label>
                       <input value={editForm.model} onChange={e => setEditForm({...editForm, model: e.target.value})}
                         placeholder="e.g. VF-2SS" className="w-full bg-[#1e2d4a] border border-[#2d3f5e] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#635bff]"/>
                     </div>
                     <div className="col-span-2">
-                      <label className="block text-xs font-semibold text-[#8892a4] uppercase tracking-wide mb-1">Location / Zone</label>
+                      <label className="block text-xs font-semibold text-[#c8d3e8] uppercase tracking-wide mb-1">Location / Zone</label>
                       <input value={editForm.location} onChange={e => setEditForm({...editForm, location: e.target.value})}
                         placeholder="e.g. Plant 1 — Bay A" className="w-full bg-[#1e2d4a] border border-[#2d3f5e] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#635bff]"/>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-[#8892a4] uppercase tracking-wide mb-1">Notes</label>
+                    <label className="block text-xs font-semibold text-[#c8d3e8] uppercase tracking-wide mb-1">Notes</label>
                     <textarea value={editForm.notes} onChange={e => setEditForm({...editForm, notes: e.target.value})} rows={3}
                       className="w-full bg-[#1e2d4a] border border-[#2d3f5e] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#635bff]"/>
                   </div>
                   {saveMsg && <p className="text-sm">{saveMsg}</p>}
                   <div className="flex gap-3">
-                    <button onClick={() => setEditMode(false)} className="flex-1 px-4 py-2 border border-[#2d3f5e] rounded-lg text-sm text-[#8892a4] hover:bg-[#1e2d4a]">Cancel</button>
+                    <button onClick={() => setEditMode(false)} className="flex-1 px-4 py-2 border border-[#2d3f5e] rounded-lg text-sm text-[#c8d3e8] hover:bg-[#1e2d4a]">Cancel</button>
                     <button onClick={saveEdit} disabled={saving} className="flex-1 px-4 py-2 bg-[#635bff] text-white rounded-lg text-sm font-semibold hover:bg-[#4f46e5] disabled:opacity-50">
                       {saving ? 'Saving…' : '💾 Save Changes'}
                     </button>
@@ -571,20 +571,20 @@ export default function AdminMachinesClient({ machines: initial }: { machines: M
                       { label: 'Active Alerts', value: selected._count?.alerts },
                     ] as {label:string;value:any}[]).map(({ label, value }) => (
                       <div key={label}>
-                        <p className="text-xs font-semibold text-[#8892a4] uppercase tracking-wide">{label}</p>
+                        <p className="text-xs font-semibold text-[#c8d3e8] uppercase tracking-wide">{label}</p>
                         <p className="text-sm text-white mt-0.5">{value ?? '—'}</p>
                       </div>
                     ))}
                   </div>
                   {m?.notes && (
                     <div>
-                      <p className="text-xs font-semibold text-[#8892a4] uppercase tracking-wide mb-1">Notes</p>
-                      <p className="text-sm text-[#8892a4] bg-[#1e2d4a] rounded-lg p-3">{m.notes}</p>
+                      <p className="text-xs font-semibold text-[#c8d3e8] uppercase tracking-wide mb-1">Notes</p>
+                      <p className="text-sm text-[#c8d3e8] bg-[#1e2d4a] rounded-lg p-3">{m.notes}</p>
                     </div>
                   )}
                   {detail?.workOrders?.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold text-[#8892a4] uppercase tracking-wide mb-2">Recent Work Orders</p>
+                      <p className="text-xs font-semibold text-[#c8d3e8] uppercase tracking-wide mb-2">Recent Work Orders</p>
                       <div className="space-y-2">
                         {detail.workOrders.map((wo: any) => (
                           <div key={wo.id} className="flex items-center justify-between bg-[#1e2d4a] rounded-lg px-3 py-2">
@@ -600,15 +600,15 @@ export default function AdminMachinesClient({ machines: initial }: { machines: M
                   )}
                   {detail?.maintenanceTasks?.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold text-[#8892a4] uppercase tracking-wide mb-2">Maintenance Schedule</p>
+                      <p className="text-xs font-semibold text-[#c8d3e8] uppercase tracking-wide mb-2">Maintenance Schedule</p>
                       <div className="space-y-2">
                         {detail.maintenanceTasks.map((t: any) => (
                           <div key={t.id} className="flex items-center justify-between bg-[#1e2d4a] rounded-lg px-3 py-2">
                             <div>
                               <p className="text-sm font-medium text-white">{t.title}</p>
-                              <p className="text-xs text-[#8892a4]">{t.frequency} · Next: {t.nextDueAt ? new Date(t.nextDueAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—'}</p>
+                              <p className="text-xs text-[#c8d3e8]">{t.frequency} · Next: {t.nextDueAt ? new Date(t.nextDueAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—'}</p>
                             </div>
-                            <span className="text-xs text-[#8892a4]">{t.priority}</span>
+                            <span className="text-xs text-[#c8d3e8]">{t.priority}</span>
                           </div>
                         ))}
                       </div>
@@ -616,7 +616,7 @@ export default function AdminMachinesClient({ machines: initial }: { machines: M
                   )}
                   {detail?.alerts?.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold text-[#8892a4] uppercase tracking-wide mb-2">Active Alerts</p>
+                      <p className="text-xs font-semibold text-[#c8d3e8] uppercase tracking-wide mb-2">Active Alerts</p>
                       <div className="space-y-2">
                         {detail.alerts.map((a: any) => (
                           <div key={a.id} className="flex items-center justify-between bg-[#1e2d4a] rounded-lg px-3 py-2 border-l-4 border-red-500/60">
@@ -630,7 +630,7 @@ export default function AdminMachinesClient({ machines: initial }: { machines: M
                 </>
               )}
               <div className="flex justify-end pt-2">
-                <button onClick={closeDetail} className="px-4 py-2 text-sm text-[#8892a4] border border-[#1e2d4a] rounded-lg hover:bg-[#1e2d4a]">Close</button>
+                <button onClick={closeDetail} className="px-4 py-2 text-sm text-[#c8d3e8] border border-[#1e2d4a] rounded-lg hover:bg-[#1e2d4a]">Close</button>
               </div>
             </div>
           </div>
@@ -647,9 +647,9 @@ export default function AdminMachinesClient({ machines: initial }: { machines: M
                 <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
               </div>
               <h3 className="text-lg font-bold text-white mb-2">Delete Machine?</h3>
-              <p className="text-sm text-[#8892a4] mb-6">Delete <strong className="text-white">{confirmDelete?.name}</strong>? This removes all work orders and maintenance tasks for this machine.</p>
+              <p className="text-sm text-[#c8d3e8] mb-6">Delete <strong className="text-white">{confirmDelete?.name}</strong>? This removes all work orders and maintenance tasks for this machine.</p>
               <div className="flex gap-3">
-                <button onClick={() => setConfirmDelete(null)} className="flex-1 px-4 py-2 border border-[#2d3f5e] rounded-lg text-sm text-[#8892a4] hover:bg-[#1e2d4a]">Cancel</button>
+                <button onClick={() => setConfirmDelete(null)} className="flex-1 px-4 py-2 border border-[#2d3f5e] rounded-lg text-sm text-[#c8d3e8] hover:bg-[#1e2d4a]">Cancel</button>
                 <button onClick={() => deleteMachine(confirmDelete.id)} disabled={!!deletingId} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50">
                   {deletingId ? 'Deleting...' : 'Delete'}
                 </button>
