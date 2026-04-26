@@ -76,62 +76,147 @@ function getMachineImageUrl(category: string, machineName: string): string {
   }
 }
 
-function MachineImage({ category, machineName, status, className = '', liveData }: {
+// ── Category-specific live readout labels ────────────────────────────────────
+function getCategoryReadouts(category: string, machineName: string, rpm: number, load: number, pressure: number) {
+  const name = machineName.toLowerCase();
+  if (category === 'CNC_MILL' || category === 'CNC_LATHE' || name.includes('lathe') || name.includes('mill')) {
+    return [
+      { label: 'SPINDLE', value: `${rpm.toFixed(0)}`,               unit: 'RPM'    },
+      { label: 'FEED',    value: `${(rpm * 0.14).toFixed(0)}`,      unit: 'mm/min' },
+      { label: 'Z POS',   value: `${-(rpm * 0.065 + load * 0.3).toFixed(1)}`, unit: 'mm' },
+      { label: 'PART Ø',  value: `${(50 + load * 0.35).toFixed(1)}`, unit: 'mm'   },
+    ];
+  }
+  if (category === 'PRESS' || category === 'HYDRAULIC' || name.includes('press') || name.includes('hydraulic')) {
+    return [
+      { label: 'FORCE',  value: `${(pressure * 9.2).toFixed(0)}`,  unit: 'kN'   },
+      { label: 'STROKE', value: `${(load * 2.5).toFixed(0)}`,      unit: 'mm'   },
+      { label: 'PRESS',  value: `${pressure.toFixed(1)}`,          unit: 'bar'  },
+      { label: 'CYCLES', value: `${(rpm * 0.1).toFixed(0)}`,       unit: '/min' },
+    ];
+  }
+  if (category === 'COMPRESSOR' || name.includes('compressor')) {
+    return [
+      { label: 'TANK',  value: `${(pressure * 1.15).toFixed(1)}`, unit: 'PSI' },
+      { label: 'FLOW',  value: `${(load * 0.85).toFixed(1)}`,     unit: 'cfm' },
+      { label: 'RPM',   value: `${rpm.toFixed(0)}`,               unit: 'RPM' },
+      { label: 'LOAD',  value: `${load.toFixed(0)}`,              unit: '%'   },
+    ];
+  }
+  if (category === 'CONVEYOR' || name.includes('conveyor')) {
+    return [
+      { label: 'SPEED', value: `${(rpm * 0.00028).toFixed(3)}`,   unit: 'm/s'  },
+      { label: 'PARTS', value: `${(load * 0.5).toFixed(0)}`,      unit: '/min' },
+      { label: 'LOAD',  value: `${load.toFixed(0)}`,              unit: '%'    },
+      { label: 'TEMP',  value: `${(40 + load * 0.2).toFixed(0)}`, unit: '°C'  },
+    ];
+  }
+  if (category === 'WELDER' || name.includes('weld')) {
+    return [
+      { label: 'VOLTAGE', value: `${(20 + load * 0.08).toFixed(1)}`, unit: 'V'     },
+      { label: 'WIRE',    value: `${(rpm * 0.004).toFixed(1)}`,       unit: 'm/min' },
+      { label: 'CURRENT', value: `${(load * 2.2).toFixed(0)}`,        unit: 'A'    },
+      { label: 'DUTY',    value: `${load.toFixed(0)}`,                unit: '%'    },
+    ];
+  }
+  if (category === 'INJECTION_MOLD' || name.includes('inject') || name.includes('mold')) {
+    return [
+      { label: 'CLAMP',  value: `${(pressure * 4.8).toFixed(0)}`,        unit: 'T'  },
+      { label: 'BARREL', value: `${(180 + load * 0.7).toFixed(0)}`,      unit: '°C' },
+      { label: 'INJECT', value: `${(rpm * 0.06).toFixed(0)}`,            unit: 'mm/s' },
+      { label: 'CYCLE',  value: `${(20 - load * 0.08).toFixed(1)}`,      unit: 's'  },
+    ];
+  }
+  if (category === 'ASSEMBLY' || name.includes('robot') || name.includes('assembly')) {
+    return [
+      { label: 'AXIS J1', value: `${(load * 1.8).toFixed(1)}`,    unit: '°'    },
+      { label: 'AXIS J2', value: `${(pressure * 0.9).toFixed(1)}`, unit: '°'  },
+      { label: 'REACH',   value: `${(load * 0.8).toFixed(0)}`,    unit: 'mm'   },
+      { label: 'SPEED',   value: `${(rpm * 0.05).toFixed(0)}`,    unit: 'mm/s' },
+    ];
+  }
+  return [
+    { label: 'RPM',      value: `${rpm.toFixed(0)}`,      unit: 'RPM' },
+    { label: 'LOAD',     value: `${load.toFixed(0)}`,     unit: '%'   },
+    { label: 'PRESSURE', value: `${pressure.toFixed(0)}`, unit: 'PSI' },
+    { label: 'OUTPUT',   value: `${(load * 0.95).toFixed(0)}`, unit: '%' },
+  ];
+}
+
+// ── Machine Image Component ───────────────────────────────────────────────────
+function MachineImage({ category, machineName, status, className = '', liveData, compact = false }: {
   category: string; machineName: string; status: string; className?: string;
   liveData?: { temp: number; load: number; rpm: number; pressure: number };
+  compact?: boolean;
 }) {
   const imgUrl = getMachineImageUrl(category, machineName);
   const isBreakdown = status === 'BREAKDOWN';
   const isMaintenance = status === 'MAINTENANCE';
   const isOp = status === 'OPERATIONAL';
+  const readouts = liveData && isOp
+    ? getCategoryReadouts(category, machineName, liveData.rpm, liveData.load, liveData.pressure)
+    : [];
+
   return (
     <div className={`relative overflow-hidden rounded-lg ${className}`} style={{ background: '#0a1628' }}>
-      <img src={imgUrl} alt={machineName} className="w-full h-full object-cover"
+      <img src={imgUrl} alt={machineName} className="w-full h-full"
         style={{
-          filter: isBreakdown ? 'grayscale(0.4) brightness(0.7) sepia(0.3) saturate(2) hue-rotate(-10deg)'
-            : isMaintenance ? 'grayscale(0.2) brightness(0.85) sepia(0.2)'
-            : 'brightness(1.0) saturate(1.15)',
+          objectFit: 'contain',
+          filter: isBreakdown ? 'grayscale(0.4) brightness(0.65) sepia(0.3) saturate(2) hue-rotate(-10deg)'
+            : isMaintenance ? 'grayscale(0.2) brightness(0.8) sepia(0.2) saturate(1.3)'
+            : 'brightness(1.05) saturate(1.2)',
           transition: 'filter 0.5s ease',
         }}
         onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80'; }}
       />
 
-      {/* Live sensor HUD overlay */}
       {liveData && isOp && (
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1.5 left-1.5 bg-black/70 border border-cyan-500/40 rounded px-1.5 py-0.5 flex items-center gap-1">
-            <span style={{ color: liveData.temp > 90 ? '#f87171' : liveData.temp > 78 ? '#fbbf24' : '#34d399', fontSize: 9, fontFamily: 'monospace', fontWeight: 700 }}>
-              {liveData.temp.toFixed(0)}°C
-            </span>
-            <span style={{ color: '#67e8f9', fontSize: 8, opacity: 0.7 }}>TEMP</span>
-          </div>
-          <div className="absolute top-1.5 right-1.5 bg-black/70 border border-cyan-500/40 rounded px-1.5 py-0.5 flex items-center gap-1">
-            <span style={{ color: '#93c5fd', fontSize: 9, fontFamily: 'monospace', fontWeight: 700 }}>
-              {liveData.rpm.toFixed(0)}
-            </span>
-            <span style={{ color: '#67e8f9', fontSize: 8, opacity: 0.7 }}>RPM</span>
-          </div>
-          <div className="absolute bottom-1.5 left-1.5 right-1.5 bg-black/70 border border-cyan-500/30 rounded px-1.5 py-1">
-            <div className="flex justify-between items-center mb-0.5">
-              <span style={{ color: '#67e8f9', fontSize: 8, opacity: 0.8 }}>LOAD</span>
-              <span style={{ color: liveData.load > 90 ? '#f87171' : '#a78bfa', fontSize: 9, fontFamily: 'monospace', fontWeight: 700 }}>{liveData.load.toFixed(0)}%</span>
-              <span style={{ color: '#67e8f9', fontSize: 8, opacity: 0.8 }}>PSI {liveData.pressure.toFixed(0)}</span>
+        <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-2"
+          style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 35%, transparent 60%, rgba(0,0,0,0.55) 100%)' }}>
+          <div className="flex justify-between items-start">
+            <div style={{ background: 'rgba(0,16,36,0.82)', border: '1px solid rgba(0,200,255,0.35)', borderRadius: 4, padding: '2px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: liveData.temp > 90 ? '#ef4444' : liveData.temp > 78 ? '#fbbf24' : '#34d399', boxShadow: `0 0 5px ${liveData.temp > 90 ? '#ef4444' : '#34d399'}`, display: 'inline-block' }} />
+              <span style={{ color: '#67e8f9', fontSize: compact ? 8 : 9, fontFamily: 'monospace' }}>TEMP</span>
+              <span style={{ color: liveData.temp > 90 ? '#f87171' : liveData.temp > 78 ? '#fbbf24' : '#34d399', fontSize: compact ? 9 : 11, fontFamily: 'monospace', fontWeight: 700 }}>{liveData.temp.toFixed(0)}°C</span>
             </div>
-            <div style={{ width: '100%', height: 3, backgroundColor: 'rgba(100,116,139,0.4)', borderRadius: 2 }}>
-              <div style={{ width: `${liveData.load}%`, height: 3, borderRadius: 2, backgroundColor: liveData.load > 90 ? '#ef4444' : liveData.load > 70 ? '#fbbf24' : '#635bff', boxShadow: `0 0 4px ${liveData.load > 90 ? '#ef4444' : '#635bff'}`, transition: 'width 0.7s ease' }} />
+            <div style={{ background: 'rgba(0,16,36,0.82)', border: '1px solid rgba(0,200,255,0.35)', borderRadius: 4, padding: '2px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ color: '#67e8f9', fontSize: compact ? 8 : 9, fontFamily: 'monospace' }}>RPM</span>
+              <span style={{ color: '#93c5fd', fontSize: compact ? 9 : 11, fontFamily: 'monospace', fontWeight: 700 }}>{liveData.rpm.toFixed(0)}</span>
+            </div>
+          </div>
+          <div>
+            {!compact && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 6px', marginBottom: 5 }}>
+                {readouts.map((r, i) => (
+                  <div key={i} style={{ background: 'rgba(0,16,36,0.82)', border: '1px solid rgba(0,200,255,0.25)', borderRadius: 4, padding: '2px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#67e8f9', fontSize: 8, fontFamily: 'monospace', opacity: 0.8 }}>{r.label}</span>
+                    <span style={{ color: '#e2f0ff', fontSize: 10, fontFamily: 'monospace', fontWeight: 700 }}>{r.value}<span style={{ color: '#67e8f9', fontSize: 8, marginLeft: 2, opacity: 0.7 }}>{r.unit}</span></span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ background: 'rgba(0,16,36,0.85)', border: '1px solid rgba(0,200,255,0.3)', borderRadius: 4, padding: '3px 7px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                <span style={{ color: '#67e8f9', fontSize: compact ? 7 : 8, fontFamily: 'monospace' }}>LOAD</span>
+                <span style={{ color: liveData.load > 90 ? '#f87171' : liveData.load > 70 ? '#fbbf24' : '#a78bfa', fontSize: compact ? 9 : 10, fontFamily: 'monospace', fontWeight: 700 }}>{liveData.load.toFixed(0)}%</span>
+                <span style={{ color: '#67e8f9', fontSize: compact ? 7 : 8, fontFamily: 'monospace', opacity: 0.8 }}>PSI {liveData.pressure.toFixed(0)}</span>
+              </div>
+              <div style={{ width: '100%', height: compact ? 2 : 3, background: 'rgba(100,116,139,0.35)', borderRadius: 2 }}>
+                <div style={{ width: `${liveData.load}%`, height: compact ? 2 : 3, borderRadius: 2, background: liveData.load > 90 ? '#ef4444' : liveData.load > 70 ? '#fbbf24' : '#635bff', boxShadow: `0 0 5px ${liveData.load > 90 ? '#ef4444' : '#635bff'}`, transition: 'width 0.8s ease' }} />
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {isBreakdown && (
-        <div className="absolute inset-0 flex items-center justify-center bg-red-900/40">
-          <span className="text-red-300 text-[10px] font-bold bg-red-900/80 px-2 py-1 rounded animate-pulse">⚠ FAULT</span>
+        <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(127,0,0,0.35)' }}>
+          <span style={{ color: '#fca5a5', fontSize: 11, fontWeight: 800, fontFamily: 'monospace', background: 'rgba(127,0,0,0.8)', padding: '3px 10px', borderRadius: 4, border: '1px solid rgba(239,68,68,0.6)' }} className="animate-pulse">⚠ FAULT DETECTED</span>
         </div>
       )}
       {isMaintenance && (
-        <div className="absolute inset-0 flex items-center justify-center bg-yellow-900/30">
-          <span className="text-yellow-300 text-[10px] font-bold bg-yellow-900/70 px-2 py-1 rounded">🔧 MAINT</span>
+        <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(80,60,0,0.3)' }}>
+          <span style={{ color: '#fde68a', fontSize: 11, fontWeight: 700, fontFamily: 'monospace', background: 'rgba(80,60,0,0.8)', padding: '3px 10px', borderRadius: 4, border: '1px solid rgba(251,191,36,0.5)' }}>🔧 IN MAINTENANCE</span>
         </div>
       )}
     </div>
@@ -381,7 +466,7 @@ function MachineCard({ machine, onClick }: { machine: Machine; onClick: () => vo
 
         {/* Machine SCADA Image */}
         <div className="w-full h-40 mb-1.5 rounded-lg overflow-hidden">
-          <MachineImage category={machine.category} machineName={machine.name} status={machine.status} className="w-full h-full" liveData={isOp ? { temp, load, rpm: rpmCard, pressure: pressCard } : undefined} />
+          <MachineImage category={machine.category} machineName={machine.name} status={machine.status} className="w-full h-full" liveData={isOp ? { temp, load, rpm: rpmCard, pressure: pressCard } : undefined} compact={true} />
         </div>
 
         {/* Name */}

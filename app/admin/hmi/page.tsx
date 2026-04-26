@@ -121,27 +121,125 @@ function getMachineImageUrl(category: string, machineName: string): string {
   }
 }
 
-// ── Machine Image Component (SCADA image with optional live sensor HUD overlay) ─────────────────
-function MachineImage({ category, machineName, status, className = '', liveData }: {
+// ── Get category-specific live readout labels ────────────────────────────────
+function getCategoryReadouts(category: string, machineName: string, rpm: number, load: number, pressure: number) {
+  const name = machineName.toLowerCase();
+  // CNC Mill / Lathe
+  if (category === 'CNC_MILL' || category === 'CNC_LATHE' || name.includes('lathe') || name.includes('mill')) {
+    const zPos = -(rpm * 0.065 + load * 0.3).toFixed(1);
+    const dia  = (50 + load * 0.35).toFixed(1);
+    const feed = (rpm * 0.14).toFixed(0);
+    return [
+      { label: 'SPINDLE', value: `${rpm.toFixed(0)}`, unit: 'RPM' },
+      { label: 'FEED',    value: `${feed}`,            unit: 'mm/min' },
+      { label: 'Z POS',   value: `${zPos}`,            unit: 'mm' },
+      { label: 'PART Ø',  value: `${dia}`,             unit: 'mm' },
+    ];
+  }
+  // Press / Hydraulic
+  if (category === 'PRESS' || category === 'HYDRAULIC' || name.includes('press') || name.includes('hydraulic')) {
+    const force  = (pressure * 9.2).toFixed(0);
+    const stroke = (load * 2.5).toFixed(0);
+    return [
+      { label: 'FORCE',  value: `${force}`,  unit: 'kN' },
+      { label: 'STROKE', value: `${stroke}`, unit: 'mm' },
+      { label: 'PRESS',  value: `${pressure.toFixed(1)}`, unit: 'bar' },
+      { label: 'CYCLES', value: `${(rpm * 0.1).toFixed(0)}`, unit: '/min' },
+    ];
+  }
+  // Compressor
+  if (category === 'COMPRESSOR' || name.includes('compressor')) {
+    const tankPsi = (pressure * 1.15).toFixed(1);
+    const flow    = (load * 0.85).toFixed(1);
+    return [
+      { label: 'TANK',   value: `${tankPsi}`,           unit: 'PSI' },
+      { label: 'FLOW',   value: `${flow}`,              unit: 'cfm' },
+      { label: 'RPM',    value: `${rpm.toFixed(0)}`,    unit: 'RPM' },
+      { label: 'LOAD',   value: `${load.toFixed(0)}`,   unit: '%' },
+    ];
+  }
+  // Conveyor
+  if (category === 'CONVEYOR' || name.includes('conveyor')) {
+    const speed = (rpm * 0.00028).toFixed(3);
+    const parts = (load * 0.5).toFixed(0);
+    return [
+      { label: 'SPEED',  value: `${speed}`,           unit: 'm/s' },
+      { label: 'PARTS',  value: `${parts}`,            unit: '/min' },
+      { label: 'LOAD',   value: `${load.toFixed(0)}`, unit: '%' },
+      { label: 'TEMP',   value: `${(40 + load * 0.2).toFixed(0)}`, unit: '°C' },
+    ];
+  }
+  // Welder
+  if (category === 'WELDER' || name.includes('weld')) {
+    const voltage = (20 + load * 0.08).toFixed(1);
+    const wire    = (rpm * 0.004).toFixed(1);
+    return [
+      { label: 'VOLTAGE', value: `${voltage}`, unit: 'V' },
+      { label: 'WIRE',    value: `${wire}`,    unit: 'm/min' },
+      { label: 'CURRENT', value: `${(load * 2.2).toFixed(0)}`, unit: 'A' },
+      { label: 'DUTY',    value: `${load.toFixed(0)}`, unit: '%' },
+    ];
+  }
+  // Injection Mold
+  if (category === 'INJECTION_MOLD' || name.includes('inject') || name.includes('mold')) {
+    const clamp = (pressure * 4.8).toFixed(0);
+    const temp2 = (180 + load * 0.7).toFixed(0);
+    return [
+      { label: 'CLAMP',  value: `${clamp}`,  unit: 'T' },
+      { label: 'BARREL', value: `${temp2}`,  unit: '°C' },
+      { label: 'INJECT', value: `${(rpm * 0.06).toFixed(0)}`, unit: 'mm/s' },
+      { label: 'CYCLE',  value: `${(20 - load * 0.08).toFixed(1)}`, unit: 's' },
+    ];
+  }
+  // Assembly / Robot
+  if (category === 'ASSEMBLY' || name.includes('robot') || name.includes('assembly')) {
+    const reach = (load * 0.8).toFixed(0);
+    const speed2 = (rpm * 0.05).toFixed(0);
+    return [
+      { label: 'AXIS J1', value: `${(load * 1.8).toFixed(1)}`, unit: '°' },
+      { label: 'AXIS J2', value: `${(pressure * 0.9).toFixed(1)}`, unit: '°' },
+      { label: 'REACH',   value: `${reach}`, unit: 'mm' },
+      { label: 'SPEED',   value: `${speed2}`, unit: 'mm/s' },
+    ];
+  }
+  // Generic fallback
+  return [
+    { label: 'RPM',      value: `${rpm.toFixed(0)}`,      unit: 'RPM' },
+    { label: 'LOAD',     value: `${load.toFixed(0)}`,     unit: '%' },
+    { label: 'PRESSURE', value: `${pressure.toFixed(0)}`, unit: 'PSI' },
+    { label: 'OUTPUT',   value: `${(load * 0.95).toFixed(0)}`, unit: '%' },
+  ];
+}
+
+// ── Machine Image Component (SCADA image + live data overlay) ─────────────────
+function MachineImage({ category, machineName, status, className = '', liveData, compact = false }: {
   category: string; machineName: string; status: string; className?: string;
   liveData?: { temp: number; load: number; rpm: number; pressure: number };
+  compact?: boolean;
 }) {
   const imgUrl = getMachineImageUrl(category, machineName);
   const isBreakdown = status === 'BREAKDOWN';
   const isMaintenance = status === 'MAINTENANCE';
   const isOp = status === 'OPERATIONAL';
+
+  const readouts = liveData && isOp
+    ? getCategoryReadouts(category, machineName, liveData.rpm, liveData.load, liveData.pressure)
+    : [];
+
   return (
     <div className={`relative overflow-hidden rounded-lg ${className}`} style={{ background: '#0a1628' }}>
+      {/* SCADA image — object-contain so full image is always visible */}
       <img
         src={imgUrl}
         alt={machineName}
-        className="w-full h-full object-cover"
+        className="w-full h-full"
         style={{
+          objectFit: 'contain',
           filter: isBreakdown
-            ? 'grayscale(0.4) brightness(0.7) sepia(0.3) saturate(2) hue-rotate(-10deg)'
+            ? 'grayscale(0.4) brightness(0.65) sepia(0.3) saturate(2) hue-rotate(-10deg)'
             : isMaintenance
-            ? 'grayscale(0.2) brightness(0.85) sepia(0.2) saturate(1.5) hue-rotate(10deg)'
-            : 'brightness(1.0) saturate(1.15)',
+            ? 'grayscale(0.2) brightness(0.8) sepia(0.2) saturate(1.3) hue-rotate(10deg)'
+            : 'brightness(1.05) saturate(1.2)',
           transition: 'filter 0.5s ease',
         }}
         onError={(e) => {
@@ -149,46 +247,60 @@ function MachineImage({ category, machineName, status, className = '', liveData 
         }}
       />
 
-      {/* Live sensor HUD overlay — shown when liveData is provided */}
+      {/* Live data overlay — only when OPERATIONAL and liveData provided */}
       {liveData && isOp && (
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Top-left: TEMP */}
-          <div className="absolute top-1.5 left-1.5 bg-black/70 border border-cyan-500/40 rounded px-1.5 py-0.5 flex items-center gap-1">
-            <span style={{ color: liveData.temp > 90 ? '#f87171' : liveData.temp > 78 ? '#fbbf24' : '#34d399', fontSize: 9, fontFamily: 'monospace', fontWeight: 700 }}>
-              {liveData.temp.toFixed(0)}°C
-            </span>
-            <span style={{ color: '#67e8f9', fontSize: 8, opacity: 0.7 }}>TEMP</span>
-          </div>
-          {/* Top-right: RPM */}
-          <div className="absolute top-1.5 right-1.5 bg-black/70 border border-cyan-500/40 rounded px-1.5 py-0.5 flex items-center gap-1">
-            <span style={{ color: '#93c5fd', fontSize: 9, fontFamily: 'monospace', fontWeight: 700 }}>
-              {liveData.rpm.toFixed(0)}
-            </span>
-            <span style={{ color: '#67e8f9', fontSize: 8, opacity: 0.7 }}>RPM</span>
-          </div>
-          {/* Bottom-left: LOAD bar */}
-          <div className="absolute bottom-1.5 left-1.5 right-1.5 bg-black/70 border border-cyan-500/30 rounded px-1.5 py-1">
-            <div className="flex justify-between items-center mb-0.5">
-              <span style={{ color: '#67e8f9', fontSize: 8, opacity: 0.8 }}>LOAD</span>
-              <span style={{ color: liveData.load > 90 ? '#f87171' : '#a78bfa', fontSize: 9, fontFamily: 'monospace', fontWeight: 700 }}>{liveData.load.toFixed(0)}%</span>
-              <span style={{ color: '#67e8f9', fontSize: 8, opacity: 0.8 }}>PSI {liveData.pressure.toFixed(0)}</span>
+        <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-2" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 35%, transparent 60%, rgba(0,0,0,0.55) 100%)' }}>
+          {/* TOP ROW — TEMP + STATUS indicator */}
+          <div className="flex justify-between items-start">
+            <div style={{ background: 'rgba(0,16,36,0.82)', border: '1px solid rgba(0,200,255,0.35)', borderRadius: 4, padding: '2px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: liveData.temp > 90 ? '#ef4444' : liveData.temp > 78 ? '#fbbf24' : '#34d399', boxShadow: `0 0 5px ${liveData.temp > 90 ? '#ef4444' : '#34d399'}`, display: 'inline-block' }} />
+              <span style={{ color: '#67e8f9', fontSize: compact ? 8 : 9, fontFamily: 'monospace' }}>TEMP</span>
+              <span style={{ color: liveData.temp > 90 ? '#f87171' : liveData.temp > 78 ? '#fbbf24' : '#34d399', fontSize: compact ? 9 : 11, fontFamily: 'monospace', fontWeight: 700 }}>{liveData.temp.toFixed(0)}°C</span>
             </div>
-            <div style={{ width: '100%', height: 3, backgroundColor: 'rgba(100,116,139,0.4)', borderRadius: 2 }}>
-              <div style={{ width: `${liveData.load}%`, height: 3, borderRadius: 2, backgroundColor: liveData.load > 90 ? '#ef4444' : liveData.load > 70 ? '#fbbf24' : '#635bff', boxShadow: `0 0 4px ${liveData.load > 90 ? '#ef4444' : '#635bff'}`, transition: 'width 0.7s ease' }} />
+            <div style={{ background: 'rgba(0,16,36,0.82)', border: '1px solid rgba(0,200,255,0.35)', borderRadius: 4, padding: '2px 7px', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ color: '#67e8f9', fontSize: compact ? 8 : 9, fontFamily: 'monospace' }}>RPM</span>
+              <span style={{ color: '#93c5fd', fontSize: compact ? 9 : 11, fontFamily: 'monospace', fontWeight: 700 }}>{liveData.rpm.toFixed(0)}</span>
+            </div>
+          </div>
+
+          {/* BOTTOM — category-specific readouts grid + LOAD bar */}
+          <div>
+            {/* Readouts grid */}
+            {!compact && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 6px', marginBottom: 5 }}>
+                {readouts.map((r, i) => (
+                  <div key={i} style={{ background: 'rgba(0,16,36,0.82)', border: '1px solid rgba(0,200,255,0.25)', borderRadius: 4, padding: '2px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#67e8f9', fontSize: 8, fontFamily: 'monospace', opacity: 0.8 }}>{r.label}</span>
+                    <span style={{ color: '#e2f0ff', fontSize: 10, fontFamily: 'monospace', fontWeight: 700 }}>{r.value}<span style={{ color: '#67e8f9', fontSize: 8, marginLeft: 2, opacity: 0.7 }}>{r.unit}</span></span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* LOAD progress bar */}
+            <div style={{ background: 'rgba(0,16,36,0.85)', border: '1px solid rgba(0,200,255,0.3)', borderRadius: 4, padding: '3px 7px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                <span style={{ color: '#67e8f9', fontSize: compact ? 7 : 8, fontFamily: 'monospace' }}>LOAD</span>
+                <span style={{ color: liveData.load > 90 ? '#f87171' : liveData.load > 70 ? '#fbbf24' : '#a78bfa', fontSize: compact ? 9 : 10, fontFamily: 'monospace', fontWeight: 700 }}>{liveData.load.toFixed(0)}%</span>
+                <span style={{ color: '#67e8f9', fontSize: compact ? 7 : 8, fontFamily: 'monospace', opacity: 0.8 }}>PSI {liveData.pressure.toFixed(0)}</span>
+              </div>
+              <div style={{ width: '100%', height: compact ? 2 : 3, background: 'rgba(100,116,139,0.35)', borderRadius: 2 }}>
+                <div style={{ width: `${liveData.load}%`, height: compact ? 2 : 3, borderRadius: 2, background: liveData.load > 90 ? '#ef4444' : liveData.load > 70 ? '#fbbf24' : '#635bff', boxShadow: `0 0 5px ${liveData.load > 90 ? '#ef4444' : '#635bff'}`, transition: 'width 0.8s ease' }} />
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Status overlays */}
+      {/* BREAKDOWN overlay */}
       {isBreakdown && (
-        <div className="absolute inset-0 flex items-center justify-center bg-red-900/40">
-          <span className="text-red-300 text-[10px] font-bold bg-red-900/80 px-2 py-1 rounded animate-pulse">⚠ FAULT</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1" style={{ background: 'rgba(127,0,0,0.35)' }}>
+          <span style={{ color: '#fca5a5', fontSize: 11, fontWeight: 800, fontFamily: 'monospace', background: 'rgba(127,0,0,0.8)', padding: '3px 10px', borderRadius: 4, border: '1px solid rgba(239,68,68,0.6)' }} className="animate-pulse">⚠ FAULT DETECTED</span>
         </div>
       )}
+      {/* MAINTENANCE overlay */}
       {isMaintenance && (
-        <div className="absolute inset-0 flex items-center justify-center bg-yellow-900/30">
-          <span className="text-yellow-300 text-[10px] font-bold bg-yellow-900/70 px-2 py-1 rounded">🔧 MAINT</span>
+        <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(80,60,0,0.3)' }}>
+          <span style={{ color: '#fde68a', fontSize: 11, fontWeight: 700, fontFamily: 'monospace', background: 'rgba(80,60,0,0.8)', padding: '3px 10px', borderRadius: 4, border: '1px solid rgba(251,191,36,0.5)' }}>🔧 IN MAINTENANCE</span>
         </div>
       )}
     </div>
@@ -760,7 +872,7 @@ function MachineCard({ machine, onSelect }: { machine: HMIMachine; onSelect: () 
           )}
         </div>
 
-        <MachineImage category={machine.category} machineName={machine.name} status={machine.status} className="w-full h-40 mb-2 rounded-lg" liveData={isOp ? { temp, load, rpm: rpmCard, pressure: pressureCard } : undefined} />
+        <MachineImage category={machine.category} machineName={machine.name} status={machine.status} className="w-full h-40 mb-2 rounded-lg" liveData={isOp ? { temp, load, rpm: rpmCard, pressure: pressureCard } : undefined} compact={true} />
 
         <h3 style={{ color: 'var(--text-primary)' }} className="font-semibold text-xs mb-0.5 truncate">{machine.name}</h3>
         <p className="text-[var(--text-muted)] text-[10px] mb-1.5 truncate">{machine.location || '—'}</p>
