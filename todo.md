@@ -18,7 +18,7 @@
 - [x] Create `lib/notifications/slack.ts` — send Slack messages
 - [x] Create `lib/notifications/sms.ts` — Twilio SMS dispatch
 - [x] Create `lib/notifications/dispatch.ts` — unified dispatcher
-- [ ] Hook dispatch into work order API — call dispatchNotifications on create/complete
+- [x] Hook dispatch into work order API — fires on create/complete
 
 ## Phase 5 — Webhooks Management Page
 - [x] Create `/app/settings/webhooks/page.tsx` — full CRUD UI
@@ -26,7 +26,7 @@
 ## Phase 6 — Advanced Features
 - [x] Floor plan upload — `/app/equipment/floor-plan/page.tsx` + API
 - [x] Barcode scanning — `/app/equipment/scan/page.tsx`
-- [x] IoT sensor data ingestion API — `/api/iot/route.ts` (NEEDS BUILD FIX)
+- [x] IoT sensor data ingestion API — `/api/iot/route.ts`
 - [x] OEE tracking — `/app/analytics/oee/page.tsx`
 - [x] Purchase Orders — `/app/purchase-orders/` full CRUD
 
@@ -38,7 +38,10 @@
 - [x] Re-add IoT sensor section to equipment-lifespan guide
 
 ## Phase 9 — Fix & Ship
-- [ ] Fix IoT route build error (meterReading → totalHours, use SensorReading DB model)
-- [ ] Hook dispatchNotifications into work order create/complete API
-- [ ] Run npm run build — verify clean
-- [ ] git commit and push all changes
+- [x] Fix IoT route build error (meterReading → totalHours, use SensorReading DB model)
+- [x] Fix Alert creation (type/isRead/isResolved not status)
+- [x] Fix dispatch.ts webhook filter (in-memory, not Prisma has)
+- [x] Fix offline/page.tsx missing 'use client'
+- [x] Hook dispatchNotifications into work order create/complete API
+- [x] Run npm run build — ✓ Compiled successfully
+- [x] git commit and push all changes
