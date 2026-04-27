@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ThemeProvider, useTheme } from '../components/ThemeProvider';
 
-interface NavItem { href: string; label: string; icon: string; exact?: boolean; }
+interface NavItem { href: string; label: string; icon: string; exact?: boolean; external?: boolean; }
 interface NavSection { label: string; items: NavItem[]; }
 interface ExternalLink { href: string; label: string; icon: string; }
 
@@ -168,6 +168,8 @@ function AdminShell({ children, navSections, externalLinks, userName }: Props) {
                     <Link
                       key={item.href}
                       href={item.href}
+                      target={item.external ? '_blank' : undefined}
+                      rel={item.external ? 'noopener noreferrer' : undefined}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group"
                       style={{
                         backgroundColor: active ? 'var(--bg-hover)' : '',

@@ -34,13 +34,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     {
       label: 'IoT & Integration',
       items: [
-        { href: '/dashboard/iot-simulator', label: 'IoT Simulator',  icon: '🔬' },
-        { href: '/equipment/qr-labels',     label: 'QR Labels',      icon: '📱' },
-        { href: '/docs/api',                label: 'API Docs',        icon: '📖' },
-        { href: '/settings/api-keys',       label: 'API Keys',        icon: '🔑' },
-        { href: '/setup',                   label: 'Setup Wizard',    icon: '⚡' },
-        { href: '/docs/iot-guides',         label: 'Wiring Guides',   icon: '🔧' },
-        { href: '/docs/protocols',          label: 'Protocols',       icon: '📡' },
+        { href: '/dashboard/iot-simulator', label: 'IoT Simulator',  icon: '🔬' , external: true },
+        { href: '/equipment/qr-labels',     label: 'QR Labels',      icon: '📱' , external: true },
+        { href: '/docs/api',                label: 'API Docs',        icon: '📖' , external: true },
+        { href: '/settings/api-keys',       label: 'API Keys',        icon: '🔑' , external: true },
+        { href: '/setup',                   label: 'Setup Wizard',    icon: '⚡' , external: true },
+        { href: '/docs/iot-guides',         label: 'Wiring Guides',   icon: '🔧' , external: true },
+        { href: '/docs/protocols',          label: 'Protocols',       icon: '📡' , external: true },
       ],
     },
     {
