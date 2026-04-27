@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { stripe } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,20 +21,26 @@ export async function GET() {
   // Test Stripe connection
   let stripeStatus = 'not configured';
   let stripeError = '';
+  let stripeProducts: any[] = [];
+  let stripePrices: any[] = [];
+
   if (stripeKey && stripeKey !== 'sk_test_placeholder') {
     try {
-      const res = await fetch('https://api.stripe.com/v1/products?limit=1', {
-        headers: { Authorization: `Bearer ${stripeKey}` },
-      });
-      const data = await res.json();
-      if (res.ok) {
-        stripeStatus = `✅ connected (${stripeKey.startsWith('sk_live') ? 'LIVE' : 'TEST'})`;
-      } else {
-        stripeStatus = '❌ error';
-        stripeError = data.error?.message || 'Unknown error';
-      }
+      const [productsRes, pricesRes] = await Promise.all([
+        stripe.products.list({ limit: 10 }),
+        stripe.prices.list({ active: true, limit: 100 }),
+      ]);
+      stripeStatus = `✅ connected (${stripeKey.startsWith('sk_live') ? 'LIVE' : 'TEST'})`;
+      stripeProducts = productsRes.data.map(p => ({ id: p.id, name: p.name }));
+      stripePrices = pricesRes.data.map(p => ({
+        id: p.id,
+        nickname: p.nickname,
+        amount: p.unit_amount ? `$${(p.unit_amount / 100).toFixed(2)}` : 'N/A',
+        interval: (p.recurring as any)?.interval || 'one-time',
+        metadata: p.metadata,
+      }));
     } catch (e: any) {
-      stripeStatus = '❌ connection failed';
+      stripeStatus = '❌ error';
       stripeError = e.message;
     }
   }
@@ -72,6 +79,8 @@ export async function GET() {
       status: stripeStatus,
       error: stripeError,
       keyPrefix: stripeKey ? stripeKey.substring(0, 12) + '...' : 'not set',
+      products: stripeProducts,
+      prices: stripePrices,
     },
     paypal: {
       status: paypalStatus,
@@ -85,12 +94,12 @@ export async function GET() {
       effectiveAppUrl: nextAuthUrl || (vercelUrl ? `https://${vercelUrl}` : 'http://localhost:3000'),
     },
     stripePriceIds: {
-      STARTER_MONTHLY:      process.env.STRIPE_STARTER_MONTHLY_PRICE_ID || 'not set (will auto-create)',
-      STARTER_YEARLY:       process.env.STRIPE_STARTER_YEARLY_PRICE_ID  || 'not set (will auto-create)',
-      GROWTH_MONTHLY:       process.env.STRIPE_GROWTH_MONTHLY_PRICE_ID  || 'not set (will auto-create)',
-      GROWTH_YEARLY:        process.env.STRIPE_GROWTH_YEARLY_PRICE_ID   || 'not set (will auto-create)',
-      PROFESSIONAL_MONTHLY: process.env.STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID || 'not set (will auto-create)',
-      PROFESSIONAL_YEARLY:  process.env.STRIPE_PROFESSIONAL_YEARLY_PRICE_ID  || 'not set (will auto-create)',
+      STARTER_MONTHLY:      process.env.STRIPE_STARTER_MONTHLY_PRICE_ID      || 'not set (will auto-create on first checkout)',
+      STARTER_YEARLY:       process.env.STRIPE_STARTER_YEARLY_PRICE_ID       || 'not set (will auto-create on first checkout)',
+      GROWTH_MONTHLY:       process.env.STRIPE_GROWTH_MONTHLY_PRICE_ID       || 'not set (will auto-create on first checkout)',
+      GROWTH_YEARLY:        process.env.STRIPE_GROWTH_YEARLY_PRICE_ID        || 'not set (will auto-create on first checkout)',
+      PROFESSIONAL_MONTHLY: process.env.STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID || 'not set (will auto-create on first checkout)',
+      PROFESSIONAL_YEARLY:  process.env.STRIPE_PROFESSIONAL_YEARLY_PRICE_ID  || 'not set (will auto-create on first checkout)',
     },
     paypalPlanIds: {
       STARTER_MONTHLY:      process.env.PAYPAL_PLAN_STARTER_MONTHLY      || 'P-3T080796KC459101ENHX253Q (hardcoded)',
