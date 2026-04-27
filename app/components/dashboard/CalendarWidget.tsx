@@ -71,7 +71,7 @@ export default function CalendarWidget() {
   };
 
   const getEventTypeColor = (type: string) => {
-    return type === 'work_order' ? 'bg-blue-500' : 'bg-green-500';
+    return type === 'work_order' ? 'bg-blue-500' : 'bg-emerald-500';
   };
 
   const renderCalendarDays = () => {
@@ -94,9 +94,9 @@ export default function CalendarWidget() {
           key={day}
           onClick={() => handleDateClick(day)}
           className={`h-10 w-full rounded-lg flex flex-col items-center justify-center relative transition-all
-            ${isToday(day) ? 'bg-[#00d4aa] text-[#0a1120] font-bold' : ''}
-            ${selected && !isToday(day) ? 'bg-[#253146] ring-2 ring-[#00d4aa]' : ''}
-            ${!isToday(day) && !selected ? 'hover:bg-[#1e293b] text-gray-300' : ''}
+            ${isToday(day) ? 'bg-[#635bff] text-white font-bold' : ''}
+            ${selected && !isToday(day) ? 'bg-[var(--bg-surface-2)] ring-2 ring-[#635bff]' : ''}
+            ${!isToday(day) && !selected ? 'hover:bg-[var(--bg-surface-2)] text-[var(--text-primary)]' : ''}
           `}
         >
           <span className="text-sm">{day}</span>
@@ -118,11 +118,11 @@ export default function CalendarWidget() {
   };
 
   return (
-    <div className="bg-[#151f32] rounded-xl border border-[#253146] p-5">
+    <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <svg className="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <h3 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <svg className="w-5 h-5 text-[#635bff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
           Maintenance Calendar
@@ -130,18 +130,18 @@ export default function CalendarWidget() {
         <div className="flex items-center gap-2">
           <button
             onClick={prevMonth}
-            className="p-1.5 rounded-lg hover:bg-[#1e293b] text-gray-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="text-sm text-gray-300 min-w-[120px] text-center">
+          <span className="text-sm text-[var(--text-primary)] min-w-[120px] text-center">
             {monthNames[month]} {year}
           </span>
           <button
             onClick={nextMonth}
-            className="p-1.5 rounded-lg hover:bg-[#1e293b] text-gray-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -154,12 +154,12 @@ export default function CalendarWidget() {
         <div className="animate-pulse">
           <div className="grid grid-cols-7 gap-1 mb-2">
             {dayNames.map((day) => (
-              <div key={day} className="h-6 bg-[#1e293b] rounded"></div>
+              <div key={day} className="h-6 bg-[var(--bg-surface-2)] rounded"></div>
             ))}
           </div>
           <div className="grid grid-cols-7 gap-1">
             {[...Array(35)].map((_, i) => (
-              <div key={i} className="h-10 bg-[#1e293b] rounded-lg"></div>
+              <div key={i} className="h-10 bg-[var(--bg-surface-2)] rounded-lg"></div>
             ))}
           </div>
         </div>
@@ -168,7 +168,7 @@ export default function CalendarWidget() {
           {/* Day names */}
           <div className="grid grid-cols-7 gap-1 mb-2">
             {dayNames.map((day) => (
-              <div key={day} className="h-6 text-center text-xs text-gray-500 font-medium">
+              <div key={day} className="h-6 text-center text-xs text-[var(--text-muted)] font-medium">
                 {day}
               </div>
             ))}
@@ -180,21 +180,21 @@ export default function CalendarWidget() {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-[#253146]">
+          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-[var(--border)]">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-              <span className="text-xs text-gray-400">Work Orders</span>
+              <span className="text-xs text-[var(--text-muted)]">Work Orders</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span className="text-xs text-gray-400">Maintenance</span>
+              <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+              <span className="text-xs text-[var(--text-muted)]">Maintenance</span>
             </div>
           </div>
 
           {/* Selected date events */}
           {selectedDate && selectedEvents.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-[#253146]">
-              <h4 className="text-sm font-medium text-white mb-2">
+            <div className="mt-4 pt-4 border-t border-[var(--border)]">
+              <h4 className="text-sm font-medium text-[var(--text-primary)] mb-2">
                 {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
               </h4>
               <div className="space-y-2 max-h-[150px] overflow-y-auto">
@@ -202,12 +202,12 @@ export default function CalendarWidget() {
                   <div
                     key={event.id}
                     className={`p-2 rounded-lg text-sm ${
-                      event.type === 'work_order' ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-green-500/10 border border-green-500/20'
+                      event.type === 'work_order' ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-emerald-500/10 border border-emerald-500/20'
                     }`}
                   >
-                    <p className="text-white font-medium truncate">{event.title}</p>
+                    <p className="text-[var(--text-primary)] font-medium truncate">{event.title}</p>
                     {event.machineName && (
-                      <p className="text-gray-400 text-xs">{event.machineName}</p>
+                      <p className="text-[var(--text-muted)] text-xs">{event.machineName}</p>
                     )}
                   </div>
                 ))}

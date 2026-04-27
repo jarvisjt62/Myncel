@@ -66,13 +66,13 @@ export default function ActivityFeed() {
 
   const getActivityColor = (type: string, priority?: string) => {
     if (type === 'alert') {
-      if (priority === 'critical') return 'bg-red-500/20 text-red-400 border-red-500/30';
-      if (priority === 'high') return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-      return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      if (priority === 'critical') return 'bg-red-500/10 text-red-500 border-red-500/20';
+      if (priority === 'high') return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+      return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20';
     }
-    if (type === 'work_order') return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-    if (type === 'maintenance') return 'bg-green-500/20 text-green-400 border-green-500/30';
-    return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    if (type === 'work_order') return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+    if (type === 'maintenance') return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+    return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
   };
 
   const formatTimeAgo = (timestamp: string) => {
@@ -92,9 +92,9 @@ export default function ActivityFeed() {
 
   if (loading) {
     return (
-      <div className="bg-[#151f32] rounded-xl border border-[#253146] p-5">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <svg className="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] p-5">
+        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+          <svg className="w-5 h-5 text-[#635bff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
           Recent Activity
@@ -102,10 +102,10 @@ export default function ActivityFeed() {
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="animate-pulse flex gap-3">
-              <div className="w-10 h-10 bg-[#1e293b] rounded-lg"></div>
+              <div className="w-10 h-10 rounded-lg bg-[var(--bg-surface-2)]"></div>
               <div className="flex-1">
-                <div className="h-4 bg-[#1e293b] rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-[#1e293b] rounded w-1/2"></div>
+                <div className="h-4 bg-[var(--bg-surface-2)] rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-[var(--bg-surface-2)] rounded w-1/2"></div>
               </div>
             </div>
           ))}
@@ -116,49 +116,49 @@ export default function ActivityFeed() {
 
   if (error) {
     return (
-      <div className="bg-[#151f32] rounded-xl border border-[#253146] p-5">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <svg className="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] p-5">
+        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+          <svg className="w-5 h-5 text-[#635bff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
           Recent Activity
         </h3>
-        <p className="text-gray-400 text-center py-4">{error}</p>
+        <p className="text-[var(--text-muted)] text-center py-4">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#151f32] rounded-xl border border-[#253146] p-5">
-      <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-        <svg className="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] p-5">
+      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+        <svg className="w-5 h-5 text-[#635bff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
         Recent Activity
       </h3>
       
       {activities.length === 0 ? (
-        <p className="text-gray-400 text-center py-8">No recent activity</p>
+        <p className="text-[var(--text-muted)] text-center py-8">No recent activity</p>
       ) : (
         <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
           {activities.map((activity) => (
             <div
               key={activity.id}
-              className={`flex gap-3 p-3 rounded-lg border ${getActivityColor(activity.type, activity.priority)} transition-all hover:scale-[1.01]`}
+              className={`flex gap-3 p-3 rounded-lg border transition-all hover:scale-[1.01] ${getActivityColor(activity.type, activity.priority)}`}
             >
               <div className="flex-shrink-0 mt-0.5">
                 {getActivityIcon(activity.type)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-medium truncate">{activity.title}</p>
-                <p className="text-gray-400 text-xs mt-0.5 truncate">{activity.description}</p>
+                <p className="text-[var(--text-primary)] text-sm font-medium truncate">{activity.title}</p>
+                <p className="text-[var(--text-secondary)] text-xs mt-0.5 truncate">{activity.description}</p>
                 <div className="flex items-center gap-2 mt-1.5">
                   {activity.machineName && (
-                    <span className="text-xs text-[#00d4aa] bg-[#00d4aa]/10 px-2 py-0.5 rounded">
+                    <span className="text-xs text-[#635bff] bg-[#635bff]/10 px-2 py-0.5 rounded">
                       {activity.machineName}
                     </span>
                   )}
-                  <span className="text-xs text-gray-500">{formatTimeAgo(activity.timestamp)}</span>
+                  <span className="text-xs text-[var(--text-muted)]">{formatTimeAgo(activity.timestamp)}</span>
                 </div>
               </div>
             </div>

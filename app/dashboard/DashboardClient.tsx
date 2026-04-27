@@ -707,6 +707,113 @@ function DashboardClientInner({ user, data }: Props) {
                 </div>
               </div>
             )}
+              
+              {/* Equipment History Timeline */}
+              <div>
+                <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-3">Equipment History Timeline</p>
+                <div className="relative">
+                  {/* Timeline line */}
+                  <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-[var(--border)]"></div>
+                  
+                  <div className="space-y-3">
+                    {/* Combine work orders and maintenance into timeline */}
+                    {(() => {
+                      const events: any[] = [];
+                      
+                      // Add work orders
+                      (machineDetail?.workOrders || []).forEach((wo: any) => {
+                        events.push({
+                          type: 'work_order',
+                          date: wo.createdAt || wo.dueAt,
+                          title: wo.title,
+                          subtitle: wo.woNumber,
+                          status: wo.status,
+                          icon: (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          ),
+                          color: wo.status === 'COMPLETED' ? 'bg-emerald-500' : wo.status === 'IN_PROGRESS' ? 'bg-blue-500' : 'bg-gray-400'
+                        });
+                      });
+                      
+                      // Add maintenance completions
+                      (machineDetail?.maintenanceTasks || []).forEach((t: any) => {
+                        if (t.lastCompletedAt) {
+                          events.push({
+                            type: 'maintenance',
+                            date: t.lastCompletedAt,
+                            title: t.title,
+                            subtitle: `${t.frequency} maintenance completed`,
+                            icon: (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ),
+                            color: 'bg-purple-500'
+                          });
+                        }
+                      });
+                      
+                      // Add alerts
+                      (machineDetail?.alerts || []).forEach((a: any) => {
+                        events.push({
+                          type: 'alert',
+                          date: a.createdAt,
+                          title: a.title,
+                          subtitle: `${a.severity} alert`,
+                          icon: (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                          ),
+                          color: a.severity === 'CRITICAL' ? 'bg-red-500' : a.severity === 'HIGH' ? 'bg-orange-500' : 'bg-yellow-500'
+                        });
+                      });
+                      
+                      // Sort by date descending
+                      events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                      
+                      if (events.length === 0) {
+                        return (
+                          <div className="pl-10 py-4 text-center">
+                            <p className="text-sm text-[var(--text-muted)]">No history records yet</p>
+                          </div>
+                        );
+                      }
+                      
+                      return events.slice(0, 10).map((event, idx) => (
+                        <div key={idx} className="flex gap-3 relative">
+                          {/* Timeline dot */}
+                          <div className={`relative z-10 w-8 h-8 rounded-full ${event.color} flex items-center justify-center text-white flex-shrink-0`}>
+                            {event.icon}
+                          </div>
+                          {/* Event content */}
+                          <div className="flex-1 bg-[var(--bg-surface-2)] rounded-lg p-3 border border-[var(--border)]">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-medium text-[var(--text-primary)]">{event.title}</p>
+                                <p className="text-xs text-[var(--text-muted)]">{event.subtitle}</p>
+                              </div>
+                              {event.date && (
+                                <span className="text-xs text-[var(--text-muted)] whitespace-nowrap">
+                                  {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </span>
+                              )}
+                            </div>
+                            {event.status && (
+                              <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded-full font-medium ${statusBadge(event.status)}`}>
+                                {event.status.replace('_', ' ')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              </div>
+              
             <div className="flex justify-end pt-2">
               <button onClick={() => { setSelectedMachine(null); setMachineDetail(null); }} className="px-4 py-2 text-sm text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[var(--bg-surface-2)]">Close</button>
             </div>
