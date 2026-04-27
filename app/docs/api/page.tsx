@@ -237,7 +237,7 @@ export default function ApiDocsPage() {
         <div className="docs-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
             {/* Smart back navigation — JS detects referrer */}
-            <a href="/admin" className="docs-back" id="docs-back-link">← Admin</a>
+            <a href="/dashboard" className="docs-back" id="docs-back-link">← Dashboard</a>
             <span className="docs-divider">|</span>
             <span className="docs-title">Myncel API Docs</span>
             <span className="docs-badge">v1.0.0</span>

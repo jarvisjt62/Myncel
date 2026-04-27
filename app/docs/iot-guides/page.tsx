@@ -338,206 +338,176 @@ export default function IoTGuidesPage() {
   };
 
   return (
-    <div className="dash-theme min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
-
-      {/* Nav */}
-      <div className="sticky top-0 z-10 px-6 py-3 flex items-center justify-between"
-        style={{ backgroundColor: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm font-medium hover:opacity-75 transition-opacity"
-            style={{ color: 'var(--text-secondary)' }}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Dashboard
-          </Link>
-          <span style={{ color: 'var(--border)' }}>›</span>
-          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>IoT Wiring Guides</span>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/docs/protocols" className="text-xs px-3 py-1.5 rounded-lg font-medium"
-            style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' }}>
-            OPC-UA / Modbus →
-          </Link>
-          <Link href="/docs/api" className="text-xs px-3 py-1.5 rounded-lg font-medium"
-            style={{ color: '#635bff', backgroundColor: 'rgba(99,91,255,0.08)', border: '1px solid rgba(99,91,255,0.25)' }}>
-            API Docs →
-          </Link>
-        </div>
+    <div className="max-w-6xl mx-auto p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>IoT Wiring & Connection Guides</h1>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+          Copy-paste code for connecting physical sensors to Myncel CMMS.
+        </p>
       </div>
 
-      <div className="max-w-6xl mx-auto p-6">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>IoT Wiring & Connection Guides</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            Copy-paste code for connecting physical sensors to Myncel CMMS.
-          </p>
-        </div>
+      {/* Guide selector tabs */}
+      <div className="flex gap-3 mb-6 flex-wrap">
+        {GUIDES.map(g => (
+          <button key={g.id} onClick={() => setActiveGuide(g.id)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+            style={activeGuide === g.id
+              ? { backgroundColor: 'var(--bg-surface)', border: `2px solid ${g.badgeColor}`, color: 'var(--text-primary)' }
+              : { backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }
+            }>
+            <span className="text-base">{g.icon}</span>
+            <span>{g.title}</span>
+            <span className="text-xs px-2 py-0.5 rounded-full font-semibold text-white"
+              style={{ backgroundColor: g.badgeColor, opacity: activeGuide === g.id ? 1 : 0.6 }}>
+              {g.badge}
+            </span>
+          </button>
+        ))}
+      </div>
 
-        {/* Guide selector tabs */}
-        <div className="flex gap-3 mb-6 flex-wrap">
-          {GUIDES.map(g => (
-            <button key={g.id} onClick={() => setActiveGuide(g.id)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
-              style={activeGuide === g.id
-                ? { backgroundColor: 'var(--bg-surface)', border: `2px solid ${g.badgeColor}`, color: 'var(--text-primary)' }
-                : { backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }
-              }>
-              <span className="text-base">{g.icon}</span>
-              <span>{g.title}</span>
-              <span className="text-xs px-2 py-0.5 rounded-full font-semibold text-white"
-                style={{ backgroundColor: g.badgeColor, opacity: activeGuide === g.id ? 1 : 0.6 }}>
-                {g.badge}
-              </span>
-            </button>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-          {/* Sidebar: steps + notes */}
-          <div className="space-y-4">
-            <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-              <div className="flex items-start gap-3 mb-3">
-                <span className="text-2xl">{guide.icon}</span>
-                <div>
-                  <h2 className="font-bold" style={{ color: 'var(--text-primary)' }}>{guide.title}</h2>
-                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{guide.subtitle}</p>
-                </div>
+        {/* Sidebar: steps + notes */}
+        <div className="space-y-4">
+          <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="flex items-start gap-3 mb-3">
+              <span className="text-2xl">{guide.icon}</span>
+              <div>
+                <h2 className="font-bold" style={{ color: 'var(--text-primary)' }}>{guide.title}</h2>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{guide.subtitle}</p>
               </div>
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{guide.description}</p>
             </div>
-
-            {guide.steps.map((step, i) => (
-              <div key={i} className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-secondary)' }}>
-                  Step {i + 1}: {step.title}
-                </h3>
-                <pre className="text-xs font-mono whitespace-pre-wrap" style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-page)', borderRadius: '8px', padding: '10px', border: '1px solid var(--border)' }}>
-                  {step.content}
-                </pre>
-              </div>
-            ))}
-
-            {/* Required libraries */}
-            <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-              <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-secondary)' }}>Required Libraries</h3>
-              <ul className="space-y-1">
-                {guide.libraries.map(lib => (
-                  <li key={lib} className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-primary)' }}>
-                    <span className="text-[#635bff]">▸</span> {lib}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Notes */}
-            <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(99,91,255,0.06)', border: '1px solid rgba(99,91,255,0.2)' }}>
-              <h3 className="text-xs font-semibold uppercase tracking-wide mb-2 text-[#635bff]">💡 Tips</h3>
-              <ul className="space-y-1.5">
-                {guide.notes.map(note => (
-                  <li key={note} className="text-xs flex gap-2" style={{ color: 'var(--text-secondary)' }}>
-                    <span className="text-[#635bff] flex-shrink-0">•</span> {note}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {'systemd' in guide && (
-              <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>systemd Service</h3>
-                  <button onClick={() => copy((guide as any).systemd, 'systemd')} className="text-xs text-[#635bff] hover:underline">
-                    {copiedId === 'systemd' ? '✓ Copied' : 'Copy'}
-                  </button>
-                </div>
-                <pre className="text-xs font-mono whitespace-pre-wrap text-emerald-600 dark:text-emerald-400"
-                  style={{ backgroundColor: 'var(--bg-page)', borderRadius: '8px', padding: '10px', border: '1px solid var(--border)' }}>
-                  {(guide as any).systemd}
-                </pre>
-              </div>
-            )}
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{guide.description}</p>
           </div>
 
-          {/* Main code panel */}
-          <div className="lg:col-span-2">
-            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-              <div className="flex items-center justify-between px-5 py-3"
-                style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--bg-page)' }}>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    {guide.id === 'esp32' ? 'esp32_myncel_sensor.ino' :
-                     guide.id === 'raspberrypi' ? 'myncel_agent.py' :
-                     'nodered_flow.json'}
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded font-mono"
-                    style={{ backgroundColor: 'rgba(99,91,255,0.1)', color: '#635bff' }}>
-                    {guide.id === 'esp32' ? 'Arduino / C++' :
-                     guide.id === 'raspberrypi' ? 'Python 3' :
-                     'JSON / JS'}
-                  </span>
-                </div>
-                <button
-                  onClick={() => copy(guide.code, 'code')}
-                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-                  style={{
-                    backgroundColor: copiedId === 'code' ? 'rgba(16,185,129,0.15)' : 'rgba(99,91,255,0.1)',
-                    color: copiedId === 'code' ? '#10b981' : '#635bff',
-                    border: `1px solid ${copiedId === 'code' ? 'rgba(16,185,129,0.3)' : 'rgba(99,91,255,0.3)'}`,
-                  }}>
-                  {copiedId === 'code' ? '✓ Copied!' : '📋 Copy Code'}
+          {guide.steps.map((step, i) => (
+            <div key={i} className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+              <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-secondary)' }}>
+                Step {i + 1}: {step.title}
+              </h3>
+              <pre className="text-xs font-mono whitespace-pre-wrap" style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-page)', borderRadius: '8px', padding: '10px', border: '1px solid var(--border)' }}>
+                {step.content}
+              </pre>
+            </div>
+          ))}
+
+          {/* Required libraries */}
+          <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-secondary)' }}>Required Libraries</h3>
+            <ul className="space-y-1">
+              {guide.libraries.map(lib => (
+                <li key={lib} className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-primary)' }}>
+                  <span className="text-[#635bff]">▸</span> {lib}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Notes */}
+          <div className="rounded-xl p-4" style={{ backgroundColor: 'rgba(99,91,255,0.06)', border: '1px solid rgba(99,91,255,0.2)' }}>
+            <h3 className="text-xs font-semibold uppercase tracking-wide mb-2 text-[#635bff]">💡 Tips</h3>
+            <ul className="space-y-1.5">
+              {guide.notes.map(note => (
+                <li key={note} className="text-xs flex gap-2" style={{ color: 'var(--text-secondary)' }}>
+                  <span className="text-[#635bff] flex-shrink-0">•</span> {note}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {'systemd' in guide && (
+            <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>systemd Service</h3>
+                <button onClick={() => copy((guide as any).systemd, 'systemd')} className="text-xs text-[#635bff] hover:underline">
+                  {copiedId === 'systemd' ? '✓ Copied' : 'Copy'}
                 </button>
               </div>
+              <pre className="text-xs font-mono whitespace-pre-wrap text-emerald-600 dark:text-emerald-400"
+                style={{ backgroundColor: 'var(--bg-page)', borderRadius: '8px', padding: '10px', border: '1px solid var(--border)' }}>
+                {(guide as any).systemd}
+              </pre>
+            </div>
+          )}
+        </div>
 
-              <div className="overflow-auto max-h-[65vh]">
-                <pre className="p-5 text-xs font-mono leading-relaxed"
-                  style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-page)', margin: 0 }}>
-                  <code>{guide.code}</code>
-                </pre>
+        {/* Main code panel */}
+        <div className="lg:col-span-2">
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="flex items-center justify-between px-5 py-3"
+              style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--bg-page)' }}>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {guide.id === 'esp32' ? 'esp32_myncel_sensor.ino' :
+                   guide.id === 'raspberrypi' ? 'myncel_agent.py' :
+                   'nodered_flow.json'}
+                </span>
+                <span className="text-xs px-2 py-0.5 rounded font-mono"
+                  style={{ backgroundColor: 'rgba(99,91,255,0.1)', color: '#635bff' }}>
+                  {guide.id === 'esp32' ? 'Arduino / C++' :
+                   guide.id === 'raspberrypi' ? 'Python 3' :
+                   'JSON / JS'}
+                </span>
               </div>
+              <button
+                onClick={() => copy(guide.code, 'code')}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+                style={{
+                  backgroundColor: copiedId === 'code' ? 'rgba(16,185,129,0.15)' : 'rgba(99,91,255,0.1)',
+                  color: copiedId === 'code' ? '#10b981' : '#635bff',
+                  border: `1px solid ${copiedId === 'code' ? 'rgba(16,185,129,0.3)' : 'rgba(99,91,255,0.3)'}`,
+                }}>
+                {copiedId === 'code' ? '✓ Copied!' : '📋 Copy Code'}
+              </button>
             </div>
 
-            {/* Quick reference card */}
-            <div className="mt-4 rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-              <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>📡 API Endpoint Reference</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                {[
-                  { label: 'Endpoint',     value: 'POST /api/iot' },
-                  { label: 'Auth Header',  value: 'X-API-Key: mnc_iot_...' },
-                  { label: 'Content-Type', value: 'application/json' },
-                  { label: 'Batch limit',  value: '100 readings per request' },
-                ].map(item => (
-                  <div key={item.label} className="rounded-lg p-3"
-                    style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' }}>
-                    <div className="font-medium mb-0.5" style={{ color: 'var(--text-secondary)' }}>{item.label}</div>
-                    <code className="text-[#635bff]">{item.value}</code>
-                  </div>
-                ))}
-              </div>
+            <div className="overflow-auto max-h-[65vh]">
+              <pre className="p-5 text-xs font-mono leading-relaxed"
+                style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-page)', margin: 0 }}>
+                <code>{guide.code}</code>
+              </pre>
+            </div>
+          </div>
 
-              <div className="mt-3 flex gap-3">
-                <Link href="/settings/api-keys"
-                  className="flex-1 text-center py-2 rounded-lg text-xs font-semibold transition-colors"
-                  style={{ backgroundColor: 'rgba(99,91,255,0.08)', color: '#635bff', border: '1px solid rgba(99,91,255,0.25)' }}>
-                  🔑 Get API Key
-                </Link>
-                <Link href="/setup"
-                  className="flex-1 text-center py-2 rounded-lg text-xs font-semibold transition-colors"
-                  style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
-                  ⚡ Setup Wizard
-                </Link>
-                <Link href="/docs/api"
-                  className="flex-1 text-center py-2 rounded-lg text-xs font-semibold transition-colors"
-                  style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
-                  📖 Full API Docs
-                </Link>
-              </div>
+          {/* Quick reference card */}
+          <div className="mt-4 rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>📡 API Endpoint Reference</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              {[
+                { label: 'Endpoint',     value: 'POST /api/iot' },
+                { label: 'Auth Header',  value: 'X-API-Key: mnc_iot_...' },
+                { label: 'Content-Type', value: 'application/json' },
+                { label: 'Batch limit',  value: '100 readings per request' },
+              ].map(item => (
+                <div key={item.label} className="rounded-lg p-3"
+                  style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' }}>
+                  <div className="font-medium mb-0.5" style={{ color: 'var(--text-secondary)' }}>{item.label}</div>
+                  <code className="text-[#635bff]">{item.value}</code>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-3 flex gap-3">
+              <Link href="/settings/api-keys"
+                className="flex-1 text-center py-2 rounded-lg text-xs font-semibold transition-colors"
+                style={{ backgroundColor: 'rgba(99,91,255,0.08)', color: '#635bff', border: '1px solid rgba(99,91,255,0.25)' }}>
+                🔑 Get API Key
+              </Link>
+              <Link href="/setup"
+                className="flex-1 text-center py-2 rounded-lg text-xs font-semibold transition-colors"
+                style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+                ⚡ Setup Wizard
+              </Link>
+              <Link href="/docs/api"
+                className="flex-1 text-center py-2 rounded-lg text-xs font-semibold transition-colors"
+                style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+                📖 Full API Docs
+              </Link>
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
+);
 }

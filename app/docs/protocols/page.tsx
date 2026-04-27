@@ -457,189 +457,159 @@ export default function ProtocolsPage() {
   };
 
   return (
-    <div className="dash-theme min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
-
-      {/* Nav */}
-      <div className="sticky top-0 z-10 px-6 py-3 flex items-center justify-between"
-        style={{ backgroundColor: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm font-medium hover:opacity-75 transition-opacity"
-            style={{ color: 'var(--text-secondary)' }}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Dashboard
-          </Link>
-          <span style={{ color: 'var(--border)' }}>›</span>
-          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>OPC-UA / Modbus Guides</span>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/docs/iot-guides" className="text-xs px-3 py-1.5 rounded-lg font-medium"
-            style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' }}>
-            ← ESP32 / Pi Guides
-          </Link>
-          <Link href="/docs/api" className="text-xs px-3 py-1.5 rounded-lg font-medium"
-            style={{ color: '#635bff', backgroundColor: 'rgba(99,91,255,0.08)', border: '1px solid rgba(99,91,255,0.25)' }}>
-            API Docs →
-          </Link>
-        </div>
+    <div className="max-w-6xl mx-auto p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Industrial Protocol Guides</h1>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+          Connect PLCs, VFDs, SCADA systems, and cloud IoT platforms to Myncel CMMS.
+        </p>
       </div>
 
-      <div className="max-w-6xl mx-auto p-6">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Industrial Protocol Guides</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            Connect PLCs, VFDs, SCADA systems, and cloud IoT platforms to Myncel CMMS.
-          </p>
-        </div>
+      {/* Protocol tabs */}
+      <div className="flex gap-3 mb-6 flex-wrap">
+        {PROTOCOLS.map(p => (
+          <button key={p.id} onClick={() => setActive(p.id)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+            style={active === p.id
+              ? { backgroundColor: 'var(--bg-surface)', border: `2px solid ${p.badgeColor}`, color: 'var(--text-primary)' }
+              : { backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }
+            }>
+            <span className="text-base">{p.icon}</span>
+            <span>{p.title}</span>
+            <span className="text-xs px-2 py-0.5 rounded-full font-semibold text-white"
+              style={{ backgroundColor: p.badgeColor, opacity: active === p.id ? 1 : 0.6 }}>
+              {p.badge}
+            </span>
+          </button>
+        ))}
+      </div>
 
-        {/* Protocol tabs */}
-        <div className="flex gap-3 mb-6 flex-wrap">
-          {PROTOCOLS.map(p => (
-            <button key={p.id} onClick={() => setActive(p.id)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
-              style={active === p.id
-                ? { backgroundColor: 'var(--bg-surface)', border: `2px solid ${p.badgeColor}`, color: 'var(--text-primary)' }
-                : { backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }
-              }>
-              <span className="text-base">{p.icon}</span>
-              <span>{p.title}</span>
-              <span className="text-xs px-2 py-0.5 rounded-full font-semibold text-white"
-                style={{ backgroundColor: p.badgeColor, opacity: active === p.id ? 1 : 0.6 }}>
-                {p.badge}
-              </span>
-            </button>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-          {/* Sidebar */}
-          <div className="space-y-4">
-            <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-              <div className="flex items-start gap-3 mb-3">
-                <span className="text-2xl">{proto.icon}</span>
-                <div>
-                  <h2 className="font-bold" style={{ color: 'var(--text-primary)' }}>{proto.title}</h2>
-                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{proto.subtitle}</p>
-                </div>
+        {/* Sidebar */}
+        <div className="space-y-4">
+          <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="flex items-start gap-3 mb-3">
+              <span className="text-2xl">{proto.icon}</span>
+              <div>
+                <h2 className="font-bold" style={{ color: 'var(--text-primary)' }}>{proto.title}</h2>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{proto.subtitle}</p>
               </div>
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{proto.description}</p>
+            </div>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{proto.description}</p>
+          </div>
+
+          {/* Architecture diagram */}
+          <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-secondary)' }}>Architecture</h3>
+            <pre className="text-xs font-mono whitespace-pre-wrap overflow-auto"
+              style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-page)', borderRadius: '8px', padding: '10px', border: '1px solid var(--border)' }}>
+              {proto.overview}
+            </pre>
+          </div>
+
+          {/* Common use cases */}
+          <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-secondary)' }}>Common Use Cases</h3>
+            <ul className="space-y-1.5">
+              {proto.useCases.map(uc => (
+                <li key={uc} className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-primary)' }}>
+                  <span style={{ color: proto.badgeColor }}>▸</span> {uc}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Tips */}
+          <div className="rounded-xl p-4" style={{ backgroundColor: `rgba(99,91,255,0.06)`, border: '1px solid rgba(99,91,255,0.2)' }}>
+            <h3 className="text-xs font-semibold uppercase tracking-wide mb-2 text-[#635bff]">💡 Tips</h3>
+            <ul className="space-y-1.5">
+              {proto.tips.map(tip => (
+                <li key={tip} className="text-xs flex gap-2" style={{ color: 'var(--text-secondary)' }}>
+                  <span className="text-[#635bff] flex-shrink-0">•</span> {tip}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Quick links */}
+          <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--text-secondary)' }}>Related Resources</h3>
+            <div className="space-y-2">
+              {[
+                { href: '/settings/api-keys',    label: '🔑 Get API Keys',         color: '#635bff' },
+                { href: '/docs/iot-guides',       label: '📡 ESP32 / Pi Guides',   color: 'var(--text-secondary)' },
+                { href: '/dashboard/iot-simulator', label: '🔬 IoT Simulator',     color: 'var(--text-secondary)' },
+                { href: '/docs/api',              label: '📖 Full API Reference',  color: 'var(--text-secondary)' },
+                { href: '/setup',                 label: '⚡ Setup Wizard',         color: 'var(--text-secondary)' },
+              ].map(link => (
+                <Link key={link.href} href={link.href}
+                  className="block text-xs px-3 py-2 rounded-lg transition-colors hover:opacity-80"
+                  style={{ color: link.color, backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' }}>
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Code panel */}
+        <div className="lg:col-span-2">
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="flex items-center justify-between px-5 py-3"
+              style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--bg-page)' }}>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {proto.id === 'opcua'   ? 'myncel_opcua_bridge.py' :
+                   proto.id === 'modbus'  ? 'myncel_modbus_bridge.py' :
+                   'cloud_bridge.js'}
+                </span>
+                <span className="text-xs px-2 py-0.5 rounded font-mono"
+                  style={{ backgroundColor: 'rgba(99,91,255,0.1)', color: '#635bff' }}>
+                  {proto.id === 'cloud' ? 'JavaScript' : 'Python 3'}
+                </span>
+              </div>
+              <button
+                onClick={() => copy(proto.code, 'code')}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+                style={{
+                  backgroundColor: copiedId === 'code' ? 'rgba(16,185,129,0.15)' : 'rgba(99,91,255,0.1)',
+                  color: copiedId === 'code' ? '#10b981' : '#635bff',
+                  border: `1px solid ${copiedId === 'code' ? 'rgba(16,185,129,0.3)' : 'rgba(99,91,255,0.3)'}`,
+                }}>
+                {copiedId === 'code' ? '✓ Copied!' : '📋 Copy Code'}
+              </button>
             </div>
 
-            {/* Architecture diagram */}
-            <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-              <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-secondary)' }}>Architecture</h3>
-              <pre className="text-xs font-mono whitespace-pre-wrap overflow-auto"
-                style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-page)', borderRadius: '8px', padding: '10px', border: '1px solid var(--border)' }}>
-                {proto.overview}
+            <div className="overflow-auto max-h-[70vh]">
+              <pre className="p-5 text-xs font-mono leading-relaxed"
+                style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-page)', margin: 0 }}>
+                <code>{proto.code}</code>
               </pre>
-            </div>
-
-            {/* Common use cases */}
-            <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-              <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-secondary)' }}>Common Use Cases</h3>
-              <ul className="space-y-1.5">
-                {proto.useCases.map(uc => (
-                  <li key={uc} className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-primary)' }}>
-                    <span style={{ color: proto.badgeColor }}>▸</span> {uc}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Tips */}
-            <div className="rounded-xl p-4" style={{ backgroundColor: `rgba(99,91,255,0.06)`, border: '1px solid rgba(99,91,255,0.2)' }}>
-              <h3 className="text-xs font-semibold uppercase tracking-wide mb-2 text-[#635bff]">💡 Tips</h3>
-              <ul className="space-y-1.5">
-                {proto.tips.map(tip => (
-                  <li key={tip} className="text-xs flex gap-2" style={{ color: 'var(--text-secondary)' }}>
-                    <span className="text-[#635bff] flex-shrink-0">•</span> {tip}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Quick links */}
-            <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--text-secondary)' }}>Related Resources</h3>
-              <div className="space-y-2">
-                {[
-                  { href: '/settings/api-keys',    label: '🔑 Get API Keys',         color: '#635bff' },
-                  { href: '/docs/iot-guides',       label: '📡 ESP32 / Pi Guides',   color: 'var(--text-secondary)' },
-                  { href: '/dashboard/iot-simulator', label: '🔬 IoT Simulator',     color: 'var(--text-secondary)' },
-                  { href: '/docs/api',              label: '📖 Full API Reference',  color: 'var(--text-secondary)' },
-                  { href: '/setup',                 label: '⚡ Setup Wizard',         color: 'var(--text-secondary)' },
-                ].map(link => (
-                  <Link key={link.href} href={link.href}
-                    className="block text-xs px-3 py-2 rounded-lg transition-colors hover:opacity-80"
-                    style={{ color: link.color, backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' }}>
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
             </div>
           </div>
 
-          {/* Code panel */}
-          <div className="lg:col-span-2">
-            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-              <div className="flex items-center justify-between px-5 py-3"
-                style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--bg-page)' }}>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    {proto.id === 'opcua'   ? 'myncel_opcua_bridge.py' :
-                     proto.id === 'modbus'  ? 'myncel_modbus_bridge.py' :
-                     'cloud_bridge.js'}
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded font-mono"
-                    style={{ backgroundColor: 'rgba(99,91,255,0.1)', color: '#635bff' }}>
-                    {proto.id === 'cloud' ? 'JavaScript' : 'Python 3'}
-                  </span>
-                </div>
-                <button
-                  onClick={() => copy(proto.code, 'code')}
-                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-                  style={{
-                    backgroundColor: copiedId === 'code' ? 'rgba(16,185,129,0.15)' : 'rgba(99,91,255,0.1)',
-                    color: copiedId === 'code' ? '#10b981' : '#635bff',
-                    border: `1px solid ${copiedId === 'code' ? 'rgba(16,185,129,0.3)' : 'rgba(99,91,255,0.3)'}`,
-                  }}>
-                  {copiedId === 'code' ? '✓ Copied!' : '📋 Copy Code'}
-                </button>
-              </div>
-
-              <div className="overflow-auto max-h-[70vh]">
-                <pre className="p-5 text-xs font-mono leading-relaxed"
-                  style={{ color: 'var(--text-primary)', backgroundColor: 'var(--bg-page)', margin: 0 }}>
-                  <code>{proto.code}</code>
-                </pre>
-              </div>
-            </div>
-
-            {/* MQTT Bridge promo */}
-            <div className="mt-4 rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-              <div className="flex items-start gap-4">
-                <div className="text-3xl flex-shrink-0">🔀</div>
-                <div>
-                  <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                    Using MQTT? Try the MQTT Bridge
-                  </h3>
-                  <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
-                    Myncel includes a built-in MQTT bridge endpoint at{' '}
-                    <code className="text-[#635bff] bg-[#635bff]/10 px-1 rounded text-xs">POST /api/mqtt-bridge</code>.
-                    It accepts topic-based payloads (e.g.{' '}
-                    <code className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>factory/machineId/temperature</code>) and
-                    auto-routes them to the right equipment without any custom code.
-                  </p>
-                  <div className="rounded-lg p-3 font-mono text-xs overflow-auto"
-                    style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: '#10b981' }}>
-                    {`# Send via Mosquitto or any MQTT client:\ncurl -X POST /api/mqtt-bridge \\
-     -H "X-API-Key: YOUR_KEY" \\
-     -d '{"topic":"factory/machineId/temperature","value":72.5}'`}
-                  </div>
+          {/* MQTT Bridge promo */}
+          <div className="mt-4 rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="flex items-start gap-4">
+              <div className="text-3xl flex-shrink-0">🔀</div>
+              <div>
+                <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                  Using MQTT? Try the MQTT Bridge
+                </h3>
+                <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+                  Myncel includes a built-in MQTT bridge endpoint at{' '}
+                  <code className="text-[#635bff] bg-[#635bff]/10 px-1 rounded text-xs">POST /api/mqtt-bridge</code>.
+                  It accepts topic-based payloads (e.g.{' '}
+                  <code className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>factory/machineId/temperature</code>) and
+                  auto-routes them to the right equipment without any custom code.
+                </p>
+                <div className="rounded-lg p-3 font-mono text-xs overflow-auto"
+                  style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: '#10b981' }}>
+                  {`# Send via Mosquitto or any MQTT client:\ncurl -X POST /api/mqtt-bridge \\
+   -H "X-API-Key: YOUR_KEY" \\
+   -d '{"topic":"factory/machineId/temperature","value":72.5}'`}
                 </div>
               </div>
             </div>
@@ -647,5 +617,5 @@ export default function ProtocolsPage() {
         </div>
       </div>
     </div>
-  );
+);
 }

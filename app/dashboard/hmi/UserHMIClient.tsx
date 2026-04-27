@@ -840,115 +840,84 @@ function UserHMIClientInner({ user, initialMachines }: {
   const oee = machines.length > 0 ? Math.round((op / machines.length) * 100) : 0;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', transition: 'background-color 0.2s, color 0.2s' }}>
-      {/* Top nav bar */}
-      <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: 'var(--bg-nav)', borderBottom: '1px solid var(--border)' }}>
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="text-sm transition-colors" style={{ color: 'var(--text-muted)' }}>← Dashboard</Link>
-          <span style={{ color: 'var(--border)' }}>|</span>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"/>
-            <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>HMI Plant Monitor</span>
-          </div>
-          <span className="hidden sm:block" style={{ color: 'var(--text-muted)' }}>·</span>
-          <span className="text-xs hidden sm:block" style={{ color: 'var(--text-muted)' }}>{user.organizationName}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={fetchMachines}
-            className="px-2 py-1 rounded text-xs font-semibold border transition-colors"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-          >
-            ⟳ Refresh
-          </button>
-          <button
-            onClick={() => setAutoRefresh(a => !a)}
-            className={`px-2 py-1 rounded text-xs font-semibold border transition-colors ${autoRefresh ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-gray-500/10 border-gray-500/30 text-gray-400'}`}
-          >
-            {autoRefresh ? '🟢 Live' : '⚫ Paused'}
-          </button>
-          <span className="text-xs hidden sm:block" style={{ color: 'var(--text-ultralow)' }}>
-            {lastRefresh ? `Updated: ${lastRefresh.toLocaleTimeString()}` : 'Loading...'}
-          </span>
-        </div>
-      </div>
-
+    <>
       <div className="p-4 space-y-4 max-w-7xl mx-auto">
 
-        {/* KPI row */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {[
-            { l: 'Total Equipment', v: machines.length, c: 'var(--text-primary)' },
-            { l: 'Operational',     v: op,              c: '#34d399' },
-            { l: 'Maintenance',     v: mt,              c: '#fbbf24' },
-            { l: 'Breakdown',       v: bd,              c: '#f87171' },
-            { l: 'Availability',    v: `${oee}%`,       c: oee >= 90 ? '#34d399' : oee >= 70 ? '#fbbf24' : '#f87171' },
-          ].map(k => (
-            <div key={k.l} className="rounded-xl p-3 text-center border" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
-              <div className="text-2xl font-bold" style={{ color: k.c }}>{k.v}</div>
-              <div className="text-[10px] mt-0.5 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{k.l}</div>
-            </div>
-          ))}
-        </div>
 
-        {/* Filter pills */}
-        <div className="flex gap-2 flex-wrap">
-          {[
-            { s: 'ALL',         l: `All (${machines.length})` },
-            { s: 'OPERATIONAL', l: `Operational (${op})` },
-            { s: 'MAINTENANCE', l: `Maintenance (${mt})` },
-            { s: 'BREAKDOWN',   l: `Breakdown (${bd})` },
-          ].map(f => (
-            <button key={f.s} onClick={() => setFilter(f.s)}
-              className={`text-xs px-3 py-1.5 rounded-full font-semibold border transition-colors ${
-                filter === f.s
-                  ? f.s === 'OPERATIONAL' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                  : f.s === 'BREAKDOWN'   ? 'bg-red-500/20 border-red-500/40 text-red-400'
-                  : f.s === 'MAINTENANCE' ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400'
-                  : 'bg-[#635bff]/20 border-[#635bff]/40 text-[#635bff]'
-                  : ''
-              }`}
-              style={filter !== f.s ? { backgroundColor: 'transparent', borderColor: 'var(--border)', color: 'var(--text-muted)' } : {}}
-            >
-              {f.l}
-            </button>
-          ))}
-        </div>
-
-        <p className="text-xs" style={{ color: 'var(--text-ultralow)' }}>Click any machine card to open the HMI control panel with live sensor data and operator controls.</p>
-
-        {/* Machine grid */}
-        {filtered.length === 0 ? (
-          <div className="rounded-xl p-12 text-center border" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No machines found. Add machines in the Equipment tab.</p>
-            <Link href="/dashboard" className="mt-3 inline-block text-xs text-[#635bff] hover:underline">← Back to Dashboard</Link>
+      {/* KPI row */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {[
+          { l: 'Total Equipment', v: machines.length, c: 'var(--text-primary)' },
+          { l: 'Operational',     v: op,              c: '#34d399' },
+          { l: 'Maintenance',     v: mt,              c: '#fbbf24' },
+          { l: 'Breakdown',       v: bd,              c: '#f87171' },
+          { l: 'Availability',    v: `${oee}%`,       c: oee >= 90 ? '#34d399' : oee >= 70 ? '#fbbf24' : '#f87171' },
+        ].map(k => (
+          <div key={k.l} className="rounded-xl p-3 text-center border" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+            <div className="text-2xl font-bold" style={{ color: k.c }}>{k.v}</div>
+            <div className="text-[10px] mt-0.5 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{k.l}</div>
           </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {filtered.map(m => <MachineCard key={m.id} machine={m} onClick={() => setSelected(m)}/>)}
-          </div>
-        )}
-
-        {/* Breakdown alert banner */}
-        {bd > 0 && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center gap-3">
-            <div className="w-3 h-3 bg-red-500 rounded-full animate-ping flex-shrink-0"/>
-            <div>
-              <p className="text-red-400 font-bold text-sm">{bd} machine{bd !== 1 ? 's' : ''} in BREAKDOWN</p>
-              <p className="text-red-400/60 text-xs">Click on the affected machine to request maintenance or view details.</p>
-            </div>
-          </div>
-        )}
+        ))}
       </div>
 
-      {selected && (
-        <MachinePanel
-          machine={selected}
-          onClose={() => setSelected(null)}
-          onStatusChange={handleStatusChange}
-        />
+      {/* Filter pills */}
+      <div className="flex gap-2 flex-wrap">
+        {[
+          { s: 'ALL',         l: `All (${machines.length})` },
+          { s: 'OPERATIONAL', l: `Operational (${op})` },
+          { s: 'MAINTENANCE', l: `Maintenance (${mt})` },
+          { s: 'BREAKDOWN',   l: `Breakdown (${bd})` },
+        ].map(f => (
+          <button key={f.s} onClick={() => setFilter(f.s)}
+            className={`text-xs px-3 py-1.5 rounded-full font-semibold border transition-colors ${
+              filter === f.s
+                ? f.s === 'OPERATIONAL' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                : f.s === 'BREAKDOWN'   ? 'bg-red-500/20 border-red-500/40 text-red-400'
+                : f.s === 'MAINTENANCE' ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400'
+                : 'bg-[#635bff]/20 border-[#635bff]/40 text-[#635bff]'
+                : ''
+            }`}
+            style={filter !== f.s ? { backgroundColor: 'transparent', borderColor: 'var(--border)', color: 'var(--text-muted)' } : {}}
+          >
+            {f.l}
+          </button>
+        ))}
+      </div>
+
+      <p className="text-xs" style={{ color: 'var(--text-ultralow)' }}>Click any machine card to open the HMI control panel with live sensor data and operator controls.</p>
+
+      {/* Machine grid */}
+      {filtered.length === 0 ? (
+        <div className="rounded-xl p-12 text-center border" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No machines found. Add machines in the Equipment tab.</p>
+          <Link href="/dashboard" className="mt-3 inline-block text-xs text-[#635bff] hover:underline">← Back to Dashboard</Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {filtered.map(m => <MachineCard key={m.id} machine={m} onClick={() => setSelected(m)}/>)}
+        </div>
       )}
-    </div>
+
+      {/* Breakdown alert banner */}
+      {bd > 0 && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-3 h-3 bg-red-500 rounded-full animate-ping flex-shrink-0"/>
+          <div>
+            <p className="text-red-400 font-bold text-sm">{bd} machine{bd !== 1 ? 's' : ''} in BREAKDOWN</p>
+            <p className="text-red-400/60 text-xs">Click on the affected machine to request maintenance or view details.</p>
+          </div>
+        </div>
+      )}
+      </div>
+
+    {selected && (
+      <MachinePanel
+        machine={selected}
+        onClose={() => setSelected(null)}
+        onStatusChange={handleStatusChange}
+      />
+    )}
+    </>
   );
 }
 
@@ -956,9 +925,5 @@ export default function UserHMIClient(props: {
   user: { name: string; organizationName: string };
   initialMachines: Machine[];
 }) {
-  return (
-    <ThemeProvider themeClass="dash-theme" defaultTheme="light" storageKey="myncel-dashboard-theme" style={{ minHeight: '100vh' }}>
-      <UserHMIClientInner {...props} />
-    </ThemeProvider>
-  );
+  return <UserHMIClientInner {...props} />;
 }

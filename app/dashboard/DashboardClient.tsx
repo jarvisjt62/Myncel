@@ -1189,75 +1189,9 @@ function DashboardClientInner({ user, data }: Props) {
   );
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: 'var(--bg-page)' }}>
-      {/* Sidebar desktop */}
-      <div className="hidden lg:flex flex-col fixed h-full z-10 w-60">
-        <Sidebar />
-      </div>
+    <>
+      <div className="flex-1 p-6">
 
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="w-60 flex flex-col">
-            <Sidebar />
-          </div>
-          <div className="flex-1 bg-black/30" onClick={() => setSidebarOpen(false)} />
-        </div>
-      )}
-
-      {/* Main */}
-      <main className="flex-1 lg:ml-60 flex flex-col min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
-        {/* Top bar */}
-        <header className="px-6 py-4 flex items-center justify-between sticky top-0 z-10" style={{ backgroundColor: 'var(--bg-nav)', borderBottom: '1px solid var(--border)' }}>
-          <div className="flex items-center gap-3">
-            <button
-              className="lg:hidden p-1.5 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-secondary)]"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <div className="hidden sm:block">
-              <h1 className="text-lg font-bold text-[var(--text-primary)] capitalize">
-                {activeTab === 'workorders' ? 'Work Orders' : activeTab}
-              </h1>
-              <p className="text-xs text-[var(--text-muted)]">
-                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden md:block">
-              <GlobalSearch />
-            </div>
-            <NotificationBell />
-            {stats.unresolvedAlerts > 0 && (
-              <button
-                onClick={() => setActiveTab('alerts')}
-                className="relative p-2 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-secondary)]"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-              </button>
-            )}
-            {user.email !== 'admin@myncel.com' && (
-              <div className="text-xs text-[var(--text-muted)]">
-                90-day trial · <Link href="/pricing" className="text-[#635bff] hover:underline">Upgrade</Link>
-              </div>
-            )}
-            {user.email === 'admin@myncel.com' && (
-              <Link href="/admin" className="flex items-center gap-1.5 text-xs font-semibold text-[#635bff] bg-[#635bff]/10 hover:bg-[#635bff]/20 px-3 py-1.5 rounded-lg transition-colors border border-[var(--accent-border)]">
-                🛡️ Admin Panel
-              </Link>
-            )}
-          </div>
-        </header>
-
-        {/* Content */}
-        <div className="flex-1 p-6">
 
           {/* ── DASHBOARD TAB ── */}
           {activeTab === 'dashboard' && (
@@ -1851,7 +1785,6 @@ function DashboardClientInner({ user, data }: Props) {
           )}
 
         </div>
-      </main>
 
       {/* Modals */}
       <Modal show={showMachineModal} onClose={() => { setShowMachineModal(false); setSaveError(''); }} title="Add New Machine">
@@ -2339,14 +2272,10 @@ function DashboardClientInner({ user, data }: Props) {
         </div>
       )}
 
-    </div>
+    </>
   );
 }
 
 export default function DashboardClient(props: Props) {
-  return (
-    <ThemeProvider themeClass="dash-theme" defaultTheme="light" storageKey="myncel-dashboard-theme" style={{ minHeight: '100vh' }}>
-      <DashboardClientInner {...props} />
-    </ThemeProvider>
-  );
+  return <DashboardClientInner {...props} />;
 }

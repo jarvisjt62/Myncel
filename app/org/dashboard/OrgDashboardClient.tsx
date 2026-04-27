@@ -170,36 +170,31 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
   ];
 
   return (
-    <div style={S.root}>
+    <div>
 
-      {/* ── Topbar ── */}
-      <header style={S.topbar}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <img src="/logo.png" alt="Myncel" style={{ width: 36, height: 36 }} />
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
-              {user.organization.name}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-              Organization Admin Panel
-            </div>
-          </div>
-          <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'rgba(99,91,255,0.1)', color: '#635bff', border: '1px solid rgba(99,91,255,0.25)', marginLeft: 4 }}>
-            {user.organization.plan}
-          </span>
+      {/* ── Page Title ── */}
+      <div style={{ padding: '0 0 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' as any, gap: 10 }}>
+        <div>
+          <h1 style={{ fontWeight: 700, fontSize: 20, color: 'var(--text-primary)', margin: 0 }}>
+            {user.organization.name} — Admin Panel
+          </h1>
+          {user.organization.plan && (
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'rgba(99,91,255,0.1)', color: '#635bff', border: '1px solid rgba(99,91,255,0.25)', display: 'inline-block', marginTop: 4 }}>
+              {user.organization.plan}
+            </span>
+          )}
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' as any }}>
           {stats.criticalAlerts > 0 && (
-            <Link href="/dashboard" style={S.alertBadge}>
+            <span style={S.alertBadge}>
               🚨 {stats.criticalAlerts} Critical Alert{stats.criticalAlerts !== 1 ? 's' : ''}
-            </Link>
+            </span>
           )}
           <button onClick={() => setShowInvite(true)} style={S.inviteBtn}>
             + Invite Team Member
           </button>
-          <Link href="/dashboard" style={S.dashLink}>← User Dashboard</Link>
         </div>
-      </header>
+      </div>
 
       {/* ── Tab Nav ── */}
       <nav style={S.tabNav}>
@@ -635,7 +630,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const S = {
-  root: { minHeight: '100vh', background: 'var(--bg-page)', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
+  root: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
   topbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', background: 'var(--bg-nav)', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' as const, gap: 10, position: 'sticky' as const, top: 0, zIndex: 50 },
   tabNav: { display: 'flex', gap: 0, padding: '0 24px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', overflowX: 'auto' as const },
   tab: { display: 'flex', alignItems: 'center', gap: 6, padding: '13px 18px', fontSize: 14, border: 'none', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' as const, background: 'transparent' },

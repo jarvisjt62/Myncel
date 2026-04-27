@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -172,22 +171,7 @@ export default function SetupWizardClient() {
   };
 
   return (
-    <div className="dash-theme min-h-screen flex flex-col items-center justify-center p-4"
-      style={{ backgroundColor: 'var(--bg-page)' }}>
-
-      {/* Back nav */}
-      <div className="w-full max-w-2xl mb-2">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Dashboard
-        </Link>
-      </div>
+    <div className="flex flex-col items-center justify-center p-4 min-h-[calc(100vh-120px)]">
 
       {/* Header */}
       <div className="w-full max-w-2xl mb-8">
