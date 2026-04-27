@@ -146,6 +146,13 @@ model Organization {
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean   @default(false)
 
+  // Admin control
+  isActive        Boolean   @default(true)
+  isSuspended     Boolean   @default(false)
+  adminNotes      String?   @db.Text
+  suspendedAt     DateTime?
+  suspendedReason String?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -385,6 +392,21 @@ model AuditLog {
   @@index([organizationId, createdAt])
   @@index([entity, entityId])
   @@map("audit_logs")
+}
+
+
+// ===== ADMIN SETTINGS =====
+
+model AdminSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique  // e.g. "payment.stripe.enabled", "feature.iot.enabled"
+  value     String   @db.Text // JSON-encoded value
+  group     String   @default("general") // payment, feature, platform, security
+  label     String?  // Human-readable label
+  updatedAt DateTime @updatedAt
+  updatedBy String?  // admin user id
+
+  @@map("admin_settings")
 }
 
 // ===== ENUMS =====

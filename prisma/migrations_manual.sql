@@ -122,3 +122,21 @@ END $$;
 SELECT table_name FROM information_schema.tables 
 WHERE table_schema = 'public' 
 AND table_name IN ('integrations', 'webhooks', 'notification_settings');
+-- AdminSetting table
+CREATE TABLE IF NOT EXISTS "admin_settings" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "key" TEXT NOT NULL UNIQUE,
+  "value" TEXT NOT NULL,
+  "group" TEXT NOT NULL DEFAULT 'general',
+  "label" TEXT,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  "updatedBy" TEXT
+);
+
+-- Organization admin control fields
+ALTER TABLE "organizations"
+  ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "isSuspended" BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS "adminNotes" TEXT,
+  ADD COLUMN IF NOT EXISTS "suspendedAt" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "suspendedReason" TEXT;

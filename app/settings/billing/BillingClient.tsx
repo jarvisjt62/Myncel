@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface PlanDef {
@@ -125,6 +125,17 @@ export default function BillingClient({
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [selectedGateway, setSelectedGateway] = useState<string>('stripe');
   const [checkoutPlanId, setCheckoutPlanId] = useState<string | null>(null);
+  const [activeGateways, setActiveGateways] = useState<Record<string, boolean>>({
+    stripe: true, paypal: true, ach: true, applePay: true, googlePay: true,
+  });
+
+  // Fetch active gateways from admin settings
+  useEffect(() => {
+    fetch('/api/billing/gateways')
+      .then(r => r.json())
+      .then(data => setActiveGateways(data))
+      .catch(() => {});
+  }, []);
 
   const showToast = (type: 'success' | 'error', text: string) => {
     setToast({ type, text });
@@ -280,7 +291,7 @@ export default function BillingClient({
               Choose Payment Method
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-              {GATEWAYS.map(gw => (
+              {GATEWAYS.filter(gw => activeGateways[gw.id] !== false).map(gw => (
                 <label
                   key={gw.id}
                   style={{
@@ -534,12 +545,14 @@ export default function BillingClient({
           Accepted payments:
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          {['VISA', 'MC', 'AMEX'].map(l => <GatewayLogoBadge key={l} type={l} />)}
-          <GatewayLogoBadge type="PP" />
-          <GatewayLogoBadge type="ACH" />
-          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-            + Apple Pay, Google Pay (via Stripe)
-          </span>
+          {activeGateways.stripe !== false && <><GatewayLogoBadge type="VISA" /><GatewayLogoBadge type="MC" /><GatewayLogoBadge type="AMEX" /></>}
+          {activeGateways.paypal !== false && <GatewayLogoBadge type="PP" />}
+          {activeGateways.ach !== false && <GatewayLogoBadge type="ACH" />}
+          {(activeGateways.applePay !== false || activeGateways.googlePay !== false) && activeGateways.stripe !== false && (
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+              {[activeGateways.applePay !== false && 'Apple Pay', activeGateways.googlePay !== false && 'Google Pay'].filter(Boolean).join(' & ')} (via Stripe)
+            </span>
+          )}
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: 12 }}>🔒</span>

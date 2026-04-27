@@ -52,8 +52,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     {
       label: 'Account',
       items: [
-        { href: '/admin/account',   label: 'My Account', icon: '👤' },
-        { href: '/admin/settings',  label: 'Settings',   icon: '⚙️' },
+        { href: '/admin/account',          label: 'My Account',       icon: '👤' },
+        { href: '/admin/settings',         label: 'Settings',         icon: '⚙️' },
+        { href: '/admin/settings/platform',label: 'Platform Config',  icon: '🔧' },
       ],
     },
   ];
