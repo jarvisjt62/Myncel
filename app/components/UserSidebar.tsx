@@ -1,11 +1,11 @@
 'use client';
 
 import '../components/theme.css';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import { ThemeProvider, ThemeToggle } from '../components/ThemeProvider';
+import { ThemeProvider } from '../components/ThemeProvider';
 import NotificationBell from '../components/NotificationBell';
 import GlobalSearch from '../components/GlobalSearch';
 
@@ -21,7 +21,21 @@ type UserSidebarProps = {
 
 function UserShellInner({ user, children }: UserSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
+
+  // Close account dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
+        setAccountOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   // Determine active nav item from URL
   const getActiveItem = () => {
@@ -45,12 +59,36 @@ function UserShellInner({ user, children }: UserSidebarProps) {
 
   const active = getActiveItem();
 
+  // Hash-based tab navigation helper — sends hash to DashboardClient
+  const navigateToTab = (hash: string) => {
+    setSidebarOpen(false);
+    if (pathname === '/dashboard') {
+      // Already on dashboard page — just push the hash to trigger hashchange
+      window.location.hash = hash;
+    } else {
+      router.push(`/dashboard#${hash}`);
+    }
+  };
+
+  // Determine if a hash tab is "active" based on DashboardClient tab state
+  // We track this via a custom event or just visually highlight based on pathname
+  const isHashTabActive = (hash: string) => {
+    // If we're not on /dashboard, none are active
+    if (pathname !== '/dashboard') return false;
+    // We highlight based on current hash in URL (best effort)
+    if (typeof window !== 'undefined') {
+      return window.location.hash === `#${hash}`;
+    }
+    return false;
+  };
+
   const navLink = (href: string, id: string, label: string, icon: React.ReactNode, badge?: React.ReactNode) => {
     const isActive = active === id;
     return (
       <Link
         key={id}
         href={href}
+        prefetch={true}
         onClick={() => setSidebarOpen(false)}
         className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
           isActive
@@ -65,11 +103,26 @@ function UserShellInner({ user, children }: UserSidebarProps) {
     );
   };
 
+  // Hash tab nav button (for Equipment, Work Orders, Schedules, Alerts)
+  const hashTabButton = (hash: string, id: string, label: string, icon: React.ReactNode, badge?: React.ReactNode) => {
+    return (
+      <button
+        key={id}
+        onClick={() => navigateToTab(hash)}
+        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] hover:text-[var(--text-primary)]`}
+      >
+        <span className="text-[var(--text-muted)]">{icon}</span>
+        <span className="flex-1 text-left">{label}</span>
+        {badge}
+      </button>
+    );
+  };
+
   const Sidebar = () => (
     <aside className="w-60 flex flex-col h-full" style={{ backgroundColor: 'var(--bg-sidebar)', borderRight: '1px solid var(--border)' }}>
       {/* Logo */}
       <div className="p-5" style={{ borderBottom: '1px solid var(--border)' }}>
-        <Link href="/" className="flex items-center gap-1.5">
+        <Link href="/" prefetch={true} className="flex items-center gap-1.5">
           <img src="/logo.png" alt="Myncel" className="w-9 h-9" />
           <div>
             <div className="font-bold text-sm text-[var(--text-primary)]">Myncel</div>
@@ -84,32 +137,33 @@ function UserShellInner({ user, children }: UserSidebarProps) {
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
 
-        {/* Main nav */}
+        {/* Dashboard */}
         {navLink('/dashboard', 'dashboard', 'Dashboard',
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
           </svg>
         )}
 
-        {navLink('/dashboard#equipment', 'equipment', 'Equipment',
+        {/* Hash-based tab buttons */}
+        {hashTabButton('equipment', 'equipment', 'Equipment',
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         )}
 
-        {navLink('/dashboard#workorders', 'workorders', 'Work Orders',
+        {hashTabButton('workorders', 'workorders', 'Work Orders',
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
         )}
 
-        {navLink('/dashboard#schedules', 'schedules', 'Schedules',
+        {hashTabButton('schedules', 'schedules', 'Schedules',
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         )}
 
-        {navLink('/dashboard#alerts', 'alerts', 'Alerts',
+        {hashTabButton('alerts', 'alerts', 'Alerts',
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
@@ -186,61 +240,114 @@ function UserShellInner({ user, children }: UserSidebarProps) {
         </div>
       </nav>
 
-      {/* User footer */}
-      <div className="p-4" style={{ borderTop: '1px solid var(--border)' }}>
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-[#635bff] flex items-center justify-center text-white text-xs font-bold">
+      {/* ── Account Footer with Dropdown ── */}
+      <div className="p-3" style={{ borderTop: '1px solid var(--border)' }} ref={accountRef}>
+        {/* Account dropdown trigger button */}
+        <button
+          onClick={() => setAccountOpen(o => !o)}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-[var(--bg-surface-2)]"
+          style={{ border: '1px solid var(--border)' }}
+        >
+          <div className="w-8 h-8 rounded-full bg-[#635bff] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
             {user.name.charAt(0).toUpperCase()}
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 text-left">
             <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user.name}</p>
-            <p className="text-xs font-medium truncate" style={{ color: 'var(--accent)', opacity: 0.85 }}>{user.role}</p>
+            <p className="text-[10px] font-medium" style={{ color: 'var(--accent)', opacity: 0.85 }}>{user.role}</p>
           </div>
-        </div>
-
-        {/* Org Admin Panel — only for OWNER and ADMIN */}
-        {(user.role === 'OWNER' || user.role === 'ADMIN') && (
-          <Link
-            href="/org/dashboard"
-            onClick={() => setSidebarOpen(false)}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all mb-1 ${
-              active === 'org-dashboard'
-                ? 'bg-[#635bff]/10 text-[#635bff]'
-                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] hover:text-[var(--text-primary)]'
-            }`}
+          <svg
+            className="w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200"
+            style={{ color: 'var(--text-muted)', transform: accountOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
           >
-            <span className={active === 'org-dashboard' ? 'text-[#635bff]' : 'text-[var(--text-secondary)]'}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </span>
-            <span className="flex-1 text-left">Org Admin Panel</span>
-            <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-semibold uppercase">
-              {user.role}
-            </span>
-          </Link>
-        )}
-
-        {user.email === 'admin@myncel.com' && (
-          <Link
-            href="/admin"
-            onClick={() => setSidebarOpen(false)}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all mb-1 text-[#635bff] bg-[#635bff]/10 hover:bg-[#635bff]/20"
-          >
-            <span>🛡️</span>
-            <span className="flex-1 text-left">Admin Panel</span>
-          </Link>
-        )}
-
-        <button
-          onClick={() => signOut({ callbackUrl: '/' })}
-          className="w-full text-xs font-medium text-[var(--text-secondary)] hover:text-red-500 flex items-center gap-1.5 transition-colors mt-1 py-1.5 px-2 rounded-lg hover:bg-red-500/10"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
-          Sign out
         </button>
+
+        {/* Dropdown menu — opens upward */}
+        {accountOpen && (
+          <div
+            className="absolute left-3 right-3 bottom-[72px] rounded-xl shadow-lg z-50 overflow-hidden"
+            style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+          >
+            {/* User info header */}
+            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+              <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user.name}</p>
+              <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>{user.email}</p>
+            </div>
+
+            <div className="py-1">
+              {/* Settings */}
+              <Link
+                href="/settings"
+                prefetch={true}
+                onClick={() => { setAccountOpen(false); setSidebarOpen(false); }}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-hover)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = ''; (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; }}
+              >
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Settings
+              </Link>
+
+              {/* Org Admin Panel — only for OWNER and ADMIN */}
+              {(user.role === 'OWNER' || user.role === 'ADMIN') && (
+                <Link
+                  href="/org/dashboard"
+                  prefetch={true}
+                  onClick={() => { setAccountOpen(false); setSidebarOpen(false); }}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-hover)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = ''; (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; }}
+                >
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <span className="flex-1">Org Admin Panel</span>
+                  <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-semibold uppercase">
+                    {user.role}
+                  </span>
+                </Link>
+              )}
+
+              {/* Admin Panel — only for super admin */}
+              {user.email === 'admin@myncel.com' && (
+                <Link
+                  href="/admin"
+                  prefetch={true}
+                  onClick={() => { setAccountOpen(false); setSidebarOpen(false); }}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-[#635bff]"
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(99,91,255,0.08)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = ''; }}
+                >
+                  <span>🛡️</span>
+                  <span className="flex-1">Admin Panel</span>
+                  <span className="text-[9px] bg-[#635bff]/10 text-[#635bff] px-1.5 py-0.5 rounded-full font-semibold">SUPER</span>
+                </Link>
+              )}
+            </div>
+
+            {/* Sign out */}
+            <div style={{ borderTop: '1px solid var(--border)' }}>
+              <button
+                onClick={() => { setAccountOpen(false); signOut({ callbackUrl: '/' }); }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(239,68,68,0.08)'; (e.currentTarget as HTMLElement).style.color = '#ef4444'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = ''; (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; }}
+              >
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Sign Out
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   );
@@ -313,7 +420,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
             </div>
             <NotificationBell />
             {user.email === 'admin@myncel.com' && (
-              <Link href="/admin" className="flex items-center gap-1.5 text-xs font-semibold text-[#635bff] bg-[#635bff]/10 hover:bg-[#635bff]/20 px-3 py-1.5 rounded-lg transition-colors border border-[rgba(99,91,255,0.25)]">
+              <Link href="/admin" prefetch={true} className="flex items-center gap-1.5 text-xs font-semibold text-[#635bff] bg-[#635bff]/10 hover:bg-[#635bff]/20 px-3 py-1.5 rounded-lg transition-colors border border-[rgba(99,91,255,0.25)]">
                 🛡️ Admin Panel
               </Link>
             )}

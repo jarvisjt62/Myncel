@@ -1,34 +1,18 @@
-# Myncel App — Task Log
+# Session 4 Fixes
 
-## ✅ Task 1: Fix Admin Dashboard "Something Went Wrong" Error — COMPLETE (ad8b687)
-## ✅ Task 2: Persistent Sidebar Navigation Across All Pages — COMPLETE (c62aa50)
+## Issue 1: Dashboard tabs (Equipment/WorkOrders/Schedules/Alerts) not working
+- [ ] Inspect DashboardClient.tsx tab switching logic
+- [ ] Fix hash-based tab navigation and rendering
 
-## ✅ Task 3: UI Fixes — April 27 — COMPLETE (ef3f7d5)
+## Issue 2: User sidebar bottom section - replace with clean dropdown account menu
+- [ ] Redesign bottom of UserSidebar: replace raw links with a proper dropdown
+- [ ] Show avatar, name, role in a compact button
+- [ ] Dropdown shows: Org Admin Panel (if OWNER/ADMIN), Admin Panel (if admin email), Sign out
 
-### Fix 1 — Sidebar bottom section visibility
-- [x] Remove duplicate `dash-theme` class from inner shell div (was blocking dark mode)
-- [x] Role text now uses accent color (was too faint with text-muted)
-- [x] Org Admin Panel link uses text-primary with opacity (was invisible)
-- [x] Sign out button more visible (text-secondary + hover:red + hover bg)
-- [x] Added ThemeToggle to topbar so dark/light switch is always accessible
+## Issue 3: Speed up navigation in both admin and user dashboards
+- [ ] Add prefetch support for key routes in UserSidebar
+- [ ] Minimize layout re-renders on tab changes in DashboardClient
+- [ ] Check for unnecessary dynamic imports slowing navigation
 
-### Fix 2 — Quick Action buttons (were causing 404)
-- [x] New Work Order → /dashboard#work-orders
-- [x] Schedule PM → /dashboard#schedules
-- [x] Add Machine → /dashboard#equipment
-- [x] View Alerts → /dashboard#alerts
-- [x] Settings → /settings
-- [x] DashboardClient now reads URL hash to activate the right tab
-
-### Fix 3 — Invite Team Member modal transparency
-- [x] Modal z-index raised to 9999
-- [x] Background uses `var(--bg-surface, #ffffff)` with solid fallback
-- [x] Form inputs use fallback colors for guaranteed visibility
-
-### Fix 4 — Dark mode sync across all pages
-- [x] UserSidebar: removed duplicate dash-theme (was preventing data-theme from cascading)
-- [x] All hardcoded light colors (#0a2540, #425466, #f6f9fc, #e6ebf1) replaced with CSS vars
-- [x] settings/: integrations, notifications, security, team, webhooks, api-keys
-- [x] equipment/: qr-labels, floor-plan, scan
-- [x] docs/: category and slug pages
-- [x] Removed min-h-screen wrappers from settings sub-pages
+## Commit & Push
+- [ ] Git commit and push all changes
