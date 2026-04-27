@@ -310,8 +310,8 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
               <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14, fontSize: 15 }}>⚡ Quick Actions</div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 {[
-                  { href: '/work-orders/new',       icon: '➕', label: 'Create Work Order', color: '#635bff' },
-                  { href: '/equipment',             icon: '⚙️', label: 'Manage Machines',   color: '#10b981' },
+                  { href: '/dashboard#work-orders', icon: '➕', label: 'Create Work Order', color: '#635bff' },
+                  { href: '/dashboard#equipment',   icon: '⚙️', label: 'Manage Machines',   color: '#10b981' },
                   { href: '/dashboard',             icon: '🖥️', label: 'Full Dashboard',    color: '#3b82f6' },
                   { href: '/settings/api-keys',     icon: '🔑', label: 'API Keys',           color: '#f59e0b' },
                   { href: '/equipment/qr-labels',   icon: '📱', label: 'Print QR Labels',   color: '#8b5cf6' },
@@ -455,7 +455,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <Link href="/equipment/qr-labels" style={{ ...S.inviteBtn, textDecoration: 'none' }}>📱 Print QR Labels</Link>
-                <Link href="/equipment" style={{ ...S.dashLink, textDecoration: 'none' }}>Manage →</Link>
+                <Link href="/dashboard#equipment" style={{ ...S.dashLink, textDecoration: 'none' }}>Manage →</Link>
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
@@ -476,7 +476,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
               })}
               {machines.length === 0 && (
                 <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)' }}>
-                  No machines registered yet. <Link href="/equipment/new" style={{ color: '#635bff' }}>Add one →</Link>
+                  No machines registered yet. <Link href="/dashboard#equipment" style={{ color: '#635bff' }}>Add one →</Link>
                 </div>
               )}
             </div>
@@ -493,7 +493,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                   {stats.openWorkOrders} open · {stats.overdueWorkOrders} overdue
                 </p>
               </div>
-              <Link href="/work-orders" style={{ ...S.inviteBtn, textDecoration: 'none' }}>View All Work Orders →</Link>
+              <Link href="/dashboard#work-orders" style={{ ...S.inviteBtn, textDecoration: 'none' }}>View All Work Orders →</Link>
             </div>
             <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
               <div style={{ overflowX: 'auto' }}>
