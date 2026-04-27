@@ -1,4 +1,13 @@
 import Stripe from 'stripe';
+import https from 'https';
+
+// Create a custom HTTP agent with keepAlive for better connection handling in serverless
+// This helps prevent ECONNRESET/EPIPE errors in Vercel Functions
+const stripeHttpAgent = new https.Agent({
+  keepAlive: true,
+  keepAliveInitialDelay: 1000, // Start keepalive probes after 1 second
+  timeout: 60000, // 60 second timeout for the agent
+});
 
 // Initialize Stripe (key required in production)
 export const stripe = new Stripe(
@@ -6,9 +15,10 @@ export const stripe = new Stripe(
   {
     apiVersion: '2024-11-20.acacia' as any,
     typescript: true,
-    maxNetworkRetries: 2, // Retry up to 2 times on network errors
-    timeout: 30000, // 30 second timeout
+    maxNetworkRetries: 3, // Retry up to 3 times on network errors (increased from 2)
+    timeout: 30000, // 30 second timeout for each request
     telemetry: true,
+    httpAgent: stripeHttpAgent, // Custom agent with keepAlive
   }
 );
 

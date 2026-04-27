@@ -6,6 +6,40 @@ import { stripe, getPlanById } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
 
+// Helper function to retry Stripe operations with exponential backoff
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  operationName: string,
+  maxRetries: number = 3
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+      const isRetryable = 
+        error.type === 'StripeConnectionError' ||
+        error.code === 'ECONNRESET' ||
+        error.code === 'EPIPE' ||
+        error.message?.includes('connection to Stripe');
+      
+      if (!isRetryable || attempt === maxRetries) {
+        console.error(`[Stripe] ${operationName} failed after ${attempt} attempts:`, error.message);
+        throw error;
+      }
+      
+      // Exponential backoff: 500ms, 1s, 2s
+      const delay = Math.pow(2, attempt - 1) * 500;
+      console.warn(`[Stripe] ${operationName} attempt ${attempt} failed, retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError;
+}
+
 // Plan prices in cents for on-the-fly Stripe price creation
 const PLAN_PRICES_CENTS: Record<string, { monthly: number; yearly: number; monthlyLabel: string; yearlyLabel: string }> = {
   STARTER:      { monthly: 4900,   yearly: 46800,  monthlyLabel: '$49/month',    yearlyLabel: '$468/year ($39/mo)' },
@@ -33,10 +67,10 @@ async function getOrCreateStripePrice(planId: string, interval: 'monthly' | 'yea
   const plan = getPlanById(planId);
   const nickname = `${plan.name} ${interval === 'yearly' ? 'Yearly' : 'Monthly'}`;
 
-  const existingPrices = await stripe.prices.list({
-    active: true,
-    limit: 100,
-  });
+  const existingPrices = await withRetry(
+    () => stripe.prices.list({ active: true, limit: 100 }),
+    'prices.list'
+  );
 
   const existing = existingPrices.data.find(p =>
     p.nickname === nickname ||
@@ -51,16 +85,22 @@ async function getOrCreateStripePrice(planId: string, interval: 'monthly' | 'yea
   // 4. Create product if needed
   let productId = process.env.STRIPE_PRODUCT_ID;
   if (!productId) {
-    const products = await stripe.products.list({ limit: 10 });
+    const products = await withRetry(
+        () => stripe.products.list({ limit: 10 }),
+        'products.list'
+      );
     const existingProduct = products.data.find(p => p.name === 'Myncel CMMS' || p.metadata?.app === 'myncel');
     if (existingProduct) {
       productId = existingProduct.id;
     } else {
-      const newProduct = await stripe.products.create({
-        name: 'Myncel CMMS',
-        description: 'Computerized Maintenance Management System',
-        metadata: { app: 'myncel' },
-      });
+      const newProduct = await withRetry(
+        () => stripe.products.create({
+          name: 'Myncel CMMS',
+          description: 'Computerized Maintenance Management System',
+          metadata: { app: 'myncel' },
+        }),
+        'products.create'
+      );
       productId = newProduct.id;
     }
   }
@@ -72,14 +112,17 @@ async function getOrCreateStripePrice(planId: string, interval: 'monthly' | 'yea
   const amount = interval === 'yearly' ? prices.yearly : prices.monthly;
   const stripeInterval = interval === 'yearly' ? 'year' : 'month';
 
-  const newPrice = await stripe.prices.create({
-    product: productId,
-    unit_amount: amount,
-    currency: 'usd',
-    recurring: { interval: stripeInterval },
-    nickname,
-    metadata: { planId, interval, app: 'myncel' },
-  });
+  const newPrice = await withRetry(
+    () => stripe.prices.create({
+      product: productId,
+      unit_amount: amount,
+      currency: 'usd',
+      recurring: { interval: stripeInterval },
+      nickname,
+      metadata: { planId, interval, app: 'myncel' },
+    }),
+    'prices.create'
+  );
 
   priceIdCache[cacheKey] = newPrice.id;
   console.log(`[Stripe] Created price ${newPrice.id} for ${planId} ${interval}`);
@@ -133,14 +176,17 @@ export async function POST(req: NextRequest) {
     // Create or retrieve Stripe customer
     let customerId = org.stripeCustomerId;
     if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: session.user.email || '',
-        name: org.name,
-        metadata: {
-          organizationId: org.id,
-          userId: session.user.id || '',
-        },
-      });
+      const customer = await withRetry(
+        () => stripe.customers.create({
+          email: session.user.email || '',
+          name: org.name,
+          metadata: {
+            organizationId: org.id,
+            userId: session.user.id || '',
+          },
+        }),
+        'customers.create'
+      );
       customerId = customer.id;
       await prisma.organization.update({
         where: { id: org.id },
@@ -154,10 +200,13 @@ export async function POST(req: NextRequest) {
 
     // If already subscribed, open billing portal instead
     if (org.stripeSubscriptionId) {
-      const portalSession = await stripe.billingPortal.sessions.create({
-        customer: customerId,
-        return_url: `${appUrl}/settings/billing`,
-      });
+      const portalSession = await withRetry(
+        () => stripe.billingPortal.sessions.create({
+          customer: customerId,
+          return_url: `${appUrl}/settings/billing`,
+        }),
+        'billingPortal.sessions.create'
+      );
       return NextResponse.json({ url: portalSession.url });
     }
 
@@ -165,19 +214,22 @@ export async function POST(req: NextRequest) {
     const priceId = await getOrCreateStripePrice(planId, billingInterval as 'monthly' | 'yearly');
 
     // Create checkout session
-    const checkoutSession = await stripe.checkout.sessions.create({
-      customer: customerId,
-      payment_method_types: ['card'],
-      line_items: [{ price: priceId, quantity: 1 }],
-      mode: 'subscription',
-      success_url: `${appUrl}/settings/billing?success=true&plan=${planId}`,
-      cancel_url: `${appUrl}/settings/billing?canceled=true`,
-      subscription_data: {
-        metadata: { organizationId: org.id, planId },
-      },
-      allow_promotion_codes: true,
-      metadata: { organizationId: org.id, planId, billingInterval },
-    });
+    const checkoutSession = await withRetry(
+      () => stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: 'subscription',
+        success_url: `${appUrl}/settings/billing?success=true&plan=${planId}`,
+        cancel_url: `${appUrl}/settings/billing?canceled=true`,
+        subscription_data: {
+          metadata: { organizationId: org.id, planId },
+        },
+        allow_promotion_codes: true,
+        metadata: { organizationId: org.id, planId, billingInterval },
+      }),
+      'checkout.sessions.create'
+    );
 
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error: any) {
