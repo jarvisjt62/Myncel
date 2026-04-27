@@ -6,6 +6,9 @@ export const stripe = new Stripe(
   {
     apiVersion: '2024-11-20.acacia' as any,
     typescript: true,
+    maxNetworkRetries: 2, // Retry up to 2 times on network errors
+    timeout: 30000, // 30 second timeout
+    telemetry: true,
   }
 );
 
