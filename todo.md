@@ -1,28 +1,25 @@
-# CMMS Feature Implementation Plan
+# Myncel Physical Connection Toolkit - Session Tasks
 
-## 1. Setup Wizard - Machine + IoT Connection
-- [ ] Create `/app/setup/SetupWizardClient.tsx` - multi-step wizard UI (5 steps)
-- [ ] Create `/app/setup/page.tsx` - page wrapper
-- [ ] Create `/app/api/setup/wizard/route.ts` - wizard API
+## 1. Dashboard Sidebar ✅
+- [x] Remove SensorSimulator from dashboard
+- [x] Add IoT Simulator link to sidebar
+- [x] Add QR Labels link to sidebar
 
-## 2. API Key Management UI
-- [ ] Create `/app/settings/api-keys/page.tsx` - API key management page
-- [ ] Create `/app/api/settings/api-keys/route.ts` - CRUD for API keys
+## 2. Theme Fixes (dark → CSS variables)
+- [ ] Fix /settings/api-keys/page.tsx
+- [ ] Fix /setup/SetupWizardClient.tsx
+- [ ] Fix /docs/api/page.tsx
+- [ ] All pages: add "← Back to Dashboard" nav
 
-## 3. Sensor Simulator
-- [ ] Create `/app/components/dashboard/SensorSimulator.tsx` - simulator panel
-- [ ] Create `/app/api/dashboard/simulate/route.ts` - simulation endpoint
+## 3. IoT Simulator Standalone Page
+- [ ] Create /dashboard/iot-simulator/page.tsx (full page, themed)
 
-## 4. OpenAPI / Swagger Docs
-- [ ] Create `/app/api/docs/route.ts` - serve OpenAPI JSON spec
-- [ ] Create `/app/docs/api/page.tsx` - Swagger UI viewer page
+## 4. Physical Connection Toolkit
+- [ ] QR Label Generator: /equipment/qr-labels/page.tsx
+- [ ] IoT Wiring Guides: /docs/iot-guides/page.tsx
+- [ ] MQTT Bridge: /api/mqtt-bridge/route.ts
+- [ ] OPC-UA/Modbus Guide: /docs/protocols/page.tsx
 
-## 5. Admin Dashboard Audit & Fixes
-- [ ] Add IoT / sensor stats section to admin overview
-- [ ] Add breakdown alert panel with link to new breakdown route
-- [ ] Verify admin simulate integrates with new breakdown API
-- [ ] Add API key management link in admin sidebar
-
-## 6. Build & Commit
+## 5. Quality
 - [ ] npx tsc --noEmit → 0 errors
-- [ ] git commit + push
+- [ ] Git commit + push

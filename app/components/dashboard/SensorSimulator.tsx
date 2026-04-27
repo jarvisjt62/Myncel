@@ -45,11 +45,11 @@ const SENSOR_PROFILES: SensorProfile[] = [
 ];
 
 const SCENARIOS = [
-  { id: 'normal',    label: 'Normal Operation',  icon: '✅', description: 'All readings within safe ranges' },
-  { id: 'warning',   label: 'Warning Condition', icon: '⚠️', description: 'Some readings approaching thresholds' },
-  { id: 'critical',  label: 'Critical Failure',  icon: '🚨', description: 'Readings exceed critical thresholds' },
-  { id: 'gradual',   label: 'Gradual Degradation',icon:'📈', description: 'Values slowly climbing over time' },
-  { id: 'random',    label: 'Random / Noise',    icon: '🎲', description: 'Randomized readings across all ranges' },
+  { id: 'normal',   label: 'Normal Operation',   icon: '✅', description: 'All readings within safe ranges' },
+  { id: 'warning',  label: 'Warning Condition',  icon: '⚠️', description: 'Some readings approaching thresholds' },
+  { id: 'critical', label: 'Critical Failure',   icon: '🚨', description: 'Readings exceed critical thresholds' },
+  { id: 'gradual',  label: 'Gradual Degradation',icon: '📈', description: 'Values slowly climbing over time' },
+  { id: 'random',   label: 'Random / Noise',     icon: '🎲', description: 'Randomized readings across all ranges' },
 ];
 
 function generateValue(profile: SensorProfile, scenario: string, tick: number): number {
@@ -63,9 +63,10 @@ function generateValue(profile: SensorProfile, scenario: string, tick: number): 
       return +(profile.alertHigh ? profile.alertHigh * 0.95 + noise() : profile.baseMax + noise()).toFixed(2);
     case 'critical':
       return +(profile.criticalHigh ? profile.criticalHigh * 1.05 + noise() : profile.baseMax * 1.2 + noise()).toFixed(2);
-    case 'gradual':
+    case 'gradual': {
       const progress = Math.min(tick / 20, 1);
       return +(profile.baseMin + range * (0.3 + progress * 0.9) + noise()).toFixed(2);
+    }
     case 'random':
     default:
       return +(profile.baseMin + Math.random() * range * 1.4 + noise()).toFixed(2);
@@ -99,7 +100,6 @@ export default function SensorSimulator() {
   const logsEndRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load machines
   useEffect(() => {
     fetch('/api/machines')
       .then(r => r.json())
@@ -111,7 +111,6 @@ export default function SensorSimulator() {
       .finally(() => setLoadingMachines(false));
   }, []);
 
-  // Load first API key
   useEffect(() => {
     fetch('/api/settings/api-keys')
       .then(r => r.json())
@@ -122,12 +121,10 @@ export default function SensorSimulator() {
       .catch(() => {});
   }, []);
 
-  // Auto-scroll logs
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
 
-  // Stop on unmount
   useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
   const toggleSensor = (type: string) => {
@@ -138,7 +135,6 @@ export default function SensorSimulator() {
 
   const sendReadings = async (currentTick: number) => {
     if (!selectedMachineId || selectedSensors.length === 0) return;
-
     const machine = machines.find(m => m.id === selectedMachineId);
     if (!machine) return;
 
@@ -160,7 +156,6 @@ export default function SensorSimulator() {
         body: JSON.stringify({ readings, apiKey }),
       });
       const data = await res.json();
-
       const timestamp = new Date().toLocaleTimeString();
       const newLogs: SimulatorLog[] = readings.map((r, i) => {
         const profile = SENSOR_PROFILES.find(p => p.type === r.sensorType)!;
@@ -177,7 +172,6 @@ export default function SensorSimulator() {
           message: data.error,
         };
       });
-
       setLogs(prev => [...prev.slice(-200), ...newLogs]);
       setStats(prev => ({
         sent: prev.sent + readings.length,
@@ -186,7 +180,7 @@ export default function SensorSimulator() {
         errors: prev.errors + newLogs.filter(l => l.status === 'error').length,
       }));
       setTick(t => t + 1);
-    } catch (e) {
+    } catch {
       const timestamp = new Date().toLocaleTimeString();
       setLogs(prev => [...prev.slice(-200), {
         id: Date.now().toString(),
@@ -209,10 +203,7 @@ export default function SensorSimulator() {
     setTick(0);
     sendReadings(0);
     intervalRef.current = setInterval(() => {
-      setTick(t => {
-        sendReadings(t + 1);
-        return t + 1;
-      });
+      setTick(t => { sendReadings(t + 1); return t + 1; });
     }, intervalSec * 1000);
   };
 
@@ -228,25 +219,34 @@ export default function SensorSimulator() {
 
   const selectedMachine = machines.find(m => m.id === selectedMachineId);
 
+  // Shared inline styles using CSS variables
+  const surfaceStyle = { backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' } as React.CSSProperties;
+  const pageStyle = { backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' } as React.CSSProperties;
+  const inputStyle = { backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as React.CSSProperties;
+
   return (
-    <div className="bg-[#0d1426] border border-[#1e2d4a] rounded-2xl overflow-hidden">
+    <div className="rounded-2xl overflow-hidden" style={surfaceStyle}>
+
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e2d4a] bg-gradient-to-r from-[#635bff]/10 to-transparent">
+      <div className="flex items-center justify-between px-6 py-4"
+        style={{ borderBottom: '1px solid var(--border)', background: 'linear-gradient(to right, rgba(99,91,255,0.07), transparent)' }}>
         <div className="flex items-center gap-3">
           <span className="text-xl">📡</span>
           <div>
-            <h3 className="text-white font-semibold">IoT Sensor Simulator</h3>
-            <p className="text-[#8892a4] text-xs">Test your IoT integration without physical hardware</p>
+            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>IoT Sensor Simulator</h3>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Test your IoT integration without physical hardware</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {running && (
-            <span className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
-              <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
               Live — tick {tick}
             </span>
           )}
-          <button onClick={clearLogs} className="text-xs px-3 py-1.5 bg-[#1e2d4a] hover:bg-[#253550] text-[#8892a4] rounded-lg transition-colors">
+          <button onClick={clearLogs}
+            className="text-xs px-3 py-1.5 rounded-lg transition-colors"
+            style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
             Clear
           </button>
         </div>
@@ -254,57 +254,51 @@ export default function SensorSimulator() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
 
-        {/* ─── Config Panel ─────────────────────────────────── */}
-        <div className="border-r border-[#1e2d4a] p-5 space-y-5">
+        {/* ── Config Panel ──────────────────────────────────────── */}
+        <div className="p-5 space-y-5" style={{ borderRight: '1px solid var(--border)' }}>
 
           {/* Machine selector */}
           <div>
-            <label className="block text-[#8892a4] text-xs font-medium mb-2 uppercase tracking-wide">Target Machine</label>
+            <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Target Machine</label>
             {loadingMachines ? (
-              <div className="text-[#8892a4] text-sm">Loading machines...</div>
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading machines...</div>
             ) : machines.length === 0 ? (
-              <div className="text-[#8892a4] text-sm">
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 No machines found.{' '}
                 <a href="/setup" className="text-[#635bff] hover:underline">Add one →</a>
               </div>
             ) : (
-              <select
-                value={selectedMachineId}
-                onChange={e => setSelectedMachineId(e.target.value)}
+              <select value={selectedMachineId} onChange={e => setSelectedMachineId(e.target.value)}
                 disabled={running}
-                className="w-full bg-[#070d1a] border border-[#1e2d4a] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#635bff] transition-colors disabled:opacity-60"
-              >
-                {machines.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
+                className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#635bff]/40 transition-all disabled:opacity-60"
+                style={inputStyle}>
+                {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
             )}
             {selectedMachine && (
               <div className="mt-1.5 flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${
-                  selectedMachine.status === 'OPERATIONAL' ? 'bg-emerald-400' :
-                  selectedMachine.status === 'BREAKDOWN' ? 'bg-red-400' : 'bg-yellow-400'
+                  selectedMachine.status === 'OPERATIONAL' ? 'bg-emerald-500' :
+                  selectedMachine.status === 'BREAKDOWN'   ? 'bg-red-500' : 'bg-yellow-500'
                 }`} />
-                <span className="text-[#8892a4] text-xs">{selectedMachine.status} · {selectedMachine.category.replace(/_/g, ' ')}</span>
+                <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  {selectedMachine.status} · {selectedMachine.category.replace(/_/g, ' ')}
+                </span>
               </div>
             )}
           </div>
 
           {/* Scenario */}
           <div>
-            <label className="block text-[#8892a4] text-xs font-medium mb-2 uppercase tracking-wide">Scenario</label>
+            <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Scenario</label>
             <div className="space-y-1.5">
               {SCENARIOS.map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => !running && setScenario(s.id)}
-                  disabled={running}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all disabled:opacity-60 ${
-                    scenario === s.id
-                      ? 'bg-[#635bff]/15 border border-[#635bff]/40 text-white'
-                      : 'bg-[#070d1a] border border-[#1e2d4a] text-[#8892a4] hover:text-white hover:border-[#2e3f5a]'
-                  }`}
-                >
+                <button key={s.id} onClick={() => !running && setScenario(s.id)} disabled={running}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all disabled:opacity-60"
+                  style={scenario === s.id
+                    ? { backgroundColor: 'rgba(99,91,255,0.12)', border: '1px solid rgba(99,91,255,0.4)', color: 'var(--text-primary)' }
+                    : { backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }
+                  }>
                   <div className="flex items-center gap-2">
                     <span>{s.icon}</span>
                     <div>
@@ -319,19 +313,15 @@ export default function SensorSimulator() {
 
           {/* Sensors */}
           <div>
-            <label className="block text-[#8892a4] text-xs font-medium mb-2 uppercase tracking-wide">Sensor Types</label>
+            <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Sensor Types</label>
             <div className="space-y-1.5">
               {SENSOR_PROFILES.map(p => (
-                <button
-                  key={p.type}
-                  onClick={() => !running && toggleSensor(p.type)}
-                  disabled={running}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all disabled:opacity-60 flex items-center justify-between ${
-                    selectedSensors.includes(p.type)
-                      ? 'bg-[#635bff]/10 border border-[#635bff]/30 text-white'
-                      : 'bg-[#070d1a] border border-[#1e2d4a] text-[#8892a4]'
-                  }`}
-                >
+                <button key={p.type} onClick={() => !running && toggleSensor(p.type)} disabled={running}
+                  className="w-full text-left px-3 py-2 rounded-lg text-sm transition-all disabled:opacity-60 flex items-center justify-between"
+                  style={selectedSensors.includes(p.type)
+                    ? { backgroundColor: 'rgba(99,91,255,0.08)', border: '1px solid rgba(99,91,255,0.3)', color: 'var(--text-primary)' }
+                    : { backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }
+                  }>
                   <span className="flex items-center gap-2">
                     <span>{p.icon}</span>
                     <span className="capitalize">{p.type.replace(/_/g, ' ')}</span>
@@ -344,33 +334,26 @@ export default function SensorSimulator() {
 
           {/* Interval */}
           <div>
-            <label className="block text-[#8892a4] text-xs font-medium mb-2 uppercase tracking-wide">
+            <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
               Interval: {intervalSec}s
             </label>
-            <input
-              type="range"
-              min={1} max={30} step={1}
-              value={intervalSec}
+            <input type="range" min={1} max={30} step={1} value={intervalSec}
               onChange={e => setIntervalSec(+e.target.value)}
               disabled={running}
-              className="w-full accent-[#635bff] disabled:opacity-60"
-            />
-            <div className="flex justify-between text-xs text-[#4a5568]">
+              className="w-full accent-[#635bff] disabled:opacity-60" />
+            <div className="flex justify-between text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
               <span>1s (fast)</span><span>30s (slow)</span>
             </div>
           </div>
 
           {/* API Key */}
           <div>
-            <label className="block text-[#8892a4] text-xs font-medium mb-2 uppercase tracking-wide">API Key</label>
-            <input
-              type="text"
-              value={apiKey}
-              onChange={e => setApiKey(e.target.value)}
+            <label className="block text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>API Key</label>
+            <input type="text" value={apiKey} onChange={e => setApiKey(e.target.value)}
               disabled={running}
               placeholder="mnc_iot_... (auto-loaded)"
-              className="w-full bg-[#070d1a] border border-[#1e2d4a] rounded-lg px-3 py-2 text-white text-xs font-mono focus:outline-none focus:border-[#635bff] transition-colors disabled:opacity-60 truncate"
-            />
+              className="w-full rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#635bff]/40 transition-all disabled:opacity-60 truncate"
+              style={inputStyle} />
           </div>
 
           {/* Start/Stop */}
@@ -379,28 +362,28 @@ export default function SensorSimulator() {
             disabled={!selectedMachineId || selectedSensors.length === 0}
             className={`w-full py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 ${
               running
-                ? 'bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400'
+                ? 'bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-600 dark:text-red-400'
                 : 'bg-[#635bff] hover:bg-[#5248e6] text-white'
-            }`}
-          >
+            }`}>
             {running ? '⏹ Stop Simulator' : '▶ Start Simulator'}
           </button>
         </div>
 
-        {/* ─── Log + Stats Panel ────────────────────────────── */}
+        {/* ── Log + Stats Panel ─────────────────────────────────── */}
         <div className="lg:col-span-2 flex flex-col">
 
           {/* Stats row */}
-          <div className="grid grid-cols-4 border-b border-[#1e2d4a]">
+          <div className="grid grid-cols-4" style={{ borderBottom: '1px solid var(--border)' }}>
             {[
-              { label: 'Sent',   value: stats.sent,   color: 'text-white' },
-              { label: 'OK',     value: stats.ok,     color: 'text-emerald-400' },
-              { label: 'Alerts', value: stats.alerts, color: 'text-yellow-400' },
-              { label: 'Errors', value: stats.errors, color: 'text-red-400' },
-            ].map(s => (
-              <div key={s.label} className="px-4 py-3 text-center border-r border-[#1e2d4a] last:border-0">
-                <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
-                <div className="text-[#8892a4] text-xs">{s.label}</div>
+              { label: 'Sent',   value: stats.sent,   color: 'var(--text-primary)' },
+              { label: 'OK',     value: stats.ok,     color: '#10b981' },
+              { label: 'Alerts', value: stats.alerts, color: '#f59e0b' },
+              { label: 'Errors', value: stats.errors, color: '#ef4444' },
+            ].map((s, i) => (
+              <div key={s.label} className="px-4 py-3 text-center"
+                style={{ borderRight: i < 3 ? '1px solid var(--border)' : undefined }}>
+                <div className="text-xl font-bold" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{s.label}</div>
               </div>
             ))}
           </div>
@@ -408,38 +391,37 @@ export default function SensorSimulator() {
           {/* Logs */}
           <div className="flex-1 overflow-y-auto max-h-96 p-4 space-y-1 font-mono text-xs">
             {logs.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 text-[#8892a4]">
+              <div className="flex flex-col items-center justify-center h-40" style={{ color: 'var(--text-secondary)' }}>
                 <span className="text-3xl mb-2">📡</span>
-                <p>Configure settings and press <strong className="text-white">Start</strong> to begin simulation</p>
+                <p>Configure settings and press <strong style={{ color: 'var(--text-primary)' }}>Start</strong> to begin simulation</p>
               </div>
             ) : (
               logs.map(log => (
-                <div
-                  key={log.id}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
-                    log.status === 'error' ? 'bg-red-500/10 border border-red-500/20' :
-                    log.status === 'alert' ? 'bg-yellow-500/10 border border-yellow-500/20' :
-                    'bg-[#070d1a] border border-[#1e2d4a]/50'
-                  }`}
-                >
-                  <span className="text-[#4a5568] w-16 flex-shrink-0">{log.timestamp}</span>
-                  <span className="text-[#8892a4] flex-shrink-0">
+                <div key={log.id}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+                  style={
+                    log.status === 'error' ? { backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' } :
+                    log.status === 'alert' ? { backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' } :
+                    { backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' }
+                  }>
+                  <span className="w-16 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{log.timestamp}</span>
+                  <span className="flex-shrink-0" style={{ color: 'var(--text-secondary)' }}>
                     {SENSOR_PROFILES.find(p => p.type === log.sensorType)?.icon || '📊'}
                   </span>
                   <span className={`flex-shrink-0 font-semibold ${
-                    log.status === 'error' ? 'text-red-400' :
-                    log.status === 'alert' ? 'text-yellow-400' :
-                    'text-emerald-400'
+                    log.status === 'error' ? 'text-red-500 dark:text-red-400' :
+                    log.status === 'alert' ? 'text-yellow-600 dark:text-yellow-400' :
+                    'text-emerald-600 dark:text-emerald-400'
                   }`}>
                     {log.value}{log.unit}
                   </span>
-                  <span className="text-[#635bff] truncate">{log.sensorType.replace(/_/g, '_')}</span>
-                  <span className="text-[#4a5568] truncate">→ {log.machineName}</span>
-                  {log.message && <span className="text-red-400 ml-auto">{log.message}</span>}
+                  <span className="text-[#635bff] truncate">{log.sensorType}</span>
+                  <span className="truncate" style={{ color: 'var(--text-muted)' }}>→ {log.machineName}</span>
+                  {log.message && <span className="text-red-500 dark:text-red-400 ml-auto">{log.message}</span>}
                   <span className="ml-auto flex-shrink-0">
-                    {log.status === 'ok' && <span className="text-emerald-400">✓</span>}
-                    {log.status === 'alert' && <span className="text-yellow-400">⚠</span>}
-                    {log.status === 'error' && <span className="text-red-400">✗</span>}
+                    {log.status === 'ok'    && <span className="text-emerald-500">✓</span>}
+                    {log.status === 'alert' && <span className="text-yellow-500">⚠</span>}
+                    {log.status === 'error' && <span className="text-red-500">✗</span>}
                   </span>
                 </div>
               ))
@@ -448,7 +430,8 @@ export default function SensorSimulator() {
           </div>
 
           {/* Footer hint */}
-          <div className="px-4 py-3 border-t border-[#1e2d4a] text-xs text-[#4a5568] flex items-center justify-between">
+          <div className="px-4 py-3 flex items-center justify-between text-xs"
+            style={{ borderTop: '1px solid var(--border)', color: 'var(--text-muted)' }}>
             <span>Readings are stored in your DB and visible on the dashboard sensor charts</span>
             <a href="/settings/api-keys" className="text-[#635bff] hover:underline">Manage API Keys →</a>
           </div>
