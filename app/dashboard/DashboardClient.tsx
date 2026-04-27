@@ -304,7 +304,7 @@ function DashboardClientInner({ user, data }: Props) {
   useEffect(() => {
     const applyHash = () => {
       const hash = window.location.hash.replace('#', '');
-      const validTabs = ['dashboard', 'work-orders', 'equipment', 'schedules', 'alerts', 'settings'];
+      const validTabs = ['dashboard', 'workorders', 'equipment', 'schedules', 'alerts', 'settings'];
       if (validTabs.includes(hash)) {
         setActiveTab(hash);
         // Clear hash without page jump

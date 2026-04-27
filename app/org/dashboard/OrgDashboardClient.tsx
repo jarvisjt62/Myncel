@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -95,6 +96,15 @@ type Tab = 'overview' | 'team' | 'machines' | 'workorders';
 export default function OrgDashboardClient({ data }: { data: OrgData }) {
   const { user, teamMembers, pendingInvites, machines, stats, recentWorkOrders } = data;
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const router = useRouter();
+
+  // Auto-refresh every 30 seconds for real-time data
+  useEffect(() => {
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [router]);
 
   // Invite modal state
   const [showInvite, setShowInvite] = useState(false);
@@ -310,7 +320,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
               <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14, fontSize: 15 }}>⚡ Quick Actions</div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 {[
-                  { href: '/dashboard#work-orders', icon: '➕', label: 'Create Work Order', color: '#635bff' },
+                  { href: '/dashboard#workorders', icon: '➕', label: 'Create Work Order', color: '#635bff' },
                   { href: '/dashboard#equipment',   icon: '⚙️', label: 'Manage Machines',   color: '#10b981' },
                   { href: '/dashboard',             icon: '🖥️', label: 'Full Dashboard',    color: '#3b82f6' },
                   { href: '/settings/api-keys',     icon: '🔑', label: 'API Keys',           color: '#f59e0b' },

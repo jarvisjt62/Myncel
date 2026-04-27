@@ -109,7 +109,7 @@ export default function QuickActions() {
         </svg>
       ),
       color: 'bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20',
-      action: () => router.push('/dashboard#work-orders'),
+      action: () => router.push('/dashboard#workorders'),
     },
     {
       id: 'schedule-maintenance',
