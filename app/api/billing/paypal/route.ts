@@ -3,12 +3,24 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 
-// PayPal plan IDs mapped from env vars
+// PayPal plan IDs — hardcoded live plan IDs + env var fallbacks
 const PAYPAL_PLAN_IDS: Record<string, Record<string, string | undefined>> = {
-  STARTER:      { monthly: process.env.PAYPAL_PLAN_STARTER_MONTHLY,      yearly: process.env.PAYPAL_PLAN_STARTER_YEARLY },
-  GROWTH:       { monthly: process.env.PAYPAL_PLAN_GROWTH_MONTHLY,        yearly: process.env.PAYPAL_PLAN_GROWTH_YEARLY },
-  PROFESSIONAL: { monthly: process.env.PAYPAL_PLAN_PROFESSIONAL_MONTHLY,  yearly: process.env.PAYPAL_PLAN_PROFESSIONAL_YEARLY },
-  ENTERPRISE:   { monthly: process.env.PAYPAL_PLAN_ENTERPRISE_MONTHLY,    yearly: process.env.PAYPAL_PLAN_ENTERPRISE_YEARLY },
+  STARTER:      {
+    monthly: process.env.PAYPAL_PLAN_STARTER_MONTHLY      || 'P-3T080796KC459101ENHX253Q',
+    yearly:  process.env.PAYPAL_PLAN_STARTER_YEARLY       || 'P-2RC008460A028212ANHX26VQ',
+  },
+  GROWTH:       {
+    monthly: process.env.PAYPAL_PLAN_GROWTH_MONTHLY       || 'P-5YB75678CD3921447NHX3AYI',
+    yearly:  process.env.PAYPAL_PLAN_GROWTH_YEARLY        || 'P-6MX930997R0660345NHX3BBI',
+  },
+  PROFESSIONAL: {
+    monthly: process.env.PAYPAL_PLAN_PROFESSIONAL_MONTHLY || 'P-76199362801260619NHX3BNQ',
+    yearly:  process.env.PAYPAL_PLAN_PROFESSIONAL_YEARLY  || 'P-39035905PM763664WNHX3B2Q',
+  },
+  ENTERPRISE:   {
+    monthly: process.env.PAYPAL_PLAN_ENTERPRISE_MONTHLY,
+    yearly:  process.env.PAYPAL_PLAN_ENTERPRISE_YEARLY,
+  },
 };
 
 const PLAN_PRICES: Record<string, { monthly: number; yearly: number }> = {
