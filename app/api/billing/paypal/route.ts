@@ -3,40 +3,44 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 
-// PayPal plan IDs — hardcoded live plan IDs + env var fallbacks
+// PayPal live plan IDs — hardcoded + env var overrides
 const PAYPAL_PLAN_IDS: Record<string, Record<string, string | undefined>> = {
-  STARTER:      {
-    monthly: process.env.PAYPAL_PLAN_STARTER_MONTHLY      || 'P-3T080796KC459101ENHX253Q',
-    yearly:  process.env.PAYPAL_PLAN_STARTER_YEARLY       || 'P-2RC008460A028212ANHX26VQ',
+  STARTER: {
+    monthly: process.env.PAYPAL_PLAN_STARTER_MONTHLY || 'P-3T080796KC459101ENHX253Q',
+    yearly:  process.env.PAYPAL_PLAN_STARTER_YEARLY  || 'P-2RC008460A028212ANHX26VQ',
   },
-  GROWTH:       {
-    monthly: process.env.PAYPAL_PLAN_GROWTH_MONTHLY       || 'P-5YB75678CD3921447NHX3AYI',
-    yearly:  process.env.PAYPAL_PLAN_GROWTH_YEARLY        || 'P-6MX930997R0660345NHX3BBI',
+  GROWTH: {
+    monthly: process.env.PAYPAL_PLAN_GROWTH_MONTHLY  || 'P-5YB75678CD3921447NHX3AYI',
+    yearly:  process.env.PAYPAL_PLAN_GROWTH_YEARLY   || 'P-6MX930997R0660345NHX3BBI',
   },
   PROFESSIONAL: {
     monthly: process.env.PAYPAL_PLAN_PROFESSIONAL_MONTHLY || 'P-76199362801260619NHX3BNQ',
     yearly:  process.env.PAYPAL_PLAN_PROFESSIONAL_YEARLY  || 'P-39035905PM763664WNHX3B2Q',
   },
-  ENTERPRISE:   {
+  ENTERPRISE: {
     monthly: process.env.PAYPAL_PLAN_ENTERPRISE_MONTHLY,
     yearly:  process.env.PAYPAL_PLAN_ENTERPRISE_YEARLY,
   },
 };
 
-const PLAN_PRICES: Record<string, { monthly: number; yearly: number }> = {
-  STARTER:      { monthly: 49,  yearly: 39 },
-  GROWTH:       { monthly: 99,  yearly: 79 },
-  PROFESSIONAL: { monthly: 249, yearly: 199 },
-};
+function getAppUrl(): string {
+  // Priority: NEXTAUTH_URL (must be production URL) > VERCEL_URL > localhost
+  const url = process.env.NEXTAUTH_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+  return url.replace(/\/$/, '');
+}
+
+function getPayPalBase(): string {
+  return process.env.PAYPAL_MODE === 'live'
+    ? 'https://api-m.paypal.com'
+    : 'https://api-m.sandbox.paypal.com';
+}
 
 async function getPayPalAccessToken(): Promise<string> {
   const clientId = process.env.PAYPAL_CLIENT_ID!;
-  const secret   = process.env.PAYPAL_CLIENT_SECRET!;
-  const base     = process.env.PAYPAL_MODE === 'live'
-    ? 'https://api-m.paypal.com'
-    : 'https://api-m.sandbox.paypal.com';
+  const secret = process.env.PAYPAL_CLIENT_SECRET!;
 
-  const res = await fetch(`${base}/v1/oauth2/token`, {
+  const res = await fetch(`${getPayPalBase()}/v1/oauth2/token`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -45,22 +49,24 @@ async function getPayPalAccessToken(): Promise<string> {
     body: 'grant_type=client_credentials',
   });
 
-  if (!res.ok) throw new Error('Failed to get PayPal access token');
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(`PayPal auth failed: ${err.error_description || 'Invalid credentials'}`);
+  }
+
   const data = await res.json();
   return data.access_token;
 }
 
 async function createPayPalSubscription(
-  planId: string,
+  paypalPlanId: string,
   returnUrl: string,
   cancelUrl: string,
-  accessToken: string
-): Promise<{ id: string; approveUrl: string }> {
-  const base = process.env.PAYPAL_MODE === 'live'
-    ? 'https://api-m.paypal.com'
-    : 'https://api-m.sandbox.paypal.com';
-
-  const res = await fetch(`${base}/v1/billing/subscriptions`, {
+  accessToken: string,
+  orgId: string,
+  planId: string,
+): Promise<string> {
+  const res = await fetch(`${getPayPalBase()}/v1/billing/subscriptions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -68,7 +74,8 @@ async function createPayPalSubscription(
       Prefer: 'return=representation',
     },
     body: JSON.stringify({
-      plan_id: planId,
+      plan_id: paypalPlanId,
+      custom_id: `${orgId}:${planId}`,
       application_context: {
         brand_name: 'Myncel',
         locale: 'en-US',
@@ -86,101 +93,75 @@ async function createPayPalSubscription(
 
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.message ?? 'Failed to create PayPal subscription');
+    throw new Error(err.message || err.details?.[0]?.description || 'Failed to create PayPal subscription');
   }
 
   const data = await res.json();
   const approveUrl = data.links?.find((l: any) => l.rel === 'approve')?.href;
   if (!approveUrl) throw new Error('No PayPal approval URL returned');
-
-  return { id: data.id, approveUrl };
+  return approveUrl;
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.organizationId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { planId, billingInterval = 'monthly' } = await req.json();
-  if (!planId || planId === 'TRIAL') {
-    return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
-  }
-
-  // Demo mode — PayPal not configured
-  if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) {
-    return NextResponse.json({ demo: true, message: 'PayPal not configured' });
-  }
-
-  const paypalPlanId = PAYPAL_PLAN_IDS[planId]?.[billingInterval];
-
-  // Build the app URL — prefer NEXTAUTH_URL, fall back to VERCEL_URL, then localhost
-  const rawUrl = process.env.NEXTAUTH_URL || 
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-  // Strip trailing slash and ensure it's a full URL
-  const appUrl = rawUrl.replace(/\/$/, '');
-  const returnUrl = `${appUrl}/settings/billing?paypal_success=1&plan=${planId}`;
-  const cancelUrl = `${appUrl}/settings/billing?paypal_canceled=1`;
-
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.organizationId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Only OWNER/ADMIN can manage billing
+    if (!['OWNER', 'ADMIN'].includes(session.user.role || '')) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    const { planId, billingInterval = 'monthly' } = await req.json();
+
+    if (!planId || planId === 'TRIAL' || planId === 'ENTERPRISE') {
+      return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
+    }
+
+    // Demo mode — PayPal not configured
+    if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) {
+      return NextResponse.json({
+        demo: true,
+        message: 'PayPal not configured. Add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET to enable.',
+      });
+    }
+
     const org = await db.organization.findUnique({
       where: { id: session.user.organizationId },
     });
-    if (!org) return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
-
-    if (paypalPlanId) {
-      // Use pre-created PayPal subscription plan
-      const accessToken = await getPayPalAccessToken();
-      const { approveUrl } = await createPayPalSubscription(paypalPlanId, returnUrl, cancelUrl, accessToken);
-      return NextResponse.json({ url: approveUrl });
-    } else {
-      // Fallback: Create a PayPal one-time payment order (for demo or missing plan IDs)
-      const accessToken = await getPayPalAccessToken();
-      const base = process.env.PAYPAL_MODE === 'live'
-        ? 'https://api-m.paypal.com'
-        : 'https://api-m.sandbox.paypal.com';
-
-      const price = PLAN_PRICES[planId]?.[billingInterval as 'monthly' | 'yearly'] ?? 0;
-
-      const res = await fetch(`${base}/v2/checkout/orders`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          intent: 'CAPTURE',
-          purchase_units: [{
-            description: `Myncel ${planId} Plan (${billingInterval})`,
-            amount: {
-              currency_code: 'USD',
-              value: price.toString(),
-            },
-            custom_id: `${org.id}:${planId}:${billingInterval}`,
-          }],
-          application_context: {
-            brand_name: 'Myncel',
-            shipping_preference: 'NO_SHIPPING',
-            user_action: 'PAY_NOW',
-            return_url: returnUrl,
-            cancel_url: cancelUrl,
-          },
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message ?? 'Failed to create PayPal order');
-      }
-
-      const order = await res.json();
-      const approveUrl = order.links?.find((l: any) => l.rel === 'approve')?.href;
-      if (!approveUrl) throw new Error('No approval URL from PayPal');
-
-      return NextResponse.json({ url: approveUrl });
+    if (!org) {
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
+
+    const appUrl = getAppUrl();
+    const returnUrl = `${appUrl}/settings/billing?paypal_success=1&plan=${planId}`;
+    const cancelUrl = `${appUrl}/settings/billing?paypal_canceled=1`;
+
+    const paypalPlanId = PAYPAL_PLAN_IDS[planId]?.[billingInterval];
+    if (!paypalPlanId) {
+      return NextResponse.json({
+        error: `PayPal plan not configured for ${planId} (${billingInterval}).`,
+      }, { status: 400 });
+    }
+
+    const accessToken = await getPayPalAccessToken();
+    const approveUrl = await createPayPalSubscription(
+      paypalPlanId,
+      returnUrl,
+      cancelUrl,
+      accessToken,
+      org.id,
+      planId,
+    );
+
+    return NextResponse.json({ url: approveUrl });
+
   } catch (err: any) {
     console.error('PayPal checkout error:', err);
-    return NextResponse.json({ error: err.message ?? 'PayPal checkout failed' }, { status: 500 });
+    return NextResponse.json({
+      error: err.message || 'PayPal checkout failed',
+    }, { status: 500 });
   }
 }
