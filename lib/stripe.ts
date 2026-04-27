@@ -1,24 +1,41 @@
 import Stripe from 'stripe';
 import https from 'https';
+import http from 'http';
 
-// Create a custom HTTP agent with keepAlive for better connection handling in serverless
+// Create a custom HTTP agent with aggressive keepAlive for serverless environments
 // This helps prevent ECONNRESET/EPIPE errors in Vercel Functions
 const stripeHttpAgent = new https.Agent({
   keepAlive: true,
   keepAliveInitialDelay: 1000, // Start keepalive probes after 1 second
-  timeout: 60000, // 60 second timeout for the agent
+  timeout: 90000, // 90 second timeout for the agent
+  maxSockets: 50,
+  maxFreeSockets: 10,
 });
 
-// Initialize Stripe (key required in production)
+// Also create an HTTP agent for completeness
+const stripeHttpAgentInsecure = new http.Agent({
+  keepAlive: true,
+  keepAliveInitialDelay: 1000,
+  timeout: 90000,
+  maxSockets: 50,
+  maxFreeSockets: 10,
+});
+
+// Initialize Stripe with enhanced configuration for serverless
 export const stripe = new Stripe(
   process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder',
   {
     apiVersion: '2024-11-20.acacia' as any,
     typescript: true,
-    maxNetworkRetries: 3, // Retry up to 3 times on network errors (increased from 2)
-    timeout: 30000, // 30 second timeout for each request
+    maxNetworkRetries: 5, // Increased to 5 retries
+    timeout: 60000, // 60 second timeout for each request
     telemetry: true,
     httpAgent: stripeHttpAgent, // Custom agent with keepAlive
+    // Enable app info for better support from Stripe
+    appInfo: {
+      name: 'Myncel CMMS',
+      version: '1.0.0',
+    },
   }
 );
 

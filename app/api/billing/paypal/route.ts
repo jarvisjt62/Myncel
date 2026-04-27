@@ -7,16 +7,16 @@ import { db } from '@/lib/db';
 // Updated with correct plan IDs from PayPal Dashboard (April 2026)
 const PAYPAL_PLAN_IDS: Record<string, Record<string, string | undefined>> = {
   STARTER: {
-    monthly: process.env.PAYPAL_PLAN_STARTER_MONTHLY || 'P-3Td0b7bkEcA59j01EtHrXZ5JQ',
-    yearly:  process.env.PAYPAL_PLAN_STARTER_YEARLY  || 'P-2RD0884sqN0282jZ4NHX24VQ',
+    monthly: process.env.PAYPAL_PLAN_STARTER_MONTHLY || 'P-3T0D07NdECA591D1E1N1X25JQ',
+    yearly:  process.env.PAYPAL_PLAN_STARTER_YEARLY  || 'P-2RCC98A6H0D282122NHX2bVQ',
   },
   GROWTH: {
-    monthly: process.env.PAYPAL_PLAN_GROWTH_MONTHLY  || 'P-5YB75t7dFjCh53z1dex7NhSXAYl',
-    yearly:  process.env.PAYPAL_PLAN_GROWTH_YEARLY   || 'P-cRX530q97f86sBQJsA5NHX3BBI',
+    monthly: process.env.PAYPAL_PLAN_GROWTH_MONTHLY  || 'P-5YB756787CDD32L14A7NHXSAYI',
+    yearly:  process.env.PAYPAL_PLAN_GROWTH_YEARLY   || 'P-4RX530997F8GG63XA5NHX3BBI',
   },
   PROFESSIONAL: {
-    monthly: process.env.PAYPAL_PLAN_PROFESSIONAL_MONTHLY || 'P-7619036280j12g05LpHtX1BRQ',
-    yearly:  process.env.PAYPAL_PLAN_PROFESSIONAL_YEARLY  || 'P-39Q15WQ5FPR363q6xBNHXSBZQ',
+    monthly: process.env.PAYPAL_PLAN_PROFESSIONAL_MONTHLY || 'P-7619953622012908S1NHX1BIQ',
+    yearly:  process.env.PAYPAL_PLAN_PROFESSIONAL_YEARLY  || 'P-390353W0SPM1N3U664WN1X38ZQ',
   },
   ENTERPRISE: {
     monthly: process.env.PAYPAL_PLAN_ENTERPRISE_MONTHLY,
@@ -69,6 +69,21 @@ async function createPayPalSubscription(
 ): Promise<string> {
   console.log('[PayPal] Creating subscription for plan:', paypalPlanId);
   
+  const requestBody = {
+    plan_id: paypalPlanId,
+    custom_id: `${orgId}:${planId}`,
+    application_context: {
+      brand_name: 'Myncel',
+      locale: 'en-US',
+      shipping_preference: 'NO_SHIPPING',
+      user_action: 'SUBSCRIBE_NOW',
+      return_url: returnUrl,
+      cancel_url: cancelUrl,
+    },
+  };
+  
+  console.log('[PayPal] Request body:', JSON.stringify(requestBody, null, 2));
+  
   const res = await fetch(`${getPayPalBase()}/v1/billing/subscriptions`, {
     method: 'POST',
     headers: {
@@ -76,33 +91,22 @@ async function createPayPalSubscription(
       Authorization: `Bearer ${accessToken}`,
       Prefer: 'return=representation',
     },
-    body: JSON.stringify({
-      plan_id: paypalPlanId,
-      custom_id: `${orgId}:${planId}`,
-      application_context: {
-        brand_name: 'Myncel',
-        locale: 'en-US',
-        shipping_preference: 'NO_SHIPPING',
-        user_action: 'SUBSCRIBE_NOW',
-        payment_method: {
-          payer_selected: 'PAYPAL',
-          payee_preferred: 'IMMEDIATE_PAYMENT_REQUIRED',
-        },
-        return_url: returnUrl,
-        cancel_url: cancelUrl,
-      },
-    }),
+    body: JSON.stringify(requestBody),
   });
 
+  const responseData = await res.json();
+  
   if (!res.ok) {
-    const err = await res.json();
-    console.error('[PayPal] Subscription creation failed:', JSON.stringify(err, null, 2));
-    throw new Error(err.message || err.details?.[0]?.description || 'Failed to create PayPal subscription');
+    console.error('[PayPal] Subscription creation failed:', JSON.stringify(responseData, null, 2));
+    const errorMessage = responseData.message || 
+                         responseData.details?.[0]?.description || 
+                         responseData.details?.[0]?.issue ||
+                         'Failed to create PayPal subscription';
+    throw new Error(`PayPal Error: ${errorMessage}`);
   }
 
-  const data = await res.json();
-  console.log('[PayPal] Subscription created:', data.id);
-  const approveUrl = data.links?.find((l: any) => l.rel === 'approve')?.href;
+  console.log('[PayPal] Subscription created:', responseData.id);
+  const approveUrl = responseData.links?.find((l: any) => l.rel === 'approve')?.href;
   if (!approveUrl) throw new Error('No PayPal approval URL returned');
   return approveUrl;
 }
