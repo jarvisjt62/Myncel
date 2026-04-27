@@ -1,10 +1,13 @@
 import Stripe from 'stripe';
 
 // Initialize Stripe (key required in production)
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
-  apiVersion: '2026-04-22.dahlia' as any,
-  typescript: true,
-});
+export const stripe = new Stripe(
+  process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder',
+  {
+    apiVersion: '2026-04-22.dahlia' as any,
+    typescript: true,
+  }
+);
 
 // Billing plan definitions
 export const BILLING_PLANS = [
