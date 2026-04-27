@@ -1,53 +1,18 @@
-# Myncel Implementation Tasks
+# Dashboard Enhancement Tasks
 
-## Phase 1 — Admin Feature Flags (Customers/Changelog toggle)
-- [x] Create `/api/admin/feature-flags/route.ts` — GET/PUT feature flags
-- [x] Update `SettingsClient.tsx` — add Feature Flags section with customers/changelog toggles
-- [x] Update `customers/page.tsx` — check flag, show disabled page if off
-- [x] Update `changelog/page.tsx` — check flag, show disabled page if off
+## API Endpoints
+- [x] Activity Feed API (`/api/dashboard/activity/route.ts`)
+- [x] Export API (`/api/dashboard/export/route.ts`)
+- [x] Calendar API (`/api/dashboard/calendar/route.ts`)
 
-## Phase 2 — Settings → Integrations UI (Connect Modals)
-- [x] Rebuild `settings/integrations/page.tsx` with proper per-integration connect modals
+## Components
+- [x] ActivityFeed.tsx - Activity timeline component
+- [x] CalendarWidget.tsx - Maintenance calendar view
+- [x] QuickActions.tsx - Quick actions panel
+- [ ] EquipmentHistory.tsx - Equipment detail timeline (optional enhancement)
+- [x] ExportButtons.tsx - Export buttons for reports
 
-## Phase 3 — OAuth Callback Routes
-- [x] Create `/api/integrations/slack/callback/route.ts`
-- [x] Create `/api/integrations/quickbooks/callback/route.ts`
-- [x] Create `/api/integrations/google-sheets/callback/route.ts`
-
-## Phase 4 — Notification Dispatch Utilities
-- [x] Create `lib/notifications/slack.ts` — send Slack messages
-- [x] Create `lib/notifications/sms.ts` — Twilio SMS dispatch
-- [x] Create `lib/notifications/dispatch.ts` — unified dispatcher
-- [x] Hook dispatch into work order API — fires on create/complete
-
-## Phase 5 — Webhooks Management Page
-- [x] Create `/app/settings/webhooks/page.tsx` — full CRUD UI
-
-## Phase 6 — Advanced Features
-- [x] Floor plan upload — `/app/equipment/floor-plan/page.tsx` + API
-- [x] Barcode scanning — `/app/equipment/scan/page.tsx`
-- [x] IoT sensor data ingestion API — `/api/iot/route.ts`
-- [x] OEE tracking — `/app/analytics/oee/page.tsx`
-- [x] Purchase Orders — `/app/purchase-orders/` full CRUD
-
-## Phase 7 — PWA / Mobile
-- [x] Add `public/manifest.json`
-- [x] Add service worker registration
-
-## Phase 8 — Docs/Guides Updates
-- [x] Re-add IoT sensor section to equipment-lifespan guide
-
-## Phase 9 — Fix & Ship
-- [x] Fix IoT route build error (meterReading → totalHours, use SensorReading DB model)
-- [x] Fix Alert creation (type/isRead/isResolved not status)
-- [x] Fix dispatch.ts webhook filter (in-memory, not Prisma has)
-- [x] Fix offline/page.tsx missing 'use client'
-- [x] Hook dispatchNotifications into work order create/complete API
-- [x] Run npm run build — ✓ Compiled successfully
-- [x] git commit and push all changes
-
-## Phase 10 — Vercel Prerender Fixes
-- [x] Fix 'window is not defined' on /equipment/scan — split into page.tsx + ScanContent.tsx with dynamic ssr:false
-- [x] Add force-dynamic to floor-plan, oee, purchase-orders, webhooks pages
-- [x] Verified: 0 TypeScript errors, 0 prerender errors, 0 Export encountered errors
-- [x] Commit f6f810c pushed to master
+## Integration
+- [x] Update DashboardClient.tsx with new components
+- [x] TypeScript check
+- [ ] Commit and push to GitHub

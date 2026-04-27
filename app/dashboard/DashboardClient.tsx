@@ -7,6 +7,10 @@ import { signOut } from 'next-auth/react';
 import NotificationBell from '../components/NotificationBell';
 import GlobalSearch from '../components/GlobalSearch';
 import { ThemeProvider, ThemeToggle, useTheme } from '../components/ThemeProvider';
+import ActivityFeed from '../components/dashboard/ActivityFeed';
+import CalendarWidget from '../components/dashboard/CalendarWidget';
+import QuickActions from '../components/dashboard/QuickActions';
+import ExportButtons from '../components/dashboard/ExportButtons';
 
 // ── Change Password Component ──────────────────────────────────────────────
 function ChangePasswordSection() {
@@ -1156,6 +1160,25 @@ function DashboardClientInner({ user, data }: Props) {
                   </div>
                 </div>
               )}
+
+                {/* Dashboard Enhancement Widgets */}
+                <div className="grid lg:grid-cols-3 gap-6">
+                  {/* Activity Feed */}
+                  <div className="lg:col-span-1">
+                    <ActivityFeed />
+                  </div>
+                  
+                  {/* Calendar Widget */}
+                  <div className="lg:col-span-1">
+                    <CalendarWidget />
+                  </div>
+                  
+                  {/* Quick Actions & Export */}
+                  <div className="lg:col-span-1 space-y-6">
+                    <QuickActions />
+                    <ExportButtons />
+                  </div>
+                </div>
             </div>
           )}
 
