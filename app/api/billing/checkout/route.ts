@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db as prisma } from '@/lib/db';
 import { stripe, getPlanById } from '@/lib/stripe';
+import { stripeFetchApi } from '@/lib/stripe-fetch';
 
 export const dynamic = 'force-dynamic';
 
@@ -176,17 +177,32 @@ export async function POST(req: NextRequest) {
     // Create or retrieve Stripe customer
     let customerId = org.stripeCustomerId;
     if (!customerId) {
-      const customer = await withRetry(
-        () => stripe.customers.create({
+      let customer: any;
+      try {
+        // Try SDK with retry
+        customer = await withRetry(
+          () => stripe.customers.create({
+            email: session.user.email || '',
+            name: org.name,
+            metadata: {
+              organizationId: org.id,
+              userId: session.user.id || '',
+            },
+          }),
+          'customers.create'
+        );
+      } catch (sdkError: any) {
+        console.warn('[Stripe SDK] Customer creation failed, trying fetch-based fallback:', sdkError.message);
+        // Fallback to fetch-based API
+        customer = await stripeFetchApi.createCustomer({
           email: session.user.email || '',
           name: org.name,
           metadata: {
             organizationId: org.id,
             userId: session.user.id || '',
           },
-        }),
-        'customers.create'
-      );
+        });
+      }
       customerId = customer.id;
       await prisma.organization.update({
         where: { id: org.id },
@@ -200,22 +216,54 @@ export async function POST(req: NextRequest) {
 
     // If already subscribed, open billing portal instead
     if (org.stripeSubscriptionId) {
-      const portalSession = await withRetry(
-        () => stripe.billingPortal.sessions.create({
+      let portalSession: any;
+      try {
+        portalSession = await withRetry(
+          () => stripe.billingPortal.sessions.create({
+            customer: customerId,
+            return_url: `${appUrl}/settings/billing`,
+          }),
+          'billingPortal.sessions.create'
+        );
+      } catch (sdkError: any) {
+        console.warn('[Stripe SDK] Portal session failed, trying fetch-based fallback:', sdkError.message);
+        portalSession = await stripeFetchApi.createBillingPortalSession({
           customer: customerId,
           return_url: `${appUrl}/settings/billing`,
-        }),
-        'billingPortal.sessions.create'
-      );
+        });
+      }
       return NextResponse.json({ url: portalSession.url });
     }
 
     // Get or auto-create Stripe price ID
     const priceId = await getOrCreateStripePrice(planId, billingInterval as 'monthly' | 'yearly');
 
-    // Create checkout session
-    const checkoutSession = await withRetry(
-      () => stripe.checkout.sessions.create({
+    // Create checkout session - try SDK first, then fallback to fetch-based API
+    let checkoutSession: any;
+    
+    try {
+      // Try SDK with retry
+      checkoutSession = await withRetry(
+        () => stripe.checkout.sessions.create({
+          customer: customerId,
+          payment_method_types: ['card'],
+          line_items: [{ price: priceId, quantity: 1 }],
+          mode: 'subscription',
+          success_url: `${appUrl}/settings/billing?success=true&plan=${planId}`,
+          cancel_url: `${appUrl}/settings/billing?canceled=true`,
+          subscription_data: {
+            metadata: { organizationId: org.id, planId },
+          },
+          allow_promotion_codes: true,
+          metadata: { organizationId: org.id, planId, billingInterval },
+        }),
+        'checkout.sessions.create'
+      );
+    } catch (sdkError: any) {
+      console.warn('[Stripe SDK] Failed, trying fetch-based fallback:', sdkError.message);
+      
+      // Fallback to fetch-based API
+      checkoutSession = await stripeFetchApi.createCheckoutSession({
         customer: customerId,
         payment_method_types: ['card'],
         line_items: [{ price: priceId, quantity: 1 }],
@@ -227,9 +275,8 @@ export async function POST(req: NextRequest) {
         },
         allow_promotion_codes: true,
         metadata: { organizationId: org.id, planId, billingInterval },
-      }),
-      'checkout.sessions.create'
-    );
+      });
+    }
 
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error: any) {
