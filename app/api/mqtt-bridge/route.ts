@@ -288,6 +288,3 @@ export async function GET() {
   });
 }
 
-// Re-export unit map for reference
-const UNIT_MAP_EXPORT = UNIT_MAP;
-export { UNIT_MAP_EXPORT as UNIT_MAP };
