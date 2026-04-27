@@ -34,9 +34,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     {
       label: 'IoT & Integration',
       items: [
-        { href: '/docs/api',          label: 'API Docs',     icon: '📖' },
-        { href: '/settings/api-keys', label: 'API Keys',     icon: '🔑' },
-        { href: '/setup',             label: 'Setup Wizard', icon: '⚡' },
+        { href: '/dashboard/iot-simulator', label: 'IoT Simulator',  icon: '🔬' },
+        { href: '/equipment/qr-labels',     label: 'QR Labels',      icon: '📱' },
+        { href: '/docs/api',                label: 'API Docs',        icon: '📖' },
+        { href: '/settings/api-keys',       label: 'API Keys',        icon: '🔑' },
+        { href: '/setup',                   label: 'Setup Wizard',    icon: '⚡' },
+        { href: '/docs/iot-guides',         label: 'Wiring Guides',   icon: '🔧' },
+        { href: '/docs/protocols',          label: 'Protocols',       icon: '📡' },
       ],
     },
     {
@@ -49,9 +53,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   ];
 
   const externalLinks = [
-    { href: 'https://vercel.com',  label: 'Vercel',   icon: '▲' },
-    { href: 'https://supabase.com',label: 'Supabase', icon: '⚡' },
-    { href: 'https://resend.com',  label: 'Resend',   icon: '📧' },
+    { href: 'https://vercel.com',   label: 'Vercel',   icon: '▲' },
+    { href: 'https://supabase.com', label: 'Supabase', icon: '⚡' },
+    { href: 'https://resend.com',   label: 'Resend',   icon: '📧' },
   ];
 
   return (
