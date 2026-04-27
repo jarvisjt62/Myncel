@@ -44,6 +44,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       ],
     },
     {
+      label: 'Billing',
+      items: [
+        { href: '/admin/billing', label: 'Billing Overview', icon: '💳' },
+      ],
+    },
+    {
       label: 'Account',
       items: [
         { href: '/admin/account',   label: 'My Account', icon: '👤' },

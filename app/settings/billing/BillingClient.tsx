@@ -65,6 +65,55 @@ function UsageBar({ label, used, limit }: { label: string; used: number; limit: 
 
 const PLAN_ORDER = ['TRIAL', 'STARTER', 'GROWTH', 'PROFESSIONAL', 'ENTERPRISE'];
 
+// Payment gateway definitions
+const GATEWAYS = [
+  {
+    id: 'stripe',
+    name: 'Credit / Debit Card',
+    description: 'Visa, Mastercard, Amex, Discover',
+    icon: '💳',
+    logos: ['VISA', 'MC', 'AMEX'],
+    color: '#635bff',
+    subtitle: 'Powered by Stripe — PCI DSS compliant',
+  },
+  {
+    id: 'paypal',
+    name: 'PayPal',
+    description: 'Pay with your PayPal account or balance',
+    icon: '🅿️',
+    logos: ['PP'],
+    color: '#003087',
+    subtitle: 'Buyer protection included',
+  },
+  {
+    id: 'bank',
+    name: 'Bank Transfer (ACH)',
+    description: 'Direct debit from US bank account',
+    icon: '🏦',
+    logos: ['ACH'],
+    color: '#10b981',
+    subtitle: 'For annual plans — 3–5 business days',
+  },
+];
+
+function GatewayLogoBadge({ type }: { type: string }) {
+  const styles: Record<string, { bg: string; color: string; text: string }> = {
+    VISA:  { bg: '#1a1f71', color: '#fff',    text: 'VISA' },
+    MC:    { bg: '#eb001b', color: '#fff',    text: 'MC' },
+    AMEX:  { bg: '#2e77bc', color: '#fff',    text: 'AMEX' },
+    PP:    { bg: '#003087', color: '#fff',    text: 'PayPal' },
+    ACH:   { bg: '#10b981', color: '#fff',    text: 'ACH' },
+  };
+  const s = styles[type] ?? { bg: '#6b7280', color: '#fff', text: type };
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 800,
+      background: s.bg, color: s.color, letterSpacing: '0.03em',
+    }}>{s.text}</span>
+  );
+}
+
 export default function BillingClient({
   orgId, orgName, plan, planData, trialEndsAt, trialDaysLeft, isTrialExpired,
   subscriptionStatus, currentPeriodEnd, cancelAtPeriodEnd, hasStripe,
@@ -74,6 +123,8 @@ export default function BillingClient({
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [selectedGateway, setSelectedGateway] = useState<string>('stripe');
+  const [checkoutPlanId, setCheckoutPlanId] = useState<string | null>(null);
 
   const showToast = (type: 'success' | 'error', text: string) => {
     setToast({ type, text });
@@ -82,31 +133,58 @@ export default function BillingClient({
 
   const currentPlanIdx = PLAN_ORDER.indexOf(plan);
 
-  const handleUpgrade = async (planId: string) => {
+  const handleUpgrade = (planId: string) => {
     if (planId === 'ENTERPRISE') {
       window.open('mailto:sales@myncel.com?subject=Enterprise Plan Inquiry', '_blank');
       return;
     }
     if (planId === plan) return;
+    // Open gateway selection modal
+    setCheckoutPlanId(planId);
+    setSelectedGateway('stripe');
+  };
 
-    setLoading(planId);
+  const handleCheckout = async () => {
+    if (!checkoutPlanId) return;
+    setLoading(checkoutPlanId);
+    setCheckoutPlanId(null);
+
     try {
-      const res = await fetch('/api/billing/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId, billingInterval }),
-      });
-      const data = await res.json();
-
-      if (data.demo) {
-        showToast('success', `Demo mode: Would redirect to Stripe Checkout for ${planId} plan. Configure STRIPE_SECRET_KEY to enable payments.`);
-        return;
-      }
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        showToast('error', data.error || 'Failed to create checkout session');
+      if (selectedGateway === 'stripe') {
+        const res = await fetch('/api/billing/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ planId: checkoutPlanId, billingInterval }),
+        });
+        const data = await res.json();
+        if (data.demo) {
+          showToast('success', `Demo mode: Would redirect to Stripe Checkout for ${checkoutPlanId}. Configure STRIPE_SECRET_KEY to enable payments.`);
+          return;
+        }
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          showToast('error', data.error || 'Failed to create checkout session');
+        }
+      } else if (selectedGateway === 'paypal') {
+        const res = await fetch('/api/billing/paypal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ planId: checkoutPlanId, billingInterval }),
+        });
+        const data = await res.json();
+        if (data.demo) {
+          showToast('success', `Demo mode: Would redirect to PayPal checkout for ${checkoutPlanId}. Configure PAYPAL_CLIENT_ID to enable.`);
+          return;
+        }
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          showToast('error', data.error || 'Failed to create PayPal checkout');
+        }
+      } else if (selectedGateway === 'bank') {
+        showToast('success', 'Our team will send you a bank transfer invoice within 1 business day. Please ensure you select an annual plan for ACH payments.');
+        // In production: trigger an email/invoice workflow
       }
     } catch {
       showToast('error', 'Failed to initiate checkout. Please try again.');
@@ -120,12 +198,10 @@ export default function BillingClient({
     try {
       const res = await fetch('/api/billing/portal', { method: 'POST' });
       const data = await res.json();
-
       if (data.demo) {
         showToast('success', 'Demo mode: Stripe Customer Portal not configured. Add STRIPE_SECRET_KEY.');
         return;
       }
-
       if (data.url) {
         window.location.href = data.url;
       } else {
@@ -139,25 +215,159 @@ export default function BillingClient({
   };
 
   const statusBadge = () => {
-    if (isTrialExpired) return { text: 'Trial Expired', color: '#ef4444', bg: '#fef2f2' };
-    if (plan === 'TRIAL') return { text: `Trial — ${trialDaysLeft}d left`, color: '#f59e0b', bg: '#fffbeb' };
-    if (subscriptionStatus === 'active') return { text: 'Active', color: '#10b981', bg: '#ecfdf5' };
-    if (subscriptionStatus === 'past_due') return { text: 'Payment Past Due', color: '#ef4444', bg: '#fef2f2' };
-    if (subscriptionStatus === 'canceled') return { text: 'Canceled', color: '#6b7280', bg: '#f9fafb' };
-    if (subscriptionStatus === 'trialing') return { text: 'Trialing', color: '#8b5cf6', bg: '#f5f3ff' };
-    return { text: 'Free', color: '#6b7280', bg: '#f9fafb' };
+    if (isTrialExpired) return { text: 'Trial Expired', color: '#ef4444', bg: 'rgba(239,68,68,0.1)' };
+    if (plan === 'TRIAL') return { text: `Trial — ${trialDaysLeft}d left`, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' };
+    if (subscriptionStatus === 'active') return { text: 'Active', color: '#10b981', bg: 'rgba(16,185,129,0.1)' };
+    if (subscriptionStatus === 'past_due') return { text: 'Payment Past Due', color: '#ef4444', bg: 'rgba(239,68,68,0.1)' };
+    if (subscriptionStatus === 'canceled') return { text: 'Canceled', color: '#6b7280', bg: 'rgba(107,114,128,0.1)' };
+    if (subscriptionStatus === 'trialing') return { text: 'Trialing', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' };
+    return { text: 'Free', color: '#6b7280', bg: 'rgba(107,114,128,0.1)' };
   };
 
   const badge = statusBadge();
+  const checkoutPlan = plans.find(p => p.id === checkoutPlanId);
 
   return (
     <div className="space-y-8">
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium max-w-sm ${
-          toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
-        }`}>
-          {toast.text}
+        <div style={{
+          position: 'fixed', top: 16, right: 16, zIndex: 9999,
+          padding: '12px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600,
+          background: toast.type === 'success' ? '#10b981' : '#ef4444',
+          color: '#fff', boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          maxWidth: 380,
+        }}>
+          {toast.type === 'success' ? '✓ ' : '✗ '}{toast.text}
+        </div>
+      )}
+
+      {/* Payment Gateway Selection Modal */}
+      {checkoutPlanId && checkoutPlan && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9998,
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+        }} onClick={() => setCheckoutPlanId(null)}>
+          <div style={{
+            background: 'var(--bg-surface)', borderRadius: 16, padding: 28,
+            width: '100%', maxWidth: 480,
+            border: '1px solid var(--border)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+          }} onClick={e => e.stopPropagation()}>
+            {/* Modal header */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                    Complete Your Purchase
+                  </h3>
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+                    Upgrading to <strong style={{ color: checkoutPlan.color }}>{checkoutPlan.name}</strong>
+                    {' '}— ${billingInterval === 'yearly' ? checkoutPlan.priceYearly : checkoutPlan.priceMonthly}/mo
+                    {billingInterval === 'yearly' ? ' billed yearly' : ''}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setCheckoutPlanId(null)}
+                  style={{ fontSize: 20, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: 0, lineHeight: 1 }}
+                >×</button>
+              </div>
+            </div>
+
+            {/* Gateway options */}
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+              Choose Payment Method
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+              {GATEWAYS.map(gw => (
+                <label
+                  key={gw.id}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '14px 16px', borderRadius: 10, cursor: 'pointer',
+                    border: selectedGateway === gw.id
+                      ? `2px solid ${gw.color}`
+                      : '2px solid var(--border)',
+                    background: selectedGateway === gw.id
+                      ? gw.color + '0d'
+                      : 'var(--bg-surface-2)',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="gateway"
+                    value={gw.id}
+                    checked={selectedGateway === gw.id}
+                    onChange={() => setSelectedGateway(gw.id)}
+                    style={{ display: 'none' }}
+                  />
+                  {/* Radio circle */}
+                  <div style={{
+                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                    border: selectedGateway === gw.id ? `5px solid ${gw.color}` : '2px solid var(--border)',
+                    background: 'var(--bg-surface)',
+                    transition: 'all 0.15s',
+                  }} />
+                  <div style={{ fontSize: 24, flexShrink: 0 }}>{gw.icon}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{gw.name}</span>
+                      {gw.logos.map(l => <GatewayLogoBadge key={l} type={l} />)}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{gw.description}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{gw.subtitle}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            {/* Security note */}
+            <div style={{
+              padding: '10px 14px', borderRadius: 8, marginBottom: 18,
+              background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <span style={{ fontSize: 16 }}>🔒</span>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                All transactions are encrypted and secured with 256-bit SSL. We never store your card details.
+              </span>
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setCheckoutPlanId(null)}
+                style={{
+                  flex: 1, padding: '11px', borderRadius: 8,
+                  border: '1px solid var(--border)', background: 'var(--bg-surface)',
+                  color: 'var(--text-secondary)', fontWeight: 600, fontSize: 14, cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCheckout}
+                style={{
+                  flex: 2, padding: '11px', borderRadius: 8, border: 'none',
+                  background: GATEWAYS.find(g => g.id === selectedGateway)?.color ?? '#635bff',
+                  color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                }}
+              >
+                {selectedGateway === 'bank'
+                  ? 'Request Invoice'
+                  : `Pay with ${GATEWAYS.find(g => g.id === selectedGateway)?.name ?? 'Card'} →`}
+              </button>
+            </div>
+
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 12 }}>
+              By completing this purchase you agree to our{' '}
+              <a href="/terms" style={{ color: 'var(--accent)' }}>Terms of Service</a>{' '}
+              and{' '}
+              <a href="/privacy" style={{ color: 'var(--accent)' }}>Privacy Policy</a>.
+            </p>
+          </div>
         </div>
       )}
 
@@ -169,16 +379,22 @@ export default function BillingClient({
 
       {/* Demo mode notice */}
       {!stripeConfigured && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <div className="flex items-start gap-3">
-            <span className="text-xl">⚠️</span>
+        <div style={{
+          borderRadius: 12, border: '1px solid rgba(245,158,11,0.3)',
+          background: 'rgba(245,158,11,0.07)', padding: '14px 18px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <span style={{ fontSize: 18 }}>⚠️</span>
             <div>
-              <p className="font-semibold text-amber-800 text-sm">Demo Mode — Stripe Not Configured</p>
-              <p className="text-xs text-amber-700 mt-1">
-                To enable real payments, add your Stripe keys to the environment:
-                <code className="ml-1 px-1 py-0.5 bg-amber-100 rounded font-mono">STRIPE_SECRET_KEY</code>,{' '}
-                <code className="px-1 py-0.5 bg-amber-100 rounded font-mono">STRIPE_PUBLISHABLE_KEY</code>,{' '}
-                and price IDs for each plan.
+              <p style={{ fontWeight: 700, color: '#f59e0b', fontSize: 14, margin: 0 }}>Demo Mode — Payment Gateways Not Configured</p>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
+                To enable real payments, configure your payment gateways:
+                <br />• <strong>Stripe</strong>:{' '}
+                <code style={{ background: 'var(--bg-surface-2)', padding: '1px 5px', borderRadius: 3 }}>STRIPE_SECRET_KEY</code>{', '}
+                <code style={{ background: 'var(--bg-surface-2)', padding: '1px 5px', borderRadius: 3 }}>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>
+                <br />• <strong>PayPal</strong>:{' '}
+                <code style={{ background: 'var(--bg-surface-2)', padding: '1px 5px', borderRadius: 3 }}>PAYPAL_CLIENT_ID</code>{', '}
+                <code style={{ background: 'var(--bg-surface-2)', padding: '1px 5px', borderRadius: 3 }}>PAYPAL_CLIENT_SECRET</code>
               </p>
             </div>
           </div>
@@ -187,17 +403,20 @@ export default function BillingClient({
 
       {/* Trial expiry warning */}
       {isTrialExpired && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-xl flex-shrink-0">🔒</div>
-            <div className="flex-1">
-              <p className="font-semibold text-red-800">Your free trial has ended</p>
-              <p className="text-sm text-red-700 mt-0.5">Upgrade now to continue using Myncel without interruption.</p>
+        <div style={{
+          borderRadius: 12, border: '1px solid rgba(239,68,68,0.3)',
+          background: 'rgba(239,68,68,0.07)', padding: '16px 20px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🔒</div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontWeight: 700, color: '#ef4444', margin: 0 }}>Your free trial has ended</p>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>Upgrade now to continue using Myncel without interruption.</p>
             </div>
-            <button
-              onClick={() => handleUpgrade('GROWTH')}
-              className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors flex-shrink-0"
-            >
+            <button onClick={() => handleUpgrade('GROWTH')} style={{
+              padding: '9px 18px', borderRadius: 8, border: 'none',
+              background: '#ef4444', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', flexShrink: 0,
+            }}>
               Upgrade Now
             </button>
           </div>
@@ -206,14 +425,17 @@ export default function BillingClient({
 
       {/* Trial countdown */}
       {plan === 'TRIAL' && !isTrialExpired && trialDaysLeft <= 7 && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">⏰</span>
-            <div className="flex-1">
-              <p className="font-semibold text-amber-800 text-sm">
+        <div style={{
+          borderRadius: 12, border: '1px solid rgba(245,158,11,0.3)',
+          background: 'rgba(245,158,11,0.07)', padding: '12px 18px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 18 }}>⏰</span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontWeight: 700, color: '#f59e0b', margin: 0, fontSize: 14 }}>
                 {trialDaysLeft === 0 ? 'Your trial expires today!' : `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left in your free trial`}
               </p>
-              <p className="text-xs text-amber-700 mt-0.5">Upgrade to keep your data and avoid service interruption.</p>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>Upgrade to keep your data and avoid service interruption.</p>
             </div>
           </div>
         </div>
@@ -221,17 +443,24 @@ export default function BillingClient({
 
       {/* Cancel at period end notice */}
       {cancelAtPeriodEnd && currentPeriodEnd && (
-        <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">📅</span>
-            <div className="flex-1">
-              <p className="font-semibold text-orange-800 text-sm">Subscription scheduled to cancel</p>
-              <p className="text-xs text-orange-700 mt-0.5">
+        <div style={{
+          borderRadius: 12, border: '1px solid rgba(249,115,22,0.3)',
+          background: 'rgba(249,115,22,0.07)', padding: '12px 18px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 18 }}>📅</span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontWeight: 700, color: '#f97316', margin: 0, fontSize: 14 }}>Subscription scheduled to cancel</p>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
                 Your subscription will end on {new Date(currentPeriodEnd).toLocaleDateString()}. You can reactivate at any time.
               </p>
             </div>
             <button onClick={handlePortal} disabled={loading === 'portal'}
-              className="px-4 py-2 bg-orange-600 text-white text-sm font-semibold rounded-lg hover:bg-orange-700 transition-colors flex-shrink-0 disabled:opacity-50">
+              style={{
+                padding: '8px 16px', borderRadius: 8, border: 'none',
+                background: '#f97316', color: '#fff', fontWeight: 700, fontSize: 13,
+                cursor: loading === 'portal' ? 'not-allowed' : 'pointer', opacity: loading === 'portal' ? 0.6 : 1, flexShrink: 0,
+              }}>
               {loading === 'portal' ? 'Loading…' : 'Reactivate'}
             </button>
           </div>
@@ -246,19 +475,21 @@ export default function BillingClient({
               <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
                 {planData.name} Plan
               </h3>
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: badge.bg, color: badge.color }}>
+              <span style={{
+                fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                background: badge.bg, color: badge.color,
+              }}>
                 {badge.text}
               </span>
             </div>
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{planData.description}</p>
-
             {currentPeriodEnd && !cancelAtPeriodEnd && (
-              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
                 Next billing date: {new Date(currentPeriodEnd).toLocaleDateString()}
               </p>
             )}
             {plan === 'TRIAL' && trialEndsAt && !isTrialExpired && (
-              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
                 Trial ends: {new Date(trialEndsAt).toLocaleDateString()}
               </p>
             )}
@@ -275,7 +506,10 @@ export default function BillingClient({
             {plan !== 'ENTERPRISE' && plan !== 'PROFESSIONAL' && (
               <button
                 onClick={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-4 py-2 bg-[#635bff] text-white text-sm font-semibold rounded-lg hover:bg-[#4f46e5] transition-colors">
+                style={{
+                  padding: '9px 18px', borderRadius: 8, border: 'none',
+                  background: '#635bff', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                }}>
                 Upgrade Plan ↓
               </button>
             )}
@@ -287,6 +521,29 @@ export default function BillingClient({
           <UsageBar label="Machines" used={usage.machines} limit={planData.limits.machines} />
           <UsageBar label="Team Members" used={usage.users} limit={planData.limits.users} />
           <UsageBar label="Work Orders (Total)" used={usage.workOrders} limit={planData.limits.workOrders} />
+        </div>
+      </div>
+
+      {/* Accepted payment methods strip */}
+      <div style={{
+        borderRadius: 10, border: '1px solid var(--border)',
+        background: 'var(--bg-surface)', padding: '14px 20px',
+        display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+      }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', flexShrink: 0 }}>
+          Accepted payments:
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {['VISA', 'MC', 'AMEX'].map(l => <GatewayLogoBadge key={l} type={l} />)}
+          <GatewayLogoBadge type="PP" />
+          <GatewayLogoBadge type="ACH" />
+          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+            + Apple Pay, Google Pay (via Stripe)
+          </span>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 12 }}>🔒</span>
+          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>256-bit SSL encryption</span>
         </div>
       </div>
 
@@ -338,7 +595,6 @@ export default function BillingClient({
                   boxShadow: p.popular ? '0 0 0 2px rgba(99,91,255,0.15)' : undefined,
                 }}
               >
-                {/* Popular badge */}
                 {p.popular && !isCurrent && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#635bff] text-white text-xs font-bold rounded-full whitespace-nowrap">
                     Most Popular
@@ -350,7 +606,6 @@ export default function BillingClient({
                   </div>
                 )}
 
-                {/* Plan header */}
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />
@@ -359,7 +614,6 @@ export default function BillingClient({
                   <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{p.description}</p>
                 </div>
 
-                {/* Price */}
                 <div className="mb-5">
                   {p.price === null ? (
                     <div>
@@ -368,9 +622,7 @@ export default function BillingClient({
                     </div>
                   ) : (
                     <div className="flex items-end gap-1">
-                      <span className="text-3xl font-black" style={{ color: 'var(--text-primary)' }}>
-                        ${displayPrice}
-                      </span>
+                      <span className="text-3xl font-black" style={{ color: 'var(--text-primary)' }}>${displayPrice}</span>
                       <span className="text-sm pb-1" style={{ color: 'var(--text-secondary)' }}>
                         /mo{billingInterval === 'yearly' ? ' billed yearly' : ''}
                       </span>
@@ -383,7 +635,6 @@ export default function BillingClient({
                   )}
                 </div>
 
-                {/* Limits */}
                 <div className="grid grid-cols-2 gap-2 mb-5 p-3 rounded-lg" style={{ background: 'var(--bg-surface-2)' }}>
                   {[
                     { label: 'Machines', val: p.limits.machines },
@@ -398,7 +649,6 @@ export default function BillingClient({
                   ))}
                 </div>
 
-                {/* Features */}
                 <ul className="space-y-1.5 mb-5 flex-1">
                   {p.features.map(f => (
                     <li key={f} className="flex items-start gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
@@ -414,7 +664,6 @@ export default function BillingClient({
                   ))}
                 </ul>
 
-                {/* CTA button */}
                 {isCurrent ? (
                   <button disabled className="w-full py-2.5 rounded-lg text-sm font-semibold opacity-60 cursor-not-allowed"
                     style={{ background: 'var(--bg-surface-2)', color: 'var(--text-secondary)' }}>
@@ -457,7 +706,7 @@ export default function BillingClient({
             },
             {
               q: 'What payment methods are accepted?',
-              a: 'We accept all major credit cards (Visa, Mastercard, American Express) through our secure Stripe payment processor.',
+              a: 'We accept all major credit/debit cards (Visa, Mastercard, Amex, Discover), PayPal, ACH bank transfers, and Apple Pay / Google Pay via Stripe.',
             },
             {
               q: 'What happens when my trial ends?',
@@ -472,8 +721,8 @@ export default function BillingClient({
               a: "We offer a 30-day money-back guarantee for new subscribers. Contact support@myncel.com and we'll issue a full refund.",
             },
             {
-              q: 'What is included in Enterprise?',
-              a: 'Enterprise includes unlimited everything, SLA guarantees, dedicated support, on-premise options, and custom integrations. Contact sales@myncel.com.',
+              q: 'How does PayPal billing work?',
+              a: 'With PayPal, you can use your PayPal balance, linked bank account, or card. Subscriptions are managed through your PayPal account portal.',
             },
           ].map(item => (
             <div key={item.q} className="p-4 rounded-lg" style={{ background: 'var(--bg-surface-2)' }}>
