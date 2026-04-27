@@ -106,8 +106,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid plan selected' }, { status: 400 });
     }
 
-    // Check if Stripe is configured
-    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'sk_test_placeholder') {
+    // Check if Stripe is configured (demo mode only if explicitly set to placeholder)
+    if (process.env.STRIPE_SECRET_KEY === 'sk_test_placeholder') {
       return NextResponse.json({
         demo: true,
         message: 'Stripe not configured. Add STRIPE_SECRET_KEY to enable real payments.',
