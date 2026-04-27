@@ -134,3 +134,60 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+// PATCH /api/team - Update a team member's role
+export async function PATCH(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { memberId, role } = body;
+
+    if (!memberId || !role) {
+      return NextResponse.json({ error: 'memberId and role are required' }, { status: 400 });
+    }
+
+    const validRoles = ['ADMIN', 'TECHNICIAN', 'MEMBER'];
+    if (!validRoles.includes(role)) {
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    }
+
+    const requester = await safeQuery(
+      db.user.findUnique({
+        where: { email: session.user.email || '' },
+        select: { organizationId: true, role: true, id: true },
+      }),
+      null
+    );
+
+    if (!requester?.organizationId || (requester.role !== 'OWNER' && requester.role !== 'ADMIN')) {
+      return NextResponse.json({ error: 'Only owners and admins can update roles' }, { status: 403 });
+    }
+
+    const target = await safeQuery(
+      db.user.findUnique({ where: { id: memberId }, select: { organizationId: true, role: true } }),
+      null
+    );
+
+    if (!target || target.organizationId !== requester.organizationId) {
+      return NextResponse.json({ error: 'Member not found in your organization' }, { status: 404 });
+    }
+
+    if (target.role === 'OWNER') {
+      return NextResponse.json({ error: 'Cannot change the role of an organization owner' }, { status: 403 });
+    }
+
+    const updated = await db.user.update({
+      where: { id: memberId },
+      data: { role: role as any },
+      select: { id: true, email: true, name: true, role: true },
+    });
+
+    return NextResponse.json({ success: true, member: updated });
+  } catch (error) {
+    console.error('Error updating role:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

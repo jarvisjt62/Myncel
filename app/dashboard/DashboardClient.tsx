@@ -1157,6 +1157,24 @@ function DashboardClientInner({ user, data }: Props) {
             <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{user.role}</p>
           </div>
         </div>
+        {/* Org Admin Panel — only for OWNER and ADMIN */}
+        {(user.role === 'OWNER' || user.role === 'ADMIN') && (
+          <Link
+            href="/org/dashboard"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] hover:text-[var(--text-primary)] mb-1"
+          >
+            <span className="text-[var(--text-muted)]">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </span>
+            <span className="flex-1 text-left">Org Admin Panel</span>
+            <span className="text-[9px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-semibold uppercase">
+              {user.role}
+            </span>
+          </Link>
+        )}
+
         <button
           onClick={() => signOut({ callbackUrl: '/' })}
           className="w-full text-xs text-[var(--text-muted)] hover:text-red-500 flex items-center gap-1.5 transition-colors"
