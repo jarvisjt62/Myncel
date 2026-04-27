@@ -58,10 +58,7 @@ export default function SecuritySettingsPage() {
       const res = await fetch('/api/user/2fa/setup');
       if (res.ok) {
         const data = await res.json();
-        if (data.enabled) {
-          setError('Two-factor authentication is already enabled.');
-          return;
-        }
+        if (data.enabled) { setError('Two-factor authentication is already enabled.'); return; }
         setTwoFASecret(data.secret);
         setTwoFAUri(data.uri);
         setBackupCodes(data.backupCodes);
@@ -70,9 +67,7 @@ export default function SecuritySettingsPage() {
         const data = await res.json();
         setError(data.error || 'Failed to start 2FA setup');
       }
-    } catch (err) {
-      setError('Failed to start 2FA setup');
-    }
+    } catch { setError('Failed to start 2FA setup'); }
   };
 
   const verify2FASetup = async () => {
@@ -92,9 +87,7 @@ export default function SecuritySettingsPage() {
         const data = await res.json();
         setError(data.error || 'Invalid verification code');
       }
-    } catch (err) {
-      setError('Failed to verify 2FA code');
-    }
+    } catch { setError('Failed to verify 2FA code'); }
   };
 
   const disable2FA = async (code: string) => {
@@ -112,9 +105,7 @@ export default function SecuritySettingsPage() {
         const data = await res.json();
         setError(data.error || 'Failed to disable 2FA');
       }
-    } catch (err) {
-      setError('Failed to disable 2FA');
-    }
+    } catch { setError('Failed to disable 2FA'); }
   };
 
   const revokeSession = async (sessionId: string) => {
@@ -124,13 +115,8 @@ export default function SecuritySettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId }),
       });
-      if (res.ok) {
-        setSuccess('Session revoked successfully.');
-        loadSecurityInfo();
-      }
-    } catch (err) {
-      setError('Failed to revoke session');
-    }
+      if (res.ok) { setSuccess('Session revoked successfully.'); loadSecurityInfo(); }
+    } catch { setError('Failed to revoke session'); }
   };
 
   const revokeAllOtherSessions = async () => {
@@ -140,149 +126,143 @@ export default function SecuritySettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ revokeAll: true }),
       });
-      if (res.ok) {
-        setSuccess('All other sessions revoked successfully.');
-        loadSecurityInfo();
-      }
-    } catch (err) {
-      setError('Failed to revoke sessions');
-    }
+      if (res.ok) { setSuccess('All other sessions revoked successfully.'); loadSecurityInfo(); }
+    } catch { setError('Failed to revoke sessions'); }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-lg text-[var(--text-secondary)]">Loading...</div>
+        <div className="text-[var(--text-secondary)]">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="py-8" style={{ backgroundColor: "var(--bg-page)", color: "var(--text-primary)" }}>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[var(--text-primary)]">Security Settings</h1>
-          <p className="mt-2 text-[var(--text-secondary)]">Manage your account security and active sessions.</p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Security Settings</h2>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>Manage your account security and active sessions.</p>
+      </div>
 
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>
-        )}
+      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>}
+      {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">{success}</div>}
 
-        {success && (
-          <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">{success}</div>
-        )}
+      {/* Two-Factor Authentication */}
+      <div className="rounded-xl border p-6" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+        <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Two-Factor Authentication</h3>
 
-        {/* Two-Factor Authentication */}
-        <div className="bg-[var(--bg-surface)] rounded-xl shadow-sm border border-[var(--border)] p-6 mb-6">
-          <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4">Two-Factor Authentication</h2>
-          
-          {!show2FASetup ? (
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[var(--text-secondary)]">
-                  Status: <span className={twoFactorEnabled ? 'text-green-600 font-medium' : 'text-[var(--text-muted)]'}>
-                    {twoFactorEnabled ? 'Enabled' : 'Not enabled'}
-                  </span>
-                </p>
-                <p className="text-sm text-[var(--text-muted)] mt-1">Add an extra layer of security to your account.</p>
-              </div>
-              <button
-                onClick={() => {
-                  if (twoFactorEnabled) {
-                    const code = prompt('Enter your 2FA code or backup code to disable:');
-                    if (code) disable2FA(code);
-                  } else {
-                    start2FASetup();
-                  }
-                }}
-                className={`px-4 py-2 rounded-lg font-medium ${
-                  twoFactorEnabled
-                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                }`}
-              >
-                {twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA'}
-              </button>
+        {!show2FASetup ? (
+          <div className="flex items-center justify-between">
+            <div>
+              <p style={{ color: 'var(--text-secondary)' }}>
+                Status:{' '}
+                <span className={twoFactorEnabled ? 'text-green-600 font-medium' : 'text-[var(--text-muted)]'}>
+                  {twoFactorEnabled ? 'Enabled' : 'Not enabled'}
+                </span>
+              </p>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Add an extra layer of security to your account.</p>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg">
-                <strong>Important:</strong> Save your backup codes securely.
-              </div>
-              
-              <div className="bg-[var(--bg-page)] p-4 rounded-lg">
-                <p className="text-sm text-[var(--text-secondary)] mb-2">1. Scan QR code with your authenticator app or enter manually:</p>
-                <p className="font-mono text-sm bg-[var(--bg-surface)] p-3 rounded border">{twoFASecret}</p>
-              </div>
-
-              <div className="bg-[var(--bg-page)] p-4 rounded-lg">
-                <p className="text-sm text-[var(--text-secondary)] mb-2">2. Save these backup codes:</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {backupCodes.map((code, i) => (
-                    <div key={i} className="bg-[var(--bg-surface)] px-3 py-2 rounded font-mono text-sm">{code}</div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-[var(--bg-page)] p-4 rounded-lg">
-                <p className="text-sm text-[var(--text-secondary)] mb-2">3. Enter the verification code:</p>
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="000000"
-                    className="px-4 py-2 border rounded-lg text-center font-mono text-lg w-32"
-                  />
-                  <button onClick={verify2FASetup} disabled={verificationCode.length !== 6}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium disabled:opacity-50">
-                    Verify
-                  </button>
-                  <button onClick={() => setShow2FASetup(false)} className="px-4 py-2 bg-[var(--bg-surface-2)] rounded-lg">
-                    Cancel
-                  </button>
-                </div>
+            <button
+              onClick={() => {
+                if (twoFactorEnabled) {
+                  const code = prompt('Enter your 2FA code or backup code to disable:');
+                  if (code) disable2FA(code);
+                } else {
+                  start2FASetup();
+                }
+              }}
+              className={`px-4 py-2 rounded-lg font-medium text-sm ${
+                twoFactorEnabled
+                  ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                  : 'bg-[#635bff] text-white hover:bg-[#4f46e5]'
+              }`}
+            >
+              {twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA'}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm">
+              <strong>Important:</strong> Save your backup codes securely before continuing.
+            </div>
+            <div className="rounded-lg p-4" style={{ background: 'var(--bg-surface-2)' }}>
+              <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>1. Scan QR code or enter manually:</p>
+              <p className="font-mono text-sm rounded border p-3" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>{twoFASecret}</p>
+            </div>
+            <div className="rounded-lg p-4" style={{ background: 'var(--bg-surface-2)' }}>
+              <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>2. Save these backup codes:</p>
+              <div className="grid grid-cols-2 gap-2">
+                {backupCodes.map((code, i) => (
+                  <div key={i} className="rounded font-mono text-sm px-3 py-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>{code}</div>
+                ))}
               </div>
             </div>
+            <div className="rounded-lg p-4" style={{ background: 'var(--bg-surface-2)' }}>
+              <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>3. Enter the verification code:</p>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={verificationCode}
+                  onChange={e => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  className="px-4 py-2 rounded-lg text-center font-mono text-lg w-32 focus:outline-none"
+                  style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
+                />
+                <button onClick={verify2FASetup} disabled={verificationCode.length !== 6}
+                  className="px-4 py-2 bg-[#635bff] text-white rounded-lg font-medium disabled:opacity-50 text-sm">
+                  Verify
+                </button>
+                <button onClick={() => setShow2FASetup(false)}
+                  className="px-4 py-2 rounded-lg text-sm" style={{ background: 'var(--bg-surface-2)', color: 'var(--text-secondary)' }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Active Sessions */}
+      <div className="rounded-xl border p-6" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Active Sessions</h3>
+          {sessions.length > 1 && (
+            <button onClick={revokeAllOtherSessions}
+              className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm font-medium">
+              Sign out other sessions
+            </button>
           )}
         </div>
-
-        {/* Active Sessions */}
-        <div className="bg-[var(--bg-surface)] rounded-xl shadow-sm border border-[var(--border)] p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-[var(--text-primary)]">Active Sessions</h2>
-            {sessions.length > 1 && (
-              <button onClick={revokeAllOtherSessions}
-                className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100">
-                Sign out other sessions
-              </button>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            {sessions.map((s) => (
-              <div key={s.id}
-                className={`p-4 rounded-lg border ${s.isCurrent ? 'border-indigo-200 bg-indigo-50' : 'border-[var(--border)] bg-[var(--bg-page)]'}`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-[var(--text-primary)]">{s.deviceName}</span>
-                      {s.isCurrent && (
-                        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded-full">Current</span>
-                      )}
-                    </div>
-                    <div className="text-sm text-[var(--text-muted)]">IP: {s.ipAddress} • Last active: {new Date(s.lastActivity).toLocaleString()}</div>
+        <div className="space-y-3">
+          {sessions.length === 0 ? (
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No active sessions found.</p>
+          ) : sessions.map(s => (
+            <div key={s.id}
+              className="p-4 rounded-lg border"
+              style={s.isCurrent
+                ? { borderColor: '#635bff', background: 'rgba(99,91,255,0.06)' }
+                : { borderColor: 'var(--border)', background: 'var(--bg-surface-2)' }
+              }>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{s.deviceName}</span>
+                    {s.isCurrent && <span className="px-2 py-0.5 bg-[#635bff] text-white text-xs rounded-full">Current</span>}
                   </div>
-                  {!s.isCurrent && (
-                    <button onClick={() => revokeSession(s.id)} className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg">
-                      Revoke
-                    </button>
-                  )}
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                    IP: {s.ipAddress} · Last active: {new Date(s.lastActivity).toLocaleString()}
+                  </div>
                 </div>
+                {!s.isCurrent && (
+                  <button onClick={() => revokeSession(s.id)}
+                    className="px-3 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg">
+                    Revoke
+                  </button>
+                )}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

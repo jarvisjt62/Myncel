@@ -137,6 +137,15 @@ model Organization {
   size        OrgSize  @default(SMALL)
   plan        Plan     @default(TRIAL)
   trialEndsAt DateTime?
+
+  // Stripe billing
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  stripePriceId        String?
+  subscriptionStatus   String?   @default("trialing")
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
