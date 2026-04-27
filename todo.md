@@ -1,74 +1,28 @@
-# Dashboard Features Analysis
+# CMMS Feature Implementation Plan
 
-## 1. Dashboard Overview / KPI Cards
-- [x] Total machines ✅
-- [x] Active alerts ✅
-- [x] Open work orders ✅
-- [x] Overdue tasks ✅
-- [ ] Trend indicators (↑↓) ❌ MISSING
-- [ ] Month-over-month comparison ❌ MISSING
+## 1. Setup Wizard - Machine + IoT Connection
+- [ ] Create `/app/setup/SetupWizardClient.tsx` - multi-step wizard UI (5 steps)
+- [ ] Create `/app/setup/page.tsx` - page wrapper
+- [ ] Create `/app/api/setup/wizard/route.ts` - wizard API
 
-## 2. Activity Feed / Timeline
-- [x] Activity Feed component ✅
-- [x] Activity API endpoint ✅
-- [x] Recent work orders ✅
-- [x] New alerts ✅
-- [x] Completed PMs ✅
-- [ ] "completed by John" (user attribution) ❌ MISSING
+## 2. API Key Management UI
+- [ ] Create `/app/settings/api-keys/page.tsx` - API key management page
+- [ ] Create `/app/api/settings/api-keys/route.ts` - CRUD for API keys
 
-## 3. Calendar View for Maintenance
-- [x] Calendar component ✅
-- [x] Calendar API endpoint ✅
-- [x] Shows PMs due dates ✅
-- [x] Shows work order due dates ✅
-- [ ] Drag-and-drop rescheduling ❌ MISSING
+## 3. Sensor Simulator
+- [ ] Create `/app/components/dashboard/SensorSimulator.tsx` - simulator panel
+- [ ] Create `/app/api/dashboard/simulate/route.ts` - simulation endpoint
 
-## 4. Equipment Detail Modal Enhancement
-- [x] Machine history timeline ✅
-- [ ] Attachments/images support ❌ MISSING
-- [ ] Sensor readings chart (IoT) ❌ MISSING
+## 4. OpenAPI / Swagger Docs
+- [ ] Create `/app/api/docs/route.ts` - serve OpenAPI JSON spec
+- [ ] Create `/app/docs/api/page.tsx` - Swagger UI viewer page
 
-## 5. Quick Actions Panel
-- [x] Quick Actions component ✅
-- [x] Add Machine button ✅
-- [x] New Work Order button ✅
-- [x] Schedule Maintenance button ✅
-- [ ] "Log breakdown" button ❌ MISSING
-- [ ] Keyboard shortcuts ❌ MISSING
+## 5. Admin Dashboard Audit & Fixes
+- [ ] Add IoT / sensor stats section to admin overview
+- [ ] Add breakdown alert panel with link to new breakdown route
+- [ ] Verify admin simulate integrates with new breakdown API
+- [ ] Add API key management link in admin sidebar
 
-## 6. Search & Global Search
-- [x] Global Search component ✅
-- [x] Search across machines ✅
-- [x] Search across work orders ✅
-- [x] Search across alerts/tasks ✅
-- [ ] Command palette (Cmd+K) ❌ MISSING
-
-## 7. Export & Reports
-- [x] Export component ✅
-- [x] Export Equipment to CSV ✅
-- [x] Export Work Orders to CSV ✅
-- [x] Export Tasks to CSV ✅
-- [ ] PDF export ❌ MISSING
-- [ ] Generate maintenance report ❌ MISSING
-
-## 8. Notifications Panel
-- [x] NotificationBell component ✅
-- [x] Bell icon with unread count ✅
-- [x] In-app notifications ✅
-- [x] Mark as read functionality ✅
-- [x] Polling for new notifications ✅
-
-## Summary
-- Implemented: 22/31 features (71%)
-- Missing: 9 features (29%)
-
-## Missing Features to Add
-1. Trend indicators on KPI cards
-2. User attribution in activity feed
-3. Drag-and-drop calendar rescheduling
-4. Equipment attachments/images
-5. IoT sensor readings chart
-6. "Log breakdown" quick action
-7. Keyboard shortcuts (Cmd+K)
-8. PDF export
-9. Generate maintenance report
+## 6. Build & Commit
+- [ ] npx tsc --noEmit → 0 errors
+- [ ] git commit + push

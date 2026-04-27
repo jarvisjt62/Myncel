@@ -45,6 +45,10 @@ export default async function AdminOverview() {
     overdueWorkOrders,
     breakdownMachines,
     recentSignups7d,
+    totalSensorReadings,
+    sensorReadings24h,
+    totalApiKeys,
+    breakdownAlerts,
   ] = await Promise.all([
     safeQuery(db.user.count({ where: superAdminOrgId ? { organizationId: { not: superAdminOrgId }, email: { not: 'admin@myncel.com' } } : {} }), 0),
     safeQuery(db.organization.count({ where: excludeOrg }), 0),
@@ -93,6 +97,10 @@ export default async function AdminOverview() {
     }), 0),
     safeQuery(db.machine.count({ where: { status: 'BREAKDOWN', ...excludeOrgData } }), 0),
     safeQuery(db.organization.count({ where: { createdAt: { gte: last7Days }, ...excludeOrg } }), 0),
+    safeQuery(db.sensorReading.count({}), 0),
+    safeQuery(db.sensorReading.count({ where: { recordedAt: { gte: new Date(Date.now() - 24*60*60*1000) } } }), 0),
+    safeQuery(db.integration.count({ where: { type: 'ZAPIER', status: 'CONNECTED' } }), 0),
+    safeQuery(db.alert.count({ where: { type: 'MACHINE_BREAKDOWN', isResolved: false } }), 0),
   ]);
 
   const userGrowth = newUsersLastMonth > 0 ? Math.round(((newUsersThisMonth - newUsersLastMonth) / newUsersLastMonth) * 100) : null;

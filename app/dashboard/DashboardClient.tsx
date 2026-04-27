@@ -11,6 +11,7 @@ import ActivityFeed from '../components/dashboard/ActivityFeed';
 import CalendarWidget from '../components/dashboard/CalendarWidget';
 import QuickActions from '../components/dashboard/QuickActions';
 import ExportButtons from '../components/dashboard/ExportButtons';
+import SensorSimulator from '../components/dashboard/SensorSimulator';
 
 // ── Change Password Component ──────────────────────────────────────────────
 function ChangePasswordSection() {
@@ -1414,6 +1415,7 @@ function DashboardClientInner({ user, data }: Props) {
                   <div className="lg:col-span-1 space-y-6">
                     <QuickActions />
                     <ExportButtons />
+                    <SensorSimulator />
                   </div>
                 </div>
             </div>

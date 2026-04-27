@@ -32,6 +32,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       ],
     },
     {
+      label: 'IoT & Integration',
+      items: [
+        { href: '/docs/api',          label: 'API Docs',     icon: '📖' },
+        { href: '/settings/api-keys', label: 'API Keys',     icon: '🔑' },
+        { href: '/setup',             label: 'Setup Wizard', icon: '⚡' },
+      ],
+    },
+    {
       label: 'Account',
       items: [
         { href: '/admin/account',   label: 'My Account', icon: '👤' },
