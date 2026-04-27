@@ -66,6 +66,8 @@ async function createPayPalSubscription(
   orgId: string,
   planId: string,
 ): Promise<string> {
+  console.log('[PayPal] Creating subscription for plan:', paypalPlanId);
+  
   const res = await fetch(`${getPayPalBase()}/v1/billing/subscriptions`, {
     method: 'POST',
     headers: {
@@ -93,10 +95,12 @@ async function createPayPalSubscription(
 
   if (!res.ok) {
     const err = await res.json();
+    console.error('[PayPal] Subscription creation failed:', JSON.stringify(err, null, 2));
     throw new Error(err.message || err.details?.[0]?.description || 'Failed to create PayPal subscription');
   }
 
   const data = await res.json();
+  console.log('[PayPal] Subscription created:', data.id);
   const approveUrl = data.links?.find((l: any) => l.rel === 'approve')?.href;
   if (!approveUrl) throw new Error('No PayPal approval URL returned');
   return approveUrl;
@@ -146,7 +150,11 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    const accessToken = await getPayPalAccessToken();
+    console.log("[PayPal] Checkout request - Plan:", planId, "Interval:", billingInterval, "PayPal Plan ID:", paypalPlanId);
+      console.log("[PayPal] Mode:", process.env.PAYPAL_MODE || "sandbox");
+      console.log("[PayPal] Base URL:", getPayPalBase());
+
+      const accessToken = await getPayPalAccessToken();
     const approveUrl = await createPayPalSubscription(
       paypalPlanId,
       returnUrl,
