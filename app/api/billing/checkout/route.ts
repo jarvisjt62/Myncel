@@ -32,13 +32,19 @@ export async function POST(req: NextRequest) {
 
     // Check if Stripe is configured
     if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'sk_test_placeholder') {
-      // Demo mode - return mock success
       return NextResponse.json({
         demo: true,
         message: 'Stripe not configured. Add STRIPE_SECRET_KEY to enable real payments.',
         planId,
         billingInterval,
       });
+    }
+
+    // Check if Stripe price ID is configured for this plan
+    if (!priceId) {
+      return NextResponse.json({
+        error: `Stripe price ID not configured for the ${plan.name} plan (${billingInterval}). Please add the Stripe Price ID to your environment variables in Vercel.`,
+      }, { status: 400 });
     }
 
     const org = await prisma.organization.findUnique({
@@ -90,7 +96,7 @@ export async function POST(req: NextRequest) {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId!,
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -102,7 +108,7 @@ export async function POST(req: NextRequest) {
           organizationId: org.id,
           planId,
         },
-        trial_period_days: org.stripeSubscriptionId ? undefined : 0, // No trial if upgrading
+        trial_period_days: org.stripeSubscriptionId ? undefined : 0,
       },
       allow_promotion_codes: true,
       metadata: {

@@ -114,8 +114,11 @@ export async function POST(req: NextRequest) {
 
   const paypalPlanId = PAYPAL_PLAN_IDS[planId]?.[billingInterval];
 
-  // If no pre-created PayPal plan ID, fall back to one-time order approach
-  const appUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
+  // Build the app URL — prefer NEXTAUTH_URL, fall back to VERCEL_URL, then localhost
+  const rawUrl = process.env.NEXTAUTH_URL || 
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+  // Strip trailing slash and ensure it's a full URL
+  const appUrl = rawUrl.replace(/\/$/, '');
   const returnUrl = `${appUrl}/settings/billing?paypal_success=1&plan=${planId}`;
   const cancelUrl = `${appUrl}/settings/billing?paypal_canceled=1`;
 
