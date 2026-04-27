@@ -314,7 +314,6 @@ export default async function AdminOverview() {
                 background: 'var(--bg-page)',
                 border: '1px solid var(--border)',
               }}
-              onMouseEnter={() => {}}
             >
               <span className="text-2xl flex-shrink-0">{item.icon}</span>
               <div>
@@ -339,12 +338,10 @@ export default async function AdminOverview() {
             {recentOrgs.map((org) => (
               <div
                 key={org.id}
-                className="flex items-center justify-between px-6 py-4 transition-colors"
+                className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-black/[0.02]"
                 style={{
                   borderLeft: isPaidPlan(org.plan) ? '2px solid #10b981' : undefined,
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; }}
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -436,9 +433,7 @@ export default async function AdminOverview() {
               return (
                 <div
                   key={wo.id}
-                  className="flex items-center justify-between px-6 py-3 transition-colors"
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; }}
+                  className="flex items-center justify-between px-6 py-3 transition-colors hover:bg-black/[0.02]"
                 >
                   <div>
                     <p className="text-sm font-medium truncate max-w-[200px]" style={{ color: 'var(--text-primary)' }}>
@@ -471,9 +466,7 @@ export default async function AdminOverview() {
             {recentUsers.map((user) => (
               <div
                 key={user.id}
-                className="flex items-center gap-3 px-6 py-3 transition-colors"
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-hover)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; }}
+                className="flex items-center gap-3 px-6 py-3 transition-colors hover:bg-black/[0.02]"
               >
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
