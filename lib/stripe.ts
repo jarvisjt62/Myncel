@@ -4,7 +4,7 @@ import Stripe from 'stripe';
 export const stripe = new Stripe(
   process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder',
   {
-    apiVersion: '2026-04-22.dahlia' as any,
+    apiVersion: '2024-11-20.acacia' as any,
     typescript: true,
   }
 );
