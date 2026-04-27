@@ -4,18 +4,19 @@ import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 
 // PayPal live plan IDs — hardcoded + env var overrides
+// Updated with correct plan IDs from PayPal Dashboard (April 2026)
 const PAYPAL_PLAN_IDS: Record<string, Record<string, string | undefined>> = {
   STARTER: {
-    monthly: process.env.PAYPAL_PLAN_STARTER_MONTHLY || 'P-3T080796KC459101ENHX253Q',
-    yearly:  process.env.PAYPAL_PLAN_STARTER_YEARLY  || 'P-2RC008460A028212ANHX26VQ',
+    monthly: process.env.PAYPAL_PLAN_STARTER_MONTHLY || 'P-3Td0b7bkEcA59j01EtHrXZ5JQ',
+    yearly:  process.env.PAYPAL_PLAN_STARTER_YEARLY  || 'P-2RD0884sqN0282jZ4NHX24VQ',
   },
   GROWTH: {
-    monthly: process.env.PAYPAL_PLAN_GROWTH_MONTHLY  || 'P-5YB75678CD3921447NHX3AYI',
-    yearly:  process.env.PAYPAL_PLAN_GROWTH_YEARLY   || 'P-6MX930997R0660345NHX3BBI',
+    monthly: process.env.PAYPAL_PLAN_GROWTH_MONTHLY  || 'P-5YB75t7dFjCh53z1dex7NhSXAYl',
+    yearly:  process.env.PAYPAL_PLAN_GROWTH_YEARLY   || 'P-cRX530q97f86sBQJsA5NHX3BBI',
   },
   PROFESSIONAL: {
-    monthly: process.env.PAYPAL_PLAN_PROFESSIONAL_MONTHLY || 'P-76199362801260619NHX3BNQ',
-    yearly:  process.env.PAYPAL_PLAN_PROFESSIONAL_YEARLY  || 'P-39035905PM763664WNHX3B2Q',
+    monthly: process.env.PAYPAL_PLAN_PROFESSIONAL_MONTHLY || 'P-7619036280j12g05LpHtX1BRQ',
+    yearly:  process.env.PAYPAL_PLAN_PROFESSIONAL_YEARLY  || 'P-39Q15WQ5FPR363q6xBNHXSBZQ',
   },
   ENTERPRISE: {
     monthly: process.env.PAYPAL_PLAN_ENTERPRISE_MONTHLY,
