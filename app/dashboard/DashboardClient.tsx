@@ -300,6 +300,22 @@ function DashboardClientInner({ user, data }: Props) {
   const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Hash-based tab navigation (from Quick Actions links like /dashboard#work-orders)
+  useEffect(() => {
+    const applyHash = () => {
+      const hash = window.location.hash.replace('#', '');
+      const validTabs = ['dashboard', 'work-orders', 'equipment', 'schedules', 'alerts', 'settings'];
+      if (validTabs.includes(hash)) {
+        setActiveTab(hash);
+        // Clear hash without page jump
+        history.replaceState(null, '', window.location.pathname);
+      }
+    };
+    applyHash();
+    window.addEventListener('hashchange', applyHash);
+    return () => window.removeEventListener('hashchange', applyHash);
+  }, []);
+
   const { machines: initialMachines, workOrders: initialWorkOrders, maintenanceTasks: initialTasks, alerts: initialAlerts, orgUsers, stats } = data;
 
   // Local state for live updates

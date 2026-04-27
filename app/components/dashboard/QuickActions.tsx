@@ -109,7 +109,7 @@ export default function QuickActions() {
         </svg>
       ),
       color: 'bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20',
-      action: () => router.push('/dashboard?modal=work-order'),
+      action: () => router.push('/dashboard#work-orders'),
     },
     {
       id: 'schedule-maintenance',
@@ -121,7 +121,7 @@ export default function QuickActions() {
         </svg>
       ),
       color: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 hover:bg-emerald-500/20',
-      action: () => router.push('/dashboard?modal=maintenance'),
+      action: () => router.push('/dashboard#schedules'),
     },
     {
       id: 'add-machine',
@@ -133,7 +133,7 @@ export default function QuickActions() {
         </svg>
       ),
       color: 'bg-purple-500/10 text-purple-600 border border-purple-500/20 hover:bg-purple-500/20',
-      action: () => router.push('/dashboard?modal=add-machine'),
+      action: () => router.push('/dashboard#equipment'),
     },
     {
       id: 'view-alerts',
@@ -145,7 +145,7 @@ export default function QuickActions() {
         </svg>
       ),
       color: 'bg-amber-500/10 text-amber-600 border border-amber-500/20 hover:bg-amber-500/20',
-      action: () => router.push('/dashboard?tab=alerts'),
+      action: () => router.push('/dashboard#alerts'),
     },
     {
       id: 'settings',
@@ -158,7 +158,7 @@ export default function QuickActions() {
         </svg>
       ),
       color: 'bg-gray-500/10 text-[var(--text-secondary)] border border-[var(--border)] hover:bg-[var(--bg-surface-2)]',
-      action: () => router.push('/dashboard?tab=settings'),
+      action: () => router.push('/settings'),
     },
   ];
 

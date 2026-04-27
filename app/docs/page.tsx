@@ -123,7 +123,7 @@ const sections = [
 
 export default function Docs() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[var(--bg-surface)]">
       <Navbar />
 
       {/* Hero */}
@@ -132,10 +132,10 @@ export default function Docs() {
           <div className="max-w-2xl">
             <span className="inline-block text-xs font-bold text-[#635bff] uppercase tracking-wider bg-[#1e3a5f] px-4 py-1.5 rounded-full mb-4">Documentation</span>
             <h1 className="text-4xl font-bold text-white mb-4">Myncel Help Center</h1>
-            <p className="text-[#8898aa] mb-6">Everything you need to get the most out of Myncel. Search guides, tutorials, and reference docs.</p>
+            <p className="text-[var(--text-muted)] mb-6">Everything you need to get the most out of Myncel. Search guides, tutorials, and reference docs.</p>
             {/* Search bar */}
             <div className="relative">
-              <svg className="absolute left-4 top-3.5 w-4 h-4 text-[#8898aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-4 top-3.5 w-4 h-4 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input type="text" placeholder="Search documentation…"
@@ -146,17 +146,17 @@ export default function Docs() {
       </section>
 
       {/* Popular articles */}
-      <section className="py-10 bg-white border-b border-[#e6ebf1]">
+      <section className="py-10 bg-[var(--bg-surface)] border-b border-[var(--border)]">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-sm font-bold text-[#8898aa] uppercase tracking-wider mb-4">Popular Articles</h2>
+          <h2 className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4">Popular Articles</h2>
           <div className="flex flex-wrap gap-3">
             {sections.flatMap(s => s.articles.filter(a => a.popular).map((art) => (
-              <Link key={`${s.slug}-${art.slug}`} href={`/docs/${s.slug}/${art.slug}`} className="flex items-center gap-2 bg-[#f6f9fc] border border-[#e6ebf1] rounded-lg px-4 py-2 text-sm text-[#0a2540] hover:border-[#635bff] hover:text-[#635bff] transition-colors">
+              <Link key={`${s.slug}-${art.slug}`} href={`/docs/${s.slug}/${art.slug}`} className="flex items-center gap-2 bg-[var(--bg-page)] border border-[var(--border)] rounded-lg px-4 py-2 text-sm text-[var(--text-primary)] hover:border-[#635bff] hover:text-[#635bff] transition-colors">
                 <svg className="w-3.5 h-3.5 text-[#635bff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 {art.title}
-                <span className="text-xs text-[#8898aa]">{art.time}</span>
+                <span className="text-xs text-[var(--text-muted)]">{art.time}</span>
               </Link>
             )))}
           </div>
@@ -164,7 +164,7 @@ export default function Docs() {
       </section>
 
       {/* Docs grid */}
-      <section className="py-16 bg-[#f6f9fc]">
+      <section className="py-16 bg-[var(--bg-page)]">
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
             {sections.map((section) => (
@@ -176,7 +176,7 @@ export default function Docs() {
                 <ul className="space-y-2.5">
                   {section.articles.map((art) => (
                     <li key={art.slug}>
-                      <Link href={`/docs/${section.slug}/${art.slug}`} className="flex items-start gap-2 text-sm text-[#425466] hover:text-[#635bff] group transition-colors">
+                      <Link href={`/docs/${section.slug}/${art.slug}`} className="flex items-start gap-2 text-sm text-[var(--text-secondary)] hover:text-[#635bff] group transition-colors">
                         <svg className="w-3.5 h-3.5 mt-0.5 text-[#c0ccda] group-hover:text-[#635bff] flex-shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>

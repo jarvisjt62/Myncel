@@ -174,16 +174,16 @@ export default function BarcodeScanContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f6f9fc]">
+    <div className="min-h-screen bg-[var(--bg-page)]">
       {/* Header */}
-      <div className="bg-white border-b border-[#e6ebf1]">
+      <div className="bg-[var(--bg-surface)] border-b border-[var(--border)]">
         <div className="max-w-2xl mx-auto px-6 py-5">
           <div className="flex items-center gap-3 mb-1">
             <Link href="/equipment" className="text-[#635bff] hover:underline text-sm">← Equipment</Link>
             <span className="text-[#e6ebf1]">/</span>
-            <h1 className="text-xl font-bold text-[#0a2540]">Scan Equipment</h1>
+            <h1 className="text-xl font-bold text-[var(--text-primary)]">Scan Equipment</h1>
           </div>
-          <p className="text-sm text-[#425466]">Scan a barcode or QR code to instantly look up equipment details</p>
+          <p className="text-sm text-[var(--text-secondary)]">Scan a barcode or QR code to instantly look up equipment details</p>
         </div>
       </div>
 
@@ -212,10 +212,10 @@ export default function BarcodeScanContent() {
 
         {/* Camera mode */}
         {!scanResult && mode === 'camera' && (
-          <div className="bg-white rounded-xl border border-[#e6ebf1] overflow-hidden">
-            <div className="p-5 border-b border-[#e6ebf1]">
-              <h2 className="font-semibold text-[#0a2540]">Camera Barcode Scanner</h2>
-              <p className="text-sm text-[#425466] mt-0.5">Point your camera at a barcode, QR code, or equipment sticker</p>
+          <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] overflow-hidden">
+            <div className="p-5 border-b border-[var(--border)]">
+              <h2 className="font-semibold text-[var(--text-primary)]">Camera Barcode Scanner</h2>
+              <p className="text-sm text-[var(--text-secondary)] mt-0.5">Point your camera at a barcode, QR code, or equipment sticker</p>
             </div>
 
             <div className="relative bg-black" style={{ aspectRatio: '4/3' }}>
@@ -253,7 +253,7 @@ export default function BarcodeScanContent() {
                   <div className="absolute bottom-4 inset-x-0 flex justify-center">
                     <button
                       onClick={stopCamera}
-                      className="px-4 py-2 bg-white/20 text-white text-sm rounded-lg hover:bg-white/30 transition-colors backdrop-blur"
+                      className="px-4 py-2 bg-[var(--bg-surface)]/20 text-white text-sm rounded-lg hover:bg-white/30 transition-colors backdrop-blur"
                     >
                       Stop Camera
                     </button>
@@ -276,9 +276,9 @@ export default function BarcodeScanContent() {
 
         {/* Manual entry mode */}
         {!scanResult && mode === 'manual' && (
-          <div className="bg-white rounded-xl border border-[#e6ebf1] p-6">
-            <h2 className="font-semibold text-[#0a2540] mb-1">Manual Part / Serial Lookup</h2>
-            <p className="text-sm text-[#425466] mb-5">Enter a part number, serial number, or equipment name to look up equipment</p>
+          <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-6">
+            <h2 className="font-semibold text-[var(--text-primary)] mb-1">Manual Part / Serial Lookup</h2>
+            <p className="text-sm text-[var(--text-secondary)] mb-5">Enter a part number, serial number, or equipment name to look up equipment</p>
             <div className="flex gap-3">
               <input
                 type="text"
@@ -286,7 +286,7 @@ export default function BarcodeScanContent() {
                 onChange={e => setManualInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleManualSearch()}
                 placeholder="e.g. SN-2024-0042 or Press #3"
-                className="flex-1 px-4 py-2.5 border border-[#e6ebf1] rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 focus:border-[#635bff]"
+                className="flex-1 px-4 py-2.5 border border-[var(--border)] rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 focus:border-[#635bff]"
                 autoFocus
               />
               <button
@@ -305,12 +305,12 @@ export default function BarcodeScanContent() {
         {scanResult && (
           <div className="space-y-4">
             {/* Scanned code */}
-            <div className="bg-white rounded-xl border border-[#e6ebf1] p-4 flex items-center justify-between">
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs text-[#8898aa] uppercase tracking-wide mb-0.5">Scanned Code</p>
-                <p className="font-mono font-semibold text-[#0a2540]">{scanResult.text}</p>
+                <p className="text-xs text-[var(--text-muted)] uppercase tracking-wide mb-0.5">Scanned Code</p>
+                <p className="font-mono font-semibold text-[var(--text-primary)]">{scanResult.text}</p>
                 {scanResult.format !== 'manual' && (
-                  <p className="text-xs text-[#8898aa]">Format: {scanResult.format}</p>
+                  <p className="text-xs text-[var(--text-muted)]">Format: {scanResult.format}</p>
                 )}
               </div>
               <button onClick={handleReset} className="text-sm text-[#635bff] hover:underline">Scan again</button>
@@ -318,45 +318,45 @@ export default function BarcodeScanContent() {
 
             {/* Loading */}
             {loading && (
-              <div className="bg-white rounded-xl border border-[#e6ebf1] p-8 text-center text-[#8898aa]">
+              <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-8 text-center text-[var(--text-muted)]">
                 Looking up equipment…
               </div>
             )}
 
             {/* Machine found */}
             {machine && !loading && (
-              <div className="bg-white rounded-xl border border-[#e6ebf1] overflow-hidden">
+              <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] overflow-hidden">
                 <div className="bg-emerald-50 border-b border-emerald-100 px-5 py-3 flex items-center gap-2">
                   <span className="text-emerald-600">✅</span>
                   <span className="text-sm font-semibold text-emerald-700">Equipment Found</span>
                 </div>
                 <div className="p-5">
-                  <h3 className="text-xl font-bold text-[#0a2540] mb-1">{machine.name}</h3>
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-1">{machine.name}</h3>
                   <div className="flex items-center gap-2 mb-4">
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${statusColors[machine.status] || 'bg-gray-100 text-gray-600'}`}>
                       {machine.status}
                     </span>
                     {machine.location && (
-                      <span className="text-xs text-[#8898aa]">📍 {machine.location}</span>
+                      <span className="text-xs text-[var(--text-muted)]">📍 {machine.location}</span>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-3 mb-5">
                     {machine.serialNumber && (
                       <div>
-                        <p className="text-xs text-[#8898aa]">Serial Number</p>
-                        <p className="text-sm font-mono font-medium text-[#0a2540]">{machine.serialNumber}</p>
+                        <p className="text-xs text-[var(--text-muted)]">Serial Number</p>
+                        <p className="text-sm font-mono font-medium text-[var(--text-primary)]">{machine.serialNumber}</p>
                       </div>
                     )}
                     {machine.model && (
                       <div>
-                        <p className="text-xs text-[#8898aa]">Model</p>
-                        <p className="text-sm font-medium text-[#0a2540]">{machine.model}</p>
+                        <p className="text-xs text-[var(--text-muted)]">Model</p>
+                        <p className="text-sm font-medium text-[var(--text-primary)]">{machine.model}</p>
                       </div>
                     )}
                     {machine.manufacturer && (
                       <div>
-                        <p className="text-xs text-[#8898aa]">Manufacturer</p>
-                        <p className="text-sm font-medium text-[#0a2540]">{machine.manufacturer}</p>
+                        <p className="text-xs text-[var(--text-muted)]">Manufacturer</p>
+                        <p className="text-sm font-medium text-[var(--text-primary)]">{machine.manufacturer}</p>
                       </div>
                     )}
                   </div>
@@ -369,7 +369,7 @@ export default function BarcodeScanContent() {
                     </Link>
                     <Link
                       href={`/work-orders/new?machineId=${machine.id}`}
-                      className="flex-1 text-center border border-[#e6ebf1] text-[#425466] font-semibold py-2.5 rounded-lg text-sm hover:bg-[#f6f9fc] transition-colors"
+                      className="flex-1 text-center border border-[var(--border)] text-[var(--text-secondary)] font-semibold py-2.5 rounded-lg text-sm hover:bg-[var(--bg-page)] transition-colors"
                     >
                       + Create Work Order
                     </Link>
@@ -380,14 +380,14 @@ export default function BarcodeScanContent() {
 
             {/* Not found */}
             {notFound && !loading && (
-              <div className="bg-white rounded-xl border border-[#e6ebf1] overflow-hidden">
+              <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] overflow-hidden">
                 <div className="bg-amber-50 border-b border-amber-100 px-5 py-3 flex items-center gap-2">
                   <span>⚠️</span>
                   <span className="text-sm font-semibold text-amber-700">No Equipment Found</span>
                 </div>
                 <div className="p-5">
-                  <p className="text-sm text-[#425466] mb-4">
-                    No equipment matching <code className="bg-[#f6f9fc] px-1 rounded font-mono">{scanResult.text}</code> was found in your inventory.
+                  <p className="text-sm text-[var(--text-secondary)] mb-4">
+                    No equipment matching <code className="bg-[var(--bg-page)] px-1 rounded font-mono">{scanResult.text}</code> was found in your inventory.
                   </p>
                   <div className="flex gap-3">
                     <Link
@@ -398,7 +398,7 @@ export default function BarcodeScanContent() {
                     </Link>
                     <button
                       onClick={handleReset}
-                      className="px-4 py-2.5 border border-[#e6ebf1] text-[#425466] font-semibold rounded-lg text-sm hover:bg-[#f6f9fc] transition-colors"
+                      className="px-4 py-2.5 border border-[var(--border)] text-[var(--text-secondary)] font-semibold rounded-lg text-sm hover:bg-[var(--bg-page)] transition-colors"
                     >
                       Try Again
                     </button>
@@ -411,8 +411,8 @@ export default function BarcodeScanContent() {
 
         {/* Info box */}
         {!scanResult && (
-          <div className="mt-6 bg-white rounded-xl border border-[#e6ebf1] p-5">
-            <h3 className="font-semibold text-[#0a2540] mb-3 text-sm">Supported code types</h3>
+          <div className="mt-6 bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-5">
+            <h3 className="font-semibold text-[var(--text-primary)] mb-3 text-sm">Supported code types</h3>
             <div className="grid grid-cols-2 gap-2">
               {[
                 { icon: '📦', label: 'Code 128 / 39', desc: 'Common industrial barcodes' },
@@ -420,11 +420,11 @@ export default function BarcodeScanContent() {
                 { icon: '📊', label: 'Data Matrix', desc: 'Small equipment labels' },
                 { icon: '🔢', label: 'EAN / UPC', desc: 'Parts and components' },
               ].map(item => (
-                <div key={item.label} className="flex items-start gap-2 p-2 rounded-lg bg-[#f6f9fc]">
+                <div key={item.label} className="flex items-start gap-2 p-2 rounded-lg bg-[var(--bg-page)]">
                   <span className="text-lg">{item.icon}</span>
                   <div>
-                    <p className="text-xs font-semibold text-[#0a2540]">{item.label}</p>
-                    <p className="text-xs text-[#8898aa]">{item.desc}</p>
+                    <p className="text-xs font-semibold text-[var(--text-primary)]">{item.label}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{item.desc}</p>
                   </div>
                 </div>
               ))}

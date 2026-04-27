@@ -122,7 +122,7 @@ function MachineLabel({ machine, appUrl, size, showSerial, showLocation, showSta
     >
       {/* Top row: logo + status */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: '10px', fontWeight: 800, color: '#0a2540', letterSpacing: '-0.3px' }}>MYNCEL</span>
+        <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>MYNCEL</span>
         {showStatus && (
           <span style={{
             fontSize: '8px', fontWeight: 700, padding: '1px 6px', borderRadius: '999px',
@@ -143,7 +143,7 @@ function MachineLabel({ machine, appUrl, size, showSerial, showLocation, showSta
 
         {/* Machine info */}
         <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-          <div style={{ fontSize: `${size.fontSize + 1}px`, fontWeight: 700, color: '#0a2540', lineHeight: 1.2, marginBottom: '4px', wordBreak: 'break-word' }}>
+          <div style={{ fontSize: `${size.fontSize + 1}px`, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2, marginBottom: '4px', wordBreak: 'break-word' }}>
             {machine.name}
           </div>
           {showManufacturer && machine.manufacturer && (
@@ -363,7 +363,7 @@ export default function QRLabelsClient({ machines }: { machines: Machine[] }) {
                         pageBreakInside: 'avoid', breakInside: 'avoid',
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '10px', fontWeight: 800, color: '#0a2540' }}>MYNCEL</span>
+                          <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-primary)' }}>MYNCEL</span>
                           {showStatus && (
                             <span style={{ fontSize: '8px', fontWeight: 700, padding: '1px 6px', borderRadius: '999px', backgroundColor: statusInfo.bg, color: statusInfo.text }}>
                               {statusInfo.label}
@@ -374,7 +374,7 @@ export default function QRLabelsClient({ machines }: { machines: Machine[] }) {
                           <div style={{ flexShrink: 0, padding: '3px', border: '1px solid #e2e8f0', borderRadius: '6px' }}
                             dangerouslySetInnerHTML={{ __html: qrSvg }} />
                           <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                            <div style={{ fontSize: `${fs + 1}px`, fontWeight: 700, color: '#0a2540', lineHeight: 1.2, marginBottom: '4px' }}>{m.name}</div>
+                            <div style={{ fontSize: `${fs + 1}px`, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2, marginBottom: '4px' }}>{m.name}</div>
                             {showManufacturer && m.manufacturer && (
                               <div style={{ fontSize: `${fs - 1}px`, color: '#546884', marginBottom: '2px' }}>{m.manufacturer}{m.model ? ` · ${m.model}` : ''}</div>
                             )}

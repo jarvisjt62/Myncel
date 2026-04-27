@@ -142,7 +142,7 @@ export default function ApiKeysPage() {
     new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
-    <div className="dash-theme min-h-screen" style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}>
+    <div style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}>
       <div className="max-w-4xl mx-auto p-6">
 
         {/* Toast */}

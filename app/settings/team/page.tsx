@@ -103,19 +103,19 @@ export default function TeamPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f6f9fc] flex items-center justify-center">
-        <div className="text-[#425466]">Loading...</div>
+      <div className="flex items-center justify-center py-12">
+        <div className="text-[var(--text-secondary)]">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f9fc]">
+    <div>
       {/* Header */}
-      <div className="bg-white border-b border-[#e6ebf1]">
+      <div className="bg-[var(--bg-surface)] border-b border-[var(--border)]">
         <div className="max-w-6xl mx-auto px-6 py-6">
-          <h1 className="text-2xl font-bold text-[#0a2540]">Team</h1>
-          <p className="text-[#425466] mt-1">Manage your team members and their permissions</p>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Team</h1>
+          <p className="text-[var(--text-secondary)] mt-1">Manage your team members and their permissions</p>
         </div>
       </div>
 
@@ -123,19 +123,19 @@ export default function TeamPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="space-y-1">
-            <Link href="/settings" className="block px-4 py-3 rounded-lg text-[#425466] hover:bg-[#f0f4f8] transition-colors">
+            <Link href="/settings" className="block px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] transition-colors">
               Profile
             </Link>
-            <Link href="/settings/security" className="block px-4 py-3 rounded-lg text-[#425466] hover:bg-[#f0f4f8] transition-colors">
+            <Link href="/settings/security" className="block px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] transition-colors">
               Security
             </Link>
             <Link href="/settings/team" className="block px-4 py-3 rounded-lg bg-[#635bff] text-white font-medium">
               Team
             </Link>
-            <Link href="/settings/notifications" className="block px-4 py-3 rounded-lg text-[#425466] hover:bg-[#f0f4f8] transition-colors">
+            <Link href="/settings/notifications" className="block px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] transition-colors">
               Notifications
             </Link>
-            <Link href="/settings/integrations" className="block px-4 py-3 rounded-lg text-[#425466] hover:bg-[#f0f4f8] transition-colors">
+            <Link href="/settings/integrations" className="block px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] transition-colors">
               Integrations
             </Link>
           </div>
@@ -143,21 +143,21 @@ export default function TeamPage() {
           {/* Main Content */}
           <div className="md:col-span-3 space-y-6">
             {/* Invite Form */}
-            <div className="bg-white rounded-xl border border-[#e6ebf1] p-6">
-              <h2 className="text-lg font-semibold text-[#0a2540] mb-4">Invite Team Member</h2>
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-6">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Invite Team Member</h2>
               <form onSubmit={handleInvite} className="flex gap-3">
                 <input
                   type="email"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="Enter email address"
-                  className="flex-1 border border-[#e6ebf1] rounded-lg px-4 py-2 text-sm"
+                  className="flex-1 border border-[var(--border)] rounded-lg px-4 py-2 text-sm"
                   required
                 />
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
-                  className="border border-[#e6ebf1] rounded-lg px-4 py-2 text-sm"
+                  className="border border-[var(--border)] rounded-lg px-4 py-2 text-sm"
                 >
                   <option value="MEMBER">Member</option>
                   <option value="TECHNICIAN">Technician</option>
@@ -174,9 +174,9 @@ export default function TeamPage() {
             </div>
 
             {/* Team Members */}
-            <div className="bg-white rounded-xl border border-[#e6ebf1] overflow-hidden">
-              <div className="px-6 py-4 border-b border-[#e6ebf1]">
-                <h2 className="text-lg font-semibold text-[#0a2540]">Team Members ({members.length})</h2>
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] overflow-hidden">
+              <div className="px-6 py-4 border-b border-[var(--border)]">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Team Members ({members.length})</h2>
               </div>
               <div className="divide-y divide-[#e6ebf1]">
                 {members.map((member) => (
@@ -186,8 +186,8 @@ export default function TeamPage() {
                         {member.name?.charAt(0) || member.email.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div className="font-medium text-[#0a2540]">{member.name || 'Unnamed'}</div>
-                        <div className="text-sm text-[#425466]">{member.email}</div>
+                        <div className="font-medium text-[var(--text-primary)]">{member.name || 'Unnamed'}</div>
+                        <div className="text-sm text-[var(--text-secondary)]">{member.email}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -214,7 +214,7 @@ export default function TeamPage() {
                   </div>
                 ))}
                 {members.length === 0 && (
-                  <div className="px-6 py-8 text-center text-[#425466]">
+                  <div className="px-6 py-8 text-center text-[var(--text-secondary)]">
                     No team members found. Invite your first team member above.
                   </div>
                 )}
@@ -222,24 +222,24 @@ export default function TeamPage() {
             </div>
 
             {/* Role Descriptions */}
-            <div className="bg-white rounded-xl border border-[#e6ebf1] p-6">
-              <h2 className="text-lg font-semibold text-[#0a2540] mb-4">Role Permissions</h2>
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-6">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Role Permissions</h2>
               <div className="space-y-3 text-sm">
                 <div className="flex items-start gap-3">
                   <span className={`px-2 py-1 rounded-full ${getRoleBadgeColor('OWNER')}`}>Owner</span>
-                  <span className="text-[#425466]">Full access to all features, billing, and team management. Cannot be removed.</span>
+                  <span className="text-[var(--text-secondary)]">Full access to all features, billing, and team management. Cannot be removed.</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <span className={`px-2 py-1 rounded-full ${getRoleBadgeColor('ADMIN')}`}>Admin</span>
-                  <span className="text-[#425466]">Can manage machines, work orders, parts, and team members.</span>
+                  <span className="text-[var(--text-secondary)]">Can manage machines, work orders, parts, and team members.</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <span className={`px-2 py-1 rounded-full ${getRoleBadgeColor('TECHNICIAN')}`}>Technician</span>
-                  <span className="text-[#425466]">Can view and update work orders, log maintenance, and update machine status.</span>
+                  <span className="text-[var(--text-secondary)]">Can view and update work orders, log maintenance, and update machine status.</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <span className={`px-2 py-1 rounded-full ${getRoleBadgeColor('MEMBER')}`}>Member</span>
-                  <span className="text-[#425466]">Can view machines and work orders. Limited edit permissions.</span>
+                  <span className="text-[var(--text-secondary)]">Can view machines and work orders. Limited edit permissions.</span>
                 </div>
               </div>
             </div>

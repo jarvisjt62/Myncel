@@ -3262,7 +3262,7 @@ export default function DocArticlePage({
   const { category, article } = data
   
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[var(--bg-surface)]">
       <Navbar />
       
       <div className="max-w-4xl mx-auto px-6 py-12">
@@ -3296,13 +3296,13 @@ export default function DocArticlePage({
               </span>
             )}
           </div>
-          <h1 className="text-3xl font-bold text-[#0a2540] mb-4">
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-4">
             {article.title}
           </h1>
         </header>
         
         {/* Article Content */}
-        <article className="prose prose-slate max-w-none prose-headings:text-[#0a2540] prose-a:text-[#635bff] prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-[#1e293b] prose-pre:text-gray-100">
+        <article className="prose prose-slate max-w-none prose-headings:text-[var(--text-primary)] prose-a:text-[#635bff] prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-[#1e293b] prose-pre:text-gray-100">
           <div dangerouslySetInnerHTML={{ __html: article.content.replace(/\n/g, '<br/>') }} />
         </article>
         

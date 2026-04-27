@@ -1,20 +1,13 @@
-# Admin Dashboard Fix — COMPLETE
+# Fixes — April 27
 
-## All Tasks Done ✅
+## Issues to Fix
+- [ ] 1. Sidebar bottom section (Org Admin Panel, Sign Out, OWNER) hard to see — improve visibility
+- [ ] 2. Quick Action buttons not working (wrong href routes → 404)
+- [ ] 3. Invite Team Member modal transparent/invisible background
+- [ ] 4. Dark mode not syncing across all pages (IoT Simulator, etc. stay in light mode)
 
-### Investigation
-- [x] Read full admin/page.tsx — confirmed no TypeScript errors
-- [x] Verified Prisma client regenerated with InviteToken model
-- [x] Verified schema fields (recordedAt, MACHINE_BREAKDOWN, ZAPIER) all exist
-- [x] Identified root cause: server component using DOM event handlers
-
-### Root Cause
-- [x] admin/page.tsx is a Next.js server component (no 'use client' directive)
-- [x] Had 4 event handlers: onMouseEnter/onMouseLeave on list items
-- [x] Event handlers in server components cause Next.js runtime crash → error boundary shows "Something went wrong"
-
-### Fix Applied
-- [x] Removed all 4 event handlers from admin/page.tsx
-- [x] Replaced with Tailwind CSS hover:bg-black/[0.02] on hover-able rows
-- [x] TypeScript check: 0 errors
-- [x] Committed and pushed (commit: ad8b687)
+## Files to Edit
+- [ ] UserSidebar.tsx — fix bottom section visibility + dark mode styles
+- [ ] DashboardClient.tsx — fix Quick Action button hrefs
+- [ ] OrgDashboardClient.tsx — fix invite modal background/z-index
+- [ ] IoT Simulator + other pages — add theme-aware CSS vars

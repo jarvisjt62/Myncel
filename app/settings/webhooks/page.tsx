@@ -149,7 +149,7 @@ export default function WebhooksPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f6f9fc]">
+    <div>
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium ${
@@ -160,12 +160,12 @@ export default function WebhooksPage() {
       )}
 
       {/* Header */}
-      <div className="bg-white border-b border-[#e6ebf1]">
+      <div className="bg-[var(--bg-surface)] border-b border-[var(--border)]">
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-[#0a2540]">Webhook Endpoints</h1>
-              <p className="text-[#425466] mt-1">Configure URLs to receive real-time Myncel events via HTTP POST</p>
+              <h1 className="text-2xl font-bold text-[var(--text-primary)]">Webhook Endpoints</h1>
+              <p className="text-[var(--text-secondary)] mt-1">Configure URLs to receive real-time Myncel events via HTTP POST</p>
             </div>
             <button
               onClick={openCreate}
@@ -181,26 +181,26 @@ export default function WebhooksPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="space-y-1">
-            <Link href="/settings" className="block px-4 py-3 rounded-lg text-[#425466] hover:bg-[#f0f4f8] transition-colors">Profile</Link>
-            <Link href="/settings/security" className="block px-4 py-3 rounded-lg text-[#425466] hover:bg-[#f0f4f8] transition-colors">Security</Link>
-            <Link href="/settings/team" className="block px-4 py-3 rounded-lg text-[#425466] hover:bg-[#f0f4f8] transition-colors">Team</Link>
-            <Link href="/settings/notifications" className="block px-4 py-3 rounded-lg text-[#425466] hover:bg-[#f0f4f8] transition-colors">Notifications</Link>
-            <Link href="/settings/integrations" className="block px-4 py-3 rounded-lg text-[#425466] hover:bg-[#f0f4f8] transition-colors">Integrations</Link>
+            <Link href="/settings" className="block px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] transition-colors">Profile</Link>
+            <Link href="/settings/security" className="block px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] transition-colors">Security</Link>
+            <Link href="/settings/team" className="block px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] transition-colors">Team</Link>
+            <Link href="/settings/notifications" className="block px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] transition-colors">Notifications</Link>
+            <Link href="/settings/integrations" className="block px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] transition-colors">Integrations</Link>
             <Link href="/settings/webhooks" className="block px-4 py-3 rounded-lg bg-[#635bff] text-white font-medium">Webhooks</Link>
           </div>
 
           {/* Main */}
           <div className="md:col-span-3 space-y-4">
             {/* How it works */}
-            <div className="bg-white rounded-xl border border-[#e6ebf1] p-5">
-              <h2 className="font-semibold text-[#0a2540] mb-2">How webhooks work</h2>
-              <p className="text-sm text-[#425466] mb-3">
-                When an event occurs in Myncel, we send a JSON <code className="bg-[#f6f9fc] px-1 rounded">POST</code> request to your endpoint URL.
-                Verify authenticity using the <code className="bg-[#f6f9fc] px-1 rounded">X-Myncel-Signature</code> header (HMAC-SHA256).
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-5">
+              <h2 className="font-semibold text-[var(--text-primary)] mb-2">How webhooks work</h2>
+              <p className="text-sm text-[var(--text-secondary)] mb-3">
+                When an event occurs in Myncel, we send a JSON <code className="bg-[var(--bg-page)] px-1 rounded">POST</code> request to your endpoint URL.
+                Verify authenticity using the <code className="bg-[var(--bg-page)] px-1 rounded">X-Myncel-Signature</code> header (HMAC-SHA256).
               </p>
-              <div className="bg-[#f6f9fc] rounded-lg p-3 border border-[#e6ebf1]">
-                <p className="text-xs font-mono text-[#425466] mb-1 font-semibold">Example payload:</p>
-                <pre className="text-xs font-mono text-[#0a2540] overflow-x-auto">{`{
+              <div className="bg-[var(--bg-page)] rounded-lg p-3 border border-[var(--border)]">
+                <p className="text-xs font-mono text-[var(--text-secondary)] mb-1 font-semibold">Example payload:</p>
+                <pre className="text-xs font-mono text-[var(--text-primary)] overflow-x-auto">{`{
   "event": "work_order.created",
   "timestamp": "2025-01-15T10:30:00Z",
   "data": {
@@ -216,12 +216,12 @@ export default function WebhooksPage() {
 
             {/* Webhook list */}
             {loading ? (
-              <div className="bg-white rounded-xl border border-[#e6ebf1] p-8 text-center text-[#8898aa]">Loading…</div>
+              <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-8 text-center text-[var(--text-muted)]">Loading…</div>
             ) : webhooks.length === 0 ? (
-              <div className="bg-white rounded-xl border border-[#e6ebf1] p-10 text-center">
+              <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-10 text-center">
                 <div className="text-4xl mb-3">🔗</div>
-                <h3 className="font-semibold text-[#0a2540] mb-1">No webhooks yet</h3>
-                <p className="text-sm text-[#425466] mb-4">Add your first endpoint to start receiving real-time events.</p>
+                <h3 className="font-semibold text-[var(--text-primary)] mb-1">No webhooks yet</h3>
+                <p className="text-sm text-[var(--text-secondary)] mb-4">Add your first endpoint to start receiving real-time events.</p>
                 <button onClick={openCreate} className="px-4 py-2 bg-[#635bff] text-white text-sm font-semibold rounded-lg hover:bg-[#4f46e5] transition-colors">
                   Add Webhook
                 </button>
@@ -229,11 +229,11 @@ export default function WebhooksPage() {
             ) : (
               <div className="space-y-3">
                 {webhooks.map(wh => (
-                  <div key={wh.id} className="bg-white rounded-xl border border-[#e6ebf1] p-5">
+                  <div key={wh.id} className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-[#0a2540] truncate">{wh.name}</h3>
+                          <h3 className="font-semibold text-[var(--text-primary)] truncate">{wh.name}</h3>
                           {wh.isActive ? (
                             <span className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-medium flex-shrink-0">Active</span>
                           ) : (
@@ -243,21 +243,21 @@ export default function WebhooksPage() {
                         <p className="text-sm font-mono text-[#635bff] truncate mb-2">{wh.url}</p>
                         <div className="flex flex-wrap gap-1.5">
                           {wh.events.map(ev => (
-                            <span key={ev} className="text-xs bg-[#f0f4f8] text-[#425466] px-2 py-0.5 rounded font-mono">{ev}</span>
+                            <span key={ev} className="text-xs bg-[var(--bg-surface-2)] text-[var(--text-secondary)] px-2 py-0.5 rounded font-mono">{ev}</span>
                           ))}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <button
                           onClick={() => handleToggleActive(wh)}
-                          className="p-2 rounded-lg border border-[#e6ebf1] text-[#425466] hover:bg-[#f6f9fc] transition-colors"
+                          className="p-2 rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-page)] transition-colors"
                           title={wh.isActive ? 'Pause' : 'Activate'}
                         >
                           {wh.isActive ? '⏸' : '▶️'}
                         </button>
                         <button
                           onClick={() => openEdit(wh)}
-                          className="p-2 rounded-lg border border-[#e6ebf1] text-[#425466] hover:bg-[#f6f9fc] transition-colors"
+                          className="p-2 rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-page)] transition-colors"
                           title="Edit"
                         >
                           ✏️
@@ -283,35 +283,35 @@ export default function WebhooksPage() {
       {/* ── Create/Edit Modal ───────────────────────────────── */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--bg-surface)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="p-6">
-              <h2 className="text-lg font-bold text-[#0a2540] mb-5">{editing ? 'Edit Webhook' : 'Add Webhook Endpoint'}</h2>
+              <h2 className="text-lg font-bold text-[var(--text-primary)] mb-5">{editing ? 'Edit Webhook' : 'Add Webhook Endpoint'}</h2>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#425466] uppercase tracking-wide mb-1">Name</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-1">Name</label>
                   <input
                     type="text"
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                     placeholder="e.g. My Production Server"
-                    className="w-full px-3 py-2.5 border border-[#e6ebf1] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 focus:border-[#635bff]"
+                    className="w-full px-3 py-2.5 border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 focus:border-[#635bff]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#425466] uppercase tracking-wide mb-1">Endpoint URL</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-1">Endpoint URL</label>
                   <input
                     type="url"
                     value={form.url}
                     onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
                     placeholder="https://your-server.com/webhook"
-                    className="w-full px-3 py-2.5 border border-[#e6ebf1] rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 focus:border-[#635bff]"
+                    className="w-full px-3 py-2.5 border border-[var(--border)] rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 focus:border-[#635bff]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#425466] uppercase tracking-wide mb-1">
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-1">
                     Secret (optional)
                   </label>
                   <input
@@ -319,16 +319,16 @@ export default function WebhooksPage() {
                     value={form.secret}
                     onChange={e => setForm(f => ({ ...f, secret: e.target.value }))}
                     placeholder="Used to verify the X-Myncel-Signature header"
-                    className="w-full px-3 py-2.5 border border-[#e6ebf1] rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 focus:border-[#635bff]"
+                    className="w-full px-3 py-2.5 border border-[var(--border)] rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 focus:border-[#635bff]"
                   />
-                  <p className="text-xs text-[#8898aa] mt-1">Leave blank to skip signature verification</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-1">Leave blank to skip signature verification</p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#425466] uppercase tracking-wide mb-2">Events to Listen For</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">Events to Listen For</label>
                   <div className="space-y-2">
                     {ALL_EVENTS.map(ev => (
-                      <label key={ev.id} className="flex items-start gap-3 p-3 rounded-lg border border-[#e6ebf1] cursor-pointer hover:bg-[#f6f9fc] transition-colors">
+                      <label key={ev.id} className="flex items-start gap-3 p-3 rounded-lg border border-[var(--border)] cursor-pointer hover:bg-[var(--bg-page)] transition-colors">
                         <input
                           type="checkbox"
                           checked={form.events.includes(ev.id)}
@@ -336,9 +336,9 @@ export default function WebhooksPage() {
                           className="mt-0.5 accent-[#635bff]"
                         />
                         <div>
-                          <p className="text-sm font-medium text-[#0a2540]">{ev.label}</p>
-                          <p className="text-xs text-[#8898aa] font-mono">{ev.id}</p>
-                          <p className="text-xs text-[#425466]">{ev.desc}</p>
+                          <p className="text-sm font-medium text-[var(--text-primary)]">{ev.label}</p>
+                          <p className="text-xs text-[var(--text-muted)] font-mono">{ev.id}</p>
+                          <p className="text-xs text-[var(--text-secondary)]">{ev.desc}</p>
                         </div>
                       </label>
                     ))}
@@ -360,7 +360,7 @@ export default function WebhooksPage() {
                 </button>
                 <button
                   onClick={() => setShowForm(false)}
-                  className="px-5 py-2.5 border border-[#e6ebf1] rounded-lg text-sm text-[#425466] hover:bg-[#f6f9fc] transition-colors"
+                  className="px-5 py-2.5 border border-[var(--border)] rounded-lg text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-page)] transition-colors"
                 >
                   Cancel
                 </button>

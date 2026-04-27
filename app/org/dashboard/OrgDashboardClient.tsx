@@ -572,7 +572,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                   onChange={e => setInviteEmail(e.target.value)}
                   placeholder="technician@company.com"
                   required
-                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--bg-page)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border, #e6ebf1)', borderRadius: 10, fontSize: 14, background: 'var(--bg-page, #f6f9fc)', color: 'var(--text-primary, #0a2540)', boxSizing: 'border-box' as const }}
                 />
               </div>
               <div style={{ marginBottom: 20 }}>
@@ -582,7 +582,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                 <select
                   value={inviteRole}
                   onChange={e => setInviteRole(e.target.value)}
-                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, background: 'var(--bg-page)', color: 'var(--text-primary)' }}
+                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border, #e6ebf1)', borderRadius: 10, fontSize: 14, background: 'var(--bg-page, #f6f9fc)', color: 'var(--text-primary, #0a2540)' }}
                 >
                   <option value="TECHNICIAN">🔧 Technician — View & complete assigned tasks</option>
                   <option value="ADMIN">⚙️ Admin — Manage team, machines & work orders</option>
@@ -639,6 +639,6 @@ const S = {
   dashLink: { display: 'inline-flex', alignItems: 'center', padding: '9px 16px', borderRadius: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: 13, textDecoration: 'none' as const },
   alertBadge: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', fontWeight: 700, fontSize: 13, textDecoration: 'none' as const, animation: 'pulse 2s infinite' as const },
   viewAllBtn: { fontSize: 12, color: '#635bff', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 },
-  modalOverlay: { position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 },
-  modal: { background: 'var(--bg-surface)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', border: '1px solid var(--border)' },
+  modalOverlay: { position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 16 },
+  modal: { background: 'var(--bg-surface, #ffffff)', backgroundColor: 'var(--bg-surface, #ffffff)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.4)', border: '1px solid var(--border, #e6ebf1)', position: 'relative' as const },
 };

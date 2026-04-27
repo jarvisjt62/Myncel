@@ -153,7 +153,7 @@ export default function DocCategoryPage({ params }: { params: { category: string
   const articles = Object.entries(category.articles)
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[var(--bg-surface)]">
       <Navbar />
       
       <div className="bg-[#0a2540] py-12">
@@ -161,7 +161,7 @@ export default function DocCategoryPage({ params }: { params: { category: string
           <nav className="mb-6">
             <ol className="flex items-center gap-2 text-sm">
               <li>
-                <Link href="/docs" className="text-[#8898aa] hover:text-white transition-colors">
+                <Link href="/docs" className="text-[var(--text-muted)] hover:text-white transition-colors">
                   Documentation
                 </Link>
               </li>
@@ -176,7 +176,7 @@ export default function DocCategoryPage({ params }: { params: { category: string
             </span>
           </div>
           <h1 className="text-3xl font-bold text-white mb-3">{category.title}</h1>
-          <p className="text-[#8898aa] max-w-2xl">{category.description}</p>
+          <p className="text-[var(--text-muted)] max-w-2xl">{category.description}</p>
         </div>
       </div>
 
@@ -187,12 +187,12 @@ export default function DocCategoryPage({ params }: { params: { category: string
             <Link
               key={slug}
               href={`/docs/${params.category}/${slug}`}
-              className="block bg-white border border-[#e6ebf1] rounded-xl p-5 hover:border-[#635bff] hover:shadow-md transition-all group"
+              className="block bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-5 hover:border-[#635bff] hover:shadow-md transition-all group"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-1">
-                    <h3 className="font-semibold text-[#0a2540] group-hover:text-[#635bff] transition-colors">
+                    <h3 className="font-semibold text-[var(--text-primary)] group-hover:text-[#635bff] transition-colors">
                       {article.title}
                     </h3>
                     {'popular' in article && article.popular && (
@@ -201,7 +201,7 @@ export default function DocCategoryPage({ params }: { params: { category: string
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-[#8898aa]">{article.time} read</p>
+                  <p className="text-sm text-[var(--text-muted)]">{article.time} read</p>
                 </div>
                 <svg className="w-5 h-5 text-[#c0ccda] group-hover:text-[#635bff] transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -212,7 +212,7 @@ export default function DocCategoryPage({ params }: { params: { category: string
         </div>
 
         {/* Back to Docs */}
-        <div className="mt-12 pt-8 border-t border-[#e6ebf1]">
+        <div className="mt-12 pt-8 border-t border-[var(--border)]">
           <Link href="/docs" className="text-[#635bff] hover:underline flex items-center gap-1">
             ← Back to all documentation
           </Link>

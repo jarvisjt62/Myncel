@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import { ThemeProvider } from '../components/ThemeProvider';
+import { ThemeProvider, ThemeToggle } from '../components/ThemeProvider';
 import NotificationBell from '../components/NotificationBell';
 import GlobalSearch from '../components/GlobalSearch';
 
@@ -194,7 +194,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user.name}</p>
-            <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{user.role}</p>
+            <p className="text-xs font-medium truncate" style={{ color: 'var(--accent)', opacity: 0.85 }}>{user.role}</p>
           </div>
         </div>
 
@@ -209,7 +209,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
                 : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] hover:text-[var(--text-primary)]'
             }`}
           >
-            <span className={active === 'org-dashboard' ? 'text-[#635bff]' : 'text-[var(--text-muted)]'}>
+            <span className={active === 'org-dashboard' ? 'text-[#635bff]' : 'text-[var(--text-secondary)]'}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
@@ -234,7 +234,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
 
         <button
           onClick={() => signOut({ callbackUrl: '/' })}
-          className="w-full text-xs text-[var(--text-muted)] hover:text-red-500 flex items-center gap-1.5 transition-colors mt-1"
+          className="w-full text-xs font-medium text-[var(--text-secondary)] hover:text-red-500 flex items-center gap-1.5 transition-colors mt-1 py-1.5 px-2 rounded-lg hover:bg-red-500/10"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -271,7 +271,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
   };
 
   return (
-    <div className="dash-theme min-h-screen flex" style={{ backgroundColor: 'var(--bg-page)' }}>
+    <div className="min-h-screen flex" style={{ backgroundColor: 'var(--bg-page)' }}>
       {/* Sidebar desktop */}
       <div className="hidden lg:flex flex-col fixed h-full z-10 w-60">
         <Sidebar />
@@ -311,6 +311,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
             <div className="hidden md:block">
               <GlobalSearch />
             </div>
+            <ThemeToggle />
             <NotificationBell />
             {user.email === 'admin@myncel.com' && (
               <Link href="/admin" className="flex items-center gap-1.5 text-xs font-semibold text-[#635bff] bg-[#635bff]/10 hover:bg-[#635bff]/20 px-3 py-1.5 rounded-lg transition-colors border border-[rgba(99,91,255,0.25)]">

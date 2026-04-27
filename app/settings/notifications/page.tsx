@@ -94,19 +94,19 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f6f9fc] flex items-center justify-center">
-        <div className="text-[#425466]">Loading...</div>
+      <div className="flex items-center justify-center py-12">
+        <div className="text-[var(--text-secondary)]">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f9fc]">
+    <div>
       {/* Header */}
-      <div className="bg-white border-b border-[#e6ebf1]">
+      <div className="bg-[var(--bg-surface)] border-b border-[var(--border)]">
         <div className="max-w-6xl mx-auto px-6 py-6">
-          <h1 className="text-2xl font-bold text-[#0a2540]">Notifications</h1>
-          <p className="text-[#425466] mt-1">Configure how and when you receive notifications</p>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Notifications</h1>
+          <p className="text-[var(--text-secondary)] mt-1">Configure how and when you receive notifications</p>
         </div>
       </div>
 
@@ -114,19 +114,19 @@ export default function NotificationsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="space-y-1">
-            <Link href="/settings" className="block px-4 py-3 rounded-lg text-[#425466] hover:bg-[#f0f4f8] transition-colors">
+            <Link href="/settings" className="block px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] transition-colors">
               Profile
             </Link>
-            <Link href="/settings/security" className="block px-4 py-3 rounded-lg text-[#425466] hover:bg-[#f0f4f8] transition-colors">
+            <Link href="/settings/security" className="block px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] transition-colors">
               Security
             </Link>
-            <Link href="/settings/team" className="block px-4 py-3 rounded-lg text-[#425466] hover:bg-[#f0f4f8] transition-colors">
+            <Link href="/settings/team" className="block px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] transition-colors">
               Team
             </Link>
             <Link href="/settings/notifications" className="block px-4 py-3 rounded-lg bg-[#635bff] text-white font-medium">
               Notifications
             </Link>
-            <Link href="/settings/integrations" className="block px-4 py-3 rounded-lg text-[#425466] hover:bg-[#f0f4f8] transition-colors">
+            <Link href="/settings/integrations" className="block px-4 py-3 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] transition-colors">
               Integrations
             </Link>
           </div>
@@ -134,13 +134,13 @@ export default function NotificationsPage() {
           {/* Main Content */}
           <div className="md:col-span-3 space-y-6">
             {/* Email Notifications */}
-            <div className="bg-white rounded-xl border border-[#e6ebf1] p-6">
-              <h2 className="text-lg font-semibold text-[#0a2540] mb-4">📧 Email Notifications</h2>
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-6">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">📧 Email Notifications</h2>
               <div className="space-y-4">
                 <label className="flex items-center justify-between">
                   <div>
-                    <span className="text-[#0a2540] font-medium">Work Order Updates</span>
-                    <p className="text-sm text-[#425466]">Get notified when work orders are assigned or completed</p>
+                    <span className="text-[var(--text-primary)] font-medium">Work Order Updates</span>
+                    <p className="text-sm text-[var(--text-secondary)]">Get notified when work orders are assigned or completed</p>
                   </div>
                   <button
                     onClick={() => handleToggle('emailWorkOrders')}
@@ -156,8 +156,8 @@ export default function NotificationsPage() {
                 
                 <label className="flex items-center justify-between">
                   <div>
-                    <span className="text-[#0a2540] font-medium">Alerts</span>
-                    <p className="text-sm text-[#425466]">Critical alerts and maintenance reminders</p>
+                    <span className="text-[var(--text-primary)] font-medium">Alerts</span>
+                    <p className="text-sm text-[var(--text-secondary)]">Critical alerts and maintenance reminders</p>
                   </div>
                   <button
                     onClick={() => handleToggle('emailAlerts')}
@@ -173,8 +173,8 @@ export default function NotificationsPage() {
 
                 <label className="flex items-center justify-between">
                   <div>
-                    <span className="text-[#0a2540] font-medium">Reports</span>
-                    <p className="text-sm text-[#425466]">Summary of maintenance activity and metrics</p>
+                    <span className="text-[var(--text-primary)] font-medium">Reports</span>
+                    <p className="text-sm text-[var(--text-secondary)]">Summary of maintenance activity and metrics</p>
                   </div>
                   <button
                     onClick={() => handleToggle('emailReports')}
@@ -188,12 +188,12 @@ export default function NotificationsPage() {
                   </button>
                 </label>
 
-                <div className="pt-4 border-t border-[#e6ebf1]">
-                  <label className="block text-sm font-medium text-[#0a2540] mb-2">Email Digest Frequency</label>
+                <div className="pt-4 border-t border-[var(--border)]">
+                  <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">Email Digest Frequency</label>
                   <select 
                     value={settings.emailDigest}
                     onChange={(e) => setSettings(prev => ({ ...prev, emailDigest: e.target.value }))}
-                    className="w-full max-w-xs border border-[#e6ebf1] rounded-lg px-3 py-2 text-sm"
+                    className="w-full max-w-xs border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
                   >
                     <option value="DAILY">Daily</option>
                     <option value="WEEKLY">Weekly</option>
@@ -205,9 +205,9 @@ export default function NotificationsPage() {
             </div>
 
             {/* SMS Notifications */}
-            <div className="bg-white rounded-xl border border-[#e6ebf1] p-6">
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-[#0a2540]">📱 SMS Notifications</h2>
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">📱 SMS Notifications</h2>
                 {!capabilities.sms && (
                   <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">Requires Twilio Integration</span>
                 )}
@@ -215,8 +215,8 @@ export default function NotificationsPage() {
               <div className="space-y-4">
                 <label className="flex items-center justify-between">
                   <div>
-                    <span className="text-[#0a2540] font-medium">Enable SMS</span>
-                    <p className="text-sm text-[#425466]">Turn on SMS notifications</p>
+                    <span className="text-[var(--text-primary)] font-medium">Enable SMS</span>
+                    <p className="text-sm text-[var(--text-secondary)]">Turn on SMS notifications</p>
                   </div>
                   <button
                     onClick={() => handleToggle('smsEnabled')}
@@ -235,8 +235,8 @@ export default function NotificationsPage() {
                   <>
                     <label className="flex items-center justify-between">
                       <div>
-                        <span className="text-[#0a2540] font-medium">Work Order Alerts</span>
-                        <p className="text-sm text-[#425466]">Get SMS for work orders</p>
+                        <span className="text-[var(--text-primary)] font-medium">Work Order Alerts</span>
+                        <p className="text-sm text-[var(--text-secondary)]">Get SMS for work orders</p>
                       </div>
                       <button
                         onClick={() => handleToggle('smsWorkOrders')}
@@ -252,8 +252,8 @@ export default function NotificationsPage() {
 
                     <label className="flex items-center justify-between">
                       <div>
-                        <span className="text-[#0a2540] font-medium">Critical Alerts Only</span>
-                        <p className="text-sm text-[#425466]">Only send SMS for critical priority items</p>
+                        <span className="text-[var(--text-primary)] font-medium">Critical Alerts Only</span>
+                        <p className="text-sm text-[var(--text-secondary)]">Only send SMS for critical priority items</p>
                       </div>
                       <button
                         onClick={() => handleToggle('smsCriticalOnly')}
@@ -268,13 +268,13 @@ export default function NotificationsPage() {
                     </label>
 
                     <div>
-                      <label className="block text-sm font-medium text-[#0a2540] mb-1">Phone Number</label>
+                      <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Phone Number</label>
                       <input
                         type="tel"
                         value={settings.phoneNumber || ''}
                         onChange={(e) => setSettings(prev => ({ ...prev, phoneNumber: e.target.value }))}
                         placeholder="+1234567890"
-                        className="w-full max-w-xs border border-[#e6ebf1] rounded-lg px-3 py-2 text-sm"
+                        className="w-full max-w-xs border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
                       />
                     </div>
                   </>
@@ -283,9 +283,9 @@ export default function NotificationsPage() {
             </div>
 
             {/* Slack Notifications */}
-            <div className="bg-white rounded-xl border border-[#e6ebf1] p-6">
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-[#0a2540]">💬 Slack Notifications</h2>
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">💬 Slack Notifications</h2>
                 {!capabilities.slack && (
                   <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">Requires Slack Integration</span>
                 )}
@@ -293,8 +293,8 @@ export default function NotificationsPage() {
               <div className="space-y-4">
                 <label className="flex items-center justify-between">
                   <div>
-                    <span className="text-[#0a2540] font-medium">Enable Slack</span>
-                    <p className="text-sm text-[#425466]">Post notifications to a Slack channel</p>
+                    <span className="text-[var(--text-primary)] font-medium">Enable Slack</span>
+                    <p className="text-sm text-[var(--text-secondary)]">Post notifications to a Slack channel</p>
                   </div>
                   <button
                     onClick={() => handleToggle('slackEnabled')}
@@ -313,8 +313,8 @@ export default function NotificationsPage() {
                   <>
                     <label className="flex items-center justify-between">
                       <div>
-                        <span className="text-[#0a2540] font-medium">Work Order Notifications</span>
-                        <p className="text-sm text-[#425466]">Post work order updates to Slack</p>
+                        <span className="text-[var(--text-primary)] font-medium">Work Order Notifications</span>
+                        <p className="text-sm text-[var(--text-secondary)]">Post work order updates to Slack</p>
                       </div>
                       <button
                         onClick={() => handleToggle('slackWorkOrders')}
@@ -329,13 +329,13 @@ export default function NotificationsPage() {
                     </label>
 
                     <div>
-                      <label className="block text-sm font-medium text-[#0a2540] mb-1">Slack Channel</label>
+                      <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Slack Channel</label>
                       <input
                         type="text"
                         value={settings.slackChannel || ''}
                         onChange={(e) => setSettings(prev => ({ ...prev, slackChannel: e.target.value }))}
                         placeholder="#maintenance"
-                        className="w-full max-w-xs border border-[#e6ebf1] rounded-lg px-3 py-2 text-sm"
+                        className="w-full max-w-xs border border-[var(--border)] rounded-lg px-3 py-2 text-sm"
                       />
                     </div>
                   </>

@@ -148,7 +148,7 @@ export default function FloorPlanPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f6f9fc]">
+    <div className="min-h-screen bg-[var(--bg-page)]">
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium ${
           toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
@@ -156,13 +156,13 @@ export default function FloorPlanPage() {
       )}
 
       {/* Header */}
-      <div className="bg-white border-b border-[#e6ebf1]">
+      <div className="bg-[var(--bg-surface)] border-b border-[var(--border)]">
         <div className="max-w-7xl mx-auto px-6 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link href="/equipment" className="text-[#635bff] hover:underline text-sm">← Equipment</Link>
               <span className="text-[#e6ebf1]">/</span>
-              <h1 className="text-xl font-bold text-[#0a2540]">Floor Plan</h1>
+              <h1 className="text-xl font-bold text-[var(--text-primary)]">Floor Plan</h1>
             </div>
             <div className="flex gap-3">
               <input
@@ -175,7 +175,7 @@ export default function FloorPlanPage() {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="px-4 py-2 text-sm border border-[#e6ebf1] rounded-lg text-[#425466] hover:bg-[#f6f9fc] disabled:opacity-50 transition-colors"
+                className="px-4 py-2 text-sm border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-page)] disabled:opacity-50 transition-colors"
               >
                 {uploading ? 'Uploading…' : floorPlan ? '🔄 Replace Floor Plan' : '📁 Upload Floor Plan'}
               </button>
@@ -195,16 +195,16 @@ export default function FloorPlanPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-6">
         {loading ? (
-          <div className="bg-white rounded-xl border border-[#e6ebf1] p-12 text-center text-[#8898aa]">Loading…</div>
+          <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-12 text-center text-[var(--text-muted)]">Loading…</div>
         ) : !floorPlan ? (
           /* Upload prompt */
-          <div className="bg-white rounded-xl border border-dashed border-[#c4cdd6] p-16 text-center">
+          <div className="bg-[var(--bg-surface)] rounded-xl border border-dashed border-[#c4cdd6] p-16 text-center">
             <div className="text-6xl mb-4">🏭</div>
-            <h2 className="text-xl font-bold text-[#0a2540] mb-2">Upload Your Factory Floor Plan</h2>
-            <p className="text-[#425466] max-w-md mx-auto mb-6">
+            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">Upload Your Factory Floor Plan</h2>
+            <p className="text-[var(--text-secondary)] max-w-md mx-auto mb-6">
               Upload an image of your factory floor plan, then drag and drop equipment icons onto the map to visualize your machine layout.
             </p>
-            <p className="text-sm text-[#8898aa] mb-6">Supported formats: JPEG, PNG, WebP, SVG — up to 10MB</p>
+            <p className="text-sm text-[var(--text-muted)] mb-6">Supported formats: JPEG, PNG, WebP, SVG — up to 10MB</p>
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
@@ -217,10 +217,10 @@ export default function FloorPlanPage() {
           <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
             {/* Floor plan map */}
             <div className="xl:col-span-4">
-              <div className="bg-white rounded-xl border border-[#e6ebf1] overflow-hidden">
-                <div className="px-5 py-3 border-b border-[#e6ebf1] flex items-center justify-between">
-                  <p className="text-sm font-semibold text-[#0a2540]">Factory Floor Map</p>
-                  <p className="text-xs text-[#8898aa]">Drag equipment icons to position them on the map</p>
+              <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] overflow-hidden">
+                <div className="px-5 py-3 border-b border-[var(--border)] flex items-center justify-between">
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">Factory Floor Map</p>
+                  <p className="text-xs text-[var(--text-muted)]">Drag equipment icons to position them on the map</p>
                 </div>
                 <div
                   ref={mapRef}
@@ -236,7 +236,7 @@ export default function FloorPlanPage() {
                   <img
                     src={floorPlan}
                     alt="Factory floor plan"
-                    className="w-full h-full object-contain bg-[#f6f9fc]"
+                    className="w-full h-full object-contain bg-[var(--bg-page)]"
                     draggable={false}
                   />
 
@@ -271,10 +271,10 @@ export default function FloorPlanPage() {
 
                         {/* Tooltip on select */}
                         {isSelected && (
-                          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-white border border-[#e6ebf1] rounded-lg shadow-xl p-3 min-w-[160px] text-xs z-30">
-                            <p className="font-bold text-[#0a2540] mb-1">{machine.name}</p>
-                            <p className="text-[#425466]">Status: <span style={{ color }}>{machine.status}</span></p>
-                            {machine.location && <p className="text-[#8898aa]">{machine.location}</p>}
+                          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-[var(--bg-surface)] border border-[var(--border)] rounded-lg shadow-xl p-3 min-w-[160px] text-xs z-30">
+                            <p className="font-bold text-[var(--text-primary)] mb-1">{machine.name}</p>
+                            <p className="text-[var(--text-secondary)]">Status: <span style={{ color }}>{machine.status}</span></p>
+                            {machine.location && <p className="text-[var(--text-muted)]">{machine.location}</p>}
                             <button
                               onClick={e => { e.stopPropagation(); handleRemovePlacement(machine.id); setSelectedMachine(null); }}
                               className="mt-2 text-red-500 hover:text-red-700 text-xs"
@@ -294,7 +294,7 @@ export default function FloorPlanPage() {
                 {Object.entries(STATUS_COLORS).map(([status, color]) => (
                   <div key={status} className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded-full" style={{ background: color }} />
-                    <span className="text-xs text-[#8898aa] capitalize">{status.toLowerCase()}</span>
+                    <span className="text-xs text-[var(--text-muted)] capitalize">{status.toLowerCase()}</span>
                   </div>
                 ))}
               </div>
@@ -303,16 +303,16 @@ export default function FloorPlanPage() {
             {/* Sidebar: machine list */}
             <div className="space-y-4">
               {unplacedMachines.length > 0 && (
-                <div className="bg-white rounded-xl border border-[#e6ebf1] p-4">
-                  <h3 className="text-xs font-semibold text-[#8898aa] uppercase tracking-wide mb-3">
+                <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-4">
+                  <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-3">
                     Not Placed ({unplacedMachines.length})
                   </h3>
                   <div className="space-y-2">
                     {unplacedMachines.map(m => (
-                      <div key={m.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-[#f6f9fc] border border-[#e6ebf1]">
+                      <div key={m.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-[var(--bg-page)] border border-[var(--border)]">
                         <div className="flex items-center gap-2 min-w-0">
                           <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: STATUS_COLORS[m.status] || '#6b7280' }} />
-                          <span className="text-xs font-medium text-[#0a2540] truncate">{m.name}</span>
+                          <span className="text-xs font-medium text-[var(--text-primary)] truncate">{m.name}</span>
                         </div>
                         <button
                           onClick={() => handlePlaceMachine(m.id)}
@@ -327,15 +327,15 @@ export default function FloorPlanPage() {
               )}
 
               {placedMachines.length > 0 && (
-                <div className="bg-white rounded-xl border border-[#e6ebf1] p-4">
-                  <h3 className="text-xs font-semibold text-[#8898aa] uppercase tracking-wide mb-3">
+                <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-4">
+                  <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-3">
                     On Map ({placedMachines.length})
                   </h3>
                   <div className="space-y-2">
                     {placedMachines.map(m => (
                       <div key={m.id} className="flex items-center gap-2 p-2 rounded-lg bg-[#f0fdf4] border border-emerald-100">
                         <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: STATUS_COLORS[m.status] || '#6b7280' }} />
-                        <span className="text-xs font-medium text-[#0a2540] truncate flex-1">{m.name}</span>
+                        <span className="text-xs font-medium text-[var(--text-primary)] truncate flex-1">{m.name}</span>
                         <span className="text-xs text-emerald-600">✓</span>
                       </div>
                     ))}
@@ -343,8 +343,8 @@ export default function FloorPlanPage() {
                 </div>
               )}
 
-              <div className="bg-[#f6f9fc] rounded-xl border border-[#e6ebf1] p-4 text-xs text-[#8898aa] space-y-1">
-                <p className="font-semibold text-[#425466]">Tips</p>
+              <div className="bg-[var(--bg-page)] rounded-xl border border-[var(--border)] p-4 text-xs text-[var(--text-muted)] space-y-1">
+                <p className="font-semibold text-[var(--text-secondary)]">Tips</p>
                 <p>• Drag pins to reposition equipment</p>
                 <p>• Click a pin to see details</p>
                 <p>• Click "Save Layout" to persist positions</p>
