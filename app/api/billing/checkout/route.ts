@@ -7,6 +7,23 @@ import { stripeFetchApi } from '@/lib/stripe-fetch';
 
 export const dynamic = 'force-dynamic';
 
+// Stripe Payment Links - Pre-created in Stripe Dashboard
+// These bypass the need for API calls to create checkout sessions
+const STRIPE_PAYMENT_LINKS: Record<string, Record<string, string>> = {
+  STARTER: {
+    monthly: 'https://buy.stripe.com/9B614n7oAeJDghR6T01kA00',
+    yearly: 'https://buy.stripe.com/8x214ncIU30Vc1B5OW1kA01',
+  },
+  GROWTH: {
+    monthly: 'https://buy.stripe.com/9B65kD5gs7hb8Pp9181kA02',
+    yearly: 'https://buy.stripe.com/7sY9ATbEQatnfdNgtA1kA03',
+  },
+  PROFESSIONAL: {
+    monthly: 'https://buy.stripe.com/00wbJ124g0SN1mXb9g1kA04',
+    yearly: 'https://buy.stripe.com/dRm14nfV65934z9els1kA05',
+  },
+};
+
 // Helper function to retry Stripe operations with exponential backoff
 async function withRetry<T>(
   operation: () => Promise<T>,
@@ -20,7 +37,7 @@ async function withRetry<T>(
       return await operation();
     } catch (error: any) {
       lastError = error;
-      const isRetryable = 
+      const isRetryable =
         error.type === 'StripeConnectionError' ||
         error.code === 'ECONNRESET' ||
         error.code === 'EPIPE' ||
@@ -41,96 +58,7 @@ async function withRetry<T>(
   throw lastError;
 }
 
-// Plan prices in cents for on-the-fly Stripe price creation
-const PLAN_PRICES_CENTS: Record<string, { monthly: number; yearly: number; monthlyLabel: string; yearlyLabel: string }> = {
-  STARTER:      { monthly: 4900,   yearly: 46800,  monthlyLabel: '$49/month',    yearlyLabel: '$468/year ($39/mo)' },
-  GROWTH:       { monthly: 9900,   yearly: 94800,  monthlyLabel: '$99/month',    yearlyLabel: '$948/year ($79/mo)' },
-  PROFESSIONAL: { monthly: 24900,  yearly: 238800, monthlyLabel: '$249/month',   yearlyLabel: '$2,388/year ($199/mo)' },
-};
-
-// Cache for dynamically created price IDs (in-memory, resets on cold start)
-const priceIdCache: Record<string, string> = {};
-
-async function getOrCreateStripePrice(planId: string, interval: 'monthly' | 'yearly'): Promise<string> {
-  const cacheKey = `${planId}_${interval}`;
-
-  // 1. Check env vars first
-  const envKey = interval === 'yearly'
-    ? `STRIPE_${planId}_YEARLY_PRICE_ID`
-    : `STRIPE_${planId}_MONTHLY_PRICE_ID`;
-  const envPriceId = process.env[envKey];
-  if (envPriceId) return envPriceId;
-
-  // 2. Check in-memory cache
-  if (priceIdCache[cacheKey]) return priceIdCache[cacheKey];
-
-  // 3. Search existing prices in Stripe
-  const plan = getPlanById(planId);
-  const nickname = `${plan.name} ${interval === 'yearly' ? 'Yearly' : 'Monthly'}`;
-
-  const existingPrices = await withRetry(
-    () => stripe.prices.list({ active: true, limit: 100 }),
-    'prices.list'
-  );
-
-  const existing = existingPrices.data.find(p =>
-    p.nickname === nickname ||
-    (p.metadata?.planId === planId && p.metadata?.interval === interval)
-  );
-
-  if (existing) {
-    priceIdCache[cacheKey] = existing.id;
-    return existing.id;
-  }
-
-  // 4. Create product if needed
-  let productId = process.env.STRIPE_PRODUCT_ID;
-  if (!productId) {
-    const products = await withRetry(
-        () => stripe.products.list({ limit: 10 }),
-        'products.list'
-      );
-    const existingProduct = products.data.find(p => p.name === 'Myncel CMMS' || p.metadata?.app === 'myncel');
-    if (existingProduct) {
-      productId = existingProduct.id;
-    } else {
-      const newProduct = await withRetry(
-        () => stripe.products.create({
-          name: 'Myncel CMMS',
-          description: 'Computerized Maintenance Management System',
-          metadata: { app: 'myncel' },
-        }),
-        'products.create'
-      );
-      productId = newProduct.id;
-    }
-  }
-
-  // 5. Create the price
-  const prices = PLAN_PRICES_CENTS[planId];
-  if (!prices) throw new Error(`No price config for plan ${planId}`);
-
-  const amount = interval === 'yearly' ? prices.yearly : prices.monthly;
-  const stripeInterval = interval === 'yearly' ? 'year' : 'month';
-
-  const newPrice = await withRetry(
-    () => stripe.prices.create({
-      product: productId,
-      unit_amount: amount,
-      currency: 'usd',
-      recurring: { interval: stripeInterval },
-      nickname,
-      metadata: { planId, interval, app: 'myncel' },
-    }),
-    'prices.create'
-  );
-
-  priceIdCache[cacheKey] = newPrice.id;
-  console.log(`[Stripe] Created price ${newPrice.id} for ${planId} ${interval}`);
-  return newPrice.id;
-}
-
-// POST /api/billing/checkout — create Stripe checkout session
+// POST /api/billing/checkout — redirect to Stripe Payment Link
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -150,14 +78,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid plan selected' }, { status: 400 });
     }
 
-    // Check if Stripe is configured (demo mode only if explicitly set to placeholder)
-    if (process.env.STRIPE_SECRET_KEY === 'sk_test_placeholder') {
-      return NextResponse.json({
-        demo: true,
-        message: 'Stripe not configured. Add STRIPE_SECRET_KEY to enable real payments.',
-        planId,
-        billingInterval,
-      });
+    // Check if we have a Payment Link for this plan
+    const paymentLink = STRIPE_PAYMENT_LINKS[planId]?.[billingInterval];
+    if (!paymentLink) {
+      return NextResponse.json({ error: 'Payment link not configured for this plan' }, { status: 400 });
     }
 
     const org = await prisma.organization.findUnique({
@@ -174,115 +98,58 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
 
-    // Create or retrieve Stripe customer
-    let customerId = org.stripeCustomerId;
-    if (!customerId) {
-      let customer: any;
-      try {
-        // Try SDK with retry
-        customer = await withRetry(
-          () => stripe.customers.create({
-            email: session.user.email || '',
-            name: org.name,
-            metadata: {
-              organizationId: org.id,
-              userId: session.user.id || '',
-            },
-          }),
-          'customers.create'
-        );
-      } catch (sdkError: any) {
-        console.warn('[Stripe SDK] Customer creation failed, trying fetch-based fallback:', sdkError.message);
-        // Fallback to fetch-based API
-        customer = await stripeFetchApi.createCustomer({
-          email: session.user.email || '',
-          name: org.name,
-          metadata: {
-            organizationId: org.id,
-            userId: session.user.id || '',
-          },
-        });
-      }
-      customerId = customer.id;
-      await prisma.organization.update({
-        where: { id: org.id },
-        data: { stripeCustomerId: customerId },
-      });
-    }
-
     const baseUrl = process.env.NEXTAUTH_URL ||
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
     const appUrl = baseUrl.replace(/\/$/, '');
 
-    // If already subscribed, open billing portal instead
+    // If already subscribed, try to open billing portal
     if (org.stripeSubscriptionId) {
-      let portalSession: any;
       try {
-        portalSession = await withRetry(
+        // Need to ensure customer exists for billing portal
+        let customerId = org.stripeCustomerId;
+        
+        if (!customerId) {
+          // Create customer first
+          const customer = await withRetry(
+            () => stripe.customers.create({
+              email: session.user.email || '',
+              name: org.name,
+              metadata: {
+                organizationId: org.id,
+                userId: session.user.id || '',
+              },
+            }),
+            'customers.create'
+          );
+          customerId = customer.id;
+          await prisma.organization.update({
+            where: { id: org.id },
+            data: { stripeCustomerId: customerId },
+          });
+        }
+
+        const portalSession = await withRetry(
           () => stripe.billingPortal.sessions.create({
             customer: customerId,
             return_url: `${appUrl}/settings/billing`,
           }),
           'billingPortal.sessions.create'
         );
-      } catch (sdkError: any) {
-        console.warn('[Stripe SDK] Portal session failed, trying fetch-based fallback:', sdkError.message);
-        portalSession = await stripeFetchApi.createBillingPortalSession({
-          customer: customerId,
-          return_url: `${appUrl}/settings/billing`,
-        });
+        return NextResponse.json({ url: portalSession.url });
+      } catch (portalError: any) {
+        console.warn('[Stripe] Billing portal failed, redirecting to payment link:', portalError.message);
+        // Fall through to payment link redirect
       }
-      return NextResponse.json({ url: portalSession.url });
     }
 
-    // Get or auto-create Stripe price ID
-    const priceId = await getOrCreateStripePrice(planId, billingInterval as 'monthly' | 'yearly');
-
-    // Create checkout session - try SDK first, then fallback to fetch-based API
-    let checkoutSession: any;
-    
-    try {
-      // Try SDK with retry
-      checkoutSession = await withRetry(
-        () => stripe.checkout.sessions.create({
-          customer: customerId,
-          payment_method_types: ['card'],
-          line_items: [{ price: priceId, quantity: 1 }],
-          mode: 'subscription',
-          success_url: `${appUrl}/settings/billing?success=true&plan=${planId}`,
-          cancel_url: `${appUrl}/settings/billing?canceled=true`,
-          subscription_data: {
-            metadata: { organizationId: org.id, planId },
-          },
-          allow_promotion_codes: true,
-          metadata: { organizationId: org.id, planId, billingInterval },
-        }),
-        'checkout.sessions.create'
-      );
-    } catch (sdkError: any) {
-      console.warn('[Stripe SDK] Failed, trying fetch-based fallback:', sdkError.message);
-      
-      // Fallback to fetch-based API
-      checkoutSession = await stripeFetchApi.createCheckoutSession({
-        customer: customerId,
-        payment_method_types: ['card'],
-        line_items: [{ price: priceId, quantity: 1 }],
-        mode: 'subscription',
-        success_url: `${appUrl}/settings/billing?success=true&plan=${planId}`,
-        cancel_url: `${appUrl}/settings/billing?canceled=true`,
-        subscription_data: {
-          metadata: { organizationId: org.id, planId },
-        },
-        allow_promotion_codes: true,
-        metadata: { organizationId: org.id, planId, billingInterval },
-      });
-    }
-
-    return NextResponse.json({ url: checkoutSession.url });
+    // Return the Payment Link URL - this bypasses all Stripe API connectivity issues
+    // The payment link is pre-created in Stripe Dashboard and handles checkout directly
+    console.log(`[Stripe] Redirecting to Payment Link for ${planId} ${billingInterval}: ${paymentLink}`);
+    return NextResponse.json({ url: paymentLink });
   } catch (error: any) {
     console.error('Checkout error:', error);
     return NextResponse.json({
-      error: error?.message || 'Failed to create checkout session',
+      error: error?.message || 'Failed to process checkout request',
     }, { status: 500 });
   }
 }
