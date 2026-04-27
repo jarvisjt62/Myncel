@@ -56,9 +56,18 @@ export default function GlobalSearch() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Handle keyboard navigation
+  // Handle keyboard navigation + Cmd+K / Ctrl+K global shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+K or Ctrl+K opens search from anywhere on the page
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+        if (query.length >= 2) setIsOpen(true);
+        return;
+      }
+
       if (!isOpen || !results) return;
 
       const totalResults = getTotalResults();
@@ -85,7 +94,7 @@ export default function GlobalSearch() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, results, selectedIndex]);
+  }, [isOpen, results, selectedIndex, query]);
 
   const performSearch = async (searchQuery: string) => {
     setIsLoading(true);

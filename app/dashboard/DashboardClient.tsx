@@ -1,7 +1,7 @@
 'use client';
 
 import '../components/theme.css';
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import NotificationBell from '../components/NotificationBell';
@@ -307,6 +307,15 @@ function DashboardClientInner({ user, data }: Props) {
   const [workOrders, setWorkOrders] = useState(initialWorkOrders);
   const [maintenanceTasks, setMaintenanceTasks] = useState(initialTasks);
   const [alerts, setAlerts] = useState(initialAlerts);
+
+  // KPI trend indicators (month-over-month comparison)
+  const [kpiTrends, setKpiTrends] = useState<any>(null);
+  useEffect(() => {
+    fetch('/api/dashboard/trends')
+      .then(r => r.json())
+      .then(d => setKpiTrends(d.trends))
+      .catch(() => {});
+  }, []);
 
   // Modal states (create)
   const [showMachineModal, setShowMachineModal] = useState(false);
@@ -814,6 +823,131 @@ function DashboardClientInner({ user, data }: Props) {
                 </div>
               </div>
               
+            {/* IoT Sensor Chart */}
+            {(() => {
+              const [sensorData, setSensorData] = React.useState<any>(null);
+              const [loadingSensors, setLoadingSensors] = React.useState(false);
+              const [activeSensorType, setActiveSensorType] = React.useState<string | null>(null);
+              React.useEffect(() => {
+                if (!selectedMachine) return;
+                setLoadingSensors(true);
+                fetch(`/api/dashboard/sensors?machineId=${selectedMachine.id}`)
+                  .then(r => r.json())
+                  .then(d => {
+                    setSensorData(d);
+                    if (d.sensorTypes?.length > 0) setActiveSensorType(d.sensorTypes[0]);
+                  })
+                  .catch(() => {})
+                  .finally(() => setLoadingSensors(false));
+              }, [selectedMachine?.id]);
+              if (loadingSensors) return <div className="h-8 bg-[var(--bg-surface-2)] rounded animate-pulse" />;
+              if (!sensorData?.hasData) return null;
+              const activeReadings = activeSensorType ? sensorData.readings[activeSensorType] || [] : [];
+              const values = activeReadings.map((r: any) => r.value);
+              const minVal = Math.min(...values);
+              const maxVal = Math.max(...values);
+              const range = maxVal - minVal || 1;
+              const chartH = 60;
+              const chartW = 280;
+              const points = activeReadings.map((r: any, i: number) => {
+                const x = (i / Math.max(activeReadings.length - 1, 1)) * chartW;
+                const y = chartH - ((r.value - minVal) / range) * (chartH - 8) - 4;
+                return `${x},${y}`;
+              }).join(' ');
+              const unit = activeReadings[0]?.unit || '';
+              const latestVal = activeReadings[activeReadings.length - 1]?.value;
+              return (
+                <div>
+                  <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">IoT Sensor Data</p>
+                  <div className="rounded-xl bg-[var(--bg-surface-2)] border border-[var(--border)] p-4">
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
+                      {sensorData.sensorTypes.map((t: string) => (
+                        <button key={t} onClick={() => setActiveSensorType(t)}
+                          className={`px-2 py-1 text-[10px] font-semibold rounded-lg border transition-all capitalize ${activeSensorType === t ? 'bg-[#635bff] text-white border-[#635bff]' : 'border-[var(--border)] text-[var(--text-muted)] hover:border-[#635bff] hover:text-[#635bff]'}`}>
+                          {t.replace('_', ' ')}
+                        </button>
+                      ))}
+                    </div>
+                    {activeReadings.length > 1 ? (
+                      <div>
+                        <div className="flex items-end justify-between mb-1">
+                          <span className="text-xs text-[var(--text-muted)] capitalize">{activeSensorType?.replace('_', ' ')}</span>
+                          <span className="text-sm font-bold text-[var(--text-primary)]">{latestVal?.toFixed(1)} {unit}</span>
+                        </div>
+                        <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full h-16 overflow-visible">
+                          <defs>
+                            <linearGradient id="sensorGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#635bff" stopOpacity="0.3"/>
+                              <stop offset="100%" stopColor="#635bff" stopOpacity="0"/>
+                            </linearGradient>
+                          </defs>
+                          <polyline points={points} fill="none" stroke="#635bff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <polyline points={`0,${chartH} ${points} ${chartW},${chartH}`} fill="url(#sensorGrad)" stroke="none" />
+                        </svg>
+                        <div className="flex justify-between text-[9px] text-[var(--text-muted)] mt-1">
+                          <span>{new Date(activeReadings[0].timestamp).toLocaleDateString()}</span>
+                          <span>{activeReadings.length} readings</span>
+                          <span>{new Date(activeReadings[activeReadings.length-1].timestamp).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[var(--text-muted)] py-2">Not enough data to render chart</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Equipment Image/Attachment Upload */}
+            <div>
+              <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">Machine Image</p>
+              <div className="flex items-start gap-3">
+                {(machineDetail?.imageUrl || selectedMachine?.imageUrl) ? (
+                  <img
+                    src={machineDetail?.imageUrl || selectedMachine?.imageUrl}
+                    alt="Machine"
+                    className="w-24 h-24 object-cover rounded-xl border border-[var(--border)]"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-xl border-2 border-dashed border-[var(--border)] flex items-center justify-center bg-[var(--bg-surface-2)]">
+                    <svg className="w-8 h-8 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                )}
+                <div className="flex-1">
+                  <label className="cursor-pointer">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:border-[#635bff] hover:text-[#635bff] transition-all w-fit">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      Upload Image
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file || !selectedMachine) return;
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        fd.append('machineId', selectedMachine.id);
+                        try {
+                          const res = await fetch('/api/machines/upload', { method: 'POST', body: fd });
+                          if (res.ok) {
+                            const { imageUrl } = await res.json();
+                            setMachineDetail((prev: any) => prev ? { ...prev, imageUrl } : prev);
+                          }
+                        } catch { /* ignore */ }
+                      }}
+                    />
+                  </label>
+                  <p className="text-[10px] text-[var(--text-muted)] mt-1.5">JPG, PNG, WebP up to 5MB</p>
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-end pt-2">
               <button onClick={() => { setSelectedMachine(null); setMachineDetail(null); }} className="px-4 py-2 text-sm text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[var(--bg-surface-2)]">Close</button>
             </div>
@@ -1102,72 +1236,68 @@ function DashboardClientInner({ user, data }: Props) {
                 </div>
               )}
 
-              {/* KPI Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  {
-                    label: 'Total Equipment',
-                    value: stats.totalMachines,
-                    sub: `${stats.criticalMachines} critical`,
-                    subColor: stats.criticalMachines > 0 ? 'text-red-500' : 'text-emerald-500',
-                    icon: (
-                      <svg className="w-5 h-5 text-[#635bff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      </svg>
-                    ),
-                    bg: 'bg-[#635bff]/10',
-                  },
-                  {
-                    label: 'Open Work Orders',
-                    value: stats.openWorkOrders,
-                    sub: `${stats.overdueWorkOrders} overdue`,
-                    subColor: stats.overdueWorkOrders > 0 ? 'text-red-500' : 'text-[var(--text-muted)]',
-                    icon: (
-                      <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
-                    ),
-                    bg: 'bg-amber-500/10',
-                  },
-                  {
-                    label: 'Due This Week',
-                    value: stats.upcomingTasks,
-                    sub: 'scheduled tasks',
-                    subColor: 'text-[var(--text-muted)]',
-                    icon: (
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    ),
-                    bg: 'bg-blue-500/10',
-                  },
-                  {
-                    label: 'Month Cost',
-                    value: `$${stats.monthMaintenanceCost.toLocaleString()}`,
-                    sub: 'maintenance spend',
-                    subColor: 'text-[var(--text-muted)]',
-                    icon: (
-                      <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    ),
-                    bg: 'bg-emerald-500/10',
-                  },
-                ].map((card) => (
-                  <div key={card.label} className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] p-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">{card.label}</p>
-                      <div className={`w-9 h-9 rounded-lg ${card.bg} flex items-center justify-center`}>
-                        {card.icon}
+                {/* KPI Cards with Trend Indicators */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {(() => {
+                    const TrendBadge = ({ change, direction, goodDown }: { change: number; direction: string; goodDown?: boolean }) => {
+                      if (!kpiTrends || change === 0) return null;
+                      const isGood = goodDown ? direction === 'down' : direction === 'up';
+                      return (
+                        <span className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${isGood ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-500'}`}>
+                          {direction === 'up' ? '↑' : '↓'}{Math.abs(change)}%
+                        </span>
+                      );
+                    };
+                    const cards = [
+                      {
+                        label: 'Total Equipment', value: stats.totalMachines,
+                        sub: `${stats.criticalMachines} critical`,
+                        subColor: stats.criticalMachines > 0 ? 'text-red-500' : 'text-emerald-500',
+                        trend: null, bg: 'bg-[#635bff]/10',
+                        icon: <svg className="w-5 h-5 text-[#635bff]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /></svg>,
+                      },
+                      {
+                        label: 'Open Work Orders', value: stats.openWorkOrders,
+                        sub: `${stats.overdueWorkOrders} overdue`,
+                        subColor: stats.overdueWorkOrders > 0 ? 'text-red-500' : 'text-[var(--text-muted)]',
+                        trend: kpiTrends?.workOrders ? { ...kpiTrends.workOrders, goodDown: true } : null,
+                        bg: 'bg-amber-500/10',
+                        icon: <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>,
+                      },
+                      {
+                        label: 'Due This Week', value: stats.upcomingTasks,
+                        sub: 'scheduled tasks', subColor: 'text-[var(--text-muted)]',
+                        trend: kpiTrends?.maintenanceTasks ? { ...kpiTrends.maintenanceTasks, goodDown: false } : null,
+                        bg: 'bg-blue-500/10',
+                        icon: <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+                      },
+                      {
+                        label: 'Month Cost', value: `$${stats.monthMaintenanceCost.toLocaleString()}`,
+                        sub: 'maintenance spend', subColor: 'text-[var(--text-muted)]',
+                        trend: kpiTrends?.cost ? { ...kpiTrends.cost, goodDown: true } : null,
+                        bg: 'bg-emerald-500/10',
+                        icon: <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+                      },
+                    ];
+                    return cards.map((card) => (
+                      <div key={card.label} className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">{card.label}</p>
+                          <div className={`w-9 h-9 rounded-lg ${card.bg} flex items-center justify-center`}>{card.icon}</div>
+                        </div>
+                        <p className="text-3xl font-bold text-[var(--text-primary)]">{card.value}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className={`text-xs ${card.subColor}`}>{card.sub}</p>
+                          {card.trend && card.trend.change !== 0 && (
+                            <TrendBadge change={card.trend.change} direction={card.trend.direction} goodDown={card.trend.goodDown} />
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <p className="text-3xl font-bold text-[var(--text-primary)]">{card.value}</p>
-                    <p className={`text-xs mt-1 ${card.subColor}`}>{card.sub}</p>
-                  </div>
-                ))}
-              </div>
+                    ));
+                  })()}
+                </div>
 
-              {/* Recent Work Orders + Alerts */}
+                {/* Recent Work Orders + Alerts */}
               <div className="grid lg:grid-cols-3 gap-6">
                 {/* Work Orders */}
                 <div className="lg:col-span-2 rounded-xl [background:var(--bg-surface)] border border-[var(--border)]">
