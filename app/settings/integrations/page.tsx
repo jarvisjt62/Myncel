@@ -1,0 +1,667 @@
+'use client';
+
+export const dynamic = 'force-dynamic';
+
+import { useState, useEffect, useCallback } from 'react';
+import PlanGate from '@/app/components/PlanGate';
+import { IntegrationCardSkeleton } from '@/app/components/LoadingSkeleton';
+import { fetchWithCache, invalidateCache } from '@/app/lib/client-cache';
+import Link from 'next/link';
+
+interface IntegrationData {
+  id: string;
+  type: string;
+  name: string;
+  status: string;
+  connectedAt?: string;
+  config?: Record<string, any>;
+  apiKey?: string;
+  webhookUrl?: string;
+  platformInherited?: boolean;
+  inheritedFrom?: string;
+  fromNumber?: string;
+  hasApiKey?: boolean;
+  disabledPlatformInheritance?: boolean;
+  adminConnected?: boolean;
+}
+
+type ModalType =
+  | { kind: 'twilio' }
+  | { kind: 'zapier'; apiKey: string; webhookUrl: string }
+  | { kind: 'oauth'; integration: string; name: string }
+  | { kind: 'webhooks' }
+  | null;
+
+const INTEGRATION_META: Record<string, { icon: string; name: string; description: string; category: string }> = {
+  slack:         { icon: '💬', name: 'Slack',           description: 'Get work order notifications and alerts in your Slack channels', category: 'Communication' },
+  quickbooks:    { icon: '💰', name: 'QuickBooks',      description: 'Sync maintenance costs and parts purchases with QuickBooks', category: 'Accounting' },
+  zapier:        { icon: '⚡', name: 'Zapier',          description: 'Connect Myncel to 5,000+ apps and automate workflows', category: 'Automation' },
+  twilio:        { icon: '📱', name: 'SMS Notifications', description: 'Send work order alerts via SMS to your team using Twilio', category: 'Communication' },
+  webhooks:      { icon: '🔗', name: 'Webhooks',        description: 'Send real-time events to your own endpoints', category: 'Developer' },
+  google_sheets: { icon: '📊', name: 'Google Sheets',   description: 'Export reports and data to Google Sheets automatically', category: 'Productivity' },
+};
+
+const ALL_IDS = ['slack', 'quickbooks', 'zapier', 'twilio', 'webhooks', 'google_sheets'];
+
+function IntegrationsPage() {
+  const [integrations, setIntegrations] = useState<Record<string, IntegrationData>>({});
+  const [loading, setLoading] = useState(true);
+  const [working, setWorking] = useState<string | null>(null);
+  const [modal, setModal] = useState<ModalType>(null);
+  const [twilioForm, setTwilioForm] = useState({ accountSid: '', authToken: '', fromNumber: '' });
+  const [twilioError, setTwilioError] = useState('');
+  const [twilioSaving, setTwilioSaving] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const showToast = (type: 'success' | 'error', text: string) => {
+    setToast({ type, text });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const fetchIntegrations = useCallback(async (useCache = true) => {
+    try {
+      const data = await fetchWithCache(
+        'integrations',
+        async () => {
+          const res = await fetch('/api/integrations');
+          if (res.ok) {
+            const json = await res.json();
+            const map: Record<string, IntegrationData> = {};
+            (json.integrations || []).forEach((i: any) => {
+              map[i.id] = {
+                id: i.integrationId || i.id,
+                type: i.id,
+                name: i.name,
+                status: i.status || (i.connected ? 'CONNECTED' : 'PENDING'),
+                disabledPlatformInheritance: i.disabledPlatformInheritance || false,
+                adminConnected: i.adminConnected || false,
+                connectedAt: i.connectedAt,
+                config: i.config,
+                apiKey: i.apiKey,
+                webhookUrl: i.webhookUrl,
+                platformInherited: i.platformInherited || false,
+                inheritedFrom: i.inheritedFrom,
+                fromNumber: i.fromNumber,
+                hasApiKey: i.hasApiKey,
+              };
+            });
+            return map;
+          }
+          return {} as Record<string, IntegrationData>;
+        },
+        { staleWhileRevalidate: useCache }
+      );
+      setIntegrations(data);
+    } catch (e) {
+      console.error('Failed to fetch integrations:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Handle OAuth callback success/error from URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get('success');
+    const error = params.get('error');
+
+    if (success) {
+      const name = success.replace('_connected', '').replace(/_/g, ' ');
+      showToast('success', `${name.charAt(0).toUpperCase() + name.slice(1)} connected successfully!`);
+      // Clean URL
+      window.history.replaceState({}, '', '/settings/integrations');
+    }
+
+    if (error) {
+      const errorMessages: Record<string, string> = {
+        // Slack errors
+        slack_denied: 'Slack connection was cancelled.',
+        slack_invalid: 'Slack callback was missing required parameters.',
+        slack_state_invalid: 'Slack OAuth state was invalid. Please try again.',
+        slack_state_expired: 'Slack OAuth session expired. Please try again.',
+        slack_state_mismatch: 'Slack OAuth state mismatch. Please try again.',
+        slack_not_found: 'Slack integration not found. Please try again.',
+        slack_token_failed: 'Slack token exchange failed. Please check your Slack app configuration and ensure the redirect URI is registered.',
+        slack_invalid_client: 'Slack OAuth credentials are invalid. Please verify your SLACK_CLIENT_ID and SLACK_CLIENT_SECRET are correct.',
+        slack_invalid_code: 'Slack authorization code was invalid or already used. Please try connecting again.',
+        slack_redirect_uri: 'Slack redirect URI mismatch. Please add https://www.myncel.com/api/integrations/slack/callback to your Slack App Redirect URLs.',
+        slack_error: 'An error occurred connecting Slack. Please try again.',
+        // Google errors
+        google_denied: 'Google connection was cancelled.',
+        google_invalid: 'Google callback was missing required parameters.',
+        google_state_invalid: 'Google OAuth state was invalid. Please try again.',
+        google_state_expired: 'Google OAuth session expired. Please try again.',
+        google_state_mismatch: 'Google OAuth state mismatch. Please try again.',
+        google_not_found: 'Google integration not found. Please try again.',
+        google_invalid_client: 'Google OAuth credentials are invalid. Please verify your GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are correct, and that the OAuth consent screen is configured.',
+        google_token_failed: 'Google token exchange failed. Please check your Google Cloud project configuration.',
+        google_error: 'An error occurred connecting Google Sheets. Please try again.',
+        // QuickBooks errors
+        quickbooks_denied: 'QuickBooks connection was cancelled.',
+        quickbooks_invalid: 'QuickBooks callback was missing required parameters.',
+        quickbooks_state_invalid: 'QuickBooks OAuth state was invalid. Please try again.',
+        quickbooks_state_expired: 'QuickBooks OAuth session expired. Please try again.',
+        quickbooks_state_mismatch: 'QuickBooks OAuth state mismatch. Please try again.',
+        quickbooks_not_found: 'QuickBooks integration not found. Please try again.',
+        quickbooks_token_failed: 'QuickBooks token exchange failed. Please verify your Intuit app is properly configured and the redirect URI is registered.',
+        quickbooks_error: 'An error occurred connecting QuickBooks. Please try again.',
+      };
+      const msg = errorMessages[error] || `Connection error: ${error}`;
+      showToast('error', msg);
+      // Clean URL
+      window.history.replaceState({}, '', '/settings/integrations');
+    }
+  }, []);
+
+  useEffect(() => { fetchIntegrations(); }, [fetchIntegrations]);
+
+  const isDisabledPlatform = (id: string) => integrations[id]?.status === 'PLATFORM_DISABLED';
+  const isConnected = (id: string) => integrations[id]?.status === 'CONNECTED' || integrations[id]?.status === 'PLATFORM_INHERITED';
+  const isPlatformManaged = (id: string) => integrations[id]?.status === 'PLATFORM_INHERITED' || integrations[id]?.status === 'PLATFORM_DISABLED';
+
+  const handleReenable = async (id: string) => {
+    if (!confirm(`Re-enable ${INTEGRATION_META[id]?.name || id}?`)) return;
+    setWorking(id);
+    try {
+      const res = await fetch(`/api/integrations/${id}/reenable`, { method: 'POST' });
+      if (res.ok) {
+        showToast('success', `${INTEGRATION_META[id]?.name || id} re-enabled.`);
+        invalidateCache('integrations');
+        fetchIntegrations(false);
+      } else {
+        const data = await res.json();
+        if (data.useConnectFlow) {
+          showToast('error', `Use the Connect button to reconnect ${INTEGRATION_META[id]?.name || id}.`);
+        } else {
+          showToast('error', data.error || 'Failed to re-enable');
+        }
+      }
+    } catch {
+      showToast('error', 'Re-enable failed.');
+    } finally {
+      setWorking(null);
+    }
+  };
+
+  const handleConnect = async (id: string) => {
+    if (id === 'twilio') {
+      setTwilioForm({ accountSid: '', authToken: '', fromNumber: '' });
+      setTwilioError('');
+      setModal({ kind: 'twilio' });
+      return;
+    }
+    if (id === 'webhooks') { setModal({ kind: 'webhooks' }); return; }
+
+    setWorking(id);
+    try {
+      const res = await fetch(`/api/integrations/${id}/connect`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.type === 'api_key') {
+          setModal({ kind: 'zapier', apiKey: data.apiKey, webhookUrl: data.webhookUrl });
+          invalidateCache('integrations'); fetchIntegrations(false);
+        } else if (res.redirected || data.authUrl) {
+          window.location.href = data.authUrl || res.url;
+        } else if (data.error) {
+          if (data.message) setModal({ kind: 'oauth', integration: id, name: INTEGRATION_META[id]?.name || id });
+          else showToast('error', data.error);
+        }
+      } else {
+        const data = await res.json();
+        if (data.message) setModal({ kind: 'oauth', integration: id, name: INTEGRATION_META[id]?.name || id });
+        else showToast('error', data.error || 'Failed to connect');
+      }
+    } catch { showToast('error', 'Connection failed. Please try again.'); }
+    finally { setWorking(null); }
+  };
+
+  const handleDisconnect = async (id: string) => {
+    if (!confirm(`Disconnect ${INTEGRATION_META[id]?.name || id}? This will disable related notifications.`)) return;
+    setWorking(id);
+    try {
+      const integ = integrations[id];
+      if (!integ?.id) { showToast('error', 'Integration not found'); return; }
+      const res = await fetch(`/api/integrations/${id}/disconnect`, { method: 'POST' });
+      if (res.ok) { showToast('success', `${INTEGRATION_META[id]?.name || id} disconnected.`); invalidateCache('integrations'); fetchIntegrations(false); }
+      else { const data = await res.json(); showToast('error', data.error || 'Failed to disconnect'); }
+    } catch { showToast('error', 'Disconnect failed.'); }
+    finally { setWorking(null); }
+  };
+
+  const handleTwilioSave = async () => {
+    setTwilioError('');
+    if (!twilioForm.accountSid || !twilioForm.authToken || !twilioForm.fromNumber) {
+      setTwilioError('All fields are required.'); return;
+    }
+    if (!/^\+\d{10,15}$/.test(twilioForm.fromNumber)) {
+      setTwilioError('From Number must be in E.164 format, e.g. +12125551234'); return;
+    }
+    setTwilioSaving(true);
+    try {
+      const res = await fetch('/api/integrations/twilio/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config: twilioForm }),
+      });
+      if (res.ok) { setModal(null); showToast('success', 'SMS / Twilio connected successfully!'); invalidateCache('integrations'); fetchIntegrations(false); }
+      else { const data = await res.json(); setTwilioError(data.error || 'Failed to save configuration.'); }
+    } catch { setTwilioError('Failed to save. Please try again.'); }
+    finally { setTwilioSaving(false); }
+  };
+
+  const connectedIds = ALL_IDS.filter(isConnected);
+  const disabledPlatformIds = ALL_IDS.filter(isDisabledPlatform);
+  const availableIds = ALL_IDS.filter(id => !isConnected(id) && !isDisabledPlatform(id) && !isPlatformManaged(id));
+
+  return (
+    <div className="space-y-6">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-[60] px-5 py-3 rounded-xl shadow-lg text-sm font-medium ${
+          toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          {toast.text}
+        </div>
+      )}
+
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Integrations</h2>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>Connect Myncel with your favorite tools to automate notifications and workflows.</p>
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">
+          <IntegrationCardSkeleton />
+          <IntegrationCardSkeleton />
+          <IntegrationCardSkeleton />
+        </div>
+      ) : (
+        <>
+          {/* Connected */}
+          {connectedIds.length > 0 && (
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
+                Connected ({connectedIds.length})
+              </h3>
+              <div className="grid gap-3">
+                {connectedIds.map(id => {
+                  const meta = INTEGRATION_META[id];
+                  const data = integrations[id];
+                  const isPlatform = data?.status === 'PLATFORM_INHERITED';
+                  return (
+                    <div key={id} className="rounded-xl border p-5" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <span className="text-3xl">{meta.icon}</span>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{meta.name}</h4>
+                              {!isPlatform && (
+                                <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-medium">
+                                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                                  Connected
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{meta.description}</p>
+                            {isPlatform && data?.fromNumber && (
+                              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                                From number: {data.fromNumber}
+                              </p>
+                            )}
+                            {isPlatform && data?.hasApiKey && id === 'zapier' && (
+                              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                                API Key configured • Manage via Admin
+                              </p>
+                            )}
+                            {isPlatform && id === 'webhooks' && (
+                              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                                Webhook endpoints available • Manage via Admin
+                              </p>
+                            )}
+                            {data?.connectedAt && (
+                              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                                {isPlatform ? 'Configured' : 'Connected'} {new Date(data.connectedAt).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {isPlatform ? (
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {/* Enable/Disable toggle for platform-managed integrations */}
+                            <button
+                              onClick={() => handleDisconnect(id)}
+                              disabled={working === id}
+                              className="relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 bg-[#635bff]"
+                              title="Disable this integration for your organization"
+                            >
+                              <span className="inline-block h-5 w-5 transform rounded-full bg-white transition-transform translate-x-6 shadow-sm" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleDisconnect(id)}
+                            disabled={working === id}
+                            className="px-4 py-2 text-sm rounded-lg disabled:opacity-50 transition-colors flex-shrink-0"
+                            style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}
+                          >
+                            {working === id ? 'Working…' : 'Disconnect'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Disabled Platform Integrations */}
+          {disabledPlatformIds.length > 0 && (
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
+                Disabled Platform Integrations ({disabledPlatformIds.length})
+              </h3>
+              <div className="grid gap-3">
+                {disabledPlatformIds.map(id => {
+                  const meta = INTEGRATION_META[id];
+                  const data = integrations[id];
+                  return (
+                    <div key={id} className="rounded-xl border p-5 opacity-75" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <span className="text-3xl grayscale">{meta.icon}</span>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{meta.name}</h4>
+                              <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full font-medium">
+                                Disabled by your org
+                              </span>
+                            </div>
+                            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{meta.description}</p>
+                            {data?.hasApiKey && id === 'zapier' && (
+                              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                                API Key configured • Manage via Admin
+                              </p>
+                            )}
+                            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                              Admin has this integration enabled. Toggle to re-enable for your organization.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200 font-medium">
+                            Disabled
+                          </span>
+                          {/* Enable/Disable toggle — currently disabled, click to enable */}
+                          <button
+                            onClick={() => handleReenable(id)}
+                            disabled={working === id}
+                            className="relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 bg-gray-300"
+                            title="Re-enable this platform integration for your organization"
+                          >
+                            <span className="inline-block h-5 w-5 transform rounded-full bg-white transition-transform translate-x-1 shadow-sm" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Available */}
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
+              Available Integrations
+            </h3>
+            <div className="grid gap-3">
+              {availableIds.map(id => {
+                const meta = INTEGRATION_META[id];
+                return (
+                  <div key={id} className="rounded-xl border p-5" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <span className="text-3xl">{meta.icon}</span>
+                        <div>
+                          <h4 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{meta.name}</h4>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{meta.description}</p>
+                          <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--bg-surface-2)', color: 'var(--text-secondary)' }}>
+                            {meta.category}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleConnect(id)}
+                        disabled={working === id}
+                        className="px-4 py-2 text-sm bg-[#635bff] text-white rounded-lg hover:bg-[#4f46e5] disabled:opacity-50 transition-colors whitespace-nowrap flex-shrink-0"
+                      >
+                        {working === id ? 'Connecting…' : id === 'webhooks' ? 'Manage' : 'Connect'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Webhooks section */}
+          <div className="rounded-xl border p-5" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Webhook Endpoints</h3>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>Configure custom endpoints to receive real-time Myncel events</p>
+              </div>
+              <Link href="/settings/webhooks" className="px-4 py-2 text-sm text-white rounded-lg hover:opacity-90 transition-colors" style={{ background: '#0a2540' }}>
+                Manage Webhooks →
+              </Link>
+            </div>
+            <div className="rounded-lg p-4 border" style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
+              <p className="text-xs font-mono mb-2" style={{ color: 'var(--text-muted)' }}>Events available:</p>
+              <div className="flex flex-wrap gap-2">
+                {['work_order.created', 'work_order.completed', 'alert.triggered', 'machine.status_changed', 'pm.overdue'].map(ev => (
+                  <span key={ev} className="text-xs font-mono px-2 py-1 rounded border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>{ev}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* REST API */}
+          <div className="rounded-xl border p-5" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+            <h3 className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>REST API</h3>
+            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+              Use the Myncel REST API to build custom integrations. Base URL:{' '}
+              <code className="text-xs px-1.5 py-0.5 rounded font-mono" style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                https://www.myncel.com/api
+              </code>
+            </p>
+            <div className="flex gap-3">
+              <Link href="/docs/api" className="px-4 py-2 text-sm rounded-lg transition-colors" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}>
+                API Documentation
+              </Link>
+              <button onClick={() => handleConnect('zapier')} className="px-4 py-2 text-sm text-white rounded-lg hover:opacity-90 transition-colors" style={{ background: '#0a2540' }}>
+                Generate API Key
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Modals ── */}
+      {modal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setModal(null)}>
+          <div className="rounded-2xl shadow-2xl w-full max-w-md" style={{ background: 'var(--bg-surface)' }} onClick={e => e.stopPropagation()}>
+
+            {/* Twilio */}
+            {modal.kind === 'twilio' && (
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <span className="text-3xl">📱</span>
+                  <div>
+                    <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Connect SMS Notifications</h2>
+                    
+                  </div>
+                </div>
+                <p className="text-sm mb-5 rounded-lg p-3 border" style={{ color: 'var(--text-secondary)', background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
+                  You'll need a{' '}
+                  <a href="https://www.twilio.com/try-twilio" target="_blank" rel="noopener noreferrer" className="text-[#635bff] hover:underline">Twilio account</a>
+                  {' '}to send SMS. Enter your credentials below — they are stored securely.
+                </p>
+                <div className="space-y-4">
+                  {[
+                    { label: 'Account SID', key: 'accountSid', type: 'text', placeholder: 'ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' },
+                    { label: 'Auth Token', key: 'authToken', type: 'password', placeholder: 'Your Twilio auth token' },
+                    { label: 'From Number', key: 'fromNumber', type: 'tel', placeholder: '+12125551234' },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label className="block text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-secondary)' }}>{f.label}</label>
+                      <input
+                        type={f.type}
+                        value={(twilioForm as any)[f.key]}
+                        onChange={e => setTwilioForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                        placeholder={f.placeholder}
+                        className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#635bff]/30"
+                        style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
+                      />
+                    </div>
+                  ))}
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>From Number must be in E.164 format, e.g. +12125551234</p>
+                  {twilioError && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{twilioError}</div>}
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <button onClick={handleTwilioSave} disabled={twilioSaving}
+                    className="flex-1 bg-[#635bff] text-white font-semibold py-2.5 rounded-lg text-sm hover:bg-[#4f46e5] disabled:opacity-50 transition-colors">
+                    {twilioSaving ? 'Saving…' : 'Connect SMS'}
+                  </button>
+                  <button onClick={() => setModal(null)}
+                    className="px-5 py-2.5 rounded-lg text-sm transition-colors"
+                    style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Zapier */}
+            {modal.kind === 'zapier' && (
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <span className="text-3xl">⚡</span>
+                  <div>
+                    <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Zapier Connected</h2>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Your API key is ready</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {[
+                    { label: 'API Key', value: modal.apiKey },
+                    { label: 'Webhook URL', value: modal.webhookUrl },
+                  ].map(item => (
+                    <div key={item.label}>
+                      <label className="block text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-secondary)' }}>{item.label}</label>
+                      <div className="flex gap-2">
+                        <code className="flex-1 rounded-lg px-3 py-2.5 text-xs font-mono break-all" style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                          {item.value}
+                        </code>
+                        <button onClick={() => { navigator.clipboard.writeText(item.value); showToast('success', 'Copied!'); }}
+                          className="px-3 py-2 rounded-lg text-sm flex-shrink-0" style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}>
+                          📋
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+                    <strong>Save your API key now.</strong> Use it in the Myncel Zapier app to authenticate.
+                  </div>
+                </div>
+                <button onClick={() => setModal(null)}
+                  className="w-full mt-6 bg-[#635bff] text-white font-semibold py-2.5 rounded-lg text-sm hover:bg-[#4f46e5] transition-colors">
+                  Done
+                </button>
+              </div>
+            )}
+
+            {/* OAuth not configured */}
+            {modal.kind === 'oauth' && (
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl">{INTEGRATION_META[modal.integration]?.icon}</span>
+                  <div>
+                    <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Connect {modal.name}</h2>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>OAuth configuration required</p>
+                  </div>
+                </div>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800 mb-5">
+                  <p className="font-semibold mb-1">Environment variables not set</p>
+                  <p>To enable {modal.name} OAuth, add these to your environment:</p>
+                  <ul className="mt-2 space-y-1 font-mono text-xs">
+                    <li>{modal.integration.toUpperCase().replace('-', '_')}_CLIENT_ID</li>
+                    <li>{modal.integration.toUpperCase().replace('-', '_')}_CLIENT_SECRET</li>
+                  </ul>
+                </div>
+                <button onClick={() => setModal(null)}
+                  className="w-full rounded-lg text-sm py-2.5 transition-colors"
+                  style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}>
+                  Close
+                </button>
+              </div>
+            )}
+
+            {/* Webhooks info */}
+            {modal.kind === 'webhooks' && (
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl">🔗</span>
+                  <div>
+                    <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Webhook Endpoints</h2>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Real-time event delivery</p>
+                  </div>
+                </div>
+                <p className="text-sm mb-5" style={{ color: 'var(--text-secondary)' }}>
+                  Webhooks let you receive real-time HTTP POST notifications when events happen in Myncel.
+                </p>
+                <div className="rounded-lg p-4 border mb-5" style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
+                  <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-secondary)' }}>Available Events</p>
+                  <div className="space-y-1">
+                    {[
+                      { event: 'work_order.created',     desc: 'A new work order is opened' },
+                      { event: 'work_order.completed',   desc: 'A work order is marked done' },
+                      { event: 'alert.triggered',        desc: 'An equipment alert fires' },
+                      { event: 'machine.status_changed', desc: 'Equipment status changes' },
+                      { event: 'pm.overdue',             desc: 'A preventive maintenance task is overdue' },
+                    ].map(e => (
+                      <div key={e.event} className="flex items-start gap-2">
+                        <code className="text-xs font-mono text-[#635bff] flex-shrink-0">{e.event}</code>
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>— {e.desc}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Link href="/settings/webhooks" onClick={() => setModal(null)}
+                    className="flex-1 text-center bg-[#635bff] text-white font-semibold py-2.5 rounded-lg text-sm hover:bg-[#4f46e5] transition-colors">
+                    Manage Webhooks →
+                  </Link>
+                  <button onClick={() => setModal(null)}
+                    className="px-5 py-2.5 rounded-lg text-sm transition-colors"
+                    style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}>
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function WrappedPage() {
+  return (
+    <PlanGate featureKey="feature.integrations.slack" featureName="Integrations" requiredPlan="STARTER">
+      <IntegrationsPage />
+    </PlanGate>
+  );
+}

@@ -1,0 +1,109 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { prefetch } from '@/app/lib/client-cache';
+
+const NAV_ITEMS = [
+  { href: '/settings',               label: 'Profile',       icon: '👤', cacheKey: null },
+  { href: '/settings/security',      label: 'Security',      icon: '🔒', cacheKey: null },
+  { href: '/settings/team',          label: 'Team',          icon: '👥', cacheKey: null },
+  { href: '/settings/notifications', label: 'Notifications', icon: '🔔', cacheKey: 'notifications' },
+  { href: '/settings/integrations',  label: 'Integrations',  icon: '🔌', cacheKey: 'integrations' },
+  { href: '/settings/billing',       label: 'Billing',       icon: '💳', cacheKey: null },
+  { href: '/settings/api-keys',      label: 'API Keys',      icon: '🔑', cacheKey: 'api-keys' },
+  { href: '/settings/webhooks',      label: 'Webhooks',      icon: '🪝', cacheKey: 'webhooks' },
+];
+
+// Map cache keys to their API endpoints for prefetching
+const PREFETCH_ENDPOINTS: Record<string, string> = {
+  'notifications': '/api/settings/notifications',
+  'integrations': '/api/integrations',
+  'api-keys': '/api/settings/api-keys',
+  'webhooks': '/api/webhooks',
+};
+
+export default function SettingsShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  // Exact match for /settings, prefix match for sub-pages
+  const isActive = (href: string) => {
+    if (href === '/settings') return pathname === '/settings';
+    return pathname.startsWith(href);
+  };
+
+  // Prefetch data when user hovers over a nav item
+  const handlePrefetch = (cacheKey: string | null) => {
+    if (!cacheKey) return;
+    const endpoint = PREFETCH_ENDPOINTS[cacheKey];
+    if (!endpoint) return;
+    prefetch(cacheKey, async () => {
+      const res = await fetch(endpoint);
+      if (res.ok) return await res.json();
+      return null;
+    });
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      {/* Page header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Settings</h1>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          Manage your account and organization settings
+        </p>
+      </div>
+
+      <div className="flex gap-6">
+        {/* ── Persistent sidebar ── */}
+        <aside className="w-52 flex-shrink-0">
+          <nav className="space-y-0.5">
+            {NAV_ITEMS.map(item => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
+                  style={
+                    active
+                      ? {
+                          background: 'var(--accent)',
+                          color: '#fff',
+                        }
+                      : {
+                          color: 'var(--text-secondary)',
+                          background: 'transparent',
+                        }
+                  }
+                  onMouseEnter={e => {
+                    if (!active) {
+                      (e.currentTarget as HTMLAnchorElement).style.background = 'var(--bg-surface-2)';
+                      (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)';
+                    }
+                    // Prefetch data on hover
+                    handlePrefetch(item.cacheKey);
+                  }}
+                  onMouseLeave={e => {
+                    if (!active) {
+                      (e.currentTarget as HTMLAnchorElement).style.background = 'transparent';
+                      (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)';
+                    }
+                  }}
+                >
+                  <span className="text-base leading-none">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </aside>
+
+        {/* ── Main content ── */}
+        <main className="flex-1 min-w-0">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}

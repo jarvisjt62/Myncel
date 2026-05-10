@@ -1,0 +1,142 @@
+gateway:
+  poll_interval_seconds: 15
+  flush_interval_seconds: 10
+  batch_size: 100
+  buffer_path: ./myncel_edge_gateway_buffer.sqlite3
+
+myncel:
+  base_url: https://YOUR-MYNCEL-DOMAIN.com
+  device_token: myncel_dt_REPLACE_WITH_MACHINE_DEVICE_TOKEN
+  timeout_seconds: 10
+
+connectors:
+  - type: modbus
+    name: compressor_modbus_tcp
+    enabled: false
+    transport: tcp
+    host: 192.168.1.50
+    port: 502
+    unit_id: 1
+    registers:
+      - type: temperature
+        unit: °C
+        address: 40001
+        function: holding
+        data_type: uint16
+        scale: 0.1
+      - type: pressure
+        unit: bar
+        address: 40002
+        function: holding
+        data_type: uint16
+        scale: 0.01
+
+  - type: modbus
+    name: power_meter_modbus_rtu
+    enabled: false
+    transport: rtu
+    port: /dev/ttyUSB0
+    baudrate: 9600
+    parity: N
+    stopbits: 1
+    unit_id: 1
+    registers:
+      - type: current
+        unit: A
+        address: 30001
+        function: input
+        data_type: uint16
+        scale: 0.1
+
+  - type: opcua
+    name: plc_opcua
+    enabled: false
+    endpoint: opc.tcp://192.168.1.100:4840
+    nodes:
+      - type: temperature
+        unit: °C
+        node_id: ns=2;s=Machine.Temperature
+      - type: vibration
+        unit: mm/s
+        node_id: ns=2;s=Machine.Vibration
+
+  - type: mqtt
+    name: shopfloor_mqtt
+    enabled: false
+    host: 192.168.1.20
+    port: 1883
+    topics:
+      - factory/+/temperature
+      - factory/+/vibration
+      - factory/+/pressure
+    unit_map:
+      temperature: °C
+      vibration: mm/s
+      pressure: PSI
+
+  - type: mtconnect
+    name: cnc_mtconnect
+    enabled: false
+    url: http://192.168.1.60:5000
+    items:
+      - type: spindle_speed
+        unit: rpm
+        data_item_id: spindle_speed
+      - type: feed_rate
+        unit: mm/min
+        data_item_id: feed_rate
+      - type: machine_available
+        unit: state
+        data_item_id: avail
+
+  - type: bacnet
+    name: chiller_bacnet
+    enabled: false
+    device_address: 192.168.1.70
+    points:
+      - type: chilled_water_temp
+        unit: °C
+        object_type: analogInput
+        instance: 1
+      - type: compressor_current
+        unit: A
+        object_type: analogInput
+        instance: 2
+
+  - type: siemens_s7
+    name: siemens_line_plc
+    enabled: false
+    host: 192.168.1.80
+    rack: 0
+    slot: 1
+    points:
+      - type: runtime_hours
+        unit: h
+        db_number: 1
+        start: 0
+        size: 4
+        data_type: real
+
+  - type: rockwell_ethernet_ip
+    name: rockwell_line_plc
+    enabled: false
+    path: 192.168.1.90/1
+    tags:
+      - type: motor_current
+        unit: A
+        tag: MotorCurrent
+      - type: cycle_count
+        unit: count
+        tag: CycleCount
+
+  - type: beckhoff_ads
+    name: beckhoff_cell
+    enabled: false
+    ams_net_id: 5.44.160.1.1.1
+    ams_port: 851
+    ip_address: 192.168.1.95
+    symbols:
+      - type: temperature
+        unit: °C
+        symbol: MAIN.temperature
+        data_type: real

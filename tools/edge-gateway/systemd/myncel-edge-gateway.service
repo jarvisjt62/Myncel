@@ -1,0 +1,17 @@
+[Unit]
+Description=Myncel Edge Gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/myncel-edge-gateway
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/myncel-edge-gateway/.venv/bin/python /opt/myncel-edge-gateway/run_gateway.py --config /etc/myncel/edge-gateway.yaml
+Restart=always
+RestartSec=10
+User=myncel
+Group=myncel
+
+[Install]
+WantedBy=multi-user.target

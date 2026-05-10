@@ -1,0 +1,12 @@
+# Core edge gateway dependencies
+requests>=2.31.0
+PyYAML>=6.0.1
+
+# Optional connector dependencies. Install what you need for your site.
+pymodbus>=3.6.9
+asyncua>=1.1.5
+paho-mqtt>=2.1.0
+bacpypes3>=0.0.98
+python-snap7>=1.3
+pycomm3>=1.2.14
+pyads>=3.4.2

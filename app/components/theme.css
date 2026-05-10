@@ -1,0 +1,248 @@
+/* ─── ADMIN THEME TOKENS ─────────────────────────────────────────────────── */
+.admin-theme {
+  --bg-page:       #080d1a;
+  --bg-nav:        #0d1426;
+  --bg-sidebar:    #0d1426;
+  --bg-surface:    #111d35;
+  --bg-surface-2:  #162035;
+  --bg-hover:      #1e2d4a;
+  --border:        #1e2d4a;
+  --border-subtle: #2d3f5e;
+  --text-primary:  #ffffff;
+  --text-secondary:#8892a4;
+  --text-muted:    #4a5568;
+  --text-label:    #94a3b8;
+  --accent:        #635bff;
+  --accent-bg:     rgba(99,91,255,0.15);
+  --accent-border: rgba(99,91,255,0.3);
+}
+
+.admin-theme[data-theme="light"] {
+  --bg-page:       #f1f5f9;
+  --bg-nav:        #ffffff;
+  --bg-sidebar:    #ffffff;
+  --bg-surface:    #ffffff;
+  --bg-surface-2:  #f8fafc;
+  --bg-hover:      #f1f5f9;
+  --border:        #e2e8f0;
+  --border-subtle: #cbd5e1;
+  --text-primary:  #0f172a;
+  --text-secondary:#475569;
+  --text-muted:    #94a3b8;
+  --text-label:    #64748b;
+  --accent:        #635bff;
+  --accent-bg:     rgba(99,91,255,0.08);
+  --accent-border: rgba(99,91,255,0.25);
+}
+
+/* ─── USER DASHBOARD THEME TOKENS ────────────────────────────────────────── */
+.dash-theme {
+  --bg-page:       #f6f9fc;
+  --bg-nav:        #ffffff;
+  --bg-sidebar:    #ffffff;
+  --bg-surface:    #ffffff;
+  --bg-surface-2:  #f6f9fc;
+  --bg-hover:      #f6f9fc;
+  --border:        #e6ebf1;
+  --border-subtle: #dde3eb;
+  --text-primary:  #0a2540;
+  --text-secondary:#425466;
+  --text-muted:    #8898aa;
+  --text-label:    #425466;
+  --text-ultralow: #b0bec7;
+  --accent:        #635bff;
+  --accent-bg:     rgba(99,91,255,0.08);
+  --accent-border: rgba(99,91,255,0.25);
+  --shadow:        rgba(0,0,0,0.06);
+  /* HMI-specific tokens */
+  --gauge-track:   rgba(0,0,0,0.08);
+  --bar-bg:        rgba(0,0,0,0.06);
+  --card-border-b: rgba(0,0,0,0.06);
+}
+
+.dash-theme[data-theme="dark"] {
+  --bg-page:       #060e1f;
+  --bg-nav:        #0d1729;
+  --bg-sidebar:    #0d1729;
+  --bg-surface:    #101e35;
+  --bg-surface-2:  #0d1729;
+  --bg-hover:      #1a2d4a;
+  --border:        #1e3050;
+  --border-subtle: #2d3f5e;
+  --text-primary:  #f1f5f9;
+  --text-secondary:#94a3b8;
+  --text-muted:    #4a5568;
+  --text-label:    #64748b;
+  --text-ultralow: rgba(255,255,255,0.2);
+  --accent:        #635bff;
+  --accent-bg:     rgba(99,91,255,0.15);
+  --accent-border: rgba(99,91,255,0.3);
+  --shadow:        rgba(0,0,0,0.3);
+  /* HMI-specific tokens */
+  --gauge-track:   rgba(255,255,255,0.07);
+  --bar-bg:        rgba(255,255,255,0.05);
+  --card-border-b: rgba(255,255,255,0.05);
+}
+
+/* ─── HMI THEME TOKENS ───────────────────────────────────────────────────── */
+.hmi-theme {
+  --bg-page:       #060e1f;
+  --bg-nav:        #0a1628;
+  --bg-surface:    #0d1426;
+  --bg-surface-2:  #0a1628;
+  --bg-hover:      #1e2d4a;
+  --border:        #1e2d4a;
+  --border-subtle: #2d3f5e;
+  --text-primary:  #ffffff;
+  --text-secondary:rgba(255,255,255,0.6);
+  --text-muted:    rgba(255,255,255,0.3);
+  --text-ultralow: rgba(255,255,255,0.2);
+  --gauge-track:   rgba(255,255,255,0.07);
+  --bar-bg:        rgba(255,255,255,0.05);
+  --card-border-b: rgba(255,255,255,0.05);
+  --accent:        #635bff;
+}
+
+.hmi-theme[data-theme="light"] {
+  --bg-page:       #f0f4f8;
+  --bg-nav:        #ffffff;
+  --bg-surface:    #ffffff;
+  --bg-surface-2:  #f7fafc;
+  --bg-hover:      #edf2f7;
+  --border:        #e2e8f0;
+  --border-subtle: #cbd5e1;
+  --text-primary:  #1a202c;
+  --text-secondary:#4a5568;
+  --text-muted:    #718096;
+  --text-ultralow: #a0aec0;
+  --gauge-track:   rgba(0,0,0,0.08);
+  --bar-bg:        rgba(0,0,0,0.06);
+  --card-border-b: rgba(0,0,0,0.06);
+  --accent:        #635bff;
+}
+/* ─── ADMIN LIGHT MODE: Override hardcoded dark Tailwind classes ──────────────
+   These rules kick in only when the admin theme is in light mode, overriding
+   the hardcoded hex colors used in the admin content pages (page.tsx, etc.)
+   The layout shell already uses var(--token) but inner pages still have
+   hardcoded dark classes — this CSS cascade fixes them without touching JSX.
+────────────────────────────────────────────────────────────────────────────── */
+
+/* ── Text color overrides ── */
+.admin-theme[data-theme="light"] .text-white,
+.admin-theme[data-theme="light"] .text-white\/70 {
+  color: #0f172a !important;
+}
+.admin-theme[data-theme="light"] .text-\[\#8892a4\] {
+  color: #475569 !important;
+}
+.admin-theme[data-theme="light"] .text-\[\#4a5568\] {
+  color: #64748b !important;
+}
+
+/* ── Background overrides ── */
+.admin-theme[data-theme="light"] .bg-\[\#0d1426\] {
+  background-color: #ffffff !important;
+}
+.admin-theme[data-theme="light"] .bg-\[\#1e2d4a\] {
+  background-color: #f1f5f9 !important;
+}
+.admin-theme[data-theme="light"] .bg-\[\#0a0f1e\] {
+  background-color: #f8fafc !important;
+}
+.admin-theme[data-theme="light"] .bg-\[\#111d35\] {
+  background-color: #f8fafc !important;
+}
+.admin-theme[data-theme="light"] .bg-\[\#162035\] {
+  background-color: #f1f5f9 !important;
+}
+.admin-theme[data-theme="light"] .bg-\[\#0a1628\] {
+  background-color: #f8fafc !important;
+}
+.admin-theme[data-theme="light"] .bg-\[\#080d1a\] {
+  background-color: #f1f5f9 !important;
+}
+
+/* ── Border overrides ── */
+.admin-theme[data-theme="light"] .border-\[\#1e2d4a\] {
+  border-color: #e2e8f0 !important;
+}
+.admin-theme[data-theme="light"] .border-\[\#2d3f5e\] {
+  border-color: #cbd5e1 !important;
+}
+.admin-theme[data-theme="light"] .border-\[\#2d3d5a\] {
+  border-color: #cbd5e1 !important;
+}
+
+/* ── Hover bg overrides ── */
+.admin-theme[data-theme="light"] .hover\:bg-\[\#1e2d4a\]\/50:hover {
+  background-color: rgba(241, 245, 249, 0.8) !important;
+}
+
+/* ── Progress / bar backgrounds ── */
+.admin-theme[data-theme="light"] .bg-\[\#1e2d4a\].rounded-full {
+  background-color: #e2e8f0 !important;
+}
+
+/* ── Accent colors stay as-is ── */
+.admin-theme[data-theme="light"] .text-\[\#635bff\] {
+  color: #635bff !important;
+}
+.admin-theme[data-theme="light"] .bg-\[\#635bff\] {
+  background-color: #635bff !important;
+}
+.admin-theme[data-theme="light"] .bg-\[\#4f46e5\] {
+  background-color: #4f46e5 !important;
+}
+.admin-theme[data-theme="light"] .bg-\[\#5248e0\] {
+  background-color: #5248e0 !important;
+}
+.admin-theme[data-theme="light"] .border-\[\#635bff\] {
+  border-color: #635bff !important;
+}
+
+/* ── Input fields inside admin light mode ── */
+.admin-theme[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.admin-theme[data-theme="light"] textarea,
+.admin-theme[data-theme="light"] select {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+.admin-theme[data-theme="light"] input::placeholder,
+.admin-theme[data-theme="light"] textarea::placeholder {
+  color: #94a3b8;
+}
+.admin-theme[data-theme="light"] input:focus,
+.admin-theme[data-theme="light"] textarea:focus,
+.admin-theme[data-theme="light"] select:focus {
+  border-color: #635bff;
+  background-color: #ffffff;
+}
+
+/* ── Table cells and rows ── */
+.admin-theme[data-theme="light"] table {
+  color: #0f172a;
+}
+.admin-theme[data-theme="light"] th {
+  color: #475569 !important;
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+.admin-theme[data-theme="light"] td {
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+.admin-theme[data-theme="light"] tr:hover td {
+  background-color: #f8fafc !important;
+}
+
+/* ── Modal / dialog backgrounds ── */
+.admin-theme[data-theme="light"] [class*="fixed"][class*="inset-0"][class*="bg-black"] {
+  background-color: rgba(0, 0, 0, 0.4) !important;
+}
+.admin-theme[data-theme="light"] [role="dialog"],
+.admin-theme[data-theme="light"] .modal-content {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
