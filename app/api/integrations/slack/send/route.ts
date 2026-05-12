@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         where: {
           organizationId: user.organizationId,
           type: 'SLACK',
-          status: { in: ['CONNECTED', 'PLATFORM_INHERITED'] },
+          status: 'CONNECTED',
         },
       }),
       null
