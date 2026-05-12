@@ -52,6 +52,17 @@ function IntegrationsPage() {
   const [twilioError, setTwilioError] = useState('');
   const [twilioSaving, setTwilioSaving] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [exporting, setExporting] = useState<string | null>(null);
+  const [exportResult, setExportResult] = useState<
+    | null
+    | {
+        integration: string;
+        title: string;
+        message: string;
+        url?: string;
+        details?: string;
+      }
+  >(null);
 
   const showToast = (type: 'success' | 'error', text: string) => {
     setToast({ type, text });
@@ -228,6 +239,82 @@ function IntegrationsPage() {
     finally { setWorking(null); }
   };
 
+  // Handle exporting data to an integration (Google Sheets, QuickBooks, Slack)
+  const handleExport = async (
+    integrationId: 'google_sheets' | 'quickbooks' | 'slack',
+    payload: Record<string, any> = {}
+  ) => {
+    const endpointMap: Record<string, string> = {
+      google_sheets: '/api/integrations/google-sheets/export',
+      quickbooks: '/api/integrations/quickbooks/export',
+      slack: '/api/integrations/slack/send',
+    };
+    const titleMap: Record<string, string> = {
+      google_sheets: 'Google Sheets',
+      quickbooks: 'QuickBooks',
+      slack: 'Slack',
+    };
+    setExporting(integrationId);
+    try {
+      const res = await fetch(endpointMap[integrationId], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast('error', data.error || `Failed to export to ${titleMap[integrationId]}`);
+        return;
+      }
+
+      if (integrationId === 'google_sheets') {
+        setExportResult({
+          integration: 'google_sheets',
+          title: '✅ Exported to Google Sheets',
+          message: `Created spreadsheet "${data.title}" with ${data.rowCount} rows of ${data.dataset?.replace('_', ' ')}.`,
+          url: data.spreadsheetUrl,
+          details: `Spreadsheet ID: ${data.spreadsheetId}`,
+        });
+        showToast('success', `Exported ${data.rowCount} rows to Google Sheets`);
+        // Auto-open the new sheet in a new tab
+        if (data.spreadsheetUrl && typeof window !== 'undefined') {
+          window.open(data.spreadsheetUrl, '_blank', 'noopener');
+        }
+      } else if (integrationId === 'quickbooks') {
+        setExportResult({
+          integration: 'quickbooks',
+          title: '✅ Exported to QuickBooks',
+          message:
+            data.created > 0
+              ? `Created ${data.created} ${data.dataset} in ${data.companyInfo?.name || 'QuickBooks'}.`
+              : data.message || 'Nothing to export.',
+          url:
+            data.links?.[
+              data.dataset === 'invoices'
+                ? 'invoices'
+                : data.dataset === 'vendors'
+                ? 'vendors'
+                : 'items'
+            ] || data.links?.quickBooksDashboard,
+          details: data.ids?.length ? `IDs: ${data.ids.join(', ')}` : undefined,
+        });
+        showToast('success', `Exported ${data.created} ${data.dataset} to QuickBooks`);
+      } else if (integrationId === 'slack') {
+        setExportResult({
+          integration: 'slack',
+          title: '✅ Sent to Slack',
+          message: `Maintenance digest posted to ${data.channel}${data.team ? ` in ${data.team}` : ''}.`,
+          details: data.ts ? `Message timestamp: ${data.ts}` : undefined,
+        });
+        showToast('success', `Sent digest to Slack (${data.channel})`);
+      }
+    } catch (err) {
+      showToast('error', `Export to ${titleMap[integrationId]} failed. Please try again.`);
+    } finally {
+      setExporting(null);
+    }
+  };
+
   const handleTwilioSave = async () => {
     setTwilioError('');
     if (!twilioForm.accountSid || !twilioForm.authToken || !twilioForm.fromNumber) {
@@ -261,6 +348,49 @@ function IntegrationsPage() {
           toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
         }`}>
           {toast.text}
+        </div>
+      )}
+
+      {/* Export Result Modal */}
+      {exportResult && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50" onClick={() => setExportResult(null)}>
+          <div
+            className="rounded-2xl border p-6 max-w-lg w-full shadow-2xl"
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+              {exportResult.title}
+            </h3>
+            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+              {exportResult.message}
+            </p>
+            {exportResult.details && (
+              <p className="text-xs mb-4 font-mono p-2 rounded" style={{ background: 'var(--bg-muted, #f3f4f6)', color: 'var(--text-muted)' }}>
+                {exportResult.details}
+              </p>
+            )}
+            <div className="flex items-center gap-2 justify-end">
+              {exportResult.url && (
+                <a
+                  href={exportResult.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 text-sm rounded-lg text-white font-medium transition-colors"
+                  style={{ background: '#635bff' }}
+                >
+                  Open ↗
+                </a>
+              )}
+              <button
+                onClick={() => setExportResult(null)}
+                className="px-4 py-2 text-sm rounded-lg transition-colors"
+                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -339,14 +469,60 @@ function IntegrationsPage() {
                             </button>
                           </div>
                         ) : (
-                          <button
-                            onClick={() => handleDisconnect(id)}
-                            disabled={working === id}
-                            className="px-4 py-2 text-sm rounded-lg disabled:opacity-50 transition-colors flex-shrink-0"
-                            style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}
-                          >
-                            {working === id ? 'Working…' : 'Disconnect'}
-                          </button>
+                          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+                            {/* Export / Action buttons for integrations that support it */}
+                            {id === 'google_sheets' && (
+                              <button
+                                onClick={() => handleExport('google_sheets', { dataset: 'work_orders' })}
+                                disabled={exporting === 'google_sheets'}
+                                className="px-3 py-2 text-xs font-medium rounded-lg disabled:opacity-50 transition-colors inline-flex items-center gap-1.5"
+                                style={{ background: '#0f9d58', color: 'white' }}
+                                title="Create a new Google Sheet with your work orders"
+                              >
+                                {exporting === 'google_sheets' ? (
+                                  <>
+                                    <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                    </svg>
+                                    Exporting…
+                                  </>
+                                ) : (
+                                  <>📊 Export to Sheets</>
+                                )}
+                              </button>
+                            )}
+                            {id === 'quickbooks' && (
+                              <button
+                                onClick={() => handleExport('quickbooks', { dataset: 'invoices' })}
+                                disabled={exporting === 'quickbooks'}
+                                className="px-3 py-2 text-xs font-medium rounded-lg disabled:opacity-50 transition-colors inline-flex items-center gap-1.5"
+                                style={{ background: '#2ca01c', color: 'white' }}
+                                title="Create QuickBooks invoices from completed work orders"
+                              >
+                                {exporting === 'quickbooks' ? 'Exporting…' : '💰 Create Invoices'}
+                              </button>
+                            )}
+                            {id === 'slack' && (
+                              <button
+                                onClick={() => handleExport('slack', { mode: 'digest' })}
+                                disabled={exporting === 'slack'}
+                                className="px-3 py-2 text-xs font-medium rounded-lg disabled:opacity-50 transition-colors inline-flex items-center gap-1.5"
+                                style={{ background: '#4a154b', color: 'white' }}
+                                title="Send a maintenance digest to your Slack channel"
+                              >
+                                {exporting === 'slack' ? 'Sending…' : '💬 Send Digest'}
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDisconnect(id)}
+                              disabled={working === id}
+                              className="px-4 py-2 text-sm rounded-lg disabled:opacity-50 transition-colors"
+                              style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}
+                            >
+                              {working === id ? 'Working…' : 'Disconnect'}
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
