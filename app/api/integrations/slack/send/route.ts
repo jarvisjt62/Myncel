@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db, safeQuery } from '@/lib/db';
+import { slackPostWithFallback } from '@/lib/slack';
 
 /**
  * POST /api/integrations/slack/send
@@ -221,89 +222,21 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // === Slack API: send message ===
-    // Uses scope: chat:write
-    // Helper that posts to a channel
-    const postTo = async (targetChannel: string) => {
-      const r = await fetch('https://slack.com/api/chat.postMessage', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json; charset=utf-8',
-        },
-        body: JSON.stringify({
-          channel: targetChannel,
-          text,
-          blocks,
-          unfurl_links: false,
-        }),
-      });
-      const data = await r.json();
-      return { ok: data.ok, data, usedChannel: targetChannel };
-    };
+    // === Slack API: send message with robust fallback ===
+    // Uses helper from lib/slack.ts which:
+    //  1. Tries preferred channel
+    //  2. On channel_not_found / not_in_channel: picks a channel the bot is member of
+    //  3. Tries to conversations.join public channels if needed
+    //  4. Final fallback: DMs the installing user
+    const result = await slackPostWithFallback(accessToken, channel, text, blocks);
 
-    let result = await postTo(channel);
-
-    // If the configured channel doesn't exist (common when the bot didn't get
-    // an incoming webhook, or when #general was renamed/deleted), try to
-    // auto-discover a channel the bot is already a member of and retry.
-    if (!result.ok && result.data?.error === 'channel_not_found') {
-      try {
-        // scope: channels:read (we requested it during OAuth)
-        const listRes = await fetch(
-          'https://slack.com/api/conversations.list?exclude_archived=true&types=public_channel&limit=200',
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-        const listData = await listRes.json();
-        const candidates: any[] = Array.isArray(listData.channels) ? listData.channels : [];
-        // Prefer channels the bot is already in; fall back to general/random/any
-        const memberOf = candidates.filter(c => c.is_member);
-        const preferred =
-          memberOf.find(c => c.is_general) ||
-          memberOf.find(c => ['maintenance', 'ops', 'operations', 'random'].includes(c.name)) ||
-          memberOf[0] ||
-          candidates.find(c => c.is_general) ||
-          candidates.find(c => c.name === 'random') ||
-          candidates[0];
-
-        if (preferred?.id) {
-          // If the bot isn't a member yet, try to join (needs channels:join; harmless if it fails)
-          if (!preferred.is_member) {
-            await fetch('https://slack.com/api/conversations.join', {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-                'Content-Type': 'application/x-www-form-urlencoded',
-              },
-              body: new URLSearchParams({ channel: preferred.id }),
-            }).catch(() => {});
-          }
-          result = await postTo(preferred.id);
-        }
-      } catch (discoverErr) {
-        console.error('[slack send] channel discovery failed:', discoverErr);
-      }
-    }
-
-    // If we still can't post (e.g. bot isn't in any channel yet), return a
-    // clear, actionable error explaining what the user needs to do.
     if (!result.ok) {
-      console.error('Slack send failed:', result.data);
-      const err = result.data?.error || 'unknown';
-      let friendly = `Slack error: ${err}`;
-      if (err === 'channel_not_found') {
-        friendly =
-          "Slack channel not found. In Slack, invite the Myncel bot to a channel with '/invite @Myncel' and try again. Or open Settings → Integrations and reconnect Slack to pick a default channel.";
-      } else if (err === 'not_in_channel') {
-        friendly =
-          "The Myncel bot is not in the target channel. In Slack, run '/invite @Myncel' in that channel and try again.";
-      } else if (err === 'invalid_auth' || err === 'token_revoked' || err === 'account_inactive') {
-        friendly = 'Slack token is invalid or revoked. Please reconnect Slack in Settings → Integrations.';
-      }
-      return NextResponse.json({ error: friendly, detail: result.data }, { status: 502 });
+      console.error('Slack send failed:', result.error, result.raw);
+      return NextResponse.json(
+        { error: result.friendlyError || `Slack error: ${result.error}`, detail: result.raw },
+        { status: 502 }
+      );
     }
-
-    const slackData = result.data;
 
     // Audit log
     await safeQuery(
@@ -312,19 +245,31 @@ export async function POST(req: NextRequest) {
           organizationId: user.organizationId,
           userId: user.id,
           type: 'INTEGRATION_SEND',
-          description: `Sent Slack ${mode} to ${slackData.channel || channel}`,
-          metadata: { integration: 'slack', mode, ts: slackData.ts },
+          description: `Sent Slack ${mode} to ${result.channelName || result.channel} (${result.fallbackUsed})`,
+          metadata: { integration: 'slack', mode, ts: result.ts, fallbackUsed: result.fallbackUsed },
         },
       }) || Promise.resolve(null),
       null
     );
 
+    // Build a user-facing message that tells them exactly where it landed.
+    const landedAt =
+      result.fallbackUsed === 'dm'
+        ? 'your Slack DM with the Myncel bot'
+        : result.channelName
+        ? `#${result.channelName}`
+        : result.channel || channel;
+
     return NextResponse.json({
       success: true,
       mode,
-      ts: slackData.ts,
-      channel: slackData.channel || channel,
+      ts: result.ts,
+      channel: result.channel || channel,
+      channelName: result.channelName,
+      fallbackUsed: result.fallbackUsed,
+      landedAt,
       team: (effectiveIntegration.config as any)?.teamName || null,
+      message: `Posted to ${landedAt}`,
     });
   } catch (err: any) {
     console.error('Slack send error:', err);
