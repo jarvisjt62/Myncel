@@ -36,7 +36,7 @@ const OAUTH_CONFIG: Record<string, {
     tokenUrl: 'https://slack.com/api/oauth.v2.access',
     clientId: process.env.SLACK_CLIENT_ID,
     clientSecret: process.env.SLACK_CLIENT_SECRET,
-    scope: 'chat:write,channels:read,groups:read,im:read',
+    scope: 'chat:write,channels:read,channels:join,groups:read,im:read,im:write',
     callbackUrl: `${process.env.NEXTAUTH_URL}/api/integrations/slack/callback`
   },
   quickbooks: {

@@ -2,17 +2,18 @@
  * Post a message to Slack with aggressive auto channel-discovery fallback.
  *
  * Strategy (in order):
- *   1. Try the preferred channel.
- *   2. On channel_not_found OR not_in_channel:
+ *   1. Try the preferred channel (by name OR id).
+ *   2. If channel name starts with '#', also try without '#' and by resolved channel ID.
+ *   3. On channel_not_found OR not_in_channel:
  *       a. List channels (public + private where visible).
- *       b. Pick ONLY channels the bot is already a member of (is_member: true).
+ *       b. If preferred channel name matches a real channel, try joining it first.
+ *       c. Pick ONLY channels the bot is already a member of (is_member: true).
  *          Prefer general > maintenance/ops > random > first.
- *       c. If none, try public channels the bot could join (try join).
- *   3. If still failing, fall back to DM the installing user via auth.test -> user_id -> conversations.open.
- *   4. Return a friendly error.
+ *       d. If none, try public channels the bot could join (try join).
+ *   4. If still failing, fall back to DM the installing user via auth.test -> user_id -> conversations.open.
+ *   5. Return a friendly error.
  *
- * Scopes this uses: chat:write, channels:read, groups:read, im:write, users:read
- * Optional: channels:join (only for auto-joining public channels)
+ * Scopes this uses: chat:write, channels:read, groups:read, im:write, channels:join (optional)
  */
 
 export type SlackBlock = any;
@@ -61,8 +62,18 @@ export async function slackPostWithFallback(
   text: string,
   blocks?: SlackBlock[]
 ): Promise<SlackPostResult> {
-  // 1. Try preferred channel first
-  let attempt = await postMessage(accessToken, preferredChannel, text, blocks);
+  // Normalise channel name — strip leading # for API calls
+  const channelArg = preferredChannel.startsWith('#')
+    ? preferredChannel.slice(1)
+    : preferredChannel;
+
+  // 1. Try preferred channel (try both '#name' form and bare name/ID)
+  let attempt = await postMessage(accessToken, channelArg, text, blocks);
+  if (!attempt.ok && channelArg !== preferredChannel) {
+    // Also try original form (e.g. channel ID like C01234)
+    attempt = await postMessage(accessToken, preferredChannel, text, blocks);
+  }
+
   if (attempt.ok) {
     return {
       ok: true,
@@ -75,7 +86,7 @@ export async function slackPostWithFallback(
 
   const initialError = attempt.data?.error;
 
-  // 2. If retry-able, discover a channel the bot IS already in
+  // 2. If retry-able, discover channels
   if (RETRY_ERRORS.has(initialError)) {
     try {
       // List public + private channels the bot can see
@@ -85,7 +96,43 @@ export async function slackPostWithFallback(
       );
       const channels: any[] = Array.isArray(listData.channels) ? listData.channels : [];
 
-      // 2a. Channels where bot is already a member — safest, no join needed
+      // 2a. If the preferred channel NAME matches a real channel, try to join it first
+      const matchedByName = channels.find(
+        (c: any) => c.name === channelArg || c.name_normalized === channelArg || c.id === channelArg
+      );
+      if (matchedByName && !matchedByName.is_member && !matchedByName.is_private) {
+        await slackCall(accessToken, 'conversations.join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ channel: matchedByName.id }).toString(),
+        });
+        const r = await postMessage(accessToken, matchedByName.id, text, blocks);
+        if (r.ok) {
+          return {
+            ok: true,
+            channel: r.data.channel,
+            channelName: matchedByName.name,
+            ts: r.data.ts,
+            fallbackUsed: 'joined_channel',
+            raw: r.data,
+          };
+        }
+      } else if (matchedByName?.is_member) {
+        // Already a member but posting by name failed — try by ID
+        const r = await postMessage(accessToken, matchedByName.id, text, blocks);
+        if (r.ok) {
+          return {
+            ok: true,
+            channel: r.data.channel,
+            channelName: matchedByName.name,
+            ts: r.data.ts,
+            fallbackUsed: 'member_channel',
+            raw: r.data,
+          };
+        }
+      }
+
+      // 2b. Channels where bot is already a member — safest
       const memberChannels = channels.filter((c: any) => c.is_member && !c.is_archived);
       const rank = (c: any) => {
         if (c.is_general) return 0;
@@ -109,7 +156,7 @@ export async function slackPostWithFallback(
         }
       }
 
-      // 2b. Try joining a public channel (needs channels:join scope)
+      // 2c. Try joining public channels (needs channels:join scope)
       const publicJoinable = channels.filter(
         (c: any) => !c.is_member && !c.is_archived && !c.is_private && !c.is_im
       );
@@ -174,11 +221,11 @@ export async function slackPostWithFallback(
   let friendlyError = `Slack error: ${err}`;
   if (err === 'channel_not_found' || err === 'not_in_channel') {
     friendlyError =
-      "Couldn't find a Slack channel the Myncel bot can post to. In Slack, run `/invite @Myncel` in any channel (or add the app in the channel's settings), then try again.";
+      "Couldn't post to Slack. Please open Slack and run `/invite @Myncel` in any channel, then try again. Or reconnect Slack in Settings → Integrations.";
   } else if (err === 'invalid_auth' || err === 'token_revoked' || err === 'account_inactive') {
     friendlyError = 'Slack token is invalid or revoked. Please reconnect Slack in Settings → Integrations.';
   } else if (err === 'missing_scope') {
-    friendlyError = 'Slack app is missing scopes. Please reconnect Slack in Settings → Integrations.';
+    friendlyError = 'Slack app is missing permissions. Please reconnect Slack in Settings → Integrations.';
   } else if (err === 'ratelimited') {
     friendlyError = 'Slack rate-limit hit. Please try again in a few seconds.';
   }
