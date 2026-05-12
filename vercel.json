@@ -4,6 +4,12 @@
   "framework": "nextjs",
   "installCommand": "npm ci",
   "regions": ["iad1"],
+  "crons": [
+    {
+      "path": "/api/cron/slack-digest",
+      "schedule": "0 13 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/machines/(.*)",

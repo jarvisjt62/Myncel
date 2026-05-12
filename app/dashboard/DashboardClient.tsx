@@ -2096,13 +2096,33 @@ function DashboardClientInner({ user, data }: Props) {
           {/* ── WORK ORDERS TAB ── */}
           {activeTab === 'workorders' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <p className="text-sm text-[var(--text-secondary)]">
                   {workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length} work order{workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length !== 1 ? 's' : ''}
                 </p>
-                <button onClick={() => setShowWorkOrderModal(true)} className="bg-[#635bff] text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-[#4f46e5] transition-colors">
-                  + New Work Order
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <a
+                    href={`/api/work-orders/export?format=csv&status=${woFilter}`}
+                    className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg font-medium border border-[var(--border)] text-[var(--text-secondary)] hover:border-[#635bff] hover:text-[#635bff] transition-colors"
+                    title="Download as CSV"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    CSV
+                  </a>
+                  <a
+                    href={`/api/work-orders/export?format=pdf&status=${woFilter}&autoprint=1`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg font-medium border border-[var(--border)] text-[var(--text-secondary)] hover:border-[#635bff] hover:text-[#635bff] transition-colors"
+                    title="Open print-ready PDF in a new tab"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    PDF
+                  </a>
+                  <button onClick={() => setShowWorkOrderModal(true)} className="bg-[#635bff] text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-[#4f46e5] transition-colors">
+                    + New Work Order
+                  </button>
+                </div>
               </div>
               {/* Status filter pills */}
               <div className="flex flex-wrap gap-2">

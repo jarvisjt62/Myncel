@@ -472,36 +472,132 @@ function IntegrationsPage() {
                           <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
                             {/* Export / Action buttons for integrations that support it */}
                             {id === 'google_sheets' && (
-                              <button
-                                onClick={() => handleExport('google_sheets', { dataset: 'work_orders' })}
-                                disabled={exporting === 'google_sheets'}
-                                className="px-3 py-2 text-xs font-medium rounded-lg disabled:opacity-50 transition-colors inline-flex items-center gap-1.5"
-                                style={{ background: '#0f9d58', color: 'white' }}
-                                title="Create a new Google Sheet with your work orders"
-                              >
-                                {exporting === 'google_sheets' ? (
-                                  <>
-                                    <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
-                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                    </svg>
-                                    Exporting…
-                                  </>
-                                ) : (
-                                  <>📊 Export to Sheets</>
-                                )}
-                              </button>
+                              <div className="relative inline-block">
+                                <details className="inline-block">
+                                  <summary
+                                    className="list-none cursor-pointer px-3 py-2 text-xs font-medium rounded-lg transition-colors inline-flex items-center gap-1.5"
+                                    style={{ background: '#0f9d58', color: 'white' }}
+                                    title="Export data to Google Sheets"
+                                  >
+                                    {exporting === 'google_sheets' ? (
+                                      <>Exporting…</>
+                                    ) : (
+                                      <>📊 Export to Sheets ▾</>
+                                    )}
+                                  </summary>
+                                  <div className="absolute right-0 mt-1 w-56 rounded-lg shadow-lg border z-10" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                                    <button
+                                      onClick={(e) => {
+                                        (e.currentTarget.closest('details') as HTMLDetailsElement)?.removeAttribute('open');
+                                        handleExport('google_sheets', { dataset: 'work_orders' });
+                                      }}
+                                      disabled={exporting === 'google_sheets'}
+                                      className="w-full text-left px-4 py-3 text-sm hover:bg-black/5 disabled:opacity-50 border-b flex items-center gap-2"
+                                      style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}
+                                    >
+                                      <span>🔧</span>
+                                      <div>
+                                        <div className="font-medium">Work Orders</div>
+                                        <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Export all maintenance work</div>
+                                      </div>
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        (e.currentTarget.closest('details') as HTMLDetailsElement)?.removeAttribute('open');
+                                        handleExport('google_sheets', { dataset: 'machines' });
+                                      }}
+                                      disabled={exporting === 'google_sheets'}
+                                      className="w-full text-left px-4 py-3 text-sm hover:bg-black/5 disabled:opacity-50 border-b flex items-center gap-2"
+                                      style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}
+                                    >
+                                      <span>⚙️</span>
+                                      <div>
+                                        <div className="font-medium">Machines</div>
+                                        <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Equipment registry</div>
+                                      </div>
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        (e.currentTarget.closest('details') as HTMLDetailsElement)?.removeAttribute('open');
+                                        handleExport('google_sheets', { dataset: 'alerts' });
+                                      }}
+                                      disabled={exporting === 'google_sheets'}
+                                      className="w-full text-left px-4 py-3 text-sm hover:bg-black/5 disabled:opacity-50 flex items-center gap-2"
+                                      style={{ color: 'var(--text-primary)' }}
+                                    >
+                                      <span>🚨</span>
+                                      <div>
+                                        <div className="font-medium">Alerts</div>
+                                        <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Critical & warning alerts</div>
+                                      </div>
+                                    </button>
+                                  </div>
+                                </details>
+                              </div>
                             )}
                             {id === 'quickbooks' && (
-                              <button
-                                onClick={() => handleExport('quickbooks', { dataset: 'invoices' })}
-                                disabled={exporting === 'quickbooks'}
-                                className="px-3 py-2 text-xs font-medium rounded-lg disabled:opacity-50 transition-colors inline-flex items-center gap-1.5"
-                                style={{ background: '#2ca01c', color: 'white' }}
-                                title="Create QuickBooks invoices from completed work orders"
-                              >
-                                {exporting === 'quickbooks' ? 'Exporting…' : '💰 Create Invoices'}
-                              </button>
+                              <div className="relative inline-block">
+                                <details className="inline-block">
+                                  <summary
+                                    className="list-none cursor-pointer px-3 py-2 text-xs font-medium rounded-lg transition-colors inline-flex items-center gap-1.5"
+                                    style={{ background: '#2ca01c', color: 'white' }}
+                                    title="Export data to QuickBooks"
+                                  >
+                                    {exporting === 'quickbooks' ? (
+                                      <>Exporting…</>
+                                    ) : (
+                                      <>💰 Export to QB ▾</>
+                                    )}
+                                  </summary>
+                                  <div className="absolute right-0 mt-1 w-56 rounded-lg shadow-lg border z-10" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                                    <button
+                                      onClick={(e) => {
+                                        (e.currentTarget.closest('details') as HTMLDetailsElement)?.removeAttribute('open');
+                                        handleExport('quickbooks', { dataset: 'invoices' });
+                                      }}
+                                      disabled={exporting === 'quickbooks'}
+                                      className="w-full text-left px-4 py-3 text-sm hover:bg-black/5 disabled:opacity-50 border-b flex items-center gap-2"
+                                      style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}
+                                    >
+                                      <span>🧾</span>
+                                      <div>
+                                        <div className="font-medium">Create Invoices</div>
+                                        <div className="text-xs" style={{ color: 'var(--text-muted)' }}>From completed work orders</div>
+                                      </div>
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        (e.currentTarget.closest('details') as HTMLDetailsElement)?.removeAttribute('open');
+                                        handleExport('quickbooks', { dataset: 'items' });
+                                      }}
+                                      disabled={exporting === 'quickbooks'}
+                                      className="w-full text-left px-4 py-3 text-sm hover:bg-black/5 disabled:opacity-50 border-b flex items-center gap-2"
+                                      style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}
+                                    >
+                                      <span>📦</span>
+                                      <div>
+                                        <div className="font-medium">Sync Items</div>
+                                        <div className="text-xs" style={{ color: 'var(--text-muted)' }}>From Myncel parts inventory</div>
+                                      </div>
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        (e.currentTarget.closest('details') as HTMLDetailsElement)?.removeAttribute('open');
+                                        handleExport('quickbooks', { dataset: 'vendors' });
+                                      }}
+                                      disabled={exporting === 'quickbooks'}
+                                      className="w-full text-left px-4 py-3 text-sm hover:bg-black/5 disabled:opacity-50 flex items-center gap-2"
+                                      style={{ color: 'var(--text-primary)' }}
+                                    >
+                                      <span>🏢</span>
+                                      <div>
+                                        <div className="font-medium">Sync Vendors</div>
+                                        <div className="text-xs" style={{ color: 'var(--text-muted)' }}>From Myncel vendor records</div>
+                                      </div>
+                                    </button>
+                                  </div>
+                                </details>
+                              </div>
                             )}
                             {id === 'slack' && (
                               <button
