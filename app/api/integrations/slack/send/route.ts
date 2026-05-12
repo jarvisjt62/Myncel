@@ -52,14 +52,39 @@ export async function POST(req: NextRequest) {
       null
     );
 
-    if (!integration) {
+    // Fallback: if the user's org doesn't have its own Slack integration,
+    // check if the platform admin org has one connected (platform-inherited model).
+    let effectiveIntegration = integration;
+    if (!effectiveIntegration) {
+      const adminUser = await safeQuery(
+        db.user.findFirst({
+          where: { email: 'admin@myncel.com' },
+          select: { organizationId: true },
+        }),
+        null
+      );
+      if (adminUser?.organizationId && adminUser.organizationId !== user.organizationId) {
+        effectiveIntegration = await safeQuery(
+          db.integration.findFirst({
+            where: {
+              organizationId: adminUser.organizationId,
+              type: 'SLACK',
+              status: 'CONNECTED',
+            },
+          }),
+          null
+        );
+      }
+    }
+
+    if (!effectiveIntegration) {
       return NextResponse.json(
         { error: 'Slack is not connected. Please connect it in Settings → Integrations.' },
         { status: 400 }
       );
     }
 
-    const accessToken = integration.accessToken;
+    const accessToken = effectiveIntegration.accessToken;
     if (!accessToken) {
       return NextResponse.json(
         { error: 'Slack integration is missing a bot token. Please reconnect.' },
@@ -67,7 +92,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const cfg = (integration.config as any) || {};
+    const cfg = (effectiveIntegration.config as any) || {};
     const channel: string = body.channel || cfg.defaultChannel || '#general';
 
     // Build the message
@@ -240,7 +265,7 @@ export async function POST(req: NextRequest) {
       mode,
       ts: slackData.ts,
       channel: slackData.channel || channel,
-      team: (integration.config as any)?.teamName || null,
+      team: (effectiveIntegration.config as any)?.teamName || null,
     });
   } catch (err: any) {
     console.error('Slack send error:', err);
