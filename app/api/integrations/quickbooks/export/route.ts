@@ -41,7 +41,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const dataset: 'invoices' | 'vendors' | 'items' = body.dataset || 'invoices';
     const limit = Math.min(Math.max(parseInt(body.limit) || 10, 1), 50);
-    const useSandbox = body.sandbox !== false; // default to sandbox for safety
 
     // Find connected QuickBooks integration, with platform-managed fallback
     let integration = await safeQuery(
@@ -156,9 +155,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Pick base URL (QuickBooks Online sandbox vs production)
-    const qbBase = useSandbox
-      ? 'https://sandbox-quickbooks.api.intuit.com'
-      : 'https://quickbooks.api.intuit.com';
+    // If the user didn't explicitly pass body.sandbox, we'll try the configured
+    // environment first, then auto-fall back to the other environment if
+    // CompanyInfo fails (token mismatch with environment is a common issue).
+    const explicitSandbox = typeof body.sandbox === 'boolean';
+    const configuredEnv = (integration.config as any)?.environment as 'sandbox' | 'production' | undefined;
+    const preferSandbox = explicitSandbox
+      ? !!body.sandbox
+      : configuredEnv
+      ? configuredEnv === 'sandbox'
+      : true; // default to sandbox for safety
+
+    const SANDBOX_BASE = 'https://sandbox-quickbooks.api.intuit.com';
+    const PROD_BASE = 'https://quickbooks.api.intuit.com';
     const qbHeaders = {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
@@ -166,19 +175,57 @@ export async function POST(req: NextRequest) {
     };
 
     // === QuickBooks API: verify connection by reading CompanyInfo ===
-    // Uses scope: com.intuit.quickbooks.accounting
-    const companyRes = await fetch(
-      `${qbBase}/v3/company/${realmId}/companyinfo/${realmId}?minorversion=70`,
-      { headers: qbHeaders }
-    );
-    const companyData = await companyRes.json();
-    if (!companyRes.ok) {
-      console.error('QuickBooks CompanyInfo failed:', companyData);
+    // Try preferred env first, then fall back to the other env on failure.
+    const tryCompanyInfo = async (base: string) => {
+      const r = await fetch(
+        `${base}/v3/company/${realmId}/companyinfo/${realmId}?minorversion=70`,
+        { headers: qbHeaders }
+      );
+      const data = await r.json().catch(() => ({}));
+      return { ok: r.ok, status: r.status, data, base };
+    };
+
+    const firstBase = preferSandbox ? SANDBOX_BASE : PROD_BASE;
+    const secondBase = preferSandbox ? PROD_BASE : SANDBOX_BASE;
+
+    let companyCheck = await tryCompanyInfo(firstBase);
+    if (!companyCheck.ok) {
+      // Retry other env if first attempt failed (common: token issued for one env but we tried the other)
+      const fallback = await tryCompanyInfo(secondBase);
+      if (fallback.ok) {
+        companyCheck = fallback;
+        // Persist discovered env on the integration so next call goes direct
+        await safeQuery(
+          db.integration.update({
+            where: { id: integration.id },
+            data: {
+              config: {
+                ...(integration.config as any),
+                environment: fallback.base === SANDBOX_BASE ? 'sandbox' : 'production',
+              },
+            },
+          }),
+          null
+        );
+      }
+    }
+
+    if (!companyCheck.ok) {
+      console.error('QuickBooks CompanyInfo failed (both envs):', companyCheck.data);
+      const detail = companyCheck.data?.Fault?.Error?.[0]?.Message || companyCheck.data?.error || 'Unknown QuickBooks error';
       return NextResponse.json(
-        { error: 'Failed to read QuickBooks company info.', detail: companyData },
+        {
+          error:
+            'QuickBooks token is not valid for this company. Please reconnect QuickBooks in Settings → Integrations.',
+          detail,
+        },
         { status: 502 }
       );
     }
+
+    const companyData = companyCheck.data;
+    const qbBase = companyCheck.base;
+    const useSandbox = qbBase === SANDBOX_BASE;
     const companyName = companyData?.CompanyInfo?.CompanyName || 'QuickBooks Company';
 
     // === Gather Myncel data + create QuickBooks entities ===
