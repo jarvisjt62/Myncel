@@ -37,6 +37,7 @@ export async function GET(
 
     const { searchParams } = new URL(req.url);
     const format = (searchParams.get('format') || 'csv').toLowerCase();
+    const singleId = searchParams.get('id'); // export a single record
     const dataset = params.dataset;
 
     const orgName = user.organization?.name || 'Myncel';
@@ -50,7 +51,10 @@ export async function GET(
       title = 'Machines';
       const machines = await safeQuery(
         db.machine.findMany({
-          where: { organizationId: user.organizationId },
+          where: {
+            organizationId: user.organizationId,
+            ...(singleId ? { id: singleId } : {}),
+          },
           orderBy: { name: 'asc' },
           take: 5000,
         }),
@@ -78,7 +82,10 @@ export async function GET(
       title = 'Alerts';
       const alerts = await safeQuery(
         db.alert.findMany({
-          where: { organizationId: user.organizationId },
+          where: {
+            organizationId: user.organizationId,
+            ...(singleId ? { id: singleId } : {}),
+          },
           orderBy: [{ isResolved: 'asc' }, { createdAt: 'desc' }],
           take: 5000,
           include: { machine: { select: { name: true, location: true } } },
@@ -100,9 +107,41 @@ export async function GET(
         a.createdAt ? new Date(a.createdAt).toISOString().slice(0, 10) : '',
         a.resolvedAt ? new Date(a.resolvedAt).toISOString().slice(0, 10) : '',
       ]);
+    } else if (dataset === 'parts') {
+      title = 'Parts Inventory';
+      const parts = await safeQuery(
+        db.part.findMany({
+          where: {
+            organizationId: user.organizationId,
+            ...(singleId ? { id: singleId } : {}),
+          },
+          orderBy: { name: 'asc' },
+          take: 5000,
+        }),
+        [] as any[]
+      );
+      headers = [
+        'Name', 'Part Number', 'Description', 'Quantity', 'Min Quantity',
+        'Unit Cost', 'Supplier', 'Location', 'Status',
+      ];
+      rows = (parts || []).map((p: any) => [
+        p.name || '',
+        p.partNumber || '',
+        (p.description || '').replace(/\r?\n/g, ' ').slice(0, 300),
+        p.quantity ?? 0,
+        p.minQuantity ?? 0,
+        p.unitCost != null ? Number(p.unitCost).toFixed(2) : '',
+        p.supplier || '',
+        p.location || '',
+        (p.quantity ?? 0) <= 0
+          ? 'Out of Stock'
+          : (p.quantity ?? 0) <= (p.minQuantity ?? 0)
+          ? 'Low Stock'
+          : 'In Stock',
+      ]);
     } else {
       return NextResponse.json(
-        { error: `Unsupported dataset: ${dataset}. Use 'machines' or 'alerts'.` },
+        { error: `Unsupported dataset: ${dataset}. Use 'machines', 'alerts', or 'parts'.` },
         { status: 400 }
       );
     }
@@ -178,8 +217,7 @@ export async function GET(
             </tr>`
           )
           .join('');
-      } else {
-        // alerts
+      } else if (dataset === 'alerts') {
         tbody = rows
           .map(
             r => `<tr>
@@ -191,6 +229,23 @@ export async function GET(
               <td>${escHtml(r[6])}</td>
               <td>${escHtml(r[7]) || '<span class="muted">—</span>'}</td>
               <td>${escHtml(r[8]) || '<span class="muted">—</span>'}</td>
+            </tr>`
+          )
+          .join('');
+      } else {
+        // parts
+        tbody = rows
+          .map(
+            r => `<tr>
+              <td><strong>${escHtml(r[0])}</strong></td>
+              <td>${escHtml(r[1]) || '<span class="muted">—</span>'}</td>
+              <td>${escHtml(r[2]) || '<span class="muted">—</span>'}</td>
+              <td style="text-align:right">${escHtml(r[3])}</td>
+              <td style="text-align:right">${escHtml(r[4])}</td>
+              <td style="text-align:right">${r[5] !== '' ? '$' + escHtml(r[5]) : '<span class="muted">—</span>'}</td>
+              <td>${escHtml(r[6]) || '<span class="muted">—</span>'}</td>
+              <td>${escHtml(r[7]) || '<span class="muted">—</span>'}</td>
+              <td><span class="pill" style="background:${statusBg(String(r[8]))}">${escHtml(r[8])}</span></td>
             </tr>`
           )
           .join('');

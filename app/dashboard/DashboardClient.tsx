@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import NotificationBell from '../components/NotificationBell';
 import ExportActionsBar from '../components/ExportActionsBar';
+import RowExportMenu from '../components/RowExportMenu';
 import GlobalSearch from '../components/GlobalSearch';
 import { ThemeProvider, ThemeToggle, useTheme } from '../components/ThemeProvider';
 import ActivityFeed from '../components/dashboard/ActivityFeed';
@@ -2126,6 +2127,12 @@ function DashboardClientInner({ user, data }: Props) {
                             >
                               Delete
                             </button>
+                            <RowExportMenu
+                              dataset="machines"
+                              recordId={m.id}
+                              recordLabel={m.name}
+                              onResult={(r) => setExportToast({ type: r.success ? 'success' : 'error', text: r.message, url: r.url })}
+                            />
                           </div>
                         </td>
                       </tr>
@@ -2234,6 +2241,12 @@ function DashboardClientInner({ user, data }: Props) {
                             >
                               Delete
                             </button>
+                            <RowExportMenu
+                              dataset="work_orders"
+                              recordId={wo.id}
+                              recordLabel={wo.woNumber || wo.title}
+                              onResult={(r) => setExportToast({ type: r.success ? 'success' : 'error', text: r.message, url: r.url })}
+                            />
                           </div>
                         </td>
                       </tr>
@@ -2443,7 +2456,15 @@ function DashboardClientInner({ user, data }: Props) {
                             <p className="text-xs text-[var(--text-muted)] mt-1">Machine: {alert.machine.name}</p>
                           )}
                         </div>
-                        <button onClick={() => resolveAlert(alert.id)} className="text-xs text-white bg-[#635bff] hover:bg-[#4f46e5] px-3 py-1 rounded-lg font-medium transition-colors flex-shrink-0">✓ Resolve</button>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <RowExportMenu
+                            dataset="alerts"
+                            recordId={alert.id}
+                            recordLabel={alert.title}
+                            onResult={(r) => setExportToast({ type: r.success ? 'success' : 'error', text: r.message, url: r.url })}
+                          />
+                          <button onClick={() => resolveAlert(alert.id)} className="text-xs text-white bg-[#635bff] hover:bg-[#4f46e5] px-3 py-1 rounded-lg font-medium transition-colors">✓ Resolve</button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -2678,14 +2699,17 @@ function DashboardClientInner({ user, data }: Props) {
 
               {/* Parts Table */}
               <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
+                <div className="px-5 py-3 flex items-center justify-between flex-wrap gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
                   <h2 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>All Parts</h2>
-                  <button
-                    onClick={() => setShowPartModal(true)}
-                    className="px-3 py-1.5 bg-[#635bff] text-white rounded-lg text-xs font-semibold hover:bg-[#4f46e5] transition-colors"
-                  >
-                    + Add Part
-                  </button>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <ExportActionsBar dataset="parts" onIntegrationResult={handleExportResult} />
+                    <button
+                      onClick={() => setShowPartModal(true)}
+                      className="px-3 py-1.5 bg-[#635bff] text-white rounded-lg text-xs font-semibold hover:bg-[#4f46e5] transition-colors"
+                    >
+                      + Add Part
+                    </button>
+                  </div>
                 </div>
 
                 {parts.length === 0 ? (
@@ -2745,13 +2769,21 @@ function DashboardClientInner({ user, data }: Props) {
                                 )}
                               </td>
                               <td className="px-4 py-3 text-center">
-                                <button
-                                  onClick={e => { e.stopPropagation(); openPartDetail(part); }}
-                                  className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
-                                  style={{ backgroundColor: 'var(--bg-surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
-                                >
-                                  View
-                                </button>
+                                <div className="inline-flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                                  <RowExportMenu
+                                    dataset="parts"
+                                    recordId={part.id}
+                                    recordLabel={part.name}
+                                    onResult={(r) => setExportToast({ type: r.success ? 'success' : 'error', text: r.message, url: r.url })}
+                                  />
+                                  <button
+                                    onClick={e => { e.stopPropagation(); openPartDetail(part); }}
+                                    className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                                    style={{ backgroundColor: 'var(--bg-surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+                                  >
+                                    View
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           );

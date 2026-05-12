@@ -37,10 +37,15 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}));
     const dataset = body.dataset || 'work_orders';
-    const title = body.title || `Myncel ${dataset} export — ${new Date().toISOString().slice(0, 10)}`;
+    const singleId: string | undefined = body.id; // optional — export a single record
+    const titleSuffix = singleId ? 'single' : dataset;
+    const title = body.title || `Myncel ${titleSuffix} export — ${new Date().toISOString().slice(0, 10)}`;
 
-    // Find the connected Google Sheets integration
-    const integration = await safeQuery(
+    // Find the connected Google Sheets integration.
+    // Myncel supports platform-managed integrations: when the admin org has
+    // Google Sheets connected and the current org hasn't opted out, we use
+    // the admin's integration on behalf of this user.
+    let integration = await safeQuery(
       db.integration.findFirst({
         where: {
           organizationId: user.organizationId,
@@ -50,6 +55,42 @@ export async function POST(req: NextRequest) {
       }),
       null
     );
+
+    if (!integration) {
+      // Fallback to admin org's platform-managed integration
+      const adminUser = await safeQuery(
+        db.user.findFirst({
+          where: { email: 'admin@myncel.com' },
+          select: { organizationId: true },
+        }),
+        null
+      );
+      if (adminUser?.organizationId && adminUser.organizationId !== user.organizationId) {
+        // Check this org hasn't opted out of the platform integration
+        const optOut = await safeQuery(
+          db.integration.findFirst({
+            where: {
+              organizationId: user.organizationId,
+              type: 'GOOGLE_SHEETS',
+              status: 'DISCONNECTED',
+            },
+          }),
+          null
+        );
+        if (!optOut) {
+          integration = await safeQuery(
+            db.integration.findFirst({
+              where: {
+                organizationId: adminUser.organizationId,
+                type: 'GOOGLE_SHEETS',
+                status: 'CONNECTED',
+              },
+            }),
+            null
+          );
+        }
+      }
+    }
 
     if (!integration || !integration.accessToken) {
       return NextResponse.json(
@@ -102,7 +143,10 @@ export async function POST(req: NextRequest) {
     if (dataset === 'work_orders') {
       const workOrders = await safeQuery(
         db.workOrder.findMany({
-          where: { organizationId: user.organizationId },
+          where: {
+            organizationId: user.organizationId,
+            ...(singleId ? { id: singleId } : {}),
+          },
           orderBy: { createdAt: 'desc' },
           take: 500,
           include: { machine: { select: { name: true } } },
@@ -122,26 +166,34 @@ export async function POST(req: NextRequest) {
     } else if (dataset === 'machines') {
       const machines = await safeQuery(
         db.machine.findMany({
-          where: { organizationId: user.organizationId },
+          where: {
+            organizationId: user.organizationId,
+            ...(singleId ? { id: singleId } : {}),
+          },
           orderBy: { name: 'asc' },
           take: 500,
         }),
         [] as any[]
       );
-      headers = ['Name', 'Type', 'Model', 'Serial', 'Status', 'Location', 'Installed'];
+      headers = ['Name', 'Category', 'Manufacturer', 'Model', 'Serial', 'Location', 'Status', 'Criticality', 'Year Installed'];
       rows = (machines || []).map((m: any) => [
         m.name || '',
-        m.type || '',
+        m.category || '',
+        m.manufacturer || '',
         m.model || '',
         m.serialNumber || '',
-        m.status || '',
         m.location || '',
-        m.installDate ? new Date(m.installDate).toISOString().slice(0, 10) : '',
+        m.status || '',
+        m.criticality || '',
+        m.yearInstalled ?? '',
       ]);
     } else if (dataset === 'alerts') {
       const alerts = await safeQuery(
         db.alert.findMany({
-          where: { organizationId: user.organizationId },
+          where: {
+            organizationId: user.organizationId,
+            ...(singleId ? { id: singleId } : {}),
+          },
           orderBy: { createdAt: 'desc' },
           take: 500,
           include: { machine: { select: { name: true } } },
@@ -156,6 +208,28 @@ export async function POST(req: NextRequest) {
         a.machine?.name || '',
         a.message || '',
         a.createdAt ? new Date(a.createdAt).toISOString().slice(0, 10) : '',
+      ]);
+    } else if (dataset === 'parts') {
+      const parts = await safeQuery(
+        db.part.findMany({
+          where: {
+            organizationId: user.organizationId,
+            ...(singleId ? { id: singleId } : {}),
+          },
+          orderBy: { name: 'asc' },
+          take: 500,
+        }),
+        [] as any[]
+      );
+      headers = ['Name', 'Part Number', 'Quantity', 'Min Quantity', 'Unit Cost', 'Supplier', 'Location'];
+      rows = (parts || []).map((p: any) => [
+        p.name || '',
+        p.partNumber || '',
+        p.quantity ?? 0,
+        p.minQuantity ?? 0,
+        p.unitCost != null ? Number(p.unitCost).toFixed(2) : '',
+        p.supplier || '',
+        p.location || '',
       ]);
     }
 

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 
-type Dataset = 'work_orders' | 'machines' | 'alerts';
+type Dataset = 'work_orders' | 'machines' | 'alerts' | 'parts';
 
 interface ExportActionsBarProps {
   /** Which resource you are exporting */
@@ -22,6 +22,7 @@ const DATASET_LABELS: Record<Dataset, string> = {
   work_orders: 'Work Orders',
   machines: 'Machines',
   alerts: 'Alerts',
+  parts: 'Parts',
 };
 
 export default function ExportActionsBar({

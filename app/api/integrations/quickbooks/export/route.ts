@@ -43,8 +43,8 @@ export async function POST(req: NextRequest) {
     const limit = Math.min(Math.max(parseInt(body.limit) || 10, 1), 50);
     const useSandbox = body.sandbox !== false; // default to sandbox for safety
 
-    // Find connected QuickBooks integration
-    const integration = await safeQuery(
+    // Find connected QuickBooks integration, with platform-managed fallback
+    let integration = await safeQuery(
       db.integration.findFirst({
         where: {
           organizationId: user.organizationId,
@@ -54,6 +54,40 @@ export async function POST(req: NextRequest) {
       }),
       null
     );
+
+    if (!integration) {
+      const adminUser = await safeQuery(
+        db.user.findFirst({
+          where: { email: 'admin@myncel.com' },
+          select: { organizationId: true },
+        }),
+        null
+      );
+      if (adminUser?.organizationId && adminUser.organizationId !== user.organizationId) {
+        const optOut = await safeQuery(
+          db.integration.findFirst({
+            where: {
+              organizationId: user.organizationId,
+              type: 'QUICKBOOKS',
+              status: 'DISCONNECTED',
+            },
+          }),
+          null
+        );
+        if (!optOut) {
+          integration = await safeQuery(
+            db.integration.findFirst({
+              where: {
+                organizationId: adminUser.organizationId,
+                type: 'QUICKBOOKS',
+                status: 'CONNECTED',
+              },
+            }),
+            null
+          );
+        }
+      }
+    }
 
     if (!integration) {
       return NextResponse.json(

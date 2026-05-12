@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, safeQuery } from '@/lib/db';
+import { slackPostWithFallback } from '@/lib/slack';
 
 /**
  * GET /api/cron/slack-digest
@@ -196,24 +197,21 @@ export async function GET(req: NextRequest) {
           ],
         });
 
-        // === Slack API: chat.postMessage (scope: chat:write) ===
-        const slackRes = await fetch('https://slack.com/api/chat.postMessage', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${integration.accessToken}`,
-            'Content-Type': 'application/json; charset=utf-8',
-          },
-          body: JSON.stringify({ channel, text, blocks, unfurl_links: false }),
-        });
-        const slackData = await slackRes.json();
+        // === Slack API: chat.postMessage with channel fallback (scope: chat:write) ===
+        const postResult = await slackPostWithFallback(
+          integration.accessToken!,
+          channel,
+          text,
+          blocks
+        );
 
-        if (slackData.ok) {
+        if (postResult.ok) {
           results.push({
             organizationId: orgId,
             organizationName: orgName,
-            channel: slackData.channel || channel,
+            channel: postResult.channel || channel,
             success: true,
-            ts: slackData.ts,
+            ts: postResult.ts,
           });
         } else {
           results.push({
@@ -221,7 +219,7 @@ export async function GET(req: NextRequest) {
             organizationName: orgName,
             channel,
             success: false,
-            error: slackData.error || 'unknown slack error',
+            error: postResult.friendlyError || postResult.error || 'unknown slack error',
           });
         }
       } catch (err: any) {

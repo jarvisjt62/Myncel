@@ -223,28 +223,87 @@ export async function POST(req: NextRequest) {
 
     // === Slack API: send message ===
     // Uses scope: chat:write
-    const slackRes = await fetch('https://slack.com/api/chat.postMessage', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-      body: JSON.stringify({
-        channel,
-        text,
-        blocks,
-        unfurl_links: false,
-      }),
-    });
+    // Helper that posts to a channel
+    const postTo = async (targetChannel: string) => {
+      const r = await fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify({
+          channel: targetChannel,
+          text,
+          blocks,
+          unfurl_links: false,
+        }),
+      });
+      const data = await r.json();
+      return { ok: data.ok, data, usedChannel: targetChannel };
+    };
 
-    const slackData = await slackRes.json();
-    if (!slackData.ok) {
-      console.error('Slack send failed:', slackData);
-      return NextResponse.json(
-        { error: `Slack error: ${slackData.error || 'unknown'}`, detail: slackData },
-        { status: 502 }
-      );
+    let result = await postTo(channel);
+
+    // If the configured channel doesn't exist (common when the bot didn't get
+    // an incoming webhook, or when #general was renamed/deleted), try to
+    // auto-discover a channel the bot is already a member of and retry.
+    if (!result.ok && result.data?.error === 'channel_not_found') {
+      try {
+        // scope: channels:read (we requested it during OAuth)
+        const listRes = await fetch(
+          'https://slack.com/api/conversations.list?exclude_archived=true&types=public_channel&limit=200',
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        const listData = await listRes.json();
+        const candidates: any[] = Array.isArray(listData.channels) ? listData.channels : [];
+        // Prefer channels the bot is already in; fall back to general/random/any
+        const memberOf = candidates.filter(c => c.is_member);
+        const preferred =
+          memberOf.find(c => c.is_general) ||
+          memberOf.find(c => ['maintenance', 'ops', 'operations', 'random'].includes(c.name)) ||
+          memberOf[0] ||
+          candidates.find(c => c.is_general) ||
+          candidates.find(c => c.name === 'random') ||
+          candidates[0];
+
+        if (preferred?.id) {
+          // If the bot isn't a member yet, try to join (needs channels:join; harmless if it fails)
+          if (!preferred.is_member) {
+            await fetch('https://slack.com/api/conversations.join', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: new URLSearchParams({ channel: preferred.id }),
+            }).catch(() => {});
+          }
+          result = await postTo(preferred.id);
+        }
+      } catch (discoverErr) {
+        console.error('[slack send] channel discovery failed:', discoverErr);
+      }
     }
+
+    // If we still can't post (e.g. bot isn't in any channel yet), return a
+    // clear, actionable error explaining what the user needs to do.
+    if (!result.ok) {
+      console.error('Slack send failed:', result.data);
+      const err = result.data?.error || 'unknown';
+      let friendly = `Slack error: ${err}`;
+      if (err === 'channel_not_found') {
+        friendly =
+          "Slack channel not found. In Slack, invite the Myncel bot to a channel with '/invite @Myncel' and try again. Or open Settings → Integrations and reconnect Slack to pick a default channel.";
+      } else if (err === 'not_in_channel') {
+        friendly =
+          "The Myncel bot is not in the target channel. In Slack, run '/invite @Myncel' in that channel and try again.";
+      } else if (err === 'invalid_auth' || err === 'token_revoked' || err === 'account_inactive') {
+        friendly = 'Slack token is invalid or revoked. Please reconnect Slack in Settings → Integrations.';
+      }
+      return NextResponse.json({ error: friendly, detail: result.data }, { status: 502 });
+    }
+
+    const slackData = result.data;
 
     // Audit log
     await safeQuery(

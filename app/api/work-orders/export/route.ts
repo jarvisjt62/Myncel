@@ -31,9 +31,14 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const format = (searchParams.get('format') || 'csv').toLowerCase();
     const status = searchParams.get('status') || 'ALL';
+    const singleId = searchParams.get('id'); // export a single record
 
     const where: any = { organizationId: user.organizationId };
-    if (status && status !== 'ALL') where.status = status;
+    if (singleId) {
+      where.id = singleId;
+    } else if (status && status !== 'ALL') {
+      where.status = status;
+    }
 
     const workOrders = await safeQuery(
       db.workOrder.findMany({
