@@ -211,20 +211,25 @@ export default function ScopedExportModal({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-[#1a1f2e] rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700"
+        className="rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border"
+        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-start justify-between gap-4">
+        <div
+          className="px-6 py-4 border-b flex items-start justify-between gap-4"
+          style={{ borderColor: 'var(--border)' }}
+        >
           <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h2>
+            <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h2>
             {description && (
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{description}</p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+            className="transition-colors hover:opacity-80"
+            style={{ color: 'var(--text-muted)' }}
             aria-label="Close"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -238,16 +243,24 @@ export default function ScopedExportModal({
           {/* Organization (admin only) */}
           {mode === 'admin' && (
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
+              <label
+                className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
+                style={{ color: 'var(--text-label)' }}
+              >
                 Organization
               </label>
               {loadingOrgs ? (
-                <div className="text-sm text-slate-400">Loading organizations…</div>
+                <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading organizations…</div>
               ) : (
                 <select
                   value={selectedOrgId}
                   onChange={e => { setSelectedOrgId(e.target.value); setSelectedIds(new Set()); setAllSelected(true); }}
-                  className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 focus:border-[#635bff]"
+                  className="w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 focus:border-[#635bff]"
+                  style={{
+                    background: 'var(--bg-surface-2)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--text-primary)',
+                  }}
                 >
                   {orgs.length === 0 && <option value="">No organizations found</option>}
                   {orgs.map(o => (
@@ -263,23 +276,30 @@ export default function ScopedExportModal({
           {/* Dataset (only if multiple) */}
           {datasets.length > 1 && (
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1.5">
+              <label
+                className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
+                style={{ color: 'var(--text-label)' }}
+              >
                 What to export
               </label>
               <div className="flex flex-wrap gap-2">
-                {datasets.map(ds => (
-                  <button
-                    key={ds}
-                    onClick={() => { setDataset(ds); setSelectedIds(new Set()); setAllSelected(true); }}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                      dataset === ds
-                        ? 'bg-[#635bff] text-white border-[#635bff]'
-                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-[#635bff]/50'
-                    }`}
-                  >
-                    {DATASET_LABELS[ds]}
-                  </button>
-                ))}
+                {datasets.map(ds => {
+                  const active = dataset === ds;
+                  return (
+                    <button
+                      key={ds}
+                      onClick={() => { setDataset(ds); setSelectedIds(new Set()); setAllSelected(true); }}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors"
+                      style={{
+                        background: active ? '#635bff' : 'var(--bg-surface-2)',
+                        color: active ? '#ffffff' : 'var(--text-secondary)',
+                        borderColor: active ? '#635bff' : 'var(--border)',
+                      }}
+                    >
+                      {DATASET_LABELS[ds]}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -288,20 +308,30 @@ export default function ScopedExportModal({
           {dataset !== 'vendors' && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                <label
+                  className="text-xs font-semibold uppercase tracking-wide"
+                  style={{ color: 'var(--text-label)' }}
+                >
                   {DATASET_LABELS[dataset]}
                   {datasetCount !== undefined && ` (${datasetCount} total)`}
                 </label>
                 <div className="flex items-center gap-3 text-xs">
-                  <button onClick={selectAll} className="text-[#635bff] hover:underline font-medium">All records</button>
-                  <span className="text-slate-300">|</span>
-                  <button onClick={selectNone} className="text-slate-500 hover:text-slate-700 hover:underline">Clear</button>
+                  <button onClick={selectAll} className="hover:underline font-medium" style={{ color: '#635bff' }}>All records</button>
+                  <span style={{ color: 'var(--text-muted)' }}>|</span>
+                  <button onClick={selectNone} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Clear</button>
                 </div>
               </div>
 
               {/* All records selected banner */}
               {allSelected && (
-                <div className="mb-3 rounded-lg bg-purple-50 dark:bg-purple-500/10 border border-[#635bff]/30 px-3 py-2 text-sm text-[#635bff] font-medium flex items-center gap-2">
+                <div
+                  className="mb-3 rounded-lg border px-3 py-2 text-sm font-medium flex items-center gap-2"
+                  style={{
+                    background: 'var(--accent-bg)',
+                    borderColor: 'var(--accent-border)',
+                    color: '#635bff',
+                  }}
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                   All {DATASET_LABELS[dataset].toLowerCase()} will be exported
                 </div>
@@ -313,32 +343,53 @@ export default function ScopedExportModal({
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder={`Search ${DATASET_LABELS[dataset].toLowerCase()}…`}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 focus:border-[#635bff] mb-2"
+                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 focus:border-[#635bff] mb-2"
+                style={{
+                  background: 'var(--bg-surface-2)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text-primary)',
+                }}
               />
 
               {/* List */}
-              <div className="border border-slate-200 dark:border-slate-700 rounded-lg max-h-60 overflow-y-auto bg-slate-50 dark:bg-slate-900/50">
+              <div
+                className="border rounded-lg max-h-60 overflow-y-auto"
+                style={{
+                  background: 'var(--bg-surface-2)',
+                  borderColor: 'var(--border)',
+                }}
+              >
                 {loadingRecords ? (
-                  <div className="p-4 text-sm text-slate-400 text-center">Loading records…</div>
+                  <div className="p-4 text-sm text-center" style={{ color: 'var(--text-muted)' }}>Loading records…</div>
                 ) : filteredRecords.length === 0 ? (
-                  <div className="p-4 text-sm text-slate-400 text-center">
+                  <div className="p-4 text-sm text-center" style={{ color: 'var(--text-muted)' }}>
                     {search ? 'No matches.' : 'No records in this organization.'}
                   </div>
                 ) : (
-                  <ul className="divide-y divide-slate-100 dark:divide-slate-700">
-                    {filteredRecords.map(r => (
-                      <li key={r.id}>
-                        <label className="flex items-start gap-3 px-3 py-2 hover:bg-white dark:hover:bg-slate-800/50 cursor-pointer transition-colors">
+                  <ul>
+                    {filteredRecords.map((r, idx) => (
+                      <li
+                        key={r.id}
+                        style={{
+                          borderTop: idx === 0 ? 'none' : '1px solid var(--border)',
+                        }}
+                      >
+                        <label
+                          className="flex items-start gap-3 px-3 py-2 cursor-pointer transition-colors"
+                          onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        >
                           <input
                             type="checkbox"
                             checked={!allSelected && selectedIds.has(r.id)}
                             onChange={() => toggleId(r.id)}
-                            className="mt-1 w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-[#635bff] focus:ring-[#635bff]/30"
+                            className="mt-1 w-4 h-4 rounded text-[#635bff] focus:ring-[#635bff]/30"
+                            style={{ borderColor: 'var(--border)' }}
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{r.label}</p>
+                            <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{r.label}</p>
                             {r.sublabel && (
-                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{r.sublabel}</p>
+                              <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{r.sublabel}</p>
                             )}
                           </div>
                         </label>
@@ -349,7 +400,7 @@ export default function ScopedExportModal({
               </div>
 
               {!allSelected && selectedIds.size > 0 && (
-                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
                   {selectedIds.size} record{selectedIds.size !== 1 ? 's' : ''} selected
                 </p>
               )}
@@ -357,24 +408,44 @@ export default function ScopedExportModal({
           )}
 
           {dataset === 'vendors' && (
-            <div className="rounded-lg bg-purple-50 dark:bg-purple-500/10 border border-[#635bff]/30 px-4 py-3 text-sm text-[#635bff]">
+            <div
+              className="rounded-lg border px-4 py-3 text-sm"
+              style={{
+                background: 'var(--accent-bg)',
+                borderColor: 'var(--accent-border)',
+                color: '#635bff',
+              }}
+            >
               All vendor records for the selected organization will be synced.
             </div>
           )}
 
           {error && (
-            <div className="rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 px-4 py-2.5 text-sm text-red-700 dark:text-red-400">
+            <div
+              className="rounded-lg border px-4 py-2.5 text-sm"
+              style={{
+                background: 'rgba(239, 68, 68, 0.08)',
+                borderColor: 'rgba(239, 68, 68, 0.3)',
+                color: '#ef4444',
+              }}
+            >
               {error}
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end gap-3 bg-slate-50 dark:bg-slate-900/50">
+        <div
+          className="px-6 py-4 border-t flex items-center justify-end gap-3"
+          style={{ borderColor: 'var(--border)', background: 'var(--bg-surface-2)' }}
+        >
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={e => !e.currentTarget.disabled && (e.currentTarget.style.background = 'var(--bg-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
             Cancel
           </button>
