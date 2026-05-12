@@ -7,6 +7,7 @@ import PlanGate from '@/app/components/PlanGate';
 import { IntegrationCardSkeleton } from '@/app/components/LoadingSkeleton';
 import { fetchWithCache, invalidateCache } from '@/app/lib/client-cache';
 import Link from 'next/link';
+import ScopedExportModal, { ScopeDataset } from '@/app/components/ScopedExportModal';
 
 interface IntegrationData {
   id: string;
@@ -64,10 +65,22 @@ function IntegrationsPage() {
       }
   >(null);
 
+  // Scoped export modal state — admin picks org + records for each integration action
+  const [scopeModal, setScopeModal] = useState<
+    | null
+    | {
+        integration: 'google_sheets' | 'quickbooks' | 'slack';
+        title: string;
+        description?: string;
+        datasets: ScopeDataset[];
+        qbDataset?: 'invoices' | 'items' | 'vendors'; // QB-specific mapping
+        confirmLabel: string;
+      }
+  >(null);
+
   const showToast = (type: 'success' | 'error', text: string) => {
     setToast({ type, text });
-    setTimeout(() => setToast(null), 4000);
-  };
+    setTimeout(() => setToast(null), 4000);  };
 
   const fetchIntegrations = useCallback(async (useCache = true) => {
     try {
@@ -489,7 +502,13 @@ function IntegrationsPage() {
                                     <button
                                       onClick={(e) => {
                                         (e.currentTarget.closest('details') as HTMLDetailsElement)?.removeAttribute('open');
-                                        handleExport('google_sheets', { dataset: 'work_orders' });
+                                        setScopeModal({
+                                          integration: 'google_sheets',
+                                          title: 'Export Work Orders to Google Sheets',
+                                          description: 'Select the organization and which work orders to include in the new spreadsheet.',
+                                          datasets: ['work_orders'],
+                                          confirmLabel: 'Create spreadsheet',
+                                        });
                                       }}
                                       disabled={exporting === 'google_sheets'}
                                       className="w-full text-left px-4 py-3 text-sm hover:bg-black/5 disabled:opacity-50 border-b flex items-center gap-2"
@@ -504,7 +523,13 @@ function IntegrationsPage() {
                                     <button
                                       onClick={(e) => {
                                         (e.currentTarget.closest('details') as HTMLDetailsElement)?.removeAttribute('open');
-                                        handleExport('google_sheets', { dataset: 'machines' });
+                                        setScopeModal({
+                                          integration: 'google_sheets',
+                                          title: 'Export Machines to Google Sheets',
+                                          description: 'Select the organization and which equipment to include.',
+                                          datasets: ['machines'],
+                                          confirmLabel: 'Create spreadsheet',
+                                        });
                                       }}
                                       disabled={exporting === 'google_sheets'}
                                       className="w-full text-left px-4 py-3 text-sm hover:bg-black/5 disabled:opacity-50 border-b flex items-center gap-2"
@@ -519,7 +544,13 @@ function IntegrationsPage() {
                                     <button
                                       onClick={(e) => {
                                         (e.currentTarget.closest('details') as HTMLDetailsElement)?.removeAttribute('open');
-                                        handleExport('google_sheets', { dataset: 'alerts' });
+                                        setScopeModal({
+                                          integration: 'google_sheets',
+                                          title: 'Export Alerts to Google Sheets',
+                                          description: 'Select the organization and which alerts to include.',
+                                          datasets: ['alerts'],
+                                          confirmLabel: 'Create spreadsheet',
+                                        });
                                       }}
                                       disabled={exporting === 'google_sheets'}
                                       className="w-full text-left px-4 py-3 text-sm hover:bg-black/5 disabled:opacity-50 flex items-center gap-2"
@@ -553,7 +584,14 @@ function IntegrationsPage() {
                                     <button
                                       onClick={(e) => {
                                         (e.currentTarget.closest('details') as HTMLDetailsElement)?.removeAttribute('open');
-                                        handleExport('quickbooks', { dataset: 'invoices' });
+                                        setScopeModal({
+                                          integration: 'quickbooks',
+                                          title: 'Create QuickBooks Invoices',
+                                          description: 'Pick the organization and which completed work orders to invoice in QuickBooks.',
+                                          datasets: ['work_orders'],
+                                          qbDataset: 'invoices',
+                                          confirmLabel: 'Create invoices',
+                                        });
                                       }}
                                       disabled={exporting === 'quickbooks'}
                                       className="w-full text-left px-4 py-3 text-sm hover:bg-black/5 disabled:opacity-50 border-b flex items-center gap-2"
@@ -568,7 +606,14 @@ function IntegrationsPage() {
                                     <button
                                       onClick={(e) => {
                                         (e.currentTarget.closest('details') as HTMLDetailsElement)?.removeAttribute('open');
-                                        handleExport('quickbooks', { dataset: 'items' });
+                                        setScopeModal({
+                                          integration: 'quickbooks',
+                                          title: 'Sync Parts → QuickBooks Items',
+                                          description: 'Pick the organization and which inventory parts to sync as QuickBooks items.',
+                                          datasets: ['parts'],
+                                          qbDataset: 'items',
+                                          confirmLabel: 'Sync items',
+                                        });
                                       }}
                                       disabled={exporting === 'quickbooks'}
                                       className="w-full text-left px-4 py-3 text-sm hover:bg-black/5 disabled:opacity-50 border-b flex items-center gap-2"
@@ -583,7 +628,14 @@ function IntegrationsPage() {
                                     <button
                                       onClick={(e) => {
                                         (e.currentTarget.closest('details') as HTMLDetailsElement)?.removeAttribute('open');
-                                        handleExport('quickbooks', { dataset: 'vendors' });
+                                        setScopeModal({
+                                          integration: 'quickbooks',
+                                          title: 'Sync Vendors → QuickBooks',
+                                          description: 'Pick the organization whose vendor records you want to sync to QuickBooks.',
+                                          datasets: ['vendors'],
+                                          qbDataset: 'vendors',
+                                          confirmLabel: 'Sync vendors',
+                                        });
                                       }}
                                       disabled={exporting === 'quickbooks'}
                                       className="w-full text-left px-4 py-3 text-sm hover:bg-black/5 disabled:opacity-50 flex items-center gap-2"
@@ -601,7 +653,13 @@ function IntegrationsPage() {
                             )}
                             {id === 'slack' && (
                               <button
-                                onClick={() => handleExport('slack', { mode: 'digest' })}
+                                onClick={() => setScopeModal({
+                                  integration: 'slack',
+                                  title: 'Send Maintenance Digest to Slack',
+                                  description: 'Pick the organization whose data to summarize in the Slack digest. Optionally filter to specific work orders or alerts.',
+                                  datasets: ['work_orders', 'alerts'],
+                                  confirmLabel: 'Send digest',
+                                })}
                                 disabled={exporting === 'slack'}
                                 className="px-3 py-2 text-xs font-medium rounded-lg disabled:opacity-50 transition-colors inline-flex items-center gap-1.5"
                                 style={{ background: '#4a154b', color: 'white' }}
@@ -925,6 +983,35 @@ function IntegrationsPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Scoped Export Modal — admin picks org + records for each integration action */}
+      {scopeModal && (
+        <ScopedExportModal
+          open
+          mode="admin"
+          title={scopeModal.title}
+          description={scopeModal.description}
+          datasets={scopeModal.datasets}
+          confirmLabel={scopeModal.confirmLabel}
+          onClose={() => setScopeModal(null)}
+          onConfirm={async ({ targetOrgId, targetOrgName, dataset, ids, allSelected }) => {
+            const integration = scopeModal.integration;
+            const payload: Record<string, any> = { targetOrgId };
+            if (integration === 'quickbooks') {
+              payload.dataset = scopeModal.qbDataset || 'invoices';
+            } else if (integration === 'slack') {
+              payload.mode = 'digest';
+            } else {
+              payload.dataset = dataset;
+            }
+            if (!allSelected && ids && ids.length > 0) {
+              payload.ids = ids;
+            }
+            await handleExport(integration, payload);
+            setScopeModal(null);
+          }}
+        />
       )}
     </div>
   );

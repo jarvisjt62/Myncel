@@ -38,7 +38,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const dataset = body.dataset || 'work_orders';
     const singleId: string | undefined = body.id; // optional — export a single record
-    const titleSuffix = singleId ? 'single' : dataset;
+    const idsList: string[] | undefined = Array.isArray(body.ids) && body.ids.length > 0 ? body.ids : undefined;
+
+    // Platform-admin-only override: admin can target any org's data
+    const isPlatformAdmin = session.user.email === 'admin@myncel.com';
+    const requestedOrgId: string | undefined = body.targetOrgId;
+    const dataOrgId = isPlatformAdmin && requestedOrgId ? requestedOrgId : user.organizationId;
+
+    const titleSuffix = singleId ? 'single' : idsList ? `selected-${dataset}` : dataset;
     const title = body.title || `Myncel ${titleSuffix} export — ${new Date().toISOString().slice(0, 10)}`;
 
     // Find the connected Google Sheets integration.
@@ -144,8 +151,8 @@ export async function POST(req: NextRequest) {
       const workOrders = await safeQuery(
         db.workOrder.findMany({
           where: {
-            organizationId: user.organizationId,
-            ...(singleId ? { id: singleId } : {}),
+            organizationId: dataOrgId,
+            ...(singleId ? { id: singleId } : idsList ? { id: { in: idsList } } : {}),
           },
           orderBy: { createdAt: 'desc' },
           take: 500,
@@ -167,8 +174,8 @@ export async function POST(req: NextRequest) {
       const machines = await safeQuery(
         db.machine.findMany({
           where: {
-            organizationId: user.organizationId,
-            ...(singleId ? { id: singleId } : {}),
+            organizationId: dataOrgId,
+            ...(singleId ? { id: singleId } : idsList ? { id: { in: idsList } } : {}),
           },
           orderBy: { name: 'asc' },
           take: 500,
@@ -191,8 +198,8 @@ export async function POST(req: NextRequest) {
       const alerts = await safeQuery(
         db.alert.findMany({
           where: {
-            organizationId: user.organizationId,
-            ...(singleId ? { id: singleId } : {}),
+            organizationId: dataOrgId,
+            ...(singleId ? { id: singleId } : idsList ? { id: { in: idsList } } : {}),
           },
           orderBy: { createdAt: 'desc' },
           take: 500,
@@ -213,8 +220,8 @@ export async function POST(req: NextRequest) {
       const parts = await safeQuery(
         db.part.findMany({
           where: {
-            organizationId: user.organizationId,
-            ...(singleId ? { id: singleId } : {}),
+            organizationId: dataOrgId,
+            ...(singleId ? { id: singleId } : idsList ? { id: { in: idsList } } : {}),
           },
           orderBy: { name: 'asc' },
           take: 500,

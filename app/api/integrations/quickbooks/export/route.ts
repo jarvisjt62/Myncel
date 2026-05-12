@@ -41,6 +41,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const dataset: 'invoices' | 'vendors' | 'items' = body.dataset || 'invoices';
     const limit = Math.min(Math.max(parseInt(body.limit) || 10, 1), 50);
+    const idsList: string[] | undefined = Array.isArray(body.ids) && body.ids.length > 0 ? body.ids : undefined;
+
+    // Platform-admin-only override: admin can target any org's data
+    const isPlatformAdmin = session.user.email === 'admin@myncel.com';
+    const requestedOrgId: string | undefined = body.targetOrgId;
+    const dataOrgId = isPlatformAdmin && requestedOrgId ? requestedOrgId : user.organizationId;
 
     // Find connected QuickBooks integration, with platform-managed fallback
     let integration = await safeQuery(
@@ -236,8 +242,9 @@ export async function POST(req: NextRequest) {
       const workOrders = await safeQuery(
         db.workOrder.findMany({
           where: {
-            organizationId: user.organizationId,
+            organizationId: dataOrgId,
             status: 'COMPLETED',
+            ...(idsList ? { id: { in: idsList } } : {}),
           },
           orderBy: { updatedAt: 'desc' },
           take: limit,
@@ -381,7 +388,10 @@ export async function POST(req: NextRequest) {
       // NOTE: This assumes your Prisma schema has a `vendor` model; adjust as needed.
       const vendors = await safeQuery(
         (db as any).vendor?.findMany?.({
-          where: { organizationId: user.organizationId },
+          where: {
+            organizationId: dataOrgId,
+            ...(idsList ? { id: { in: idsList } } : {}),
+          },
           take: limit,
         }) || Promise.resolve([]),
         []
@@ -424,7 +434,10 @@ export async function POST(req: NextRequest) {
       // Pull inventory parts and create Items
       const parts = await safeQuery(
         db.part.findMany({
-          where: { organizationId: user.organizationId },
+          where: {
+            organizationId: dataOrgId,
+            ...(idsList ? { id: { in: idsList } } : {}),
+          },
           take: limit,
         }),
         [] as any[]

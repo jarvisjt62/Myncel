@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import ScopedExportModal, { ScopeDataset } from './ScopedExportModal';
 
 type Dataset = 'work_orders' | 'machines' | 'alerts' | 'parts';
 
@@ -37,6 +38,18 @@ export default function ExportActionsBar({
     quickbooks: false,
     slack: false,
   });
+  // Scope picker modal — user picks specific records (or "All") before running the export
+  const [scopeModal, setScopeModal] = useState<
+    | null
+    | {
+        integration: 'google_sheets' | 'quickbooks' | 'slack';
+        title: string;
+        description?: string;
+        datasets: ScopeDataset[];
+        qbDataset?: 'invoices' | 'items' | 'vendors';
+        confirmLabel: string;
+      }
+  >(null);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   // Fetch which integrations are connected so we only show relevant buttons
@@ -214,7 +227,13 @@ export default function ExportActionsBar({
       {available.googleSheets && (
         <button
           type="button"
-          onClick={() => runIntegrationExport('google_sheets', { dataset })}
+          onClick={() => setScopeModal({
+            integration: 'google_sheets',
+            title: `Export ${DATASET_LABELS[dataset]} to Google Sheets`,
+            description: 'Choose which records to include in the new spreadsheet.',
+            datasets: [dataset],
+            confirmLabel: 'Create spreadsheet',
+          })}
           disabled={busy === 'google_sheets'}
           className={`${btnBase} text-white`}
           style={{ background: '#0f9d58' }}
@@ -225,15 +244,33 @@ export default function ExportActionsBar({
         </button>
       )}
 
-      {/* QuickBooks (only relevant for work orders → invoices) */}
-      {available.quickbooks && dataset === 'work_orders' && (
+      {/* QuickBooks */}
+      {available.quickbooks && (dataset === 'work_orders' || dataset === 'parts') && (
         <button
           type="button"
-          onClick={() => runIntegrationExport('quickbooks', { dataset: 'invoices' })}
+          onClick={() => setScopeModal(
+            dataset === 'work_orders'
+              ? {
+                  integration: 'quickbooks',
+                  title: 'Create QuickBooks Invoices',
+                  description: 'Choose which completed work orders to invoice in QuickBooks.',
+                  datasets: ['work_orders'],
+                  qbDataset: 'invoices',
+                  confirmLabel: 'Create invoices',
+                }
+              : {
+                  integration: 'quickbooks',
+                  title: 'Sync Parts → QuickBooks Items',
+                  description: 'Choose which inventory parts to sync as QuickBooks items.',
+                  datasets: ['parts'],
+                  qbDataset: 'items',
+                  confirmLabel: 'Sync items',
+                }
+          )}
           disabled={busy === 'quickbooks'}
           className={`${btnBase} text-white`}
           style={{ background: '#2ca01c' }}
-          title="Create QuickBooks invoices from completed work orders"
+          title={dataset === 'work_orders' ? 'Create QuickBooks invoices from completed work orders' : 'Sync parts inventory as QuickBooks items'}
         >
           <span>💰</span>
           {busy === 'quickbooks' ? 'Creating…' : 'QuickBooks'}
@@ -244,7 +281,13 @@ export default function ExportActionsBar({
       {available.slack && (
         <button
           type="button"
-          onClick={() => runIntegrationExport('slack', { mode: 'digest' })}
+          onClick={() => setScopeModal({
+            integration: 'slack',
+            title: 'Send Maintenance Digest to Slack',
+            description: 'Optionally filter to specific work orders or alerts. Leave "All records" selected for a full digest.',
+            datasets: dataset === 'alerts' ? ['alerts', 'work_orders'] : ['work_orders', 'alerts'],
+            confirmLabel: 'Send digest',
+          })}
           disabled={busy === 'slack'}
           className={`${btnBase} text-white`}
           style={{ background: '#4a154b' }}
@@ -253,6 +296,36 @@ export default function ExportActionsBar({
           <span>💬</span>
           {busy === 'slack' ? 'Sending…' : 'Slack'}
         </button>
+      )}
+
+      {/* Scope picker modal */}
+      {scopeModal && (
+        <ScopedExportModal
+          open
+          mode="user"
+          title={scopeModal.title}
+          description={scopeModal.description}
+          datasets={scopeModal.datasets}
+          confirmLabel={scopeModal.confirmLabel}
+          loading={busy !== null}
+          onClose={() => setScopeModal(null)}
+          onConfirm={async ({ dataset: chosenDataset, ids, allSelected }) => {
+            const integration = scopeModal.integration;
+            const payload: Record<string, any> = {};
+            if (integration === 'quickbooks') {
+              payload.dataset = scopeModal.qbDataset || 'invoices';
+            } else if (integration === 'slack') {
+              payload.mode = 'digest';
+            } else {
+              payload.dataset = chosenDataset;
+            }
+            if (!allSelected && ids && ids.length > 0) {
+              payload.ids = ids;
+            }
+            await runIntegrationExport(integration, payload);
+            setScopeModal(null);
+          }}
+        />
       )}
     </div>
   );

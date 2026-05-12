@@ -40,6 +40,8 @@ export async function GET() {
               machines: true,
               users: true,
               workOrders: true,
+              alerts: true,
+              parts: true,
             },
           },
         },

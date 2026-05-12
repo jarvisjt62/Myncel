@@ -41,6 +41,17 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}));
     const mode: 'digest' | 'test' | 'custom' = body.mode || 'digest';
+    const idsList: string[] | undefined = Array.isArray(body.ids) && body.ids.length > 0 ? body.ids : undefined;
+
+    // Platform-admin-only override: admin can build a digest scoped to any org's data
+    const isPlatformAdmin = session.user.email === 'admin@myncel.com';
+    const requestedOrgId: string | undefined = body.targetOrgId;
+    const dataOrgId = isPlatformAdmin && requestedOrgId ? requestedOrgId : user.organizationId;
+
+    // Resolve org name for digest header (shown in the Slack message when admin targets another org)
+    const targetOrgInfo = isPlatformAdmin && requestedOrgId
+      ? await safeQuery(db.organization.findUnique({ where: { id: requestedOrgId }, select: { name: true } }), null)
+      : null;
 
     const integration = await safeQuery(
       db.integration.findFirst({
@@ -113,8 +124,9 @@ export async function POST(req: NextRequest) {
         safeQuery(
           db.workOrder.count({
             where: {
-              organizationId: user.organizationId,
+              organizationId: dataOrgId,
               status: { in: ['OPEN', 'IN_PROGRESS'] },
+              ...(idsList ? { id: { in: idsList } } : {}),
             },
           }),
           0
@@ -122,9 +134,10 @@ export async function POST(req: NextRequest) {
         safeQuery(
           db.alert.count({
             where: {
-              organizationId: user.organizationId,
+              organizationId: dataOrgId,
               severity: 'CRITICAL',
               isResolved: false,
+              ...(idsList ? { id: { in: idsList } } : {}),
             },
           }),
           0
@@ -132,9 +145,10 @@ export async function POST(req: NextRequest) {
         safeQuery(
           db.workOrder.count({
             where: {
-              organizationId: user.organizationId,
+              organizationId: dataOrgId,
               dueAt: { lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
               status: { not: 'COMPLETED' },
+              ...(idsList ? { id: { in: idsList } } : {}),
             },
           }),
           0
@@ -145,8 +159,9 @@ export async function POST(req: NextRequest) {
       const topOpen = await safeQuery(
         db.workOrder.findMany({
           where: {
-            organizationId: user.organizationId,
+            organizationId: dataOrgId,
             status: { in: ['OPEN', 'IN_PROGRESS'] },
+            ...(idsList ? { id: { in: idsList } } : {}),
           },
           orderBy: [{ priority: 'desc' }, { dueAt: 'asc' }],
           take: 5,
@@ -169,16 +184,21 @@ export async function POST(req: NextRequest) {
         day: 'numeric',
       });
 
-      text = `📋 Myncel Maintenance Digest — ${today}: ${openWorkOrders} open work orders, ${criticalAlerts} critical alerts, ${dueMaintenance} due this week.`;
+      const orgLabel = targetOrgInfo?.name ? ` — ${targetOrgInfo.name}` : '';
+      const scopeLabel = idsList ? ` (${idsList.length} selected items)` : '';
+
+      text = `📋 Myncel Maintenance Digest${orgLabel} — ${today}: ${openWorkOrders} open work orders, ${criticalAlerts} critical alerts, ${dueMaintenance} due this week.${scopeLabel}`;
 
       blocks = [
         {
           type: 'header',
-          text: { type: 'plain_text', text: `📋 Myncel Maintenance Digest` },
+          text: { type: 'plain_text', text: `📋 Myncel Maintenance Digest${orgLabel}` },
         },
         {
           type: 'context',
-          elements: [{ type: 'mrkdwn', text: `*${today}*` }],
+          elements: [
+            { type: 'mrkdwn', text: `*${today}*${scopeLabel ? ` · ${scopeLabel.trim()}` : ''}` },
+          ],
         },
         {
           type: 'section',
