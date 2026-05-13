@@ -5,10 +5,10 @@ import { authOptions } from '@/lib/auth';
 import { hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
-type Ctx = { params: { userId: string } };
+type Ctx = { params: { id: string } };
 
 /**
- * POST /api/team/[userId]/roles
+ * POST /api/team/[id]/roles
  *   body: { roleIds: string[] }  — full set of role IDs to assign (replaces current)
  *
  * Only team members in the same org can be managed. Platform admin can manage
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   if (!actor) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const target = await db.user.findUnique({
-    where: { id: params.userId },
+    where: { id: params.id },
     select: { id: true, organizationId: true },
   });
   if (!target) return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
