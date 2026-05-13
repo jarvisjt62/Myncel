@@ -2058,15 +2058,15 @@ function DashboardClientInner({ user, data }: Props) {
               </div>
               <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] overflow-hidden">
                 <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[680px]">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--border)] bg-[var(--bg-surface-2)]">
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Machine</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden md:table-cell">Location</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Status</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Last Service</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Work Orders</th>
-                      <th className="px-5 py-3 text-right text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Actions</th>
+                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Machine</th>
+                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden md:table-cell">Location</th>
+                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Status</th>
+                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Last Service</th>
+                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Work Orders</th>
+                      <th className="px-3 sm:px-5 py-3 text-right text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#e6ebf1]">
@@ -2078,18 +2078,18 @@ function DashboardClientInner({ user, data }: Props) {
                       </tr>
                     ) : machines.map((m) => (
                       <tr key={m.id} className="hover:bg-[var(--bg-surface-2)] transition-colors cursor-pointer" onClick={() => openMachineDetail(m)}>
-                        <td className="px-5 py-3.5">
+                        <td className="px-3 sm:px-5 py-3.5">
                           <div className="flex items-center gap-2.5">
                             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${statusDot(m.status)}`} />
-                            <div>
-                              <p className="font-medium text-[var(--text-primary)]">{m.name}</p>
-                              <p className="text-xs text-[var(--text-muted)]">{m.model ?? '—'}</p>
+                            <div className="min-w-0">
+                              <p className="font-medium text-[var(--text-primary)] truncate">{m.name}</p>
+                              <p className="text-xs text-[var(--text-muted)] truncate">{m.model ?? '—'}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-5 py-3.5 text-[var(--text-secondary)] hidden md:table-cell">{m.location ?? '—'}</td>
-                        <td className="px-5 py-3.5">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        <td className="px-3 sm:px-5 py-3.5 text-[var(--text-secondary)] hidden md:table-cell">{m.location ?? '—'}</td>
+                        <td className="px-3 sm:px-5 py-3.5">
+                          <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${
                             m.status === 'OPERATIONAL' || m.status === 'OK' ? 'bg-green-100 text-green-700' :
                             m.status === 'WARNING' ? 'bg-amber-100 text-amber-700' :
                             m.status === 'CRITICAL' ? 'bg-red-100 text-red-700' :
@@ -2098,32 +2098,32 @@ function DashboardClientInner({ user, data }: Props) {
                             {m.status}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5 text-[var(--text-secondary)] hidden lg:table-cell">
+                        <td className="px-3 sm:px-5 py-3.5 text-[var(--text-secondary)] hidden lg:table-cell">
                           {m.lastServiceAt ? new Date(m.lastServiceAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Never'}
                         </td>
-                        <td className="px-5 py-3.5 text-[var(--text-secondary)] hidden lg:table-cell">
+                        <td className="px-3 sm:px-5 py-3.5 text-[var(--text-secondary)] hidden lg:table-cell">
                           {m._count.workOrders} total
                         </td>
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-3 sm:px-5 py-3.5">
+                          <div className="flex items-center justify-end gap-1 sm:gap-2">
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); openMachineDetail(m); }}
-                              className="text-xs font-semibold text-[#635bff] hover:text-[#4f46e5] px-2 py-1 rounded-lg hover:bg-[#635bff]/10"
+                              className="text-xs font-semibold text-[#635bff] hover:text-[#4f46e5] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[#635bff]/10"
                             >
                               View
                             </button>
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); openEditMachine(m); }}
-                              className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)]"
+                              className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] hidden sm:inline-block"
                             >
                               Edit
                             </button>
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); setConfirmDeleteMachine(m); }}
-                              className="text-xs font-semibold text-red-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50"
+                              className="text-xs font-semibold text-red-500 hover:text-red-600 px-1.5 sm:px-2 py-1 rounded-lg hover:bg-red-50 hidden sm:inline-block"
                             >
                               Delete
                             </button>
@@ -2176,16 +2176,16 @@ function DashboardClientInner({ user, data }: Props) {
               </div>
               <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] overflow-hidden">
                 <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[760px]">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--border)] bg-[var(--bg-surface-2)]">
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">WO #</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Task</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden md:table-cell">Priority</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Status</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Due</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Assigned To</th>
-                      <th className="px-5 py-3 text-right text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Actions</th>
+                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">WO #</th>
+                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Task</th>
+                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden md:table-cell">Priority</th>
+                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Status</th>
+                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Due</th>
+                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden lg:table-cell">Assigned To</th>
+                      <th className="px-3 sm:px-5 py-3 text-right text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#e6ebf1]">
@@ -2197,47 +2197,48 @@ function DashboardClientInner({ user, data }: Props) {
                       </tr>
                     ) : workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).map((wo) => (
                       <tr key={wo.id} className="hover:bg-[var(--bg-surface-2)] transition-colors cursor-pointer" onClick={() => openWoDetail(wo)}>
-                        <td className="px-5 py-3.5 font-mono text-xs text-[var(--text-muted)]">{wo.woNumber}</td>
-                        <td className="px-5 py-3.5">
-                          <p className="font-medium text-[var(--text-primary)]">{wo.title}</p>
-                          <p className="text-xs text-[var(--text-muted)]">{wo.machine?.name ?? '—'}</p>
+                        <td className="px-3 sm:px-5 py-3.5 font-mono text-xs text-[var(--text-muted)] hidden sm:table-cell">{wo.woNumber}</td>
+                        <td className="px-3 sm:px-5 py-3.5 max-w-0">
+                          <p className="text-[10px] font-mono text-[var(--text-muted)] sm:hidden truncate">{wo.woNumber}</p>
+                          <p className="font-medium text-[var(--text-primary)] truncate">{wo.title}</p>
+                          <p className="text-xs text-[var(--text-muted)] truncate">{wo.machine?.name ?? '—'}</p>
                         </td>
-                        <td className="px-5 py-3.5 hidden md:table-cell">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${priorityBadge(wo.priority)}`}>
+                        <td className="px-3 sm:px-5 py-3.5 hidden md:table-cell">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${priorityBadge(wo.priority)}`}>
                             {wo.priority}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusBadge(wo.status)}`}>
+                        <td className="px-3 sm:px-5 py-3.5">
+                          <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${statusBadge(wo.status)}`}>
                             {wo.status.replace('_', ' ')}
                           </span>
                         </td>
-                        <td className={`px-5 py-3.5 text-xs hidden lg:table-cell ${wo.dueAt && new Date(wo.dueAt) < new Date() ? 'text-red-500 font-semibold' : 'text-[var(--text-secondary)]'}`}>
+                        <td className={`px-3 sm:px-5 py-3.5 text-xs hidden lg:table-cell ${wo.dueAt && new Date(wo.dueAt) < new Date() ? 'text-red-500 font-semibold' : 'text-[var(--text-secondary)]'}`}>
                           {formatDate(wo.dueAt)}
                         </td>
-                        <td className="px-5 py-3.5 text-xs text-[var(--text-secondary)] hidden lg:table-cell">
+                        <td className="px-3 sm:px-5 py-3.5 text-xs text-[var(--text-secondary)] hidden lg:table-cell">
                           {wo.assignedTo?.name ?? 'Unassigned'}
                         </td>
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-3 sm:px-5 py-3.5">
+                          <div className="flex items-center justify-end gap-1 sm:gap-2">
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); openWoDetail(wo); }}
-                              className="text-xs font-semibold text-[#635bff] hover:text-[#4f46e5] px-2 py-1 rounded-lg hover:bg-[#635bff]/10"
+                              className="text-xs font-semibold text-[#635bff] hover:text-[#4f46e5] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[#635bff]/10"
                             >
                               View
                             </button>
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); openEditWo(wo); }}
-                              className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)]"
+                              className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] hidden sm:inline-block"
                             >
                               Edit
                             </button>
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); setConfirmDeleteWo(wo); }}
-                              className="text-xs font-semibold text-red-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50"
+                              className="text-xs font-semibold text-red-500 hover:text-red-600 px-1.5 sm:px-2 py-1 rounded-lg hover:bg-red-50 hidden sm:inline-block"
                             >
                               Delete
                             </button>
@@ -2720,18 +2721,18 @@ function DashboardClientInner({ user, data }: Props) {
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm min-w-[700px]">
+                    <table className="w-full text-sm">
                       <thead>
                         <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                          <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Part</th>
-                          <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Part #</th>
-                          <th className="text-center px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Qty</th>
-                          <th className="text-center px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Min</th>
-                          <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Unit Cost</th>
-                          <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Supplier</th>
-                          <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Location</th>
-                          <th className="text-center px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Status</th>
-                          <th className="text-center px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Action</th>
+                          <th className="text-left px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Part</th>
+                          <th className="text-left px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden md:table-cell" style={{ color: 'var(--text-secondary)' }}>Part #</th>
+                          <th className="text-center px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Qty</th>
+                          <th className="text-center px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden sm:table-cell" style={{ color: 'var(--text-secondary)' }}>Min</th>
+                          <th className="text-right px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden lg:table-cell" style={{ color: 'var(--text-secondary)' }}>Unit Cost</th>
+                          <th className="text-left px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden lg:table-cell" style={{ color: 'var(--text-secondary)' }}>Supplier</th>
+                          <th className="text-left px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden lg:table-cell" style={{ color: 'var(--text-secondary)' }}>Location</th>
+                          <th className="text-center px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Status</th>
+                          <th className="text-center px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Action</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2740,35 +2741,35 @@ function DashboardClientInner({ user, data }: Props) {
                           const isOut = part.quantity === 0;
                           return (
                             <tr key={part.id} style={{ borderBottom: '1px solid var(--border)' }} className="hover:bg-[var(--bg-surface-2)] transition-colors cursor-pointer" onClick={() => openPartDetail(part)}>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-2.5">
+                              <td className="px-3 sm:px-4 py-3 max-w-0">
+                                <div className="flex items-center gap-2.5 min-w-0">
                                   {part.imageUrl ? (
                                     <img src={part.imageUrl} alt={part.name} className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border" style={{ borderColor: 'var(--border)' }} />
                                   ) : (
                                     <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-lg" style={{ backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--border)' }}>🔧</div>
                                   )}
-                                  <div>
-                                    <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{part.name}</div>
+                                  <div className="min-w-0">
+                                    <div className="font-medium truncate" style={{ color: 'var(--text-primary)' }}>{part.name}</div>
                                     {part.description && <div className="text-xs mt-0.5 line-clamp-1" style={{ color: 'var(--text-muted)' }}>{part.description}</div>}
                                   </div>
                                 </div>
                               </td>
-                              <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>{part.partNumber ?? '—'}</td>
-                              <td className="px-4 py-3 text-center font-semibold" style={{ color: isOut ? '#ef4444' : isLow ? '#f59e0b' : 'var(--text-primary)' }}>{part.quantity}</td>
-                              <td className="px-4 py-3 text-center text-xs" style={{ color: 'var(--text-muted)' }}>{part.minQuantity}</td>
-                              <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--text-primary)' }}>{part.unitCost != null ? `$${part.unitCost.toFixed(2)}` : '—'}</td>
-                              <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{part.supplier ?? '—'}</td>
-                              <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{part.location ?? '—'}</td>
-                              <td className="px-4 py-3 text-center">
+                              <td className="px-3 sm:px-4 py-3 font-mono text-xs hidden md:table-cell" style={{ color: 'var(--text-secondary)' }}>{part.partNumber ?? '—'}</td>
+                              <td className="px-3 sm:px-4 py-3 text-center font-semibold" style={{ color: isOut ? '#ef4444' : isLow ? '#f59e0b' : 'var(--text-primary)' }}>{part.quantity}</td>
+                              <td className="px-3 sm:px-4 py-3 text-center text-xs hidden sm:table-cell" style={{ color: 'var(--text-muted)' }}>{part.minQuantity}</td>
+                              <td className="px-3 sm:px-4 py-3 text-right font-mono text-xs hidden lg:table-cell" style={{ color: 'var(--text-primary)' }}>{part.unitCost != null ? `$${part.unitCost.toFixed(2)}` : '—'}</td>
+                              <td className="px-3 sm:px-4 py-3 text-xs hidden lg:table-cell" style={{ color: 'var(--text-secondary)' }}>{part.supplier ?? '—'}</td>
+                              <td className="px-3 sm:px-4 py-3 text-xs hidden lg:table-cell" style={{ color: 'var(--text-secondary)' }}>{part.location ?? '—'}</td>
+                              <td className="px-3 sm:px-4 py-3 text-center">
                                 {isOut ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-600">Out of Stock</span>
+                                  <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-600 whitespace-nowrap">Out</span>
                                 ) : isLow ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-600">Low Stock</span>
+                                  <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-600 whitespace-nowrap">Low</span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-600">In Stock</span>
+                                  <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-600 whitespace-nowrap">OK</span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-center">
+                              <td className="px-3 sm:px-4 py-3 text-center">
                                 <div className="inline-flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
                                   <RowExportMenu
                                     dataset="parts"
@@ -2778,7 +2779,7 @@ function DashboardClientInner({ user, data }: Props) {
                                   />
                                   <button
                                     onClick={e => { e.stopPropagation(); openPartDetail(part); }}
-                                    className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                                    className="px-2 sm:px-2.5 py-1 rounded-lg text-xs font-medium transition-colors hidden sm:inline-block"
                                     style={{ backgroundColor: 'var(--bg-surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
                                   >
                                     View

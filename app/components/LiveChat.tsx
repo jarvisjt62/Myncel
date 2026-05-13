@@ -450,7 +450,7 @@ export default function LiveChat() {
           setIsOpen(true);
           setHasNewMessage(false);
         }}
-        className={`fixed bottom-[calc(8rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] z-[9999] bg-[#635bff] text-white p-3.5 sm:p-4 rounded-full shadow-lg hover:bg-[#4f46e5] transition-all hover:scale-105 sm:bottom-24 sm:right-6 ${isOpen ? 'hidden' : 'flex'} items-center justify-center group overflow-visible`}
+        className={`fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] z-[9999] bg-[#635bff] text-white p-3.5 sm:p-4 rounded-full shadow-lg hover:bg-[#4f46e5] transition-all hover:scale-105 sm:bottom-6 sm:right-6 ${isOpen ? 'hidden' : 'flex'} items-center justify-center group overflow-visible`}
         aria-label="Open live chat"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
