@@ -1942,22 +1942,22 @@ function DashboardClientInner({ user, data }: Props) {
                   ) : (
                     <div className="divide-y divide-[#e6ebf1]">
                       {workOrders.slice(0, 5).map((wo) => (
-                        <div key={wo.id} className="px-5 py-3.5 flex items-center gap-3 hover:bg-[var(--bg-surface-2)] transition-colors">
+                        <div key={wo.id} className="px-3 sm:px-5 py-3.5 flex items-center gap-2 sm:gap-3 hover:bg-[var(--bg-surface-2)] transition-colors">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className="text-xs font-mono text-[var(--text-muted)]">{wo.woNumber}</span>
-                              <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${priorityBadge(wo.priority)}`}>
+                            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                              <span className="text-xs font-mono text-[var(--text-muted)] truncate max-w-[140px] sm:max-w-none">{wo.woNumber}</span>
+                              <span className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap ${priorityBadge(wo.priority)}`}>
                                 {wo.priority}
                               </span>
                             </div>
                             <p className="text-sm font-medium text-[var(--text-primary)] truncate">{wo.title}</p>
-                            <p className="text-xs text-[var(--text-muted)]">{wo.machine?.name ?? '—'}</p>
+                            <p className="text-xs text-[var(--text-muted)] truncate">{wo.machine?.name ?? '—'}</p>
                           </div>
                           <div className="text-right flex-shrink-0">
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium block mb-1 ${statusBadge(wo.status)}`}>
+                            <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-medium block mb-1 whitespace-nowrap ${statusBadge(wo.status)}`}>
                               {wo.status.replace('_', ' ')}
                             </span>
-                            <span className={`text-xs ${wo.dueAt && new Date(wo.dueAt) < new Date() ? 'text-red-500 font-semibold' : 'text-[var(--text-muted)]'}`}>
+                            <span className={`text-[10px] sm:text-xs whitespace-nowrap ${wo.dueAt && new Date(wo.dueAt) < new Date() ? 'text-red-500 font-semibold' : 'text-[var(--text-muted)]'}`}>
                               {formatDate(wo.dueAt)}
                             </span>
                           </div>
