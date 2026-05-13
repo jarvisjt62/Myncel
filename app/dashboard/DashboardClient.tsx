@@ -2293,8 +2293,8 @@ function DashboardClientInner({ user, data }: Props) {
               ) : (
                 <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] divide-y divide-[#e6ebf1]">
                   {maintenanceTasks.filter(t => !doneTasks.has(t.id)).map((task) => (
-                    <div key={task.id} className="px-5 py-4 flex items-center justify-between hover:bg-[var(--bg-surface-2)] transition-colors cursor-pointer" onClick={() => openTaskDetail(task)}>
-                      <div className="flex items-center gap-3 min-w-0">
+                    <div key={task.id} className="px-3 sm:px-5 py-4 flex items-center justify-between hover:bg-[var(--bg-surface-2)] transition-colors cursor-pointer gap-2" onClick={() => openTaskDetail(task)}>
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         <button
                           onClick={(e) => { e.stopPropagation(); markTaskDone(task.id); }}
                           className="flex-shrink-0 w-5 h-5 rounded-full border-2 border-[var(--border)] hover:border-emerald-400 hover:bg-emerald-50 transition-colors flex items-center justify-center group"
@@ -2304,16 +2304,16 @@ function DashboardClientInner({ user, data }: Props) {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         </button>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="font-medium text-[var(--text-primary)] text-sm truncate">{task.title}</p>
-                          <p className="text-xs text-[var(--text-muted)] mt-0.5">{task.machine?.name ?? 'General'}</p>
+                          <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">{task.machine?.name ?? 'General'}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${priorityBadge(task.priority)}`}>
+                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                        <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${priorityBadge(task.priority)}`}>
                           {task.priority}
                         </span>
-                        <span className={`text-xs font-medium hidden sm:block ${task.nextDueAt && new Date(task.nextDueAt) < new Date() ? 'text-red-500 font-semibold' : 'text-[var(--text-primary)]'}`}>
+                        <span className={`text-xs font-medium hidden lg:block ${task.nextDueAt && new Date(task.nextDueAt) < new Date() ? 'text-red-500 font-semibold' : 'text-[var(--text-primary)]'}`}>
                           {formatDate(task.nextDueAt)}
                         </span>
                         <button
@@ -2324,19 +2324,19 @@ function DashboardClientInner({ user, data }: Props) {
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); openEditTask(task); }}
-                          className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-semibold px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] transition-colors"
+                          className="hidden sm:inline-block text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-semibold px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] transition-colors"
                         >
                           Edit
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); markTaskDone(task.id); }}
-                          className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold px-3 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-50 transition-colors"
+                          className="hidden sm:inline-block text-xs text-emerald-600 hover:text-emerald-700 font-semibold px-3 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-50 transition-colors"
                         >
                           ✓ Done
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setConfirmDeleteTask(task.id); }}
-                          className="text-xs text-red-500 hover:text-red-600 font-semibold px-2 py-1 rounded-lg border border-red-100 hover:bg-red-50 transition-colors"
+                          className="hidden sm:inline-block text-xs text-red-500 hover:text-red-600 font-semibold px-2 py-1 rounded-lg border border-red-100 hover:bg-red-50 transition-colors"
                         >
                           Delete
                         </button>
@@ -2357,19 +2357,19 @@ function DashboardClientInner({ user, data }: Props) {
                   </div>
                   <div className="divide-y divide-[#e6ebf1]">
                     {maintenanceTasks.filter(t => doneTasks.has(t.id)).map((task) => (
-                      <div key={task.id} className="px-5 py-3 flex items-center justify-between bg-emerald-50/30">
-                        <div className="flex items-center gap-3 min-w-0">
+                      <div key={task.id} className="px-3 sm:px-5 py-3 flex items-center justify-between bg-emerald-50/30 gap-2">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
                             <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
                           </div>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-sm text-[var(--text-secondary)] line-through truncate">{task.title}</p>
-                            <p className="text-xs text-[var(--text-muted)]">{task.machine?.name ?? 'General'} &middot; Marked done</p>
+                            <p className="text-xs text-[var(--text-muted)] truncate">{task.machine?.name ?? 'General'} &middot; Marked done</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                           <button
                             onClick={(e) => { e.stopPropagation(); openTaskDetail(task); }}
                             className="text-xs text-[#635bff] hover:text-[#4f46e5] font-medium px-2 py-1 rounded hover:bg-[#635bff]/10 transition-colors"
@@ -2378,14 +2378,14 @@ function DashboardClientInner({ user, data }: Props) {
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); openEditTask(task); }}
-                            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium px-2 py-1 rounded hover:bg-[var(--bg-surface-2)] transition-colors"
+                            className="hidden sm:inline-block text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium px-2 py-1 rounded hover:bg-[var(--bg-surface-2)] transition-colors"
                           >
                             Edit
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); setConfirmDeleteTask(task.id); }}
                             disabled={deletingTaskId === task.id}
-                            className="text-xs text-red-400 hover:text-red-600 font-medium px-2 py-1 rounded border border-red-100 hover:bg-red-50 transition-colors disabled:opacity-50"
+                            className="hidden sm:inline-block text-xs text-red-400 hover:text-red-600 font-medium px-2 py-1 rounded border border-red-100 hover:bg-red-50 transition-colors disabled:opacity-50"
                           >
                             {deletingTaskId === task.id ? '...' : 'Delete'}
                           </button>
@@ -2741,7 +2741,7 @@ function DashboardClientInner({ user, data }: Props) {
                           const isOut = part.quantity === 0;
                           return (
                             <tr key={part.id} style={{ borderBottom: '1px solid var(--border)' }} className="hover:bg-[var(--bg-surface-2)] transition-colors cursor-pointer" onClick={() => openPartDetail(part)}>
-                              <td className="px-3 sm:px-4 py-3 max-w-0">
+                              <td className="px-3 sm:px-4 py-3 min-w-[140px]">
                                 <div className="flex items-center gap-2.5 min-w-0">
                                   {part.imageUrl ? (
                                     <img src={part.imageUrl} alt={part.name} className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border" style={{ borderColor: 'var(--border)' }} />
