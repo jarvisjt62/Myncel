@@ -221,7 +221,7 @@ export default async function AdminBillingPage() {
           <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{totalOrgs} total</span>
         </div>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table style={{ width: '100%', minWidth: 1000, borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'var(--bg-surface-2)' }}>
                 {['Organization', 'Plan', 'Status', 'Users', 'Machines', 'Work Orders', 'Current Period End', 'Actions'].map(h => (

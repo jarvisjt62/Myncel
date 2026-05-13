@@ -171,7 +171,7 @@ export default function AdminReportsClient({ organizations }: { organizations: O
             <h2 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Per-Organization Breakdown</h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[900px]">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)' }}>
                   {['Organization', 'Plan', 'Machines', 'Work Orders', 'Completed', 'Total Cost', 'Labor', 'Parts'].map(h => (

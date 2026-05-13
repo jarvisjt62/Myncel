@@ -225,7 +225,7 @@ export default function AdminWorkOrdersClient({ workOrders: initial }: { workOrd
       {/* Table */}
       <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[1000px]">
             <thead>
               <tr className="border-b border-[var(--border)]">
                 <th className="text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider px-6 py-3">WO #</th>

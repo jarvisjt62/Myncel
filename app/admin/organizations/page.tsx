@@ -102,7 +102,7 @@ export default async function AdminOrganizations({ searchParams }: { searchParam
       {/* Organizations Table */}
       <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[1100px]">
             <thead>
               <tr className="border-b border-[var(--border)]">
                 {['Organization', 'Owner', 'Plan', 'Status', 'Industry', 'Users', 'Machines', 'Work Orders', 'Trial Ends', ''].map(h => (

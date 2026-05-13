@@ -67,7 +67,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: { rol
       {/* Users Table */}
       <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[900px]">
             <thead>
               <tr className="border-b border-[var(--border)] bg-[var(--bg-surface-2)]">
                 {['User', 'Role', 'Organization', 'Plan', '2FA', 'Joined', 'Last Login', 'Actions'].map(h => (

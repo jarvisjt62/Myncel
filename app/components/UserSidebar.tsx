@@ -601,7 +601,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
       )}
 
       {/* Main */}
-      <main className="flex-1 lg:ml-60 flex flex-col min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
+      <main className="flex-1 lg:ml-60 flex flex-col min-h-screen min-w-0 overflow-x-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
         {/* Top bar */}
         <header className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between sticky top-0 z-10" style={{ backgroundColor: 'var(--bg-nav)', borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3">
@@ -634,7 +634,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
         </header>
 
         {/* Page content */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {children}
         </div>
       </main>

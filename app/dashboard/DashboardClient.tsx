@@ -2159,12 +2159,12 @@ function DashboardClientInner({ user, data }: Props) {
                 </div>
               </div>
               {/* Status filter pills */}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-2 overflow-x-auto flex-nowrap -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap pb-1 sm:pb-0">
                 {(['ALL', 'OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] as const).map(f => (
                   <button
                     key={f}
                     onClick={() => setWoFilter(f)}
-                    className={`text-xs px-3 py-1.5 rounded-full font-medium border transition-colors ${
+                    className={`text-xs px-3 py-1.5 rounded-full font-medium border transition-colors whitespace-nowrap flex-shrink-0 ${
                       woFilter === f
                         ? 'bg-[#635bff] text-white border-[#635bff]'
                         : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[#635bff] hover:text-[#635bff]'

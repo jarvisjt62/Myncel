@@ -345,7 +345,7 @@ export default function AdminPartsClient({ organizations: initialOrgs }: { organ
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[1000px]">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)' }}>
                   {['Organization', 'Part', 'Part #', 'Qty', 'Min', 'Unit Cost', 'Value', 'Supplier', 'Location', 'Status', 'Action'].map(h => (

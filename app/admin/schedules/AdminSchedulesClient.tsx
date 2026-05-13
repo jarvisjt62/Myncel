@@ -274,7 +274,7 @@ export default function AdminSchedulesClient({ tasks }: { tasks: Schedule[] }) {
       {/* Table */}
       <div className="rounded-xl border border-[var(--border)] [background:var(--bg-surface)] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[1000px]">
             <thead>
               <tr className="border-b border-[var(--border)] bg-[var(--bg-base)]">
                 <th className="text-left px-4 py-3 font-semibold text-[var(--text-muted)] text-xs uppercase tracking-wide">Title</th>
