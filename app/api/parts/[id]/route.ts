@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { guardPermission, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,6 +54,20 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const body = await req.json();
     const { name, partNumber, description, quantity, minQuantity, unitCost, supplier, location, imageUrl } = body;
 
+    // If the only field being changed is quantity, this is a stock adjustment.
+    const bodyKeys = Object.keys(body);
+    const onlyStock = bodyKeys.length === 1 && bodyKeys[0] === 'quantity';
+    const requiredPerm = onlyStock ? 'parts.adjust_stock' : 'parts.edit';
+    const denied = await guardPermission(session.user.id, requiredPerm);
+    if (denied) {
+      if (onlyStock) {
+        const hasEdit = await hasPermission(session.user.id, 'parts.edit');
+        if (!hasEdit) return denied;
+      } else {
+        return denied;
+      }
+    }
+
     if (name !== undefined && !name.trim()) {
       return NextResponse.json({ error: 'Part name cannot be empty' }, { status: 400 });
     }
@@ -95,6 +110,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     if (!isAdmin && existing.organizationId !== session.user.organizationId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+
+    const denied = await guardPermission(session.user.id, 'parts.delete');
+    if (denied) return denied;
 
     await db.part.delete({ where: { id: params.id } });
 

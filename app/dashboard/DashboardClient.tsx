@@ -14,6 +14,7 @@ import CalendarWidget from '../components/dashboard/CalendarWidget';
 import QuickActions from '../components/dashboard/QuickActions';
 import ExportButtons from '../components/dashboard/ExportButtons';
 import RolesTab from './RolesTab';
+import { PermissionsProvider, Can } from '../components/PermissionsProvider';
 
 // ── Change Password Component ──────────────────────────────────────────────
 function ChangePasswordSection() {
@@ -1097,8 +1098,12 @@ function DashboardClientInner({ user, data }: Props) {
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusBadge(wo.status)}`}>{wo.status.replace('_',' ')}</span>
                         <button onClick={() => openWoDetail(wo)} className="text-xs px-2 py-1 rounded border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]">View</button>
-                        <button onClick={() => openEditWo(wo)} className="text-xs px-2 py-1 rounded border border-[#635bff]/40 text-[#635bff] hover:bg-[#635bff]/10">Edit</button>
-                        <button onClick={() => setConfirmDeleteWo(wo)} className="text-xs px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50">Delete</button>
+                        <Can permission="work_orders.edit">
+                          <button onClick={() => openEditWo(wo)} className="text-xs px-2 py-1 rounded border border-[#635bff]/40 text-[#635bff] hover:bg-[#635bff]/10">Edit</button>
+                        </Can>
+                        <Can permission="work_orders.delete">
+                          <button onClick={() => setConfirmDeleteWo(wo)} className="text-xs px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50">Delete</button>
+                        </Can>
                       </div>
                     </div>
                   ))}
@@ -1237,22 +1242,34 @@ function DashboardClientInner({ user, data }: Props) {
                               {event.type === 'work_order' && (
                                 <>
                                   <button onClick={() => openWoDetail(event.record)} className="text-xs px-2 py-1 rounded border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]">View</button>
-                                  <button onClick={() => openEditWo(event.record)} className="text-xs px-2 py-1 rounded border border-[#635bff]/40 text-[#635bff] hover:bg-[#635bff]/10">Edit</button>
-                                  <button onClick={() => setConfirmDeleteWo(event.record)} className="text-xs px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50">Delete</button>
+                                  <Can permission="work_orders.edit">
+                                    <button onClick={() => openEditWo(event.record)} className="text-xs px-2 py-1 rounded border border-[#635bff]/40 text-[#635bff] hover:bg-[#635bff]/10">Edit</button>
+                                  </Can>
+                                  <Can permission="work_orders.delete">
+                                    <button onClick={() => setConfirmDeleteWo(event.record)} className="text-xs px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50">Delete</button>
+                                  </Can>
                                 </>
                               )}
                               {event.type === 'maintenance' && (
                                 <>
                                   <button onClick={() => openTaskDetail(event.record)} className="text-xs px-2 py-1 rounded border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]">View</button>
-                                  <button onClick={() => openEditTask(event.record)} className="text-xs px-2 py-1 rounded border border-[#635bff]/40 text-[#635bff] hover:bg-[#635bff]/10">Edit</button>
-                                  <button onClick={() => setConfirmDeleteTask(event.record.id)} className="text-xs px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50">Delete</button>
+                                  <Can permission="schedules.edit">
+                                    <button onClick={() => openEditTask(event.record)} className="text-xs px-2 py-1 rounded border border-[#635bff]/40 text-[#635bff] hover:bg-[#635bff]/10">Edit</button>
+                                  </Can>
+                                  <Can permission="schedules.delete">
+                                    <button onClick={() => setConfirmDeleteTask(event.record.id)} className="text-xs px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50">Delete</button>
+                                  </Can>
                                 </>
                               )}
                               {event.type === 'alert' && (
                                 <>
                                   <button onClick={() => setSelectedAlert(event.record)} className="text-xs px-2 py-1 rounded border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]">View</button>
-                                  <button onClick={() => openEditAlert(event.record)} className="text-xs px-2 py-1 rounded border border-[#635bff]/40 text-[#635bff] hover:bg-[#635bff]/10">Edit</button>
-                                  <button onClick={() => setConfirmDeleteAlert(event.record)} className="text-xs px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50">Delete</button>
+                                  <Can permission="alerts.resolve">
+                                    <button onClick={() => openEditAlert(event.record)} className="text-xs px-2 py-1 rounded border border-[#635bff]/40 text-[#635bff] hover:bg-[#635bff]/10">Edit</button>
+                                  </Can>
+                                  <Can permission="alerts.resolve">
+                                    <button onClick={() => setConfirmDeleteAlert(event.record)} className="text-xs px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50">Delete</button>
+                                  </Can>
                                 </>
                               )}
                             </div>
@@ -2057,9 +2074,11 @@ function DashboardClientInner({ user, data }: Props) {
                 <p className="text-sm text-[var(--text-secondary)]">{machines.length} machines registered</p>
                 <div className="flex items-center gap-2 flex-wrap">
                   <ExportActionsBar dataset="machines" onIntegrationResult={handleExportResult} />
-                  <button onClick={() => setShowMachineModal(true)} className="bg-[#635bff] text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-[#4f46e5] transition-colors">
-                    + Add Machine
-                  </button>
+                  <Can permission="machines.create">
+                    <button onClick={() => setShowMachineModal(true)} className="bg-[#635bff] text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-[#4f46e5] transition-colors">
+                      + Add Machine
+                    </button>
+                  </Can>
                 </div>
               </div>
               <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] overflow-hidden">
@@ -2119,20 +2138,24 @@ function DashboardClientInner({ user, data }: Props) {
                             >
                               View
                             </button>
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); openEditMachine(m); }}
-                              className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] hidden sm:inline-block"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteMachine(m); }}
-                              className="text-xs font-semibold text-red-500 hover:text-red-600 px-1.5 sm:px-2 py-1 rounded-lg hover:bg-red-50 hidden sm:inline-block"
-                            >
-                              Delete
-                            </button>
+                            <Can permission="machines.edit">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); openEditMachine(m); }}
+                                className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] hidden sm:inline-block"
+                              >
+                                Edit
+                              </button>
+                            </Can>
+                            <Can permission="machines.delete">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setConfirmDeleteMachine(m); }}
+                                className="text-xs font-semibold text-red-500 hover:text-red-600 px-1.5 sm:px-2 py-1 rounded-lg hover:bg-red-50 hidden sm:inline-block"
+                              >
+                                Delete
+                              </button>
+                            </Can>
                             <RowExportMenu
                               dataset="machines"
                               recordId={m.id}
@@ -2159,9 +2182,11 @@ function DashboardClientInner({ user, data }: Props) {
                 </p>
                 <div className="flex items-center gap-2 flex-wrap">
                   <ExportActionsBar dataset="work_orders" filterParam={woFilter} onIntegrationResult={handleExportResult} />
-                  <button onClick={() => setShowWorkOrderModal(true)} className="bg-[#635bff] text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-[#4f46e5] transition-colors">
-                    + New Work Order
-                  </button>
+                  <Can permission="work_orders.create">
+                    <button onClick={() => setShowWorkOrderModal(true)} className="bg-[#635bff] text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-[#4f46e5] transition-colors">
+                      + New Work Order
+                    </button>
+                  </Can>
                 </div>
               </div>
               {/* Status filter pills */}
@@ -2234,20 +2259,24 @@ function DashboardClientInner({ user, data }: Props) {
                             >
                               View
                             </button>
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); openEditWo(wo); }}
-                              className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] hidden sm:inline-block"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteWo(wo); }}
-                              className="text-xs font-semibold text-red-500 hover:text-red-600 px-1.5 sm:px-2 py-1 rounded-lg hover:bg-red-50 hidden sm:inline-block"
-                            >
-                              Delete
-                            </button>
+                            <Can permission="work_orders.edit">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); openEditWo(wo); }}
+                                className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] hidden sm:inline-block"
+                              >
+                                Edit
+                              </button>
+                            </Can>
+                            <Can permission="work_orders.delete">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setConfirmDeleteWo(wo); }}
+                                className="text-xs font-semibold text-red-500 hover:text-red-600 px-1.5 sm:px-2 py-1 rounded-lg hover:bg-red-50 hidden sm:inline-block"
+                              >
+                                Delete
+                              </button>
+                            </Can>
                             <RowExportMenu
                               dataset="work_orders"
                               recordId={wo.id}
@@ -2273,9 +2302,11 @@ function DashboardClientInner({ user, data }: Props) {
                   {maintenanceTasks.filter(t => !doneTasks.has(t.id)).length} pending &middot;{' '}
                   <span className="text-emerald-600 font-medium">{doneTasks.size} completed</span>
                 </p>
-                <button onClick={() => setShowTaskModal(true)} className="bg-[#635bff] text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-[#4f46e5] transition-colors">
-                  + Add Task
-                </button>
+                <Can permission="schedules.create">
+                  <button onClick={() => setShowTaskModal(true)} className="bg-[#635bff] text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-[#4f46e5] transition-colors">
+                    + Add Task
+                  </button>
+                </Can>
               </div>
 
               {/* Pending Tasks */}
@@ -2328,24 +2359,30 @@ function DashboardClientInner({ user, data }: Props) {
                         >
                           View
                         </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); openEditTask(task); }}
-                          className="hidden sm:inline-block text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-semibold px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); markTaskDone(task.id); }}
-                          className="hidden sm:inline-block text-xs text-emerald-600 hover:text-emerald-700 font-semibold px-3 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-50 transition-colors"
-                        >
-                          ✓ Done
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setConfirmDeleteTask(task.id); }}
-                          className="hidden sm:inline-block text-xs text-red-500 hover:text-red-600 font-semibold px-2 py-1 rounded-lg border border-red-100 hover:bg-red-50 transition-colors"
-                        >
-                          Delete
-                        </button>
+                        <Can permission="schedules.edit">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openEditTask(task); }}
+                            className="hidden sm:inline-block text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-semibold px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] transition-colors"
+                          >
+                            Edit
+                          </button>
+                        </Can>
+                        <Can permission="schedules.complete">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); markTaskDone(task.id); }}
+                            className="hidden sm:inline-block text-xs text-emerald-600 hover:text-emerald-700 font-semibold px-3 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-50 transition-colors"
+                          >
+                            ✓ Done
+                          </button>
+                        </Can>
+                        <Can permission="schedules.delete">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteTask(task.id); }}
+                            className="hidden sm:inline-block text-xs text-red-500 hover:text-red-600 font-semibold px-2 py-1 rounded-lg border border-red-100 hover:bg-red-50 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </Can>
                       </div>
                     </div>
                   ))}
@@ -2382,19 +2419,23 @@ function DashboardClientInner({ user, data }: Props) {
                           >
                             View
                           </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); openEditTask(task); }}
-                            className="hidden sm:inline-block text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium px-2 py-1 rounded hover:bg-[var(--bg-surface-2)] transition-colors"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteTask(task.id); }}
-                            disabled={deletingTaskId === task.id}
-                            className="hidden sm:inline-block text-xs text-red-400 hover:text-red-600 font-medium px-2 py-1 rounded border border-red-100 hover:bg-red-50 transition-colors disabled:opacity-50"
-                          >
-                            {deletingTaskId === task.id ? '...' : 'Delete'}
-                          </button>
+                          <Can permission="schedules.edit">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openEditTask(task); }}
+                              className="hidden sm:inline-block text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium px-2 py-1 rounded hover:bg-[var(--bg-surface-2)] transition-colors"
+                            >
+                              Edit
+                            </button>
+                          </Can>
+                          <Can permission="schedules.delete">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteTask(task.id); }}
+                              disabled={deletingTaskId === task.id}
+                              className="hidden sm:inline-block text-xs text-red-400 hover:text-red-600 font-medium px-2 py-1 rounded border border-red-100 hover:bg-red-50 transition-colors disabled:opacity-50"
+                            >
+                              {deletingTaskId === task.id ? '...' : 'Delete'}
+                            </button>
+                          </Can>
                         </div>
                       </div>
                     ))}
@@ -2715,12 +2756,14 @@ function DashboardClientInner({ user, data }: Props) {
                   <h2 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>All Parts</h2>
                   <div className="flex items-center gap-3 flex-wrap">
                     <ExportActionsBar dataset="parts" onIntegrationResult={handleExportResult} />
-                    <button
-                      onClick={() => setShowPartModal(true)}
-                      className="px-3 py-1.5 bg-[#635bff] text-white rounded-lg text-xs font-semibold hover:bg-[#4f46e5] transition-colors"
-                    >
-                      + Add Part
-                    </button>
+                    <Can permission="parts.create">
+                      <button
+                        onClick={() => setShowPartModal(true)}
+                        className="px-3 py-1.5 bg-[#635bff] text-white rounded-lg text-xs font-semibold hover:bg-[#4f46e5] transition-colors"
+                      >
+                        + Add Part
+                      </button>
+                    </Can>
                   </div>
                 </div>
 
@@ -3671,19 +3714,23 @@ function DashboardClientInner({ user, data }: Props) {
               <div className="flex items-center gap-2">
                 {!editingPart && (
                   <>
-                    <button
-                      onClick={() => startEditingPart(selectedPart)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-                      style={{ backgroundColor: 'var(--bg-surface-2)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
-                    >
-                      ✏️ Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeletePart(selectedPart.id)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
-                    >
-                      🗑️ Delete
-                    </button>
+                    <Can permission="parts.edit">
+                      <button
+                        onClick={() => startEditingPart(selectedPart)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                        style={{ backgroundColor: 'var(--bg-surface-2)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+                      >
+                        ✏️ Edit
+                      </button>
+                    </Can>
+                    <Can permission="parts.delete">
+                      <button
+                        onClick={() => handleDeletePart(selectedPart.id)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </Can>
                   </>
                 )}
                 <button onClick={() => { setShowPartDetailModal(false); setEditingPart(false); setSaveError(''); }} className="w-8 h-8 flex items-center justify-center rounded-lg text-lg" style={{ color: 'var(--text-secondary)' }}>✕</button>
@@ -3942,5 +3989,9 @@ function DashboardClientInner({ user, data }: Props) {
 }
 
 export default function DashboardClient(props: Props) {
-  return <DashboardClientInner {...props} />;
+  return (
+    <PermissionsProvider>
+      <DashboardClientInner {...props} />
+    </PermissionsProvider>
+  );
 }

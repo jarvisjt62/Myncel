@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { guardPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,6 +75,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const denied = await guardPermission(session.user.id, 'machines.edit');
+    if (denied) return denied;
+
     const updated = await db.machine.update({
       where: { id: params.id },
       data: {
@@ -106,6 +110,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     if (!isSA && machine.organizationId !== session.user.organizationId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+
+    const denied = await guardPermission(session.user.id, 'machines.delete');
+    if (denied) return denied;
 
     // Delete cascade: alerts, work orders, maintenance tasks, then machine
     await db.alert.deleteMany({ where: { machineId: params.id } });

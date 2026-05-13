@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { sendTeamInviteEmail } from '@/lib/email';
 import { checkPlanLimit } from '@/lib/plan-limits';
+import { guardPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,9 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const denied = await guardPermission(session.user.id, 'team.invite');
+    if (denied) return denied;
 
     const body = await req.json();
     const { email, role = 'TECHNICIAN' } = body;
@@ -133,6 +137,9 @@ export async function DELETE(req: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const denied = await guardPermission(session.user.id, 'team.invite');
+    if (denied) return denied;
 
     const { searchParams } = new URL(req.url);
     const inviteId = searchParams.get('id');

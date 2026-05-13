@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import RolesTab from '@/app/dashboard/RolesTab';
+import { Can, usePermissions } from '@/app/components/PermissionsProvider';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -98,6 +99,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
   const { user, teamMembers, pendingInvites, machines, stats, recentWorkOrders } = data;
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const router = useRouter();
+  const { can: hasPerm } = usePermissions();
 
   // Auto-refresh every 30 seconds for real-time data
   useEffect(() => {
@@ -222,9 +224,11 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
           )}
           {/* Hide the page-level invite button on the Team tab — Team tab has its own */}
           {activeTab !== 'team' && (
-            <button onClick={() => setShowInvite(true)} style={S.inviteBtn}>
-              + Invite Team Member
-            </button>
+            <Can permission="team.invite">
+              <button onClick={() => setShowInvite(true)} style={S.inviteBtn}>
+                + Invite Team Member
+              </button>
+            </Can>
           )}
         </div>
       </div>
@@ -354,9 +358,11 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                     <span>{a.icon}</span><span>{a.label}</span>
                   </Link>
                 ))}
-                <button onClick={() => setShowInvite(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 10, background: 'rgba(99,91,255,0.1)', border: '1px solid rgba(99,91,255,0.3)', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#635bff' }}>
-                  <span>👤</span><span>Invite Technician</span>
-                </button>
+                <Can permission="team.invite">
+                  <button onClick={() => setShowInvite(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 10, background: 'rgba(99,91,255,0.1)', border: '1px solid rgba(99,91,255,0.3)', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#635bff' }}>
+                    <span>👤</span><span>Invite Technician</span>
+                  </button>
+                </Can>
               </div>
             </div>
           </div>
@@ -372,7 +378,9 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                   {teamMembers.length} member{teamMembers.length !== 1 ? 's' : ''} · {localInvites.length} pending invite{localInvites.length !== 1 ? 's' : ''}
                 </p>
               </div>
-              <button onClick={() => setShowInvite(true)} style={S.inviteBtn}>+ Invite Team Member</button>
+              <Can permission="team.invite">
+                <button onClick={() => setShowInvite(true)} style={S.inviteBtn}>+ Invite Team Member</button>
+              </Can>
             </div>
 
             {/* Active Members */}
@@ -409,9 +417,9 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                         <td style={{ padding: '12px 16px' }}>
                           <select
                             defaultValue={m.role}
-                            disabled={m.role === 'OWNER' || updatingRole === m.id}
+                            disabled={m.role === 'OWNER' || updatingRole === m.id || !hasPerm('team.edit_roles')}
                             onChange={e => handleRoleChange(m.id, e.target.value)}
-                            style={{ fontSize: 12, fontWeight: 600, padding: '4px 8px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-page)', color: 'var(--text-primary)', cursor: m.role === 'OWNER' ? 'not-allowed' : 'pointer' }}
+                            style={{ fontSize: 12, fontWeight: 600, padding: '4px 8px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-page)', color: 'var(--text-primary)', cursor: m.role === 'OWNER' || !hasPerm('team.edit_roles') ? 'not-allowed' : 'pointer' }}
                           >
                             <option value="OWNER" disabled>OWNER</option>
                             <option value="ADMIN">ADMIN</option>

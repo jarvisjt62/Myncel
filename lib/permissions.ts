@@ -118,3 +118,23 @@ export async function requirePermission(userId: string | null | undefined, key: 
     throw err;
   }
 }
+
+/**
+ * Route helper: runs requirePermission and, on failure, returns a NextResponse
+ * 403. On success returns null so the caller can continue.
+ *
+ *   const denied = await guardPermission(session.user.id, 'work_orders.create');
+ *   if (denied) return denied;
+ */
+import { NextResponse } from 'next/server';
+export async function guardPermission(
+  userId: string | null | undefined,
+  key: string,
+): Promise<NextResponse | null> {
+  const ok = await hasPermission(userId, key);
+  if (ok) return null;
+  return NextResponse.json(
+    { error: `Forbidden: missing permission "${key}"`, permission: key },
+    { status: 403 },
+  );
+}

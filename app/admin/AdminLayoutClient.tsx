@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ThemeProvider, useTheme } from '../components/ThemeProvider';
+import { PermissionsProvider } from '../components/PermissionsProvider';
 import { prefetch } from '@/app/lib/client-cache';
 import AdminLiveChatNotifier from './AdminLiveChatNotifier';
 
@@ -319,14 +320,16 @@ export default function AdminLayoutClient({ children, navSections, externalLinks
       storageKey="myncel-admin-theme"
       style={{ minHeight: '100vh' }}
     >
-      <AdminLiveChatNotifier />
-      <AdminShell
-        navSections={navSections}
-        externalLinks={externalLinks}
-        userName={userName}
-      >
-        {children}
-      </AdminShell>
+      <PermissionsProvider>
+        <AdminLiveChatNotifier />
+        <AdminShell
+          navSections={navSections}
+          externalLinks={externalLinks}
+          userName={userName}
+        >
+          {children}
+        </AdminShell>
+      </PermissionsProvider>
     </ThemeProvider>
   );
 }

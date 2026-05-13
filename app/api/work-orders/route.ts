@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { checkPlanLimit } from '@/lib/plan-limits';
+import { guardPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,9 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const denied = await guardPermission(session.user.id, 'work_orders.create');
+    if (denied) return denied;
 
     const orgId = (session.user as any).organizationId as string | undefined;
     const role = (session.user as any).role as string;

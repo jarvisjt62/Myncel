@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { guardPermission, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,20 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const isSA = session.user.role === 'SUPER_ADMIN';
     if (!isSA && task.organizationId !== session.user.organizationId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Determine which permission gates this update.
+    const bodyKeys = Object.keys(body);
+    const onlyMarkDone = bodyKeys.length === 1 && bodyKeys[0] === 'markDone';
+    const requiredPerm = onlyMarkDone ? 'schedules.complete' : 'schedules.edit';
+    const denied = await guardPermission(session.user.id, requiredPerm);
+    if (denied) {
+      if (onlyMarkDone) {
+        const hasEdit = await hasPermission(session.user.id, 'schedules.edit');
+        if (!hasEdit) return denied;
+      } else {
+        return denied;
+      }
     }
 
     // Calculate next due date when marking done
@@ -75,6 +90,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     if (!isSA && task.organizationId !== session.user.organizationId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+
+    const denied = await guardPermission(session.user.id, 'schedules.delete');
+    if (denied) return denied;
 
     await db.maintenanceTask.delete({ where: { id: params.id } });
     return NextResponse.json({ success: true });

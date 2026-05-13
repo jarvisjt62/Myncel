@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { guardPermission, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,6 +49,31 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!wo) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     if (!canManageWorkOrderRecord(session, wo.organizationId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Decide which permission gates this update. We accept the request if
+    // the user has the permission matching the specific action they're taking.
+    const userId = session.user.id;
+    const bodyKeys = Object.keys(body);
+    const onlyStatus = bodyKeys.length === 1 && bodyKeys[0] === 'status';
+    const onlyAssign = bodyKeys.length === 1 && bodyKeys[0] === 'assignedToId';
+
+    let requiredPerm = 'work_orders.edit';
+    if (onlyStatus && (body.status === 'COMPLETED' || body.status === 'DONE' || body.status === 'CLOSED')) {
+      requiredPerm = 'work_orders.close';
+    } else if (onlyAssign) {
+      requiredPerm = 'work_orders.assign';
+    }
+
+    const denied = await guardPermission(userId, requiredPerm);
+    if (denied) {
+      // Graceful fallback: if they have the broader edit perm, allow it anyway.
+      if (requiredPerm !== 'work_orders.edit') {
+        const hasEdit = await hasPermission(userId, 'work_orders.edit');
+        if (!hasEdit) return denied;
+      } else {
+        return denied;
+      }
     }
 
     const now = new Date();
@@ -109,6 +135,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const denied = await guardPermission(session.user.id, 'work_orders.delete');
+    if (denied) return denied;
     await db.workOrder.delete({ where: { id: params.id } });
     return NextResponse.json({ success: true });
   } catch (error) {

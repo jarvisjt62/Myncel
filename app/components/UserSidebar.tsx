@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { ThemeProvider } from '../components/ThemeProvider';
+import { PermissionsProvider } from '../components/PermissionsProvider';
 import NotificationBell from '../components/NotificationBell';
 import GlobalSearch from '../components/GlobalSearch';
 import { prefetch } from '@/app/lib/client-cache';
@@ -645,7 +646,9 @@ function UserShellInner({ user, children }: UserSidebarProps) {
 export default function UserSidebar({ user, children }: UserSidebarProps) {
   return (
     <ThemeProvider themeClass="dash-theme" defaultTheme="light" storageKey="myncel-dashboard-theme">
-      <UserShellInner user={user} children={children} />
+      <PermissionsProvider>
+        <UserShellInner user={user} children={children} />
+      </PermissionsProvider>
     </ThemeProvider>
   );
 }

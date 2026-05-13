@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db, safeQuery } from '@/lib/db';
+import { guardPermission } from '@/lib/permissions';
 
 // PATCH - Update team member role
 export async function PATCH(
@@ -13,6 +14,9 @@ export async function PATCH(
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const denied = await guardPermission((session.user as any).id, 'team.edit_roles');
+    if (denied) return denied;
 
     const { role } = await req.json();
     const targetUserId = params.id;
@@ -89,6 +93,9 @@ export async function DELETE(
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const denied = await guardPermission((session.user as any).id, 'team.remove');
+    if (denied) return denied;
 
     const targetUserId = params.id;
 
