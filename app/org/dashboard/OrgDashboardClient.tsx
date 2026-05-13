@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import RolesTab from '@/app/dashboard/RolesTab';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -91,7 +92,7 @@ function timeAgo(iso: string | null) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-type Tab = 'overview' | 'team' | 'machines' | 'workorders';
+type Tab = 'overview' | 'team' | 'machines' | 'workorders' | 'roles';
 
 export default function OrgDashboardClient({ data }: { data: OrgData }) {
   const { user, teamMembers, pendingInvites, machines, stats, recentWorkOrders } = data;
@@ -189,11 +190,13 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
     }
   };
 
+  const canManageRoles = user.role === 'OWNER' || user.role === 'ADMIN';
   const tabs: { id: Tab; label: string; icon: string; badge?: number }[] = [
     { id: 'overview',   label: 'Overview',    icon: '📊' },
     { id: 'team',       label: 'Team',        icon: '👥', badge: localInvites.length || undefined },
     { id: 'machines',   label: 'Machines',    icon: '⚙️', badge: stats.breakdownMachines || undefined },
     { id: 'workorders', label: 'Work Orders', icon: '📋', badge: stats.overdueWorkOrders || undefined },
+    ...(canManageRoles ? [{ id: 'roles' as Tab, label: 'Roles & Permissions', icon: '🛡️' }] : []),
   ];
 
   return (
@@ -217,9 +220,12 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
               🚨 {stats.criticalAlerts} Critical Alert{stats.criticalAlerts !== 1 ? 's' : ''}
             </span>
           )}
-          <button onClick={() => setShowInvite(true)} style={S.inviteBtn}>
-            + Invite Team Member
-          </button>
+          {/* Hide the page-level invite button on the Team tab — Team tab has its own */}
+          {activeTab !== 'team' && (
+            <button onClick={() => setShowInvite(true)} style={S.inviteBtn}>
+              + Invite Team Member
+            </button>
+          )}
         </div>
       </div>
 
@@ -568,6 +574,19 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                 </table>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Roles & Permissions Tab */}
+        {activeTab === 'roles' && canManageRoles && (
+          <div className="space-y-5">
+            <div>
+              <h2 style={{ fontWeight: 700, fontSize: 18, color: 'var(--text-primary)', margin: 0 }}>Roles &amp; Permissions</h2>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+                Create custom roles for {user.organization.name}, assign them to team members, and manage permissions.
+              </p>
+            </div>
+            <RolesTab currentUserRole={user.role} organizationId={user.organization.id} />
           </div>
         )}
 
