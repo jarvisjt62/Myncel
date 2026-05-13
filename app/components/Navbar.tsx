@@ -8,7 +8,7 @@ type MegaMenuProps = {
 };
 
 const ProductsMenu = ({ isOpen, onClose }: MegaMenuProps) => (
-  <div className={`absolute top-full left-0 w-screen max-w-5xl bg-white border border-[#e6ebf1] rounded-2xl shadow-2xl mt-2 transition-all duration-200 z-50 ${isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+  <div className={`absolute top-full left-0 right-0 w-full max-w-5xl bg-white border border-[#e6ebf1] rounded-2xl shadow-2xl mt-2 transition-all duration-200 z-50 ${isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
     style={{ left: '50%', transform: isOpen ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(-8px)' }}>
     <div className="p-6 grid grid-cols-4 gap-6">
       {/* Column 1 */}
