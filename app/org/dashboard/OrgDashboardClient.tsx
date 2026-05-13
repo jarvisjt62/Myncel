@@ -113,6 +113,23 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
   const [inviting, setInviting] = useState(false);
   const [inviteResult, setInviteResult] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [localInvites, setLocalInvites] = useState(pendingInvites);
+  // Custom + global roles fetched from /api/org/roles for the invite dropdown
+  const [customRoles, setCustomRoles] = useState<{ id: string; slug: string; name: string; icon: string | null; description: string | null }[]>([]);
+  useEffect(() => {
+    if (!showInvite) return;
+    (async () => {
+      try {
+        const res = await fetch('/api/org/roles');
+        if (!res.ok) return;
+        const data = await res.json();
+        // Only show roles outside the 6 built-in system slugs
+        const SYSTEM = new Set(['owner','admin','technician','operator','employee','member']);
+        setCustomRoles((data.roles || []).filter((r: any) => !SYSTEM.has(r.slug)).map((r: any) => ({
+          id: r.id, slug: r.slug, name: r.name, icon: r.icon, description: r.description,
+        })));
+      } catch {}
+    })();
+  }, [showInvite]);
 
   // Role update state
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
@@ -599,6 +616,10 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                   <option value="EMPLOYEE">👷 Employee — Submit requests, view assigned tasks & follow safety checklists</option>
                   <option value="ADMIN">⚙️ Admin — Manage team, machines, parts & work orders</option>
                   <option value="MEMBER">👤 Member — View dashboards, reports & shared maintenance updates</option>
+                  {customRoles.length > 0 && <option disabled>──────── Custom roles ────────</option>}
+                  {customRoles.map(r => (
+                    <option key={r.id} value={r.id}>{r.icon || '🔖'} {r.name}{r.description ? ` — ${r.description}` : ''}</option>
+                  ))}
                 </select>
               </div>
 

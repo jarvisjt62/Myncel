@@ -13,6 +13,7 @@ import ActivityFeed from '../components/dashboard/ActivityFeed';
 import CalendarWidget from '../components/dashboard/CalendarWidget';
 import QuickActions from '../components/dashboard/QuickActions';
 import ExportButtons from '../components/dashboard/ExportButtons';
+import RolesTab from './RolesTab';
 
 // ── Change Password Component ──────────────────────────────────────────────
 function ChangePasswordSection() {
@@ -249,7 +250,7 @@ type Stats = {
 type OrgUser = { id: string; name: string | null; email: string; role: string };
 
 type Props = {
-  user: { name: string; email: string; role: string; organizationName: string };
+  user: { name: string; email: string; role: string; organizationName: string; organizationId?: string };
   data: {
     machines: Machine[];
     workOrders: WorkOrder[];
@@ -346,7 +347,7 @@ function DashboardClientInner({ user, data }: Props) {
   const [remoteSessionsLoaded, setRemoteSessionsLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Hash-based tab navigation — keeps hash in URL for proper routing
-  const validTabs = ['dashboard', 'workorders', 'equipment', 'schedules', 'alerts', 'reports', 'parts', 'settings', 'remote-support'];
+  const validTabs = ['dashboard', 'workorders', 'equipment', 'schedules', 'alerts', 'reports', 'parts', 'roles', 'settings', 'remote-support'];
 
   useEffect(() => {
     const applyHash = () => {
@@ -1674,6 +1675,11 @@ function DashboardClientInner({ user, data }: Props) {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
       </svg>
     )},
+    ...((user.role === 'OWNER' || user.role === 'ADMIN') ? [{ id: 'roles', label: 'Roles & Permissions', icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+      </svg>
+    )}] : []),
     { id: 'settings', label: 'Settings', icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -2472,6 +2478,11 @@ function DashboardClientInner({ user, data }: Props) {
                 </div>
               )}
             </div>
+          )}
+
+          {/* ── ROLES & PERMISSIONS TAB ── */}
+          {activeTab === 'roles' && (user.role === 'OWNER' || user.role === 'ADMIN') && (
+            <RolesTab currentUserRole={user.role} organizationId={user.organizationId ?? ''} />
           )}
 
           {/* ── SETTINGS TAB ── */}

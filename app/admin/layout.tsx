@@ -56,6 +56,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: '/admin',               label: 'Overview',       icon: '📊', exact: true },
         { href: '/admin/form-submissions', label: 'Form Submissions', icon: '📨', badge: formSubmissionBadge },
         { href: '/admin/users',         label: 'Users',          icon: '👥' },
+        { href: '/admin/roles',         label: 'Roles',          icon: '🛡️' },
+        { href: '/admin/permissions',   label: 'Permissions',    icon: '🔐' },
         { href: '/admin/organizations', label: 'Organizations',  icon: '🏢' },
         { href: '/admin/machines',      label: 'Machines',       icon: '⚙️' },
         { href: '/admin/work-orders',   label: 'Work Orders',    icon: '📋' },

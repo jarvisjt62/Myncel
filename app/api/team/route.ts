@@ -25,6 +25,9 @@ export async function GET(req: NextRequest) {
     }
 
     // Get all team members
+    const url = new URL(req.url);
+    const includeRoles = url.searchParams.get('includeRoles') === '1';
+
     const members = await safeQuery(
       db.user.findMany({
         where: { organizationId: user.organizationId },
@@ -33,8 +36,15 @@ export async function GET(req: NextRequest) {
           name: true,
           email: true,
           role: true,
+          image: true,
           createdAt: true,
-          lastLoginAt: true
+          lastLoginAt: true,
+          roleAssignments: includeRoles ? {
+            select: {
+              roleId: true,
+              role: { select: { id: true, name: true, slug: true, color: true, icon: true } },
+            },
+          } : false,
         },
         orderBy: [
           { role: 'asc' }, // Owner first, then Admin, etc.

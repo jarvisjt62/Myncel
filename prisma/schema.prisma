@@ -13,40 +13,44 @@ datasource db {
 // ===== AUTH =====
 
 model User {
-  id                String    @id @default(cuid())
-  name              String?
-  email             String    @unique
-  emailVerified     DateTime?
-  password          String?   // hashed with bcrypt
-  image             String?
-  role              UserRole  @default(MEMBER)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String? // hashed with bcrypt
+  image         String?
+  role          UserRole  @default(MEMBER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // Two-Factor Authentication
-  twoFactorEnabled  Boolean   @default(false)
-  twoFactorSecret   String?   // TOTP secret (encrypted)
+  twoFactorEnabled     Boolean @default(false)
+  twoFactorSecret      String? // TOTP secret (encrypted)
   twoFactorBackupCodes String? // JSON array of hashed backup codes
-  
+
   // Account Security
-  failedLoginAttempts Int     @default(0)
-  lockedUntil       DateTime? // Account lockout timestamp
-  lastLoginAt       DateTime?
-  lastLoginIp       String?
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime? // Account lockout timestamp
+  lastLoginAt         DateTime?
+  lastLoginIp         String?
 
   // Relations
-  organizationId    String?
-  organization      Organization? @relation(fields: [organizationId], references: [id])
-  accounts          Account[]
-  sessions          Session[]
-  workOrders        WorkOrder[]   @relation("AssignedTo")
-  createdWorkOrders WorkOrder[]   @relation("CreatedBy")
-  passwordResets    PasswordReset[]
-  notifications     Notification[]
-  auditLogs         AuditLog[]
-    sentInvites       InviteToken[]   @relation("InvitedBy")
-  remoteSupportCreated RemoteSupportSession[] @relation("RemoteSupportCreatedBy")
+  organizationId              String?
+  organization                Organization?              @relation(fields: [organizationId], references: [id])
+  accounts                    Account[]
+  sessions                    Session[]
+  workOrders                  WorkOrder[]                @relation("AssignedTo")
+  createdWorkOrders           WorkOrder[]                @relation("CreatedBy")
+  passwordResets              PasswordReset[]
+  notifications               Notification[]
+  auditLogs                   AuditLog[]
+  sentInvites                 InviteToken[]              @relation("InvitedBy")
+  remoteSupportCreated        RemoteSupportSession[]     @relation("RemoteSupportCreatedBy")
   remoteSupportParticipations RemoteSupportParticipant[] @relation("RemoteSupportParticipants")
+
+  // Custom roles system (many-to-many)
+  roleAssignments UserRoleAssignment[]
+  createdRoles    Role[]               @relation("RoleCreatedBy")
 
   @@map("users")
 }
@@ -78,11 +82,11 @@ model Session {
   expires      DateTime
   createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   // Enhanced Session Tracking
   ipAddress    String?
   userAgent    String?
-  deviceName   String?  // e.g., "Chrome on Windows"
+  deviceName   String? // e.g., "Chrome on Windows"
   lastActivity DateTime @default(now())
   isActive     Boolean  @default(true)
 
@@ -114,17 +118,17 @@ model PasswordReset {
 // ===== TEAM INVITE TOKENS =====
 
 model InviteToken {
-  id             String    @id @default(cuid())
-  token          String    @unique @default(cuid())
+  id             String       @id @default(cuid())
+  token          String       @unique @default(cuid())
   email          String
-  role           UserRole  @default(TECHNICIAN)
+  role           UserRole     @default(TECHNICIAN)
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   invitedById    String
-  invitedBy      User      @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+  invitedBy      User         @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
   expires        DateTime
-  used           Boolean   @default(false)
-  createdAt      DateTime  @default(now())
+  used           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
 
   @@map("invite_tokens")
 }
@@ -132,12 +136,12 @@ model InviteToken {
 // ===== ORGANIZATION =====
 
 model Organization {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
-  slug        String   @unique
-  industry    Industry @default(OTHER)
-  size        OrgSize  @default(SMALL)
-  plan        Plan     @default(TRIAL)
+  slug        String    @unique
+  industry    Industry  @default(OTHER)
+  size        OrgSize   @default(SMALL)
+  plan        Plan      @default(TRIAL)
   trialEndsAt DateTime?
 
   // Stripe billing
@@ -147,13 +151,13 @@ model Organization {
   subscriptionStatus   String?   @default("trialing")
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean   @default(false)
-    // ACH bank account
-    achBankAccount       String?
-    paypalSubscriptionId String?
+  // ACH bank account
+  achBankAccount       String?
+  paypalSubscriptionId String?
 
   // Floor plan (HMI)
-  floorPlanImageUrl  String?   @db.Text  // base64 data URL of floor plan image
-  floorPlanPositions String?   @db.Text  // JSON string of machine positions
+  floorPlanImageUrl  String? @db.Text // base64 data URL of floor plan image
+  floorPlanPositions String? @db.Text // JSON string of machine positions
 
   // Admin control
   isActive        Boolean   @default(true)
@@ -162,23 +166,26 @@ model Organization {
   suspendedAt     DateTime?
   suspendedReason String?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  users        User[]
-  machines     Machine[]
-  workOrders   WorkOrder[]
-  maintenanceTasks MaintenanceTask[]
-  alerts       Alert[]
-  parts        Part[]
-  auditLogs    AuditLog[]
-  integrations Integration[]
-  webhooks     Webhook[]
-  notificationSettings NotificationSetting?
-    inviteTokens InviteToken[]
+  users                 User[]
+  machines              Machine[]
+  workOrders            WorkOrder[]
+  maintenanceTasks      MaintenanceTask[]
+  alerts                Alert[]
+  parts                 Part[]
+  auditLogs             AuditLog[]
+  integrations          Integration[]
+  webhooks              Webhook[]
+  notificationSettings  NotificationSetting?
+  inviteTokens          InviteToken[]
   remoteSupportSessions RemoteSupportSession[]
-  machineDeviceTokens MachineDeviceToken[]
+  machineDeviceTokens   MachineDeviceToken[]
+
+  // Custom roles per org
+  customRoles Role[]
 
   @@map("organizations")
 }
@@ -186,33 +193,33 @@ model Organization {
 // ===== MACHINES =====
 
 model Machine {
-  id             String        @id @default(cuid())
-  name           String
-  model          String?
-  manufacturer   String?
-  serialNumber   String?
-  yearInstalled  Int?
-  location       String?
-  category       MachineCategory @default(OTHER)
-  status         MachineStatus @default(OPERATIONAL)
-  criticality    Criticality   @default(MEDIUM)
-  notes          String?       @db.Text
-  imageUrl       String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id            String          @id @default(cuid())
+  name          String
+  model         String?
+  manufacturer  String?
+  serialNumber  String?
+  yearInstalled Int?
+  location      String?
+  category      MachineCategory @default(OTHER)
+  status        MachineStatus   @default(OPERATIONAL)
+  criticality   Criticality     @default(MEDIUM)
+  notes         String?         @db.Text
+  imageUrl      String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   // Runtime tracking
-  totalHours     Float         @default(0)
-  lastServiceAt  DateTime?
+  totalHours    Float     @default(0)
+  lastServiceAt DateTime?
 
   // Relations
-  organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  maintenanceTasks MaintenanceTask[]
-  workOrders     WorkOrder[]
-  alerts         Alert[]
-  sensorReadings SensorReading[]
-  machineDeviceTokens MachineDeviceToken[]
+  organizationId        String
+  organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  maintenanceTasks      MaintenanceTask[]
+  workOrders            WorkOrder[]
+  alerts                Alert[]
+  sensorReadings        SensorReading[]
+  machineDeviceTokens   MachineDeviceToken[]
   remoteSupportSessions RemoteSupportSession[]
 
   @@map("machines")
@@ -221,26 +228,26 @@ model Machine {
 // ===== MAINTENANCE TASKS (PM Schedules) =====
 
 model MaintenanceTask {
-  id              String          @id @default(cuid())
-  title           String
-  description     String?         @db.Text
-  taskType        TaskType        @default(PREVENTIVE)
-  frequency       Frequency       @default(MONTHLY)
-  intervalDays    Int?            // for custom intervals
-  intervalHours   Float?          // for hour-based intervals
+  id               String    @id @default(cuid())
+  title            String
+  description      String?   @db.Text
+  taskType         TaskType  @default(PREVENTIVE)
+  frequency        Frequency @default(MONTHLY)
+  intervalDays     Int? // for custom intervals
+  intervalHours    Float? // for hour-based intervals
   estimatedMinutes Int?
-  priority        Priority        @default(MEDIUM)
-  isActive        Boolean         @default(true)
-  nextDueAt       DateTime?
-  lastCompletedAt DateTime?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  priority         Priority  @default(MEDIUM)
+  isActive         Boolean   @default(true)
+  nextDueAt        DateTime?
+  lastCompletedAt  DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   // Relations
   machineId      String
-  machine        Machine         @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  machine        Machine      @relation(fields: [machineId], references: [id], onDelete: Cascade)
   organizationId String
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   workOrders     WorkOrder[]
 
   @@map("maintenance_tasks")
@@ -249,39 +256,39 @@ model MaintenanceTask {
 // ===== WORK ORDERS =====
 
 model WorkOrder {
-  id              String          @id @default(cuid())
-  woNumber        String          @unique // e.g. WO-2026-0042
-  title           String
-  description     String?         @db.Text
-  type            WorkOrderType   @default(PREVENTIVE)
-  status          WorkOrderStatus @default(OPEN)
-  priority        Priority        @default(MEDIUM)
-  scheduledAt     DateTime?
-  startedAt       DateTime?
-  completedAt     DateTime?
-  dueAt           DateTime?
+  id               String          @id @default(cuid())
+  woNumber         String          @unique // e.g. WO-2026-0042
+  title            String
+  description      String?         @db.Text
+  type             WorkOrderType   @default(PREVENTIVE)
+  status           WorkOrderStatus @default(OPEN)
+  priority         Priority        @default(MEDIUM)
+  scheduledAt      DateTime?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  dueAt            DateTime?
   estimatedMinutes Int?
-  actualMinutes   Int?
-  laborCost       Float?
-  partsCost       Float?
-  totalCost       Float?
-  notes           String?         @db.Text
-  completionNotes String?         @db.Text
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  actualMinutes    Int?
+  laborCost        Float?
+  partsCost        Float?
+  totalCost        Float?
+  notes            String?         @db.Text
+  completionNotes  String?         @db.Text
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   // Relations
-  machineId        String
-  machine          Machine         @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  organizationId   String
-  organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  assignedToId     String?
-  assignedTo       User?           @relation("AssignedTo", fields: [assignedToId], references: [id])
-  createdById      String?
-  createdBy        User?           @relation("CreatedBy", fields: [createdById], references: [id])
-  maintenanceTaskId String?
-  maintenanceTask  MaintenanceTask? @relation(fields: [maintenanceTaskId], references: [id])
-  parts            WorkOrderPart[]
+  machineId             String
+  machine               Machine                @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  organizationId        String
+  organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignedToId          String?
+  assignedTo            User?                  @relation("AssignedTo", fields: [assignedToId], references: [id])
+  createdById           String?
+  createdBy             User?                  @relation("CreatedBy", fields: [createdById], references: [id])
+  maintenanceTaskId     String?
+  maintenanceTask       MaintenanceTask?       @relation(fields: [maintenanceTaskId], references: [id])
+  parts                 WorkOrderPart[]
   remoteSupportSessions RemoteSupportSession[]
 
   @@map("work_orders")
@@ -290,31 +297,31 @@ model WorkOrder {
 // ===== PARTS INVENTORY =====
 
 model Part {
-  id             String    @id @default(cuid())
-  name           String
-  partNumber     String?
-  description    String?
-  quantity       Int       @default(0)
-  minQuantity    Int       @default(1)  // reorder point
-  unitCost       Float?
-  supplier       String?
-  location       String?   // shelf/bin location
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  partNumber  String?
+  description String?
+  quantity    Int      @default(0)
+  minQuantity Int      @default(1) // reorder point
+  unitCost    Float?
+  supplier    String?
+  location    String? // shelf/bin location
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  imageUrl       String?   // uploaded photo of the part
+  imageUrl String? // uploaded photo of the part
 
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   workOrders     WorkOrderPart[]
 
   @@map("parts")
 }
 
 model WorkOrderPart {
-  id          String    @id @default(cuid())
-  quantity    Int       @default(1)
-  unitCost    Float?
+  id       String @id @default(cuid())
+  quantity Int    @default(1)
+  unitCost Float?
 
   workOrderId String
   workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
@@ -327,18 +334,18 @@ model WorkOrderPart {
 // ===== ALERTS =====
 
 model Alert {
-  id             String      @id @default(cuid())
-  type           AlertType
-  title          String
-  message        String      @db.Text
-  severity       Severity    @default(MEDIUM)
-  isRead         Boolean     @default(false)
-  isResolved     Boolean     @default(false)
-  resolvedAt     DateTime?
-  createdAt      DateTime    @default(now())
+  id         String    @id @default(cuid())
+  type       AlertType
+  title      String
+  message    String    @db.Text
+  severity   Severity  @default(MEDIUM)
+  isRead     Boolean   @default(false)
+  isResolved Boolean   @default(false)
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
 
   machineId      String?
-  machine        Machine?    @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  machine        Machine?     @relation(fields: [machineId], references: [id], onDelete: Cascade)
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -349,13 +356,13 @@ model Alert {
 
 model SensorReading {
   id         String   @id @default(cuid())
-  type       String   // temperature, vibration, pressure, etc.
+  type       String // temperature, vibration, pressure, etc.
   value      Float
-  unit       String   // °C, mm/s, PSI, etc.
+  unit       String // °C, mm/s, PSI, etc.
   recordedAt DateTime @default(now())
 
-  machineId  String
-  machine    Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  machineId String
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
 
   @@index([machineId, type, recordedAt])
   @@map("sensor_readings")
@@ -364,15 +371,15 @@ model SensorReading {
 // ===== MACHINE DEVICE TOKENS =====
 
 model MachineDeviceToken {
-  id             String       @id @default(cuid())
-  name           String
-  tokenHash      String       @unique
-  tokenPrefix    String
-  isActive       Boolean      @default(true)
-  lastSeenAt     DateTime?
-  revokedAt      DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id          String    @id @default(cuid())
+  name        String
+  tokenHash   String    @unique
+  tokenPrefix String
+  isActive    Boolean   @default(true)
+  lastSeenAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   machineId      String
   machine        Machine      @relation(fields: [machineId], references: [id], onDelete: Cascade)
@@ -387,23 +394,23 @@ model MachineDeviceToken {
 // ===== NOTIFICATIONS =====
 
 model Notification {
-  id        String           @id @default(cuid())
+  id        String               @id @default(cuid())
   type      NotificationType
   title     String
-  message   String           @db.Text
+  message   String               @db.Text
   priority  NotificationPriority @default(NORMAL)
-  isRead    Boolean          @default(false)
-  link      String?          // URL to related resource
-  createdAt DateTime         @default(now())
+  isRead    Boolean              @default(false)
+  link      String? // URL to related resource
+  createdAt DateTime             @default(now())
   readAt    DateTime?
 
   // Relations
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Polymorphic relation data
-  relatedType  String?       // 'work_order', 'machine', 'alert', etc.
-  relatedId    String?       // ID of the related entity
+  relatedType String? // 'work_order', 'machine', 'alert', etc.
+  relatedId   String? // ID of the related entity
 
   @@index([userId, isRead])
   @@index([userId, createdAt])
@@ -414,17 +421,17 @@ model Notification {
 
 model AuditLog {
   id        String   @id @default(cuid())
-  action    String   // CREATE, UPDATE, DELETE, LOGIN, etc.
-  entity    String   // Model name (User, Machine, WorkOrder, etc.)
-  entityId  String?  // ID of the affected entity
-  changes   Json?    // Before/after values for updates
+  action    String // CREATE, UPDATE, DELETE, LOGIN, etc.
+  entity    String // Model name (User, Machine, WorkOrder, etc.)
+  entityId  String? // ID of the affected entity
+  changes   Json? // Before/after values for updates
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())
 
   // Relations
-  userId        String?
-  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
@@ -434,17 +441,16 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-
 // ===== ADMIN SETTINGS =====
 
 model AdminSetting {
   id        String   @id @default(cuid())
-  key       String   @unique  // e.g. "payment.stripe.enabled", "feature.iot.enabled"
+  key       String   @unique // e.g. "payment.stripe.enabled", "feature.iot.enabled"
   value     String   @db.Text // JSON-encoded value
   group     String   @default("general") // payment, feature, platform, security
-  label     String?  // Human-readable label
+  label     String? // Human-readable label
   updatedAt DateTime @updatedAt
-  updatedBy String?  // admin user id
+  updatedBy String? // admin user id
 
   @@map("admin_settings")
 }
@@ -608,34 +614,34 @@ enum NotificationPriority {
 // ===== REMOTE SUPPORT SESSIONS =====
 
 model RemoteSupportSession {
-  id              String                @id @default(cuid())
-  title           String
-  description     String?               @db.Text
-  status          RemoteSessionStatus   @default(SCHEDULED)
-  provider        String                @default("jitsi")
-  roomName        String                @unique
-  inviteToken     String                @unique @default(cuid())
-  inviteExpiresAt DateTime?
-  startedAt       DateTime?
-  endedAt         DateTime?
-  notes           String?               @db.Text
-  adminNotes      String?               @db.Text
-  recordingUrl    String?               @db.Text
+  id                 String              @id @default(cuid())
+  title              String
+  description        String?             @db.Text
+  status             RemoteSessionStatus @default(SCHEDULED)
+  provider           String              @default("jitsi")
+  roomName           String              @unique
+  inviteToken        String              @unique @default(cuid())
+  inviteExpiresAt    DateTime?
+  startedAt          DateTime?
+  endedAt            DateTime?
+  notes              String?             @db.Text
+  adminNotes         String?             @db.Text
+  recordingUrl       String?             @db.Text
   diagnosticSnapshot Json?
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
-  organizationId  String
-  organization    Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  machineId       String?
-  machine         Machine?              @relation(fields: [machineId], references: [id], onDelete: SetNull)
-  workOrderId     String?
-  workOrder       WorkOrder?            @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
-  createdById     String
-  createdBy       User                  @relation("RemoteSupportCreatedBy", fields: [createdById], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  machineId      String?
+  machine        Machine?     @relation(fields: [machineId], references: [id], onDelete: SetNull)
+  workOrderId    String?
+  workOrder      WorkOrder?   @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  createdById    String
+  createdBy      User         @relation("RemoteSupportCreatedBy", fields: [createdById], references: [id])
 
-  participants    RemoteSupportParticipant[]
-  auditLogs       SupportAuditLog[]
+  participants RemoteSupportParticipant[]
+  auditLogs    SupportAuditLog[]
 
   @@index([organizationId, status])
   @@index([inviteToken])
@@ -643,14 +649,14 @@ model RemoteSupportSession {
 }
 
 model RemoteSupportParticipant {
-  id          String   @id @default(cuid())
+  id          String               @id @default(cuid())
   sessionId   String
   session     RemoteSupportSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   userId      String?
-  user        User?    @relation("RemoteSupportParticipants", fields: [userId], references: [id], onDelete: SetNull)
+  user        User?                @relation("RemoteSupportParticipants", fields: [userId], references: [id], onDelete: SetNull)
   displayName String
-  role        String   @default("user")
-  joinedAt    DateTime @default(now())
+  role        String               @default("user")
+  joinedAt    DateTime             @default(now())
   leftAt      DateTime?
 
   @@index([sessionId])
@@ -658,13 +664,13 @@ model RemoteSupportParticipant {
 }
 
 model SupportAuditLog {
-  id        String   @id @default(cuid())
+  id        String               @id @default(cuid())
   sessionId String
   session   RemoteSupportSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   actorName String
   action    String
   detail    String?
-  createdAt DateTime @default(now())
+  createdAt DateTime             @default(now())
 
   @@index([sessionId, createdAt])
   @@map("support_audit_logs")
@@ -680,37 +686,37 @@ enum RemoteSessionStatus {
 // ===== LIVE CHAT =====
 
 model ChatSession {
-  id            String        @id @default(cuid())
-  status        ChatStatus    @default(OPEN)
-  userName      String?
-  userEmail     String?
-  userId        String?
-  subject       String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  closedAt      DateTime?
-  
+  id        String     @id @default(cuid())
+  status    ChatStatus @default(OPEN)
+  userName  String?
+  userEmail String?
+  userId    String?
+  subject   String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  closedAt  DateTime?
+
   // Relations
   organizationId String?
   messages       ChatMessage[]
-  
+
   @@index([status, createdAt])
   @@map("chat_sessions")
 }
 
 model ChatMessage {
-  id           String      @id @default(cuid())
-  content      String      @db.Text
-  senderType   SenderType
-  senderName   String?
-  isRead       Boolean     @default(false)
-  readAt       DateTime?
-  createdAt    DateTime    @default(now())
-  
+  id         String     @id @default(cuid())
+  content    String     @db.Text
+  senderType SenderType
+  senderName String?
+  isRead     Boolean    @default(false)
+  readAt     DateTime?
+  createdAt  DateTime   @default(now())
+
   // Relations
-  sessionId    String
-  session      ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
   @@index([sessionId, createdAt])
   @@map("chat_messages")
 }
@@ -730,95 +736,95 @@ enum SenderType {
 // ===== INTEGRATIONS =====
 
 model Integration {
-  id              String          @id @default(cuid())
-  type            IntegrationType
-  name            String
-  status          IntegrationStatus @default(PENDING)
-  
+  id     String            @id @default(cuid())
+  type   IntegrationType
+  name   String
+  status IntegrationStatus @default(PENDING)
+
   // Configuration (encrypted where sensitive)
-  config          Json?           // Integration-specific configuration
-  
+  config Json? // Integration-specific configuration
+
   // OAuth tokens (encrypted)
-  accessToken     String?         @db.Text
-  refreshToken    String?         @db.Text
-  tokenExpiresAt  DateTime?
-  
+  accessToken    String?   @db.Text
+  refreshToken   String?   @db.Text
+  tokenExpiresAt DateTime?
+
   // API Keys
-  apiKey          String?         // For Zapier, API access
-  apiSecret       String?         @db.Text
-  
+  apiKey    String? // For Zapier, API access
+  apiSecret String? @db.Text
+
   // Webhook/Callback URLs
-  webhookUrl      String?
-  callbackUrl     String?
-  
+  webhookUrl  String?
+  callbackUrl String?
+
   // Timestamps
-  connectedAt     DateTime?
-  disconnectedAt  DateTime?
-  lastSyncAt      DateTime?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  
+  connectedAt    DateTime?
+  disconnectedAt DateTime?
+  lastSyncAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
   // Relations
-  organizationId  String
-  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  webhooks        Webhook[]
-  
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  webhooks       Webhook[]
+
   @@unique([organizationId, type])
   @@map("integrations")
 }
 
 model Webhook {
-  id              String          @id @default(cuid())
+  id              String    @id @default(cuid())
   name            String
   url             String
-  secret          String?         // For signature verification
-  events          Json            // Array of event types to trigger on
-  isActive        Boolean         @default(true)
+  secret          String? // For signature verification
+  events          Json // Array of event types to trigger on
+  isActive        Boolean   @default(true)
   lastTriggeredAt DateTime?
-  failureCount    Int             @default(0)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  
+  failureCount    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
   // Relations
-  organizationId  String
-  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  integrationId   String?
-  integration     Integration?    @relation(fields: [integrationId], references: [id], onDelete: SetNull)
-  
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  integrationId  String?
+  integration    Integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+
   @@index([organizationId, isActive])
   @@map("webhooks")
 }
 
 model NotificationSetting {
-  id              String          @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Email notifications
-  emailWorkOrders Boolean         @default(true)
-  emailAlerts     Boolean         @default(true)
-  emailReports    Boolean         @default(true)
+  emailWorkOrders Boolean              @default(true)
+  emailAlerts     Boolean              @default(true)
+  emailReports    Boolean              @default(true)
   emailDigest     EmailDigestFrequency @default(WEEKLY)
-  
+
   // SMS notifications
-  smsEnabled      Boolean         @default(false)
-  smsWorkOrders   Boolean         @default(false)
-  smsAlerts       Boolean         @default(false)
-  smsCriticalOnly Boolean         @default(true)
+  smsEnabled      Boolean @default(false)
+  smsWorkOrders   Boolean @default(false)
+  smsAlerts       Boolean @default(false)
+  smsCriticalOnly Boolean @default(true)
   phoneNumber     String?
-  
+
   // Slack notifications
-  slackEnabled    Boolean         @default(false)
-  slackWorkOrders Boolean         @default(false)
-  slackAlerts     Boolean         @default(false)
+  slackEnabled    Boolean @default(false)
+  slackWorkOrders Boolean @default(false)
+  slackAlerts     Boolean @default(false)
   slackChannel    String?
-  
+
   // Timestamps
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  organizationId  String
-  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   @@unique([organizationId])
   @@map("notification_settings")
 }
@@ -849,19 +855,19 @@ enum EmailDigestFrequency {
 // ===== PUBLIC FORM SUBMISSIONS =====
 
 model FormSubmission {
-  id          String             @id @default(cuid())
-  type        FormSubmissionType
-  name        String
-  email       String
-  company     String?
-  subject     String?
-  source      String?
-  recipient   String?
-  payload     Json
-  isRead      Boolean            @default(false)
-  readAt      DateTime?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  id        String             @id @default(cuid())
+  type      FormSubmissionType
+  name      String
+  email     String
+  company   String?
+  subject   String?
+  source    String?
+  recipient String?
+  payload   Json
+  isRead    Boolean            @default(false)
+  readAt    DateTime?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
 
   @@index([type, createdAt])
   @@index([isRead, createdAt])
@@ -874,4 +880,70 @@ enum FormSubmissionType {
   SUPPORT
   LEAD
   PARTNER
+}
+
+// ===== ROLES & PERMISSIONS (Custom RBAC) =====
+
+model Role {
+  id             String               @id @default(cuid())
+  name           String
+  slug           String
+  description    String?              @db.Text
+  color          String? // UI badge hex color, e.g. "#635bff"
+  icon           String? // emoji or icon identifier
+  isSystem       Boolean              @default(false) // built-in roles (OWNER/ADMIN/etc) cannot be deleted
+  isGlobal       Boolean              @default(false) // created by platform admin, visible to all orgs
+  isDisabled     Boolean              @default(false) // platform-admin override to disable without deleting
+  organizationId String?
+  organization   Organization?        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String?
+  createdBy      User?                @relation("RoleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  permissions    RolePermission[]
+  assignments    UserRoleAssignment[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@index([isGlobal])
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  key         String           @unique // e.g. "work_orders.create"
+  category    String // e.g. "Work Orders"
+  label       String // human-readable
+  description String?          @db.Text
+  isCustom    Boolean          @default(false) // false = seeded, true = added by platform admin
+  createdAt   DateTime         @default(now())
+  roles       RolePermission[]
+
+  @@index([category])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  assignedAt   DateTime   @default(now())
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model UserRoleAssignment {
+  userId     String
+  roleId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+  assignedBy String? // userId of who assigned it
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_role_assignments")
 }

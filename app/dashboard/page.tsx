@@ -157,6 +157,7 @@ export default async function DashboardPage() {
         email: session.user.email ?? '',
         role: session.user.role ?? 'MEMBER',
         organizationName: session.user.organizationName ?? 'Your Organization',
+        organizationId: session.user.organizationId,
       }}
       data={data}
     />
