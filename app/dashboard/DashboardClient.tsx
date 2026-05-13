@@ -323,9 +323,9 @@ function severityColor(severity: string) {
 const Modal = ({ show, onClose, title, children }: { show: boolean; onClose: () => void; title: string; children: React.ReactNode }) => {
   if (!show) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-0">
         <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
           <h3 className="text-lg font-bold text-[var(--text-primary)]">{title}</h3>
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
@@ -1047,9 +1047,9 @@ function DashboardClientInner({ user, data }: Props) {
     if (!selectedMachine) return null;
     const m = machineDetail || selectedMachine;
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
         <div className="absolute inset-0 bg-black/50" onClick={() => { setSelectedMachine(null); setMachineDetail(null); }} />
-        <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-0">
           <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full ${statusDot(m.status)}`} />
@@ -1562,9 +1562,9 @@ function DashboardClientInner({ user, data }: Props) {
     };
     const statusOptions = ['OPEN','IN_PROGRESS','ON_HOLD','COMPLETED','CANCELLED'];
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
         <div className="absolute inset-0 bg-black/50" onClick={() => { setSelectedWorkOrder(null); setWoDetail(null); }} />
-        <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-0">
           <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
             <div><p className="text-xs font-mono text-[var(--text-muted)]">{wo.woNumber}</p><h3 className="text-lg font-bold text-[var(--text-primary)]">{wo.title}</h3></div>
             <button onClick={() => { setSelectedWorkOrder(null); setWoDetail(null); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
@@ -1840,7 +1840,7 @@ function DashboardClientInner({ user, data }: Props) {
         </div>
       )}
 
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-3 sm:p-6">
 
 
           {/* ── DASHBOARD TAB ── */}
@@ -2047,7 +2047,7 @@ function DashboardClientInner({ user, data }: Props) {
           {/* ── EQUIPMENT TAB ── */}
           {activeTab === 'equipment' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <p className="text-sm text-[var(--text-secondary)]">{machines.length} machines registered</p>
                 <div className="flex items-center gap-2 flex-wrap">
                   <ExportActionsBar dataset="machines" onIntegrationResult={handleExportResult} />
@@ -2147,7 +2147,7 @@ function DashboardClientInner({ user, data }: Props) {
           {/* ── WORK ORDERS TAB ── */}
           {activeTab === 'workorders' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <p className="text-sm text-[var(--text-secondary)]">
                   {workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length} work order{workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length !== 1 ? 's' : ''}
                 </p>
@@ -2261,7 +2261,7 @@ function DashboardClientInner({ user, data }: Props) {
           {/* ── SCHEDULES TAB ── */}
           {activeTab === 'schedules' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <p className="text-sm text-[var(--text-secondary)]">
                   {maintenanceTasks.filter(t => !doneTasks.has(t.id)).length} pending &middot;{' '}
                   <span className="text-emerald-600 font-medium">{doneTasks.size} completed</span>
@@ -2421,7 +2421,7 @@ function DashboardClientInner({ user, data }: Props) {
           {/* ── ALERTS TAB ── */}
           {activeTab === 'alerts' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <p className="text-sm text-[var(--text-secondary)]">{alerts.length} unresolved alert{alerts.length !== 1 ? 's' : ''}</p>
                 <ExportActionsBar dataset="alerts" onIntegrationResult={handleExportResult} />
               </div>
@@ -2720,7 +2720,7 @@ function DashboardClientInner({ user, data }: Props) {
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm min-w-[700px]">
                       <thead>
                         <tr style={{ borderBottom: '1px solid var(--border)' }}>
                           <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Part</th>
@@ -3103,9 +3103,9 @@ function DashboardClientInner({ user, data }: Props) {
 
       {/* Maintenance Task Detail Modal */}
       {selectedTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSelectedTask(null)} />
-          <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-0">
             <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
               <div>
                 <h3 className="text-lg font-bold text-[var(--text-primary)]">{selectedTask.title}</h3>
@@ -3148,9 +3148,9 @@ function DashboardClientInner({ user, data }: Props) {
 
       {/* Edit Maintenance Task Modal */}
       {editingTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setEditingTask(null)} />
-          <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-0">
             <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
               <h3 className="text-lg font-bold text-[var(--text-primary)]">Edit Maintenance Task</h3>
               <button onClick={() => setEditingTask(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
@@ -3300,9 +3300,9 @@ function DashboardClientInner({ user, data }: Props) {
 
       {/* Edit Machine Modal */}
       {editingMachine && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setEditingMachine(null)} />
-          <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-0">
             <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
               <h3 className="text-lg font-bold text-[var(--text-primary)]">Edit Machine</h3>
               <button onClick={() => setEditingMachine(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
@@ -3438,9 +3438,9 @@ function DashboardClientInner({ user, data }: Props) {
 
       {/* Edit Work Order Modal */}
       {editingWo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setEditingWo(null)} />
-          <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-0">
             <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
               <h3 className="text-lg font-bold text-[var(--text-primary)]">Edit Work Order</h3>
               <button onClick={() => setEditingWo(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
@@ -3508,7 +3508,7 @@ function DashboardClientInner({ user, data }: Props) {
 
       {/* Confirm Delete Machine */}
       {confirmDeleteMachine && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmDeleteMachine(null)} />
           <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-sm p-6">
             <div className="text-center">
@@ -3530,7 +3530,7 @@ function DashboardClientInner({ user, data }: Props) {
 
       {/* Confirm Delete Work Order */}
       {confirmDeleteWo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmDeleteWo(null)} />
           <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-sm p-6">
             <div className="text-center">
@@ -3552,7 +3552,7 @@ function DashboardClientInner({ user, data }: Props) {
 
       {/* Alert Detail Modal */}
       {selectedAlert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSelectedAlert(null)} />
           <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
@@ -3585,7 +3585,7 @@ function DashboardClientInner({ user, data }: Props) {
 
       {/* Edit Alert Modal */}
       {editingAlert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setEditingAlert(null)} />
           <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-lg">
             <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
@@ -3627,7 +3627,7 @@ function DashboardClientInner({ user, data }: Props) {
 
       {/* Confirm Delete Alert */}
       {confirmDeleteAlert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmDeleteAlert(null)} />
           <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-sm p-6">
             <div className="text-center">
@@ -3647,7 +3647,7 @@ function DashboardClientInner({ user, data }: Props) {
 
       {/* Part Detail / Edit Modal */}
       {showPartDetailModal && selectedPart && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => { setShowPartDetailModal(false); setEditingPart(false); setSaveError(''); }} />
           <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
             {/* Header */}

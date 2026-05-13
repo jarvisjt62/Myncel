@@ -45,26 +45,28 @@ export default function SettingsShell({ children }: { children: React.ReactNode 
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       {/* Page header */}
-      <div className="mb-6">
+      <div className="mb-5 sm:mb-6">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Settings</h1>
         <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
           Manage your account and organization settings
         </p>
       </div>
 
-      <div className="flex gap-6">
-        {/* ── Persistent sidebar ── */}
-        <aside className="w-52 flex-shrink-0">
-          <nav className="space-y-0.5">
+      {/* On mobile: horizontal scrollable pill nav. On desktop: sidebar layout */}
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+        {/* ── Persistent nav ── */}
+        <aside className="sm:w-52 flex-shrink-0">
+          {/* Mobile: horizontal scroll pills */}
+          <nav className="flex sm:flex-col gap-1 overflow-x-auto pb-1 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 sm:space-y-0.5 flex-nowrap sm:flex-wrap">
             {NAV_ITEMS.map(item => {
               const active = isActive(item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
+                  className="flex items-center gap-2 sm:gap-2.5 px-3 py-2 sm:py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 sm:flex-shrink sm:w-full"
                   style={
                     active
                       ? {
