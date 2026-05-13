@@ -208,9 +208,9 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
         @media (max-width: 640px) {
           .org-dash-page { padding: 16px 12px 12px 12px !important; }
           .org-dash-title { font-size: 17px !important; line-height: 1.25 !important; word-break: break-word; }
-          .org-dash-tabnav { padding: 0 !important; gap: 4px !important; }
-          .org-dash-tabnav button { padding: 11px 14px !important; font-size: 13px !important; gap: 6px !important; }
-          .org-dash-tabnav button span:first-child { font-size: 14px !important; }
+          .org-dash-tabnav { padding: 0 8px !important; gap: 0 !important; }
+          .org-dash-tabnav button { padding: 12px 10px !important; font-size: 13px !important; gap: 5px !important; letter-spacing: -0.01em !important; }
+          .org-dash-tabnav button span:first-child { display: none !important; }
           .org-dash-main { padding: 16px 12px !important; }
           .org-dash-overview-2col { grid-template-columns: 1fr !important; gap: 14px !important; }
           .org-dash-kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
