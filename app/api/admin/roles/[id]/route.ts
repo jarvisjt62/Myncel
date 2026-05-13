@@ -54,8 +54,9 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     where: { id: role.id },
     data,
     include: {
-      permissions: { include: { permission: true } },
-      organization: { select: { id: true, name: true } },
+      permissions: { select: { permission: { select: { id: true, key: true, category: true, label: true } } } },
+      organization: { select: { id: true, name: true, slug: true } },
+      _count: { select: { assignments: true } },
     },
   });
 

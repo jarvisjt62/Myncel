@@ -60,7 +60,11 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   const updated = await db.role.update({
     where: { id: role.id },
     data,
-    include: { permissions: { include: { permission: true } } },
+    include: {
+      permissions: { select: { permission: { select: { id: true, key: true, category: true, label: true } } } },
+      organization: { select: { id: true, name: true, slug: true } },
+      _count: { select: { assignments: true } },
+    },
   });
   return NextResponse.json({ role: updated });
 }

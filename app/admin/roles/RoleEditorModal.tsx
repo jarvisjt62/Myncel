@@ -35,7 +35,15 @@ export default function RoleEditorModal({
   const [error, setError]     = useState('');
 
   const byCategory = useMemo(() => groupByCategory(permissions), [permissions]);
-  const readOnlyMeta = !isNew && role!.isSystem && !isPlatformAdmin;
+
+  // When is this modal read-only?
+  //   - Editing a system role AND not platform admin (org users can only view).
+  //   - Editing a role not owned by the current org (global / other-org) from the org side.
+  //   - Never read-only for platform admin.
+  const isSystemRole = !isNew && role!.isSystem;
+  const isOwnOrgRole = !isNew && role!.organizationId && role!.organizationId === forceOrgId;
+  const isReadOnly = !isNew && !isPlatformAdmin && !isOwnOrgRole; // covers system + global + other-org
+  const readOnlyMeta = isReadOnly || (isSystemRole && !isPlatformAdmin);
 
   function toggleKey(k: string) {
     setSelectedKeys(prev => {
@@ -104,11 +112,11 @@ export default function RoleEditorModal({
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[var(--border)]">
           <div className="min-w-0">
             <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] truncate">
-              {isNew ? 'Create Role' : `Edit Role: ${role!.name}`}
+              {isNew ? 'Create Role' : `${isReadOnly ? 'View' : 'Edit'} Role: ${role!.name}`}
             </h2>
             {!isNew && (
               <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                {role!.isSystem ? 'System role (name is fixed)' : role!.isGlobal ? 'Global role — visible to every org' : role!.organization ? `Org: ${role!.organization.name}` : 'Org role'}
+                {role!.isSystem ? 'Built-in system role' : role!.isGlobal ? 'Global role — visible to every org' : role!.organization ? `Org: ${role!.organization.name}` : 'Org role'}
               </p>
             )}
           </div>
@@ -116,6 +124,11 @@ export default function RoleEditorModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+          {isReadOnly && (
+            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 text-sm">
+              <strong>View-only.</strong> This role is managed by the platform and cannot be edited from your organization. Contact support if changes are needed.
+            </div>
+          )}
           {/* Basic fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -130,7 +143,7 @@ export default function RoleEditorModal({
               <label className="block text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] mb-1.5">Icon</label>
               <div className="flex flex-wrap gap-1.5">
                 {EMOJI_CHOICES.map(e => (
-                  <button key={e} type="button" onClick={() => setIcon(e)} className={`w-8 h-8 rounded-lg border text-lg transition-colors ${icon === e ? 'border-[#635bff] bg-[#635bff]/15' : 'border-[var(--border)] hover:border-[#635bff]/50'}`}>{e}</button>
+                  <button key={e} type="button" disabled={readOnlyMeta} onClick={() => !readOnlyMeta && setIcon(e)} className={`w-8 h-8 rounded-lg border text-lg transition-colors ${icon === e ? 'border-[#635bff] bg-[#635bff]/15' : 'border-[var(--border)] hover:border-[#635bff]/50'} disabled:opacity-60 disabled:cursor-not-allowed`}>{e}</button>
                 ))}
               </div>
             </div>
@@ -147,7 +160,7 @@ export default function RoleEditorModal({
               <label className="block text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] mb-1.5">Badge Color</label>
               <div className="flex flex-wrap gap-1.5">
                 {COLOR_CHOICES.map(c => (
-                  <button key={c} type="button" onClick={() => setColor(c)} className={`w-7 h-7 rounded-full border-2 transition-transform ${color === c ? 'border-white scale-110 ring-2 ring-offset-2 ring-[#635bff]' : 'border-transparent'}`} style={{ backgroundColor: c }} />
+                  <button key={c} type="button" disabled={readOnlyMeta} onClick={() => !readOnlyMeta && setColor(c)} className={`w-7 h-7 rounded-full border-2 transition-transform ${color === c ? 'border-white scale-110 ring-2 ring-offset-2 ring-[#635bff]' : 'border-transparent'} disabled:opacity-60 disabled:cursor-not-allowed`} style={{ backgroundColor: c }} />
                 ))}
               </div>
             </div>
@@ -185,10 +198,12 @@ export default function RoleEditorModal({
           <div>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold text-[var(--text-primary)]">Permissions</h3>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setSelectedKeys(new Set(permissions.map(p => p.key)))} className="text-xs text-[#635bff] hover:text-[#4f46e5] font-semibold">Select all</button>
-                <button type="button" onClick={() => setSelectedKeys(new Set())} className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-semibold">Clear</button>
-              </div>
+              {!isReadOnly && (
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setSelectedKeys(new Set(permissions.map(p => p.key)))} className="text-xs text-[#635bff] hover:text-[#4f46e5] font-semibold">Select all</button>
+                  <button type="button" onClick={() => setSelectedKeys(new Set())} className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-semibold">Clear</button>
+                </div>
+              )}
             </div>
             <div className="space-y-3">
               {Object.entries(byCategory).map(([cat, perms]) => {
@@ -204,8 +219,8 @@ export default function RoleEditorModal({
                     </button>
                     <div className="p-2 sm:p-3 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       {perms.map(p => (
-                        <label key={p.key} className="flex items-start gap-2 px-2 py-1.5 rounded hover:bg-[var(--bg-surface-2)] cursor-pointer text-sm">
-                          <input type="checkbox" checked={selectedKeys.has(p.key)} onChange={() => toggleKey(p.key)} className="mt-0.5 accent-[#635bff]" />
+                        <label key={p.key} className={`flex items-start gap-2 px-2 py-1.5 rounded text-sm ${isReadOnly ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[var(--bg-surface-2)] cursor-pointer'}`}>
+                          <input type="checkbox" checked={selectedKeys.has(p.key)} onChange={() => !isReadOnly && toggleKey(p.key)} disabled={isReadOnly} className="mt-0.5 accent-[#635bff]" />
                           <div className="min-w-0">
                             <div className="text-[var(--text-primary)] truncate">{p.label}</div>
                             <div className="text-[10px] font-mono text-[var(--text-muted)] truncate">{p.key}</div>
@@ -223,10 +238,14 @@ export default function RoleEditorModal({
         </div>
 
         <div className="flex items-center justify-end gap-2 px-4 sm:px-6 py-3 border-t border-[var(--border)]">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)]">Cancel</button>
-          <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg bg-[#635bff] text-white text-sm font-semibold hover:bg-[#4f46e5] transition-colors disabled:opacity-60">
-            {saving ? 'Saving…' : isNew ? 'Create Role' : 'Save Changes'}
+          <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)]">
+            {isReadOnly ? 'Close' : 'Cancel'}
           </button>
+          {!isReadOnly && (
+            <button onClick={handleSave} disabled={saving} className="px-4 py-2 rounded-lg bg-[#635bff] text-white text-sm font-semibold hover:bg-[#4f46e5] transition-colors disabled:opacity-60">
+              {saving ? 'Saving…' : isNew ? 'Create Role' : 'Save Changes'}
+            </button>
+          )}
         </div>
       </div>
     </div>

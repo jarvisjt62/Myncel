@@ -92,7 +92,9 @@ export async function POST(req: NextRequest) {
       permissions: perms.length > 0 ? { create: perms.map(p => ({ permissionId: p.id })) } : undefined,
     },
     include: {
-      permissions: { include: { permission: true } },
+      permissions: { select: { permission: { select: { id: true, key: true, category: true, label: true } } } },
+      organization: { select: { id: true, name: true, slug: true } },
+      _count: { select: { assignments: true } },
     },
   });
 
