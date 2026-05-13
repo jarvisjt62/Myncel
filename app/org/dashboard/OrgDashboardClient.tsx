@@ -203,11 +203,30 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
 
   return (
     <div>
+      {/* Mobile-responsive tweaks scoped to this dashboard */}
+      <style jsx global>{`
+        @media (max-width: 640px) {
+          .org-dash-page { padding: 16px 12px 12px 12px !important; }
+          .org-dash-title { font-size: 17px !important; line-height: 1.25 !important; word-break: break-word; }
+          .org-dash-tabnav { padding: 0 !important; }
+          .org-dash-tabnav button { padding: 11px 12px !important; font-size: 13px !important; }
+          .org-dash-main { padding: 16px 12px !important; }
+          .org-dash-overview-2col { grid-template-columns: 1fr !important; gap: 14px !important; }
+          .org-dash-kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+          .org-dash-kpi-grid > div { padding: 14px 12px !important; }
+          .org-dash-kpi-grid > div > div:nth-child(2) { font-size: 22px !important; }
+          .org-dash-invite-btn { padding: 8px 12px !important; font-size: 12px !important; }
+          .org-dash-role-select option { font-size: 12px !important; }
+          .org-dash-team-row { padding: 10px 14px !important; gap: 8px !important; }
+          .org-dash-team-row .org-dash-role-badge span { font-size: 10px !important; padding: 2px 7px !important; }
+          .org-dash-wo-row { padding: 10px 14px !important; }
+        }
+      `}</style>
 
       {/* ── Page Title ── */}
-      <div style={{ padding: '0 0 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' as any, gap: 10 }}>
-        <div>
-          <h1 style={{ fontWeight: 700, fontSize: 20, color: 'var(--text-primary)', margin: 0 }}>
+      <div className="org-dash-page" style={{ padding: '0 0 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' as any, gap: 10 }}>
+        <div style={{ minWidth: 0, flex: '1 1 auto' }}>
+          <h1 className="org-dash-title" style={{ fontWeight: 700, fontSize: 20, color: 'var(--text-primary)', margin: 0 }}>
             {user.organization.name} — Admin Panel
           </h1>
           {user.organization.plan && (
@@ -225,7 +244,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
           {/* Hide the page-level invite button on the Team tab — Team tab has its own */}
           {activeTab !== 'team' && (
             <Can permission="team.invite">
-              <button onClick={() => setShowInvite(true)} style={S.inviteBtn}>
+              <button onClick={() => setShowInvite(true)} className="org-dash-invite-btn" style={S.inviteBtn}>
                 + Invite Team Member
               </button>
             </Can>
@@ -234,7 +253,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
       </div>
 
       {/* ── Tab Nav ── */}
-      <nav style={S.tabNav}>
+      <nav className="org-dash-tabnav" style={S.tabNav}>
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -259,14 +278,14 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
       </nav>
 
       {/* ── Content ── */}
-      <main style={S.main}>
+      <main className="org-dash-main" style={S.main}>
 
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
 
             {/* KPI Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16 }}>
+            <div className="org-dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16 }}>
               {[
                 { icon: '👥', label: 'Team Members',    value: stats.totalMembers,       color: '#635bff', sub: `${teamMembers.filter(m=>m.role==='TECHNICIAN').length} technicians` },
                 { icon: '📋', label: 'Open Work Orders', value: stats.openWorkOrders,     color: '#3b82f6', sub: `${stats.overdueWorkOrders} overdue` },
@@ -284,7 +303,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
             </div>
 
             {/* Two-column: Team snapshot + Recent WOs */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div className="org-dash-overview-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
               {/* Team Snapshot */}
               <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
@@ -293,7 +312,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                   <button onClick={() => setActiveTab('team')} style={S.viewAllBtn}>View All →</button>
                 </div>
                 {teamMembers.slice(0, 5).map(m => (
-                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px', borderBottom: '1px solid var(--border)' }}>
+                  <div key={m.id} className="org-dash-team-row" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px', borderBottom: '1px solid var(--border)' }}>
                     <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(99,91,255,0.15)', color: '#635bff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
                       {(m.name || m.email).charAt(0).toUpperCase()}
                     </div>
@@ -301,7 +320,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name || m.email}</div>
                       <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{m.activeWorkOrders} active WOs · {timeAgo(m.lastLoginAt)}</div>
                     </div>
-                    <RoleBadge role={m.role} />
+                    <span className="org-dash-role-badge"><RoleBadge role={m.role} /></span>
                   </div>
                 ))}
                 {localInvites.length > 0 && (
@@ -323,7 +342,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                   const sc = STATUS_COLORS[wo.status] ?? STATUS_COLORS.OPEN;
                   const isOverdue = wo.dueAt && new Date(wo.dueAt) < new Date() && wo.status !== 'COMPLETED';
                   return (
-                    <div key={wo.id} style={{ padding: '11px 20px', borderBottom: '1px solid var(--border)' }}>
+                    <div key={wo.id} className="org-dash-wo-row" style={{ padding: '11px 20px', borderBottom: '1px solid var(--border)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{wo.title}</div>
@@ -636,13 +655,14 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                 <select
                   value={inviteRole}
                   onChange={e => setInviteRole(e.target.value)}
-                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border, #e6ebf1)', borderRadius: 10, fontSize: 14, background: 'var(--bg-page, #f6f9fc)', color: 'var(--text-primary, #0a2540)' }}
+                  className="org-dash-role-select"
+                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid var(--border, #e6ebf1)', borderRadius: 10, fontSize: 14, background: 'var(--bg-page, #f6f9fc)', color: 'var(--text-primary, #0a2540)', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}
                 >
-                  <option value="TECHNICIAN">🔧 Technician — Diagnose faults, complete repairs & maintenance work orders</option>
-                  <option value="OPERATOR">🏭 Operator — Run assigned machines, monitor HMI status & report issues</option>
-                  <option value="EMPLOYEE">👷 Employee — Submit requests, view assigned tasks & follow safety checklists</option>
-                  <option value="ADMIN">⚙️ Admin — Manage team, machines, parts & work orders</option>
-                  <option value="MEMBER">👤 Member — View dashboards, reports & shared maintenance updates</option>
+                  <option value="TECHNICIAN">🔧 Technician — Diagnose & repair machines</option>
+                  <option value="OPERATOR">🏭 Operator — Run machines & report issues</option>
+                  <option value="EMPLOYEE">👷 Employee — Submit requests & view tasks</option>
+                  <option value="ADMIN">⚙️ Admin — Manage team, machines & work orders</option>
+                  <option value="MEMBER">👤 Member — View dashboards & reports</option>
                   {customRoles.length > 0 && <option disabled>──────── Custom roles ────────</option>}
                   {customRoles.map(r => (
                     <option key={r.id} value={r.id}>{r.icon || '🔖'} {r.name}{r.description ? ` — ${r.description}` : ''}</option>
