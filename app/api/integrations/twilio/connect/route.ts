@@ -10,7 +10,99 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json();
+    // Get user's organization and admin org in parallel
+    const [user, adminUser] = await Promise.all([
+      safeQuery(
+        db.user.findUnique({
+          where: { email: session.user.email || '' },
+          select: { organizationId: true, role: true },
+        }),
+        null
+      ),
+      safeQuery(
+        db.user.findFirst({
+          where: { email: 'admin@myncel.com' },
+          select: { organizationId: true },
+        }),
+        null
+      ),
+    ]);
+
+    if (!user?.organizationId) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
+    }
+
+    // Only ADMIN or OWNER can configure integrations
+    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
+      return NextResponse.json({ error: 'Only admins and owners can configure integrations' }, { status: 403 });
+    }
+
+    const isNonAdminOrg = adminUser?.organizationId && user.organizationId !== adminUser.organizationId;
+
+    // Non-admin org: check if admin has Twilio configured, and if so auto-enable via platform inheritance
+    if (isNonAdminOrg) {
+      const adminTwilio = await safeQuery(
+        db.integration.findFirst({
+          where: {
+            organizationId: adminUser!.organizationId,
+            type: 'TWILIO',
+            status: 'CONNECTED',
+          },
+        }),
+        null
+      );
+
+      if (adminTwilio) {
+        // Admin has Twilio configured — auto-enable for this org without needing credentials
+        // Delete any existing opt-out record for this org
+        const existingOptOut = await safeQuery(
+          db.integration.findFirst({
+            where: { organizationId: user.organizationId, type: 'TWILIO' },
+          }),
+          null
+        );
+        if (existingOptOut) {
+          await safeQuery(db.integration.delete({ where: { id: existingOptOut.id } }), null);
+        }
+
+        // Auto-enable SMS notification settings
+        await safeQuery(
+          db.notificationSetting.upsert({
+            where: { organizationId: user.organizationId },
+            create: {
+              smsEnabled: true,
+              smsWorkOrders: true,
+              smsAlerts: true,
+              organization: { connect: { id: user.organizationId } },
+            },
+            update: {
+              smsEnabled: true,
+              smsWorkOrders: true,
+              smsAlerts: true,
+            },
+          }),
+          null
+        );
+
+        return NextResponse.json({
+          success: true,
+          platformManaged: true,
+          message: 'SMS Notifications enabled using your platform admin\'s Twilio configuration. No credentials needed.',
+        });
+      }
+
+      // Admin does NOT have Twilio configured — block the org from setting it up themselves
+      return NextResponse.json(
+        {
+          error: 'SMS Notifications is platform-managed. Please ask your platform admin to configure Twilio first.',
+          platformManaged: true,
+        },
+        { status: 403 }
+      );
+    }
+
+    // === Admin org: allow full credential setup ===
+    const body = await req.json().catch(() => ({}));
     const { config } = body;
 
     if (!config) {
@@ -32,40 +124,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Account SID must start with "AC"' }, { status: 400 });
     }
 
-    // Get user's organization
-    const user = await safeQuery(
-      db.user.findUnique({
-        where: { email: session.user.email || '' },
-        select: { organizationId: true, role: true },
-      }),
-      null
-    );
-
-    if (!user?.organizationId) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 400 });
-    }
-
-    // Only ADMIN or OWNER can configure integrations
-    if (user.role !== 'ADMIN' && user.role !== 'OWNER') {
-      return NextResponse.json({ error: 'Only admins and owners can configure integrations' }, { status: 403 });
-    }
-
-    // Twilio is a platform-wide integration — only the platform admin org can configure it.
-    // Non-admin orgs should toggle the platform-inherited integration via the disconnect/reenable endpoints.
-    const adminUser = await safeQuery(
-      db.user.findFirst({
-        where: { email: 'admin@myncel.com' },
-        select: { organizationId: true },
-      }),
-      null
-    );
-    if (adminUser?.organizationId && user.organizationId !== adminUser.organizationId) {
-      return NextResponse.json(
-        { error: 'SMS Notifications is platform-managed. Use the toggle to enable or disable it for your organization.' },
-        { status: 403 }
-      );
-    }
-
     // Optionally verify credentials with Twilio API
     let twilioVerified = false;
     try {
@@ -79,7 +137,6 @@ export async function POST(req: NextRequest) {
       );
       twilioVerified = twilioRes.ok;
       if (!twilioRes.ok) {
-        const errorData = await twilioRes.json().catch(() => ({}));
         return NextResponse.json({
           error: 'Invalid Twilio credentials. Please check your Account SID and Auth Token.',
         }, { status: 400 });
@@ -105,7 +162,7 @@ export async function POST(req: NextRequest) {
           connectedAt: new Date(),
           config: {
             accountSid,
-            authToken, // In production, encrypt this
+            authToken,
             fromNumber,
             verified: twilioVerified,
           },

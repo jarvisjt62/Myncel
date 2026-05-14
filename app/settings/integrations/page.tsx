@@ -209,10 +209,12 @@ function IntegrationsPage() {
 
   const handleConnect = async (id: string) => {
     if (id === 'twilio') {
-      // If Twilio is platform-managed (admin already configured), just enable it without credentials
+      // First check if Twilio is platform-managed from cached data
       const twilioData = integrations['twilio'];
-      if (twilioData?.adminConnected || twilioData?.platformInherited) {
-        // Platform-managed: enable via reenable endpoint
+      const looksLikePlatformManaged = twilioData?.adminConnected || twilioData?.platformInherited || twilioData?.status === 'PLATFORM_INHERITED' || twilioData?.status === 'PLATFORM_DISABLED';
+
+      if (looksLikePlatformManaged) {
+        // Platform-managed path: enable without credentials
         setWorking(id);
         try {
           const res = await fetch(`/api/integrations/${id}/reenable`, { method: 'POST' });
@@ -231,7 +233,38 @@ function IntegrationsPage() {
         }
         return;
       }
-      // Non-platform-managed: show Twilio credentials form
+
+      // If local data says PENDING, do a server-side check first by calling connect with no body.
+      // The server will tell us if it's platform-managed before we show the form.
+      setWorking(id);
+      try {
+        const probeRes = await fetch('/api/integrations/twilio/connect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}), // empty — server will handle platform-managed case
+        });
+        const probeData = await probeRes.json();
+
+        if (probeRes.ok && probeData.platformManaged) {
+          // Server confirmed platform-managed and auto-enabled
+          showToast('success', probeData.message || 'SMS Notifications enabled!');
+          invalidateCache('integrations');
+          fetchIntegrations(false);
+          return;
+        }
+
+        if (!probeRes.ok && probeData.platformManaged) {
+          // Server says platform-managed but admin hasn't configured yet
+          showToast('error', probeData.error || 'Ask your platform admin to configure Twilio first.');
+          return;
+        }
+      } catch {
+        // Probe failed — fall through to show the form (admin org scenario)
+      } finally {
+        setWorking(null);
+      }
+
+      // Only show the credentials form if this is the admin org or server didn't say platform-managed
       setTwilioForm({ accountSid: '', authToken: '', fromNumber: '' });
       setTwilioError('');
       setModal({ kind: 'twilio' });
@@ -366,8 +399,25 @@ function IntegrationsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ config: twilioForm }),
       });
-      if (res.ok) { setModal(null); showToast('success', 'SMS / Twilio connected successfully!'); invalidateCache('integrations'); fetchIntegrations(false); }
-      else { const data = await res.json(); setTwilioError(data.error || 'Failed to save configuration.'); }
+      const data = await res.json();
+      if (res.ok) {
+        setModal(null);
+        // If platform-managed, show a more informative message
+        const msg = data.platformManaged
+          ? 'SMS Notifications enabled! Your platform admin has already configured Twilio — no credentials needed.'
+          : 'SMS / Twilio connected successfully!';
+        showToast('success', msg);
+        invalidateCache('integrations');
+        fetchIntegrations(false);
+      } else {
+        // If the server says it's platform-managed but admin hasn't set it up, close the form and show a clear message
+        if (data.platformManaged) {
+          setModal(null);
+          showToast('error', data.error || 'SMS is platform-managed. Ask your admin to configure Twilio first.');
+        } else {
+          setTwilioError(data.error || 'Failed to save configuration.');
+        }
+      }
     } catch { setTwilioError('Failed to save. Please try again.'); }
     finally { setTwilioSaving(false); }
   };
@@ -379,7 +429,9 @@ function IntegrationsPage() {
     if (isConnected(id) || isDisabledPlatform(id)) return false;
     const data = integrations[id];
     // Show as platform-available if admin has it connected but this org hasn't enabled it
-    return data?.adminConnected && data?.status !== 'PLATFORM_INHERITED';
+    // Check multiple indicators: adminConnected flag, platformInherited flag, or PLATFORM_INHERITED status
+    const isPlatformAvailable = data?.adminConnected || data?.platformInherited || data?.status === 'PLATFORM_INHERITED';
+    return isPlatformAvailable && data?.status !== 'PLATFORM_INHERITED';
   });
   // Truly available (no platform management, org needs own credentials)
   const availableIds = ALL_IDS.filter(id => !isConnected(id) && !isDisabledPlatform(id) && !isPlatformManaged(id) && !platformAvailableIds.includes(id));

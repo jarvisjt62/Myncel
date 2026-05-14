@@ -253,6 +253,7 @@ export async function GET(req: NextRequest) {
             webhookUrl: adminIntegration.webhookUrl,
             hasApiKey: !!adminIntegration.apiKey,
             disabledPlatformInheritance: false,
+            adminConnected: true,
             config: existing?.config,
           };
         } else if (adminIsConnected && hasExplicitOptOut) {
