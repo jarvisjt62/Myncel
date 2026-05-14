@@ -61,6 +61,8 @@ export async function dispatchNotifications(
   organizationId: string,
   event: NotificationEvent
 ): Promise<void> {
+  const logPrefix = `[dispatch] org=${organizationId} event=${event.type}`;
+  console.log(`${logPrefix} START`);
   try {
     // Get notification settings
     let settings = await safeQuery(
@@ -72,6 +74,7 @@ export async function dispatchNotifications(
 
     // If no settings row exists yet, check if platform SMS is available and auto-create
     if (!settings) {
+      console.log(`${logPrefix} no NotificationSetting row exists — auto-creating`);
       // Check if platform Twilio exists so we can auto-enable SMS
       const adminUser = await safeQuery(
         db.user.findFirst({ where: { email: 'admin@myncel.com' }, select: { organizationId: true } }),
@@ -84,6 +87,8 @@ export async function dispatchNotifications(
         null
       )) : false;
 
+      console.log(`${logPrefix} hasPlatformTwilio=${hasPlatformTwilio}`);
+
       settings = await safeQuery(
         db.notificationSetting.create({
           data: {
@@ -93,9 +98,15 @@ export async function dispatchNotifications(
         }),
         null
       );
+      console.log(`${logPrefix} auto-created settings smsEnabled=${settings?.smsEnabled}`);
     }
 
-    if (!settings) return;
+    if (!settings) {
+      console.log(`${logPrefix} SKIP: no settings could be created`);
+      return;
+    }
+
+    console.log(`${logPrefix} settings: smsEnabled=${settings.smsEnabled} smsWorkOrders=${settings.smsWorkOrders} smsAlerts=${settings.smsAlerts} phoneNumber=${settings.phoneNumber ? '[SET]' : '[EMPTY]'}`);
 
     const isCritical = event.type === 'alert.triggered' &&
       ['CRITICAL', 'HIGH'].includes((event as any).severity || '');
@@ -137,6 +148,8 @@ export async function dispatchNotifications(
           (!settings.smsCriticalOnly || isCritical)) ||
         (event.type === 'pm.overdue' && settings.smsAlerts);
 
+      console.log(`${logPrefix} SMS: shouldSend=${shouldSendSms} hasPhone=${!!settings.phoneNumber}`);
+
       if (shouldSendSms && settings.phoneNumber) {
         let smsText = '';
 
@@ -149,11 +162,18 @@ export async function dispatchNotifications(
         }
 
         if (smsText) {
-          broadcastSms(organizationId, smsText, settings.smsCriticalOnly).catch(err =>
-            console.error('SMS dispatch error:', err)
+          console.log(`${logPrefix} SMS: calling broadcastSms`);
+          broadcastSms(organizationId, smsText, settings.smsCriticalOnly).then(result => {
+            console.log(`${logPrefix} SMS result sent=${result.sent} failed=${result.failed}`);
+          }).catch(err =>
+            console.error(`${logPrefix} SMS dispatch error:`, err)
           );
         }
+      } else {
+        console.log(`${logPrefix} SMS SKIPPED: shouldSend=${shouldSendSms} phone=${settings.phoneNumber ? 'set' : 'empty'}`);
       }
+    } else {
+      console.log(`${logPrefix} SMS SKIPPED: smsEnabled is false`);
     }
 
 

@@ -10,6 +10,7 @@ export async function sendSmsNotification(
   toNumber: string,
   message: string
 ): Promise<{ success: boolean; sid?: string; error?: string }> {
+  const logPrefix = `[sms] org=${organizationId} to=${toNumber}`;
   try {
     // Fetch Twilio integration config — first check org, then fall back to platform (admin) config
     let integration = await safeQuery(
@@ -22,6 +23,10 @@ export async function sendSmsNotification(
       }),
       null
     );
+
+    if (integration) {
+      console.log(`${logPrefix} using org's own Twilio integration`);
+    }
 
     // If org doesn't have Twilio, check the platform-level (admin) integration
     if (!integration) {
@@ -44,15 +49,20 @@ export async function sendSmsNotification(
           }),
           null
         );
+        if (integration) {
+          console.log(`${logPrefix} falling back to platform (admin) Twilio integration`);
+        }
       }
     }
 
     if (!integration) {
+      console.error(`${logPrefix} NO Twilio integration found (neither org nor platform)`);
       return { success: false, error: 'SMS integration not connected' };
     }
 
     const config = integration.config as Record<string, any> | null;
     if (!config?.accountSid || !config?.authToken || !config?.fromNumber) {
+      console.error(`${logPrefix} Twilio config incomplete: accountSid=${!!config?.accountSid} authToken=${!!config?.authToken} fromNumber=${!!config?.fromNumber}`);
       return { success: false, error: 'Twilio configuration incomplete' };
     }
 
@@ -60,6 +70,8 @@ export async function sendSmsNotification(
 
     // Truncate to SMS max length
     const truncatedMessage = message.length > 160 ? message.slice(0, 157) + '…' : message;
+
+    console.log(`${logPrefix} calling Twilio API from=${fromNumber} sid=${accountSid.substring(0, 8)}...`);
 
     const res = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
@@ -80,13 +92,14 @@ export async function sendSmsNotification(
     const data = await res.json();
 
     if (res.ok && data.sid) {
+      console.log(`${logPrefix} Twilio SUCCESS sid=${data.sid}`);
       return { success: true, sid: data.sid };
     } else {
-      console.error('Twilio SMS error:', data);
-      return { success: false, error: data.message || 'Twilio send failed' };
+      console.error(`${logPrefix} Twilio API error status=${res.status}:`, data);
+      return { success: false, error: data.message || `Twilio send failed (status ${res.status})` };
     }
   } catch (err) {
-    console.error('SMS notification error:', err);
+    console.error(`${logPrefix} exception:`, err);
     return { success: false, error: String(err) };
   }
 }
@@ -102,6 +115,7 @@ export async function broadcastSms(
   message: string,
   _criticalOnly = false // kept for backwards compatibility; caller handles filtering
 ): Promise<{ sent: number; failed: number }> {
+  const logPrefix = `[broadcastSms] org=${organizationId}`;
   let sent = 0;
   let failed = 0;
 
@@ -114,16 +128,28 @@ export async function broadcastSms(
       null
     );
 
-    if (!settings?.smsEnabled) return { sent: 0, failed: 0 };
+    if (!settings?.smsEnabled) {
+      console.log(`${logPrefix} SKIP: smsEnabled=${settings?.smsEnabled}`);
+      return { sent: 0, failed: 0 };
+    }
 
     const phoneNumber = settings.phoneNumber;
-    if (!phoneNumber) return { sent: 0, failed: 0 };
+    if (!phoneNumber) {
+      console.log(`${logPrefix} SKIP: phoneNumber empty`);
+      return { sent: 0, failed: 0 };
+    }
 
+    console.log(`${logPrefix} sending to ${phoneNumber}`);
     const result = await sendSmsNotification(organizationId, phoneNumber, message);
-    if (result.success) sent++;
-    else failed++;
+    if (result.success) {
+      sent++;
+      console.log(`${logPrefix} SUCCESS sid=${result.sid}`);
+    } else {
+      failed++;
+      console.error(`${logPrefix} FAILED: ${result.error}`);
+    }
   } catch (err) {
-    console.error('Broadcast SMS error:', err);
+    console.error(`${logPrefix} exception:`, err);
     failed++;
   }
 
