@@ -59,6 +59,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => { fetchSettings(); }, []);
 
@@ -95,16 +96,44 @@ export default function NotificationsPage() {
   };
 
   const handleSave = async () => {
+    // Validate: if SMS is enabled, phone number must be provided
+    if (settings.smsEnabled && (!settings.phoneNumber || !settings.phoneNumber.trim())) {
+      setSaveError('Please enter your mobile phone number to receive SMS alerts.');
+      return;
+    }
+    // Validate phone number format if provided
+    if (settings.phoneNumber && settings.phoneNumber.trim()) {
+      const cleaned = settings.phoneNumber.trim();
+      if (!/^\+\d{10,15}$/.test(cleaned.replace(/[\s()\-]/g, ''))) {
+        setSaveError('Phone number must include country code, e.g. +12125551234');
+        return;
+      }
+    }
+
+    setSaveError('');
     setSaving(true);
     try {
+      // Normalize phone number before saving (strip spaces, dashes, parens)
+      const payload = {
+        ...settings,
+        phoneNumber: settings.phoneNumber ? settings.phoneNumber.replace(/[\s()\-]/g, '') : null,
+      };
       const res = await fetch('/api/settings/notifications', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(payload),
       });
-      if (res.ok) { invalidateCache('notifications'); setSaved(true); setTimeout(() => setSaved(false), 3000); }
+      if (res.ok) {
+        invalidateCache('notifications');
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setSaveError(data.error || 'Failed to save notification settings.');
+      }
     } catch (e) {
       console.error('Failed to save:', e);
+      setSaveError('Failed to save. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -238,6 +267,11 @@ export default function NotificationsPage() {
                   className="w-full max-w-xs rounded-lg px-3 py-2 text-sm focus:outline-none"
                   style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
                 />
+                {(!settings.phoneNumber || !settings.phoneNumber.trim()) && (
+                  <p className="text-xs mt-1.5" style={{ color: '#dc2626' }}>
+                    ⚠️ Phone number is required to receive SMS alerts. Include country code, e.g. +12125551234.
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
@@ -346,6 +380,7 @@ export default function NotificationsPage() {
 
       {/* Save */}
       <div className="flex items-center justify-end gap-4">
+        {saveError && <span className="text-sm text-red-600">⚠️ {saveError}</span>}
         {saved && <span className="text-sm text-emerald-600">✓ Settings saved successfully!</span>}
         <button
           onClick={handleSave}
