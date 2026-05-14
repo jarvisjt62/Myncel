@@ -53,17 +53,34 @@ export async function POST(req: NextRequest) {
       );
 
       if (adminTwilio) {
-        // Admin has Twilio configured — auto-enable for this org without needing credentials
-        // Delete any existing opt-out record for this org
-        const existingOptOut = await safeQuery(
-          db.integration.findFirst({
-            where: { organizationId: user.organizationId, type: 'TWILIO' },
+        // Admin has Twilio configured — auto-enable for this org without needing credentials.
+        // Persist an EXPLICIT CONNECTED record with config.platformManaged = true so the
+        // enabled state survives browser refreshes and is unambiguous in the DB.
+        await safeQuery(
+          db.integration.upsert({
+            where: {
+              organizationId_type: {
+                organizationId: user.organizationId,
+                type: 'TWILIO',
+              },
+            },
+            create: {
+              type: 'TWILIO',
+              name: 'SMS Notifications',
+              status: 'CONNECTED',
+              connectedAt: new Date(),
+              config: { platformManaged: true } as any,
+              organization: { connect: { id: user.organizationId } },
+            },
+            update: {
+              status: 'CONNECTED',
+              connectedAt: new Date(),
+              disconnectedAt: null,
+              config: { platformManaged: true } as any,
+            },
           }),
           null
         );
-        if (existingOptOut) {
-          await safeQuery(db.integration.delete({ where: { id: existingOptOut.id } }), null);
-        }
 
         // Auto-enable SMS notification settings
         await safeQuery(

@@ -66,8 +66,10 @@ export async function POST(
       );
 
       if (integration) {
-        // Update existing record to DISCONNECTED with platform opt-out flag
+        // Update existing record to DISCONNECTED with platform opt-out flag.
+        // Remove any previous platformManaged flag since the org is now opting out.
         const existingConfig = (integration.config as Record<string, any>) || {};
+        const { platformManaged, ...restConfig } = existingConfig;
         await safeQuery(
           db.integration.update({
             where: { id: integration.id },
@@ -77,7 +79,7 @@ export async function POST(
               accessToken: null,
               refreshToken: null,
               config: {
-                ...existingConfig,
+                ...restConfig,
                 disabledPlatformInheritance: true,
                 disabledAt: new Date().toISOString(),
               },

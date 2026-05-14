@@ -8,6 +8,11 @@ const PLATFORM_WIDE_TYPES = new Set(['TWILIO', 'ZAPIER', 'SLACK', 'WEBHOOKS', 'Q
 
 // POST - Re-enable a platform-inherited integration that was previously disabled by this org,
 // OR enable a platform-managed integration for an org that hasn't set it up yet.
+//
+// IMPORTANT: To make the enabled state refresh-proof, we now persist an EXPLICIT
+// CONNECTED record for the org with config.platformManaged = true. The GET endpoint
+// knows how to treat that as PLATFORM_INHERITED so the UI still shows the correct
+// "platform-managed" affordance.
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -70,43 +75,33 @@ export async function POST(
         }, { status: 400 });
       }
 
-      // Find any existing record for this org
-      const existingIntegration = await safeQuery(
-        db.integration.findFirst({
+      // Persist an EXPLICIT CONNECTED record for this org with platformManaged: true.
+      // This survives browser refreshes and makes the enabled state unambiguous.
+      await safeQuery(
+        db.integration.upsert({
           where: {
-            organizationId: user.organizationId,
+            organizationId_type: {
+              organizationId: user.organizationId,
+              type: integrationId as any,
+            },
+          },
+          create: {
             type: integrationId as any,
-          }
+            name: integrationId === 'TWILIO' ? 'SMS Notifications' : integrationId,
+            status: 'CONNECTED',
+            connectedAt: new Date(),
+            config: { platformManaged: true } as any,
+            organization: { connect: { id: user.organizationId } },
+          },
+          update: {
+            status: 'CONNECTED',
+            connectedAt: new Date(),
+            disconnectedAt: null,
+            config: { platformManaged: true } as any,
+          },
         }),
         null
       );
-
-      if (existingIntegration) {
-        const config = existingIntegration.config as Record<string, any> | null;
-        const hasExplicitOptOut = config?.disabledPlatformInheritance === true;
-
-        if (hasExplicitOptOut) {
-          // This was a platform opt-out. Delete the DISCONNECTED record so the org
-          // will again inherit the platform default.
-          await safeQuery(
-            db.integration.delete({
-              where: { id: existingIntegration.id },
-            }),
-            null
-          );
-        } else if (existingIntegration.status === 'DISCONNECTED') {
-          // Was disconnected without opt-out flag — just delete so platform inheritance kicks in
-          await safeQuery(
-            db.integration.delete({
-              where: { id: existingIntegration.id },
-            }),
-            null
-          );
-        }
-        // If it's already CONNECTED, nothing to do
-      }
-      // If no existing record, that's fine — the absence of a record means
-      // the org inherits the platform default (which is CONNECTED).
 
       // Also auto-enable SMS in notification settings if this is Twilio
       if (integrationId === 'TWILIO') {
@@ -161,10 +156,17 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // Remove the opt-out record
+    // Flip the opt-out record back to CONNECTED and mark it as platform-managed
+    const { disabledPlatformInheritance, ...restConfig } = config || {};
     await safeQuery(
-      db.integration.delete({
+      db.integration.update({
         where: { id: integration.id },
+        data: {
+          status: 'CONNECTED',
+          connectedAt: new Date(),
+          disconnectedAt: null,
+          config: { ...restConfig, platformManaged: true } as any,
+        },
       }),
       null
     );

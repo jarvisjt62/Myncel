@@ -237,16 +237,22 @@ export async function GET(req: NextRequest) {
         const adminIntegration = adminByType.get(type.id.toUpperCase());
         const adminIsConnected = adminIntegration?.status === 'CONNECTED';
 
-        if (adminIsConnected && !hasExplicitOptOut) {
-          // Admin has it connected AND this org hasn't opted out → show as Platform Managed
+        // Detect explicit opt-in: org has its OWN CONNECTED record with config.platformManaged = true.
+        // This is the refresh-proof persisted state set by /reenable or /twilio/connect.
+        const existingConfig = (existing?.config as Record<string, any> | null) || null;
+        const hasExplicitOptIn = existing?.status === 'CONNECTED' &&
+          existingConfig?.platformManaged === true;
+
+        if (adminIsConnected && (hasExplicitOptIn || !hasExplicitOptOut)) {
+          // Admin has it connected AND (this org explicitly opted in OR hasn't opted out) → Platform Managed
           const cfg = adminIntegration.config as Record<string, any> | null;
           return {
             ...type,
             connected: true,
             status: 'PLATFORM_INHERITED',
-            connectedAt: adminIntegration.connectedAt,
+            connectedAt: existing?.connectedAt || adminIntegration.connectedAt,
             lastSyncAt: adminIntegration.lastSyncAt,
-            integrationId: 'platform',
+            integrationId: existing?.id || 'platform',
             platformInherited: true,
             inheritedFrom: 'platform',
             fromNumber: cfg?.fromNumber,
