@@ -172,34 +172,31 @@ export function workOrderSmsMessage(opts: {
   title: string;
   machineName: string;
   priority: string;
-  orgName?: string;
+  orgName?: string; // kept for backwards compatibility, no longer rendered
   dashboardUrl?: string;
 }): string {
-  const prefix = opts.orgName ? `[${opts.orgName}]` : '[Myncel]';
   const cta = opts.dashboardUrl ? ` View: ${opts.dashboardUrl}` : ' Log in to view.';
-  return `${prefix} New ${opts.priority} work order WO#${opts.workOrderNumber}: "${opts.title}" on ${opts.machineName}.${cta}`;
+  return `New ${opts.priority} work order WO#${opts.workOrderNumber}: "${opts.title}" on ${opts.machineName}.${cta}`;
 }
 
 export function alertSmsMessage(opts: {
   alertTitle: string;
   machineName: string;
   severity: string;
-  orgName?: string;
+  orgName?: string; // kept for backwards compatibility, no longer rendered
   dashboardUrl?: string;
 }): string {
-  const prefix = opts.orgName ? `[${opts.orgName}]` : '[Myncel]';
   const cta = opts.dashboardUrl ? ` View: ${opts.dashboardUrl}` : ' Check your dashboard immediately.';
-  return `${prefix} ${opts.severity} Alert: ${opts.alertTitle} on ${opts.machineName}.${cta}`;
+  return `${opts.severity} Alert: ${opts.alertTitle} on ${opts.machineName}.${cta}`;
 }
 
 export function pmOverdueSmsMessage(opts: {
   taskTitle: string;
   machineName: string;
   daysOverdue: number;
-  orgName?: string;
+  orgName?: string; // kept for backwards compatibility, no longer rendered
   dashboardUrl?: string;
 }): string {
-  const prefix = opts.orgName ? `[${opts.orgName}]` : '[Myncel]';
   const cta = opts.dashboardUrl ? ` View: ${opts.dashboardUrl}` : ' Schedule maintenance now.';
-  return `${prefix} PM Overdue: "${opts.taskTitle}" on ${opts.machineName} is ${opts.daysOverdue} day(s) overdue.${cta}`;
+  return `PM Overdue: "${opts.taskTitle}" on ${opts.machineName} is ${opts.daysOverdue} day(s) overdue.${cta}`;
 }
