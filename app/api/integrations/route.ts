@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db, safeQuery } from '@/lib/db';
 
+// Force dynamic rendering — integration status can change at any time and must never be cached
+export const dynamic = 'force-dynamic';
+
 // Integration types with metadata
 const INTEGRATION_TYPES = [
   {
@@ -243,6 +246,11 @@ export async function GET(req: NextRequest) {
         const hasExplicitOptIn = existing?.status === 'CONNECTED' &&
           existingConfig?.platformManaged === true;
 
+        // Diagnostic logging for Twilio
+        if (type.id === 'twilio') {
+          console.log(`[integrations GET] twilio: isSameOrgAsAdmin=${isSameOrgAsAdmin} adminIsConnected=${adminIsConnected} existingStatus=${existing?.status} hasExplicitOptIn=${hasExplicitOptIn} hasExplicitOptOut=${hasExplicitOptOut} adminByTypeKeys=${Array.from(adminByType.keys()).join(',')}`);
+        }
+
         if (adminIsConnected && (hasExplicitOptIn || !hasExplicitOptOut)) {
           // Admin has it connected AND (this org explicitly opted in OR hasn't opted out) → Platform Managed
           const cfg = adminIntegration.config as Record<string, any> | null;
@@ -283,6 +291,7 @@ export async function GET(req: NextRequest) {
           };
         } else {
           // Admin does NOT have it connected → available (not platform-managed)
+          console.log(`[integrations GET] ${type.id}: admin NOT connected. adminByType has types: [${Array.from(adminByType.keys()).join(',')}] adminOrgId=${adminOrgId} isSameOrgAsAdmin=${isSameOrgAsAdmin}`);
           return {
             ...type,
             connected: false,
@@ -296,6 +305,7 @@ export async function GET(req: NextRequest) {
             webhookUrl: undefined,
             hasApiKey: false,
             disabledPlatformInheritance: false,
+            adminConnected: false,
             config: existing?.config,
           };
         }

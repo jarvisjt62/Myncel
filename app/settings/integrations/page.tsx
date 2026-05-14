@@ -87,7 +87,7 @@ function IntegrationsPage() {
       const data = await fetchWithCache(
         'integrations',
         async () => {
-          const res = await fetch('/api/integrations');
+          const res = await fetch('/api/integrations', { cache: 'no-store' });
           if (res.ok) {
             const json = await res.json();
             const map: Record<string, IntegrationData> = {};
@@ -109,6 +109,9 @@ function IntegrationsPage() {
                 hasApiKey: i.hasApiKey,
               };
             });
+            console.log('[integrations] fetched statuses:', Object.fromEntries(
+              Object.entries(map).map(([k, v]) => [k, v.status])
+            ));
             return map;
           }
           return {} as Record<string, IntegrationData>;

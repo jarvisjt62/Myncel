@@ -107,6 +107,8 @@ async function runDiagnostic(sendTest: boolean, fix: boolean) {
       hasConfig: !!orgTwilio.config,
       hasCredentials: !!(orgTwilio.config && (orgTwilio.config as any).accountSid && (orgTwilio.config as any).authToken),
       fromNumber: (orgTwilio.config as any)?.fromNumber || null,
+      platformManaged: (orgTwilio.config as any)?.platformManaged || false,
+      disabledPlatformInheritance: (orgTwilio.config as any)?.disabledPlatformInheritance || false,
     } : { exists: false };
 
     // Step 5: Check the admin (platform) Twilio integration
