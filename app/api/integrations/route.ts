@@ -206,18 +206,46 @@ export async function GET(req: NextRequest) {
       adminByType.set(ai.type, ai);
     }
 
-    // Self-healing pre-pass: fix stale integration records for non-admin orgs.
-    // If admin has a platform-wide integration CONNECTED and the org has a stale record
-    // (e.g., CONNECTED without platformManaged, DISCONNECTED without opt-out, etc.),
-    // fix it now so the status returned to the frontend is correct.
-    if (!isSameOrgAsAdmin) {
+    // Self-healing pre-pass: ensure non-admin orgs have correct integration records.
+    // Two scenarios to fix:
+    // 1. Stale record: admin has CONNECTED and org has a record in an inconsistent state
+    //    (e.g., CONNECTED without platformManaged, DISCONNECTED without opt-out).
+    // 2. Missing record: admin has CONNECTED and org has NO record at all.
+    //    With the priority-based logic, PRIORITY 3 handles this (default inheritance when
+    //    admin is connected), but creating an explicit record makes the opt-in durable
+    //    and prevents the toggle from reverting on refresh.
+    if (!isSameOrgAsAdmin && adminOrgId) {
       for (const type of INTEGRATION_TYPES) {
         if (!PLATFORM_WIDE_TYPES.has(type.id.toUpperCase())) continue;
         const adminInt = adminByType.get(type.id.toUpperCase());
         if (adminInt?.status !== 'CONNECTED') continue;
 
         const existing = (existingIntegrations as any[]).find((i: any) => i.type === type.id.toUpperCase());
-        if (!existing) continue; // No record = inherited by default, no fix needed
+
+        if (!existing) {
+          // No record at all — create one so the toggle state is persisted explicitly.
+          // This ensures the org sees PLATFORM_INHERITED (via PRIORITY 1) even if
+          // admin's integration is later temporarily disconnected.
+          console.log(`[integrations GET] self-healing ${type.id} for org ${user.organizationId}: no record, creating CONNECTED+platformManaged`);
+          const newRecord = await safeQuery(
+            db.integration.create({
+              data: {
+                type: type.id.toUpperCase() as any,
+                name: type.name,
+                status: 'CONNECTED',
+                connectedAt: new Date(),
+                config: { platformManaged: true },
+                organizationId: user.organizationId,
+              },
+            }),
+            null
+          ).catch(err => console.error('[integrations GET] self-healing create failed:', err));
+
+          if (newRecord) {
+            (existingIntegrations as any[]).push(newRecord);
+          }
+          continue;
+        }
 
         const existingConfig = (existing?.config as Record<string, any> | null) || null;
         const hasOptOut = existing.status === 'DISCONNECTED' && existingConfig?.disabledPlatformInheritance === true;
@@ -299,8 +327,57 @@ export async function GET(req: NextRequest) {
           console.log(`[integrations GET] twilio: isSameOrgAsAdmin=${isSameOrgAsAdmin} adminIsConnected=${adminIsConnected} existingStatus=${existing?.status} hasExplicitOptIn=${hasExplicitOptIn} hasExplicitOptOut=${hasExplicitOptOut} adminByTypeKeys=${Array.from(adminByType.keys()).join(',')}`);
         }
 
-        if (adminIsConnected && (hasExplicitOptIn || !hasExplicitOptOut)) {
-          // Admin has it connected AND (this org explicitly opted in OR hasn't opted out) → Platform Managed
+        // ── PRIORITY 1: Explicit opt-in ──
+        // If the org has explicitly opted in (CONNECTED + platformManaged), ALWAYS show it as
+        // PLATFORM_INHERITED regardless of admin's current connection status. The user's
+        // toggle preference must persist — even if admin's integration is temporarily down,
+        // the org chose to have this ON and it should stay ON.
+        if (hasExplicitOptIn) {
+          const cfg = adminIntegration?.config as Record<string, any> | null;
+          return {
+            ...type,
+            connected: true,
+            status: 'PLATFORM_INHERITED',
+            connectedAt: existing?.connectedAt || adminIntegration?.connectedAt,
+            lastSyncAt: adminIntegration?.lastSyncAt,
+            integrationId: existing?.id || 'platform',
+            platformInherited: true,
+            inheritedFrom: 'platform',
+            fromNumber: cfg?.fromNumber,
+            webhookUrl: adminIntegration?.webhookUrl,
+            hasApiKey: !!adminIntegration?.apiKey,
+            disabledPlatformInheritance: false,
+            adminConnected: adminIsConnected,
+            config: existing?.config,
+          };
+        }
+
+        // ── PRIORITY 2: Explicit opt-out ──
+        // If the org has explicitly opted out (DISCONNECTED + disabledPlatformInheritance),
+        // show it as PLATFORM_DISABLED.
+        if (hasExplicitOptOut) {
+          const cfg = adminIntegration?.config as Record<string, any> | null;
+          return {
+            ...type,
+            connected: false,
+            status: 'PLATFORM_DISABLED',
+            connectedAt: adminIntegration?.connectedAt,
+            lastSyncAt: adminIntegration?.lastSyncAt,
+            integrationId: 'platform',
+            platformInherited: false,
+            inheritedFrom: 'platform',
+            fromNumber: cfg?.fromNumber,
+            webhookUrl: adminIntegration?.webhookUrl,
+            hasApiKey: !!adminIntegration?.apiKey,
+            disabledPlatformInheritance: true,
+            config: existing?.config,
+            adminConnected: adminIsConnected,
+          };
+        }
+
+        // ── PRIORITY 3: No explicit preference, admin IS connected ──
+        // Default inheritance: admin has it connected, org hasn't opted out → PLATFORM_INHERITED
+        if (adminIsConnected) {
           const cfg = adminIntegration.config as Record<string, any> | null;
           return {
             ...type,
@@ -318,45 +395,28 @@ export async function GET(req: NextRequest) {
             adminConnected: true,
             config: existing?.config,
           };
-        } else if (adminIsConnected && hasExplicitOptOut) {
-          // Admin has it connected but this org opted out → show as disabled platform integration
-          const cfg = adminIntegration.config as Record<string, any> | null;
-          return {
-            ...type,
-            connected: false,
-            status: 'PLATFORM_DISABLED',
-            connectedAt: adminIntegration.connectedAt,
-            lastSyncAt: adminIntegration.lastSyncAt,
-            integrationId: 'platform',
-            platformInherited: false,
-            inheritedFrom: 'platform',
-            fromNumber: cfg?.fromNumber,
-            webhookUrl: adminIntegration.webhookUrl,
-            hasApiKey: !!adminIntegration.apiKey,
-            disabledPlatformInheritance: true,
-            config: existing?.config,
-            adminConnected: true, // Let UI know admin has it connected
-          };
-        } else {
-          // Admin does NOT have it connected → available (not platform-managed)
-          console.log(`[integrations GET] ${type.id}: admin NOT connected. adminByType has types: [${Array.from(adminByType.keys()).join(',')}] adminOrgId=${adminOrgId} isSameOrgAsAdmin=${isSameOrgAsAdmin}`);
-          return {
-            ...type,
-            connected: false,
-            status: 'PENDING',
-            connectedAt: undefined,
-            lastSyncAt: undefined,
-            integrationId: existing?.id || undefined,
-            platformInherited: false,
-            inheritedFrom: undefined,
-            fromNumber: undefined,
-            webhookUrl: undefined,
-            hasApiKey: false,
-            disabledPlatformInheritance: false,
-            adminConnected: false,
-            config: existing?.config,
-          };
         }
+
+        // ── PRIORITY 4: No explicit preference, admin NOT connected ──
+        // Admin doesn't have this integration → show as PENDING / available.
+        // The org can't inherit something the admin hasn't set up.
+        console.log(`[integrations GET] ${type.id}: admin NOT connected. adminByType has types: [${Array.from(adminByType.keys()).join(',')}] adminOrgId=${adminOrgId} isSameOrgAsAdmin=${isSameOrgAsAdmin}`);
+        return {
+          ...type,
+          connected: false,
+          status: 'PENDING',
+          connectedAt: undefined,
+          lastSyncAt: undefined,
+          integrationId: existing?.id || undefined,
+          platformInherited: false,
+          inheritedFrom: undefined,
+          fromNumber: undefined,
+          webhookUrl: undefined,
+          hasApiKey: false,
+          disabledPlatformInheritance: false,
+          adminConnected: false,
+          config: existing?.config,
+        };
       }
 
       // For non-platform-wide types: show the org's own integration status
