@@ -73,8 +73,11 @@ const PERMISSIONS: PermissionSeed[] = [
 
   // Alerts
   { key: 'alerts.view',        category: 'Alerts', label: 'View alerts' },
+  { key: 'alerts.create',      category: 'Alerts', label: 'Create alerts' },
   { key: 'alerts.acknowledge', category: 'Alerts', label: 'Acknowledge alerts' },
   { key: 'alerts.resolve',     category: 'Alerts', label: 'Resolve alerts' },
+  { key: 'alerts.edit',        category: 'Alerts', label: 'Edit alerts' },
+  { key: 'alerts.delete',      category: 'Alerts', label: 'Delete alerts' },
 
   // Billing
   { key: 'billing.view',   category: 'Billing', label: 'View billing information' },
@@ -126,7 +129,7 @@ const SYSTEM_ROLES: SystemRole[] = [
       'team.view','team.invite','team.edit_roles','team.remove',
       'roles.view','roles.create','roles.edit','roles.delete',
       'reports.view','reports.export',
-      'alerts.view','alerts.acknowledge','alerts.resolve',
+      'alerts.view','alerts.create','alerts.acknowledge','alerts.resolve','alerts.edit','alerts.delete',
       'integrations.view','integrations.configure',
       'settings.view','settings.edit',
     ],

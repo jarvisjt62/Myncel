@@ -10,6 +10,10 @@ const PROTECTED_PREFIXES = [
   '/work-orders',
   '/settings',
   '/reports',
+  '/org',
+  '/purchase-orders',
+  '/remote-support',
+  '/analytics',
 ];
 
 // Auth routes — redirect to dashboard if already logged in
@@ -32,7 +36,9 @@ export async function middleware(req: NextRequest) {
   }
 
   // 2. If unauthenticated user visits a protected route → redirect to signin
-  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+  // Exception: /remote-support/join/[token] is publicly accessible for external participants
+  const isPublicJoin = pathname.startsWith('/remote-support/join/');
+  const isProtected = !isPublicJoin && PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
   if (!isAuthenticated && isProtected) {
     const signInUrl = new URL('/signin', req.url);
     signInUrl.searchParams.set('callbackUrl', pathname);

@@ -43,14 +43,26 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/notifications - Create notification (internal use)
+// POST /api/notifications - Create notification (admin/owner only, or self-notification)
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { userId, type, title, message, link, priority } = body;
 
     if (!userId || !type || !title || !message) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Only allow users to create notifications for themselves, or admins/owners for any user
+    const isSelf = userId === session.user.id;
+    const isAdmin = session.user.role === 'OWNER' || session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN';
+    if (!isSelf && !isAdmin) {
+      return NextResponse.json({ error: 'Forbidden — can only create notifications for yourself' }, { status: 403 });
     }
 
     const notification = await db.notification.create({

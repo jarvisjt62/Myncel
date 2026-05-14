@@ -23,6 +23,7 @@ const PLATFORM_ADMIN_EMAIL = 'admin@myncel.com';
 
 /** Map legacy UserRole enum → system role slug so enum users still get perms. */
 const ENUM_TO_SLUG: Record<string, string> = {
+  SUPER_ADMIN: 'owner',
   OWNER: 'owner',
   ADMIN: 'admin',
   TECHNICIAN: 'technician',

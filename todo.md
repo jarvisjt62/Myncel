@@ -1,27 +1,29 @@
-# RBAC Enforcement + UI Gating
+# Full Application Review — Pre-Mobile Development
 
-## Infrastructure
-- [x] `/api/me/permissions` endpoint
-- [x] `PermissionsProvider` + `usePermissions()` + `<Can>` component
-- [x] Provider wired in DashboardClient, AdminLayoutClient, UserSidebar
-- [x] Typecheck clean
+## Phase 1: Build & TypeCheck
+- [ ] tsc --noEmit clean
+- [ ] npm run build succeeds
 
-## Task 1 — Server-side enforcement
-- [x] `/api/work-orders` POST → `work_orders.create`
-- [x] `/api/work-orders/[id]` PATCH → edit/close/assign; DELETE → delete
-- [x] `/api/machines` POST → `machines.create`; PATCH/DELETE per-id
-- [x] `/api/parts` POST → `parts.create`; PUT (edit/adjust_stock)/DELETE per-id
-- [x] `/api/maintenance-tasks` POST/PATCH/DELETE → schedules.*
-- [x] `/api/team/invite` POST/DELETE → `team.invite`
-- [x] `/api/team/[id]` PATCH → `team.edit_roles`; DELETE → `team.remove`
-- [x] `guardPermission` helper in lib/permissions.ts
+## Phase 2: Schema & Data
+- [ ] Prisma schema valid
+- [ ] Seed script idempotent
 
-## Task 2 — UI gating
-- [x] Wrap Create Work Order / Machine / Part / Task buttons
-- [x] Wrap Delete/Edit actions in DashboardClient rows and modals
-- [x] Wrap Invite Team Member buttons in OrgDashboardClient
-- [x] Disable role-change select when missing team.edit_roles
+## Phase 3: API Routes
+- [ ] All protected routes have session + permission guards
+- [ ] No crash on missing session
+- [ ] Key endpoints reviewed
 
-## Verification
-- [x] Typecheck clean
+## Phase 4: Client Pages
+- [ ] Admin roles/permissions pages
+- [ ] Dashboard all tabs
+- [ ] Org dashboard all tabs
+- [ ] PermissionsProvider loads
+
+## Phase 5: Cross-cutting
+- [ ] Mobile responsive
+- [ ] No import errors
+
+## Phase 6: Fix + Ship
+- [ ] All issues resolved
+- [ ] Build clean
 - [ ] Commit + push

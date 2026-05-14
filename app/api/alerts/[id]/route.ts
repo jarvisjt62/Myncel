@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     // Allow platform admins to manage any alert; regular users can only manage their org's alerts.
     if (!canManageAlertRecord(session, alert.organizationId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Granular permission check: resolving vs editing
+    const isResolveOnly = body.isResolved !== undefined && !body.title && !body.message && !body.type && !body.severity;
+    const requiredPerm = isResolveOnly ? 'alerts.resolve' : 'alerts.edit';
+    const hasEditPerm = await hasPermission(session.user.id, requiredPerm);
+    if (!hasEditPerm) {
+      // Fallback: if user has the broader permission, allow it
+      const hasFallback = await hasPermission(session.user.id, 'alerts.edit');
+      if (!hasFallback) {
+        return NextResponse.json({ error: `Forbidden — missing ${requiredPerm}` }, { status: 403 });
+      }
     }
 
     const updated = await db.alert.update({
@@ -95,6 +108,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     if (!canManageAlertRecord(session, alert.organizationId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    if (!(await hasPermission(session.user.id, 'alerts.delete'))) {
+      return NextResponse.json({ error: 'Forbidden — missing alerts.delete' }, { status: 403 });
     }
 
     await db.alert.delete({ where: { id: params.id } });

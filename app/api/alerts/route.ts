@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { guardPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +30,9 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const guard = await guardPermission(session.user.id, 'alerts.create');
+    if (guard) return guard;
 
     const orgId = (session.user as any).organizationId as string | undefined;
     const role = (session.user as any).role as string;
