@@ -13,8 +13,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'organizationId and toNumber are required' }, { status: 400 });
     }
 
-    // First check if Twilio is configured for this org
-    const integration = await safeQuery(
+    // First check if Twilio is configured for this org.
+    // Skip platform-managed records (they have no credentials of their own).
+    let integration = await safeQuery(
       db.integration.findFirst({
         where: {
           organizationId,
@@ -24,6 +25,10 @@ export async function POST(req: NextRequest) {
       }),
       null
     );
+    const intConfig = integration?.config as Record<string, any> | null;
+    if (intConfig?.platformManaged && !intConfig?.accountSid) {
+      integration = null; // Skip — fall through to admin
+    }
 
     if (!integration) {
       return NextResponse.json({ 

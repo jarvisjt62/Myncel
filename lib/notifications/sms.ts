@@ -12,8 +12,11 @@ export async function sendSmsNotification(
 ): Promise<{ success: boolean; sid?: string; error?: string }> {
   const logPrefix = `[sms] org=${organizationId} to=${toNumber}`;
   try {
-    // Fetch Twilio integration config — first check org, then fall back to platform (admin) config
-    let integration = await safeQuery(
+    // Fetch Twilio integration config — first check org, then fall back to platform (admin) config.
+    // If the org's record is platform-managed (config.platformManaged = true), it has no credentials
+    // of its own — skip it and fall through to the admin's record.
+    let integration: any = null;
+    const orgIntegration = await safeQuery(
       db.integration.findFirst({
         where: {
           organizationId,
@@ -24,11 +27,16 @@ export async function sendSmsNotification(
       null
     );
 
-    if (integration) {
+    const orgConfig = orgIntegration?.config as Record<string, any> | null;
+    const isPlatformManaged = orgConfig?.platformManaged === true;
+
+    if (orgIntegration && !isPlatformManaged) {
+      integration = orgIntegration;
       console.log(`${logPrefix} using org's own Twilio integration`);
     }
 
-    // If org doesn't have Twilio, check the platform-level (admin) integration
+    // If org doesn't have its own Twilio credentials (or only has a platformManaged record),
+    // check the platform-level (admin) integration
     if (!integration) {
       const adminUser = await safeQuery(
         db.user.findFirst({

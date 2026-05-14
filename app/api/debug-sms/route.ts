@@ -135,7 +135,11 @@ async function runDiagnostic(sendTest: boolean, fix: boolean) {
     }
 
     // Step 6: Which Twilio would sendSmsNotification use?
-    const effectiveTwilio = (orgTwilio && orgTwilio.status === 'CONNECTED') ? 'org' :
+    // A platformManaged record (no credentials of its own) is treated as "not the org's own" —
+    // the SMS module falls through to the admin's record.
+    const orgConfig = orgTwilio?.config as Record<string, any> | null;
+    const orgHasOwnCredentials = orgTwilio?.status === 'CONNECTED' && orgConfig?.accountSid && orgConfig?.authToken && !orgConfig?.platformManaged;
+    const effectiveTwilio = orgHasOwnCredentials ? 'org' :
                             (adminTwilio && adminTwilio.status === 'CONNECTED') ? 'platform (admin fallback)' :
                             'NONE';
     report.checks.effectiveTwilio = effectiveTwilio;
