@@ -113,20 +113,8 @@ export async function GET(req: NextRequest) {
         : Promise.resolve([]),
     ]);
 
-    // Create default settings if not exist
-    let settings = settingsResult;
-    if (!settings) {
-      settings = await safeQuery(
-        db.notificationSetting.create({
-          data: {
-            organization: { connect: { id: user.organizationId } }
-          }
-        }),
-        null
-      );
-    }
-
-    // Process integration status
+    // Process integration status BEFORE creating default settings
+    // so we can auto-enable SMS if platform Twilio is available
     let hasSlack = (integrations as any[]).some((i: any) => i.type === 'SLACK');
     let hasSms = (integrations as any[]).some((i: any) => i.type === 'TWILIO');
     let smsPlatformManaged = false;
@@ -137,6 +125,36 @@ export async function GET(req: NextRequest) {
       for (const pi of adminIntegrations as any[]) {
         if (pi.type === 'TWILIO' && !hasSms) { hasSms = true; smsPlatformManaged = true; }
         if (pi.type === 'SLACK' && !hasSlack) { hasSlack = true; slackPlatformManaged = true; }
+      }
+    }
+
+    // Create default settings if not exist
+    // If platform SMS is available, auto-enable smsEnabled/smsWorkOrders/smsAlerts on first creation
+    let settings = settingsResult;
+    if (!settings) {
+      settings = await safeQuery(
+        db.notificationSetting.create({
+          data: {
+            organization: { connect: { id: user.organizationId } },
+            // Auto-enable SMS if platform Twilio is available for this org
+            ...(hasSms ? { smsEnabled: true, smsWorkOrders: true, smsAlerts: true } : {}),
+          }
+        }),
+        null
+      );
+    } else if (hasSms && !settings.smsEnabled && smsPlatformManaged) {
+      // Settings exist but SMS is disabled and platform Twilio is now available —
+      // auto-enable if the user never explicitly turned it off (i.e. it's at the default false value
+      // and smsWorkOrders/smsAlerts are also false, meaning they never touched it)
+      const neverConfiguredSms = !settings.smsWorkOrders && !settings.smsAlerts && !settings.phoneNumber;
+      if (neverConfiguredSms) {
+        settings = await safeQuery(
+          db.notificationSetting.update({
+            where: { organizationId: user.organizationId },
+            data: { smsEnabled: true, smsWorkOrders: true, smsAlerts: true },
+          }),
+          settings
+        );
       }
     }
 

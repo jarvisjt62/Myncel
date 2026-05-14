@@ -63,12 +63,37 @@ export async function dispatchNotifications(
 ): Promise<void> {
   try {
     // Get notification settings
-    const settings = await safeQuery(
+    let settings = await safeQuery(
       db.notificationSetting.findFirst({
         where: { organizationId },
       }),
       null
     );
+
+    // If no settings row exists yet, check if platform SMS is available and auto-create
+    if (!settings) {
+      // Check if platform Twilio exists so we can auto-enable SMS
+      const adminUser = await safeQuery(
+        db.user.findFirst({ where: { email: 'admin@myncel.com' }, select: { organizationId: true } }),
+        null
+      );
+      const hasPlatformTwilio = adminUser?.organizationId ? !!(await safeQuery(
+        db.integration.findFirst({
+          where: { organizationId: adminUser.organizationId, type: 'TWILIO', status: 'CONNECTED' },
+        }),
+        null
+      )) : false;
+
+      settings = await safeQuery(
+        db.notificationSetting.create({
+          data: {
+            organizationId,
+            ...(hasPlatformTwilio ? { smsEnabled: true, smsWorkOrders: true, smsAlerts: true } : {}),
+          },
+        }),
+        null
+      );
+    }
 
     if (!settings) return;
 
