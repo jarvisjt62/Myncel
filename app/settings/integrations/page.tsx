@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback } from 'react';
 import PlanGate from '@/app/components/PlanGate';
 import { IntegrationCardSkeleton } from '@/app/components/LoadingSkeleton';
-import { fetchWithCache, invalidateCache } from '@/app/lib/client-cache';
+import { invalidateCache, setCached } from '@/app/lib/client-cache';
 import Link from 'next/link';
 import ScopedExportModal, { ScopeDataset } from '@/app/components/ScopedExportModal';
 
@@ -82,43 +82,51 @@ function IntegrationsPage() {
     setToast({ type, text });
     setTimeout(() => setToast(null), 4000);  };
 
-  const fetchIntegrations = useCallback(async (useCache = true) => {
+  const fetchIntegrations = useCallback(async (_useCache = false) => {
+    // Integration status changes (connect/disconnect/toggle) must be reflected
+    // immediately in the UI. We deliberately bypass fetchWithCache's
+    // stale-while-revalidate path here because that returns stale data on
+    // mount (e.g. after sign-out → sign-in within the same browser session)
+    // without ever updating React state when the background revalidate completes.
+    // Always fetch fresh data and update state directly.
     try {
-      const data = await fetchWithCache(
-        'integrations',
-        async () => {
-          const res = await fetch('/api/integrations', { cache: 'no-store' });
-          if (res.ok) {
-            const json = await res.json();
-            const map: Record<string, IntegrationData> = {};
-            (json.integrations || []).forEach((i: any) => {
-              map[i.id] = {
-                id: i.integrationId || i.id,
-                type: i.id,
-                name: i.name,
-                status: i.status || (i.connected ? 'CONNECTED' : 'PENDING'),
-                disabledPlatformInheritance: i.disabledPlatformInheritance || false,
-                adminConnected: i.adminConnected || false,
-                connectedAt: i.connectedAt,
-                config: i.config,
-                apiKey: i.apiKey,
-                webhookUrl: i.webhookUrl,
-                platformInherited: i.platformInherited || false,
-                inheritedFrom: i.inheritedFrom,
-                fromNumber: i.fromNumber,
-                hasApiKey: i.hasApiKey,
-              };
-            });
-            console.log('[integrations] fetched statuses:', Object.fromEntries(
-              Object.entries(map).map(([k, v]) => [k, v.status])
-            ));
-            return map;
-          }
-          return {} as Record<string, IntegrationData>;
-        },
-        { staleWhileRevalidate: useCache }
-      );
-      setIntegrations(data);
+      // Defensively clear any cached data so other places that use fetchWithCache
+      // ('integrations' key) get the same fresh data we just fetched.
+      invalidateCache('integrations');
+
+      const res = await fetch('/api/integrations', { cache: 'no-store' });
+      if (!res.ok) {
+        console.error('[integrations] fetch failed with status:', res.status);
+        setIntegrations({});
+        return;
+      }
+
+      const json = await res.json();
+      const map: Record<string, IntegrationData> = {};
+      (json.integrations || []).forEach((i: any) => {
+        map[i.id] = {
+          id: i.integrationId || i.id,
+          type: i.id,
+          name: i.name,
+          status: i.status || (i.connected ? 'CONNECTED' : 'PENDING'),
+          disabledPlatformInheritance: i.disabledPlatformInheritance || false,
+          adminConnected: i.adminConnected || false,
+          connectedAt: i.connectedAt,
+          config: i.config,
+          apiKey: i.apiKey,
+          webhookUrl: i.webhookUrl,
+          platformInherited: i.platformInherited || false,
+          inheritedFrom: i.inheritedFrom,
+          fromNumber: i.fromNumber,
+          hasApiKey: i.hasApiKey,
+        };
+      });
+      console.log('[integrations] fetched statuses:', Object.fromEntries(
+        Object.entries(map).map(([k, v]) => [k, v.status])
+      ));
+      // Seed the shared cache with the fresh data so other consumers see it too
+      setCached('integrations', map);
+      setIntegrations(map);
     } catch (e) {
       console.error('Failed to fetch integrations:', e);
     } finally {
