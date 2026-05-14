@@ -149,7 +149,60 @@ async function runDiagnostic(sendTest: boolean, fix: boolean) {
     // Step 7: Optional auto-fix
     if (fix) {
       if (adminTwilio && adminTwilio.status === 'CONNECTED') {
-        // Enable SMS flags for this org
+        // Fix 1: Ensure the org's Twilio integration record is in the correct state.
+        // If there's a stale/wrong record (e.g., DISCONNECTED without opt-out, or CONNECTED
+        // without platformManaged flag from older code), replace it with the correct
+        // CONNECTED + platformManaged record.
+        if (orgTwilio) {
+          const orgTwilioConfig = orgTwilio.config as Record<string, any> | null;
+          const needsFix = orgTwilio.status !== 'CONNECTED' ||
+            orgTwilioConfig?.platformManaged !== true ||
+            orgTwilioConfig?.disabledPlatformInheritance === true;
+
+          if (needsFix) {
+            await safeQuery(
+              db.integration.upsert({
+                where: { organizationId_type: { organizationId: user.organizationId, type: 'TWILIO' } },
+                create: {
+                  type: 'TWILIO',
+                  name: 'SMS Notifications',
+                  status: 'CONNECTED',
+                  connectedAt: new Date(),
+                  config: { platformManaged: true } as any,
+                  organization: { connect: { id: user.organizationId } },
+                },
+                update: {
+                  status: 'CONNECTED',
+                  connectedAt: new Date(),
+                  disconnectedAt: null,
+                  config: { platformManaged: true } as any,
+                },
+              }),
+              null
+            );
+            report.actions.push('✅ Fixed org Twilio integration record: set status=CONNECTED, config.platformManaged=true');
+          } else {
+            report.actions.push('ℹ️ Org Twilio integration record is already correct (CONNECTED + platformManaged=true)');
+          }
+        } else {
+          // No record exists — create one
+          await safeQuery(
+            db.integration.create({
+              data: {
+                type: 'TWILIO',
+                name: 'SMS Notifications',
+                status: 'CONNECTED',
+                connectedAt: new Date(),
+                config: { platformManaged: true },
+                organizationId: user.organizationId,
+              },
+            }),
+            null
+          );
+          report.actions.push('✅ Created org Twilio integration record: status=CONNECTED, config.platformManaged=true');
+        }
+
+        // Fix 2: Enable SMS flags for this org
         const updated = await safeQuery(
           db.notificationSetting.upsert({
             where: { organizationId: user.organizationId },
