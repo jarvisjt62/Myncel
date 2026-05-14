@@ -206,6 +206,54 @@ export async function GET(req: NextRequest) {
       adminByType.set(ai.type, ai);
     }
 
+    // Self-healing pre-pass: fix stale integration records for non-admin orgs.
+    // If admin has a platform-wide integration CONNECTED and the org has a stale record
+    // (e.g., CONNECTED without platformManaged, DISCONNECTED without opt-out, etc.),
+    // fix it now so the status returned to the frontend is correct.
+    if (!isSameOrgAsAdmin) {
+      for (const type of INTEGRATION_TYPES) {
+        if (!PLATFORM_WIDE_TYPES.has(type.id.toUpperCase())) continue;
+        const adminInt = adminByType.get(type.id.toUpperCase());
+        if (adminInt?.status !== 'CONNECTED') continue;
+
+        const existing = (existingIntegrations as any[]).find((i: any) => i.type === type.id.toUpperCase());
+        if (!existing) continue; // No record = inherited by default, no fix needed
+
+        const existingConfig = (existing?.config as Record<string, any> | null) || null;
+        const hasOptOut = existing.status === 'DISCONNECTED' && existingConfig?.disabledPlatformInheritance === true;
+        const hasOptIn = existing.status === 'CONNECTED' && existingConfig?.platformManaged === true;
+
+        if (hasOptOut || hasOptIn) continue; // Already in a known state
+
+        // Stale record detected — heal it
+        console.log(`[integrations GET] self-healing ${type.id} for org ${user.organizationId}: existing status=${existing.status}, fixing to CONNECTED+platformManaged`);
+        await safeQuery(
+          db.integration.upsert({
+            where: { organizationId_type: { organizationId: user.organizationId, type: type.id.toUpperCase() as any } },
+            create: {
+              type: type.id.toUpperCase() as any,
+              name: type.name,
+              status: 'CONNECTED',
+              connectedAt: new Date(),
+              config: { platformManaged: true },
+              organization: { connect: { id: user.organizationId } },
+            },
+            update: {
+              status: 'CONNECTED',
+              connectedAt: new Date(),
+              disconnectedAt: null,
+              config: { platformManaged: true },
+            },
+          }),
+          null
+        ).catch(err => console.error('[integrations GET] self-healing failed:', err));
+
+        // Update the in-memory record so the map below sees the corrected state
+        existing.status = 'CONNECTED';
+        existing.config = { platformManaged: true };
+      }
+    }
+
     // Merge with integration types
     const integrations = INTEGRATION_TYPES.map((type) => {
       const existing = (existingIntegrations as any[]).find((i: any) => i.type === type.id.toUpperCase());
