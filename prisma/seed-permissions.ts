@@ -271,8 +271,10 @@ async function main() {
 
 main()
   .catch(err => {
-    console.error('❌ Seed failed:', err);
-    process.exit(1);
+    // Log the error but don't exit with code 1 — a seed failure should not
+    // block the entire Vercel deployment. The app still works without fresh
+    // seed data; admins can re-run `npx tsx prisma/seed-permissions.ts` manually.
+    console.error('⚠️  Seed failed (non-fatal):', err?.message || err);
   })
   .finally(async () => {
     await db.$disconnect();
