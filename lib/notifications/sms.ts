@@ -92,12 +92,15 @@ export async function sendSmsNotification(
 }
 
 /**
- * Send SMS to all users in an organization who have SMS enabled
+ * Send SMS to the organization's configured phone number.
+ * The caller (dispatch.ts) is responsible for checking whether SMS should be
+ * sent for this event type and severity. This function only verifies that
+ * SMS is enabled and a phone number is configured.
  */
 export async function broadcastSms(
   organizationId: string,
   message: string,
-  criticalOnly = false
+  _criticalOnly = false // kept for backwards compatibility; caller handles filtering
 ): Promise<{ sent: number; failed: number }> {
   let sent = 0;
   let failed = 0;
@@ -112,7 +115,6 @@ export async function broadcastSms(
     );
 
     if (!settings?.smsEnabled) return { sent: 0, failed: 0 };
-    if (criticalOnly && !settings.smsCriticalOnly) return { sent: 0, failed: 0 };
 
     const phoneNumber = settings.phoneNumber;
     if (!phoneNumber) return { sent: 0, failed: 0 };

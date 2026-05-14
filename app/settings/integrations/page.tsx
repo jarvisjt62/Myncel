@@ -209,6 +209,29 @@ function IntegrationsPage() {
 
   const handleConnect = async (id: string) => {
     if (id === 'twilio') {
+      // If Twilio is platform-managed (admin already configured), just enable it without credentials
+      const twilioData = integrations['twilio'];
+      if (twilioData?.adminConnected || twilioData?.platformInherited) {
+        // Platform-managed: enable via reenable endpoint
+        setWorking(id);
+        try {
+          const res = await fetch(`/api/integrations/${id}/reenable`, { method: 'POST' });
+          if (res.ok) {
+            showToast('success', 'SMS Notifications enabled! The platform admin has already configured Twilio.');
+            invalidateCache('integrations');
+            fetchIntegrations(false);
+          } else {
+            const data = await res.json();
+            showToast('error', data.error || 'Failed to enable SMS');
+          }
+        } catch {
+          showToast('error', 'Failed to enable SMS Notifications.');
+        } finally {
+          setWorking(null);
+        }
+        return;
+      }
+      // Non-platform-managed: show Twilio credentials form
       setTwilioForm({ accountSid: '', authToken: '', fromNumber: '' });
       setTwilioError('');
       setModal({ kind: 'twilio' });
@@ -351,7 +374,15 @@ function IntegrationsPage() {
 
   const connectedIds = ALL_IDS.filter(isConnected);
   const disabledPlatformIds = ALL_IDS.filter(isDisabledPlatform);
-  const availableIds = ALL_IDS.filter(id => !isConnected(id) && !isDisabledPlatform(id) && !isPlatformManaged(id));
+  // Platform-managed but not yet enabled by this org (admin has it, org hasn't opted in or out)
+  const platformAvailableIds = ALL_IDS.filter(id => {
+    if (isConnected(id) || isDisabledPlatform(id)) return false;
+    const data = integrations[id];
+    // Show as platform-available if admin has it connected but this org hasn't enabled it
+    return data?.adminConnected && data?.status !== 'PLATFORM_INHERITED';
+  });
+  // Truly available (no platform management, org needs own credentials)
+  const availableIds = ALL_IDS.filter(id => !isConnected(id) && !isDisabledPlatform(id) && !isPlatformManaged(id) && !platformAvailableIds.includes(id));
 
   return (
     <div className="space-y-6">
@@ -733,6 +764,54 @@ function IntegrationsPage() {
                             <span className="inline-block h-5 w-5 transform rounded-full bg-white transition-transform translate-x-1 shadow-sm" />
                           </button>
                         </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Platform-Managed — Available to Enable */}
+          {platformAvailableIds.length > 0 && (
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>
+                Platform-Managed ({platformAvailableIds.length})
+              </h3>
+              <div className="grid gap-3">
+                {platformAvailableIds.map(id => {
+                  const meta = INTEGRATION_META[id];
+                  const data = integrations[id];
+                  return (
+                    <div key={id} className="rounded-xl border p-5" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <span className="text-3xl">{meta.icon}</span>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{meta.name}</h4>
+                              <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-medium">
+                                Platform-Managed
+                              </span>
+                            </div>
+                            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{meta.description}</p>
+                            {data?.fromNumber && (
+                              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                                From number: {data.fromNumber} (configured by admin)
+                              </p>
+                            )}
+                            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                              Your platform admin has already configured this integration. Click Enable to activate it for your organization.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleConnect(id)}
+                          disabled={working === id}
+                          className="px-4 py-2 text-sm bg-[#635bff] text-white rounded-lg hover:bg-[#4f46e5] disabled:opacity-50 transition-colors whitespace-nowrap flex-shrink-0"
+                        >
+                          {working === id ? 'Enabling…' : 'Enable'}
+                        </button>
                       </div>
                     </div>
                   );

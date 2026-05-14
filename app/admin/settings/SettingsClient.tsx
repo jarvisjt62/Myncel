@@ -16,6 +16,15 @@ interface FeatureFlags {
   changelogNote: string
 }
 
+interface IntegrationStatus {
+  slack: boolean
+  twilio: boolean
+  zapier: boolean
+  quickbooks: boolean
+  google_sheets: boolean
+  webhooks: boolean
+}
+
 export default function SettingsClient({ organizationId, canCleanup, hasData }: SettingsClientProps) {
   const router = useRouter()
   const { theme, isDark } = useTheme()
@@ -29,12 +38,37 @@ export default function SettingsClient({ organizationId, canCleanup, hasData }: 
     changelogNote: '',
   })
   const [flagsLoading, setFlagsLoading] = useState(true)
+  const [integStatus, setIntegStatus] = useState<IntegrationStatus>({
+    slack: false, twilio: false, zapier: false, quickbooks: false, google_sheets: false, webhooks: false,
+  })
   const [flagsSaving, setFlagsSaving] = useState(false)
   const [flagsMsg, setFlagsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
     fetchFlags()
+    fetchIntegrationStatus()
   }, [])
+
+  const fetchIntegrationStatus = async () => {
+    try {
+      const res = await fetch('/api/integrations')
+      if (res.ok) {
+        const data = await res.json()
+        const status: IntegrationStatus = {
+          slack: false, twilio: false, zapier: false, quickbooks: false, google_sheets: false, webhooks: false,
+        }
+        for (const i of data.integrations || []) {
+          const key = i.id as string
+          if (key in status) {
+            (status as any)[key] = i.connected || i.status === 'CONNECTED' || i.status === 'PLATFORM_INHERITED'
+          }
+        }
+        setIntegStatus(status)
+      }
+    } catch (e) {
+      console.error('Failed to fetch integration status:', e)
+    }
+  }
 
   const fetchFlags = async () => {
     try {
@@ -234,84 +268,30 @@ export default function SettingsClient({ organizationId, canCleanup, hasData }: 
           Connect Sentinel with your existing tools and workflows.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Slack */}
-            <div className="rounded-xl border p-5 flex flex-col gap-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg" style={{ background: 'var(--bg-secondary)', color: '#4A154B' }}>S</div>
-                <div>
-                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Slack</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Team notifications</p>
+            {([
+              { key: 'slack' as const, icon: 'S', color: '#4A154B', name: 'Slack', desc: 'Team notifications', detail: 'Send alerts and work order updates directly to Slack channels.' },
+              { key: 'twilio' as const, icon: 'T', color: '#F22F46', name: 'SMS / Twilio', desc: 'Text message alerts', detail: 'Receive critical machine alerts via SMS using Twilio.' },
+              { key: 'zapier' as const, icon: 'Z', color: '#FF4A00', name: 'Zapier', desc: 'Workflow automation', detail: 'Automate workflows by connecting Myncel to 5,000+ apps.' },
+              { key: 'quickbooks' as const, icon: 'Q', color: '#2CA01C', name: 'QuickBooks', desc: 'Accounting sync', detail: 'Sync maintenance costs and work orders with QuickBooks.' },
+              { key: 'google_sheets' as const, icon: 'G', color: '#0F9D58', name: 'Google Sheets', desc: 'Data export', detail: 'Export machine data and reports to Google Sheets automatically.' },
+              { key: 'webhooks' as const, icon: 'W', color: '#6366f1', name: 'Webhooks', desc: 'Custom HTTP events', detail: 'Send real-time event data to any endpoint via HTTP webhooks.' },
+            ] as const).map(integ => {
+              const active = integStatus[integ.key]
+              return (
+                <div key={integ.key} className="rounded-xl border p-5 flex flex-col gap-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg" style={{ background: 'var(--bg-secondary)', color: integ.color }}>{integ.icon}</div>
+                    <div>
+                      <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{integ.name}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{integ.desc}</p>
+                    </div>
+                    <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: active ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: active ? '#10b981' : '#ef4444' }}>{active ? 'Active' : 'Inactive'}</span>
+                  </div>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{integ.detail}</p>
+                  <a href="/settings/integrations" className="text-xs font-medium text-blue-500 hover:underline mt-auto">Configure →</a>
                 </div>
-                <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>Inactive</span>
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Send alerts and work order updates directly to Slack channels.</p>
-              <a href="/settings/integrations" className="text-xs font-medium text-blue-500 hover:underline mt-auto">Configure →</a>
-            </div>
-            {/* SMS / Twilio */}
-            <div className="rounded-xl border p-5 flex flex-col gap-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg" style={{ background: 'var(--bg-secondary)', color: '#F22F46' }}>T</div>
-                <div>
-                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>SMS / Twilio</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Text message alerts</p>
-                </div>
-                <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>Inactive</span>
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Receive critical machine alerts via SMS using Twilio.</p>
-              <a href="/settings/integrations" className="text-xs font-medium text-blue-500 hover:underline mt-auto">Configure →</a>
-            </div>
-            {/* Zapier */}
-            <div className="rounded-xl border p-5 flex flex-col gap-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg" style={{ background: 'var(--bg-secondary)', color: '#FF4A00' }}>Z</div>
-                <div>
-                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Zapier</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Workflow automation</p>
-                </div>
-                <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>Inactive</span>
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Automate workflows by connecting Sentinel to 5,000+ apps.</p>
-              <a href="/settings/integrations" className="text-xs font-medium text-blue-500 hover:underline mt-auto">Configure →</a>
-            </div>
-            {/* QuickBooks */}
-            <div className="rounded-xl border p-5 flex flex-col gap-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg" style={{ background: 'var(--bg-secondary)', color: '#2CA01C' }}>Q</div>
-                <div>
-                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>QuickBooks</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Accounting sync</p>
-                </div>
-                <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>Inactive</span>
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Sync maintenance costs and work orders with QuickBooks.</p>
-              <a href="/settings/integrations" className="text-xs font-medium text-blue-500 hover:underline mt-auto">Configure →</a>
-            </div>
-            {/* Google Sheets */}
-            <div className="rounded-xl border p-5 flex flex-col gap-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg" style={{ background: 'var(--bg-secondary)', color: '#0F9D58' }}>G</div>
-                <div>
-                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Google Sheets</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Data export</p>
-                </div>
-                <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>Inactive</span>
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Export machine data and reports to Google Sheets automatically.</p>
-              <a href="/settings/integrations" className="text-xs font-medium text-blue-500 hover:underline mt-auto">Configure →</a>
-            </div>
-            {/* Webhooks */}
-            <div className="rounded-xl border p-5 flex flex-col gap-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg" style={{ background: 'var(--bg-secondary)', color: '#6366f1' }}>W</div>
-                <div>
-                  <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Webhooks</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Custom HTTP events</p>
-                </div>
-                <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>Inactive</span>
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Send real-time event data to any endpoint via HTTP webhooks.</p>
-              <a href="/settings/integrations" className="text-xs font-medium text-blue-500 hover:underline mt-auto">Configure →</a>
-            </div>
+              )
+            })}
           </div>
           <div className="pt-2">
             <a href="/settings/integrations" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white" style={{ background: 'var(--accent-blue)' }}>

@@ -190,6 +190,12 @@ export default function NotificationsPage() {
               and{' '}
               <a href="/terms" className="underline" style={{ color: 'var(--color-primary, #635bff)' }}>Terms of Service</a>.
             </p>
+            {capabilities.smsPlatformManaged && (
+              <div className="mt-3 rounded-lg px-3 py-2 text-xs flex items-start gap-2" style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe' }}>
+                <span className="flex-shrink-0 mt-0.5">ℹ️</span>
+                <span>SMS is powered by your platform admin's Twilio configuration. No additional credentials needed — just toggle on and enter your phone number.</span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between pt-2">
@@ -203,7 +209,16 @@ export default function NotificationsPage() {
             </div>
             <Toggle
               checked={settings.smsEnabled}
-              onChange={() => toggle('smsEnabled')}
+              onChange={() => {
+                const newVal = !settings.smsEnabled;
+                setSettings(prev => ({
+                  ...prev,
+                  smsEnabled: newVal,
+                  // When opting in, also enable SMS work orders and alerts automatically
+                  smsWorkOrders: newVal ? true : prev.smsWorkOrders,
+                  smsAlerts: newVal ? true : prev.smsAlerts,
+                }));
+              }}
               disabled={!capabilities.sms}
             />
           </div>
@@ -238,8 +253,19 @@ export default function NotificationsPage() {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Critical Equipment Alerts Only</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>Only send SMS text messages for critical priority equipment alerts</p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Equipment Alert SMS</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>Receive a text message for equipment alerts and overdue maintenance</p>
+                </div>
+                <Toggle
+                  checked={settings.smsAlerts}
+                  onChange={() => toggle('smsAlerts')}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Critical Alerts Only</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>Only send SMS for CRITICAL and HIGH priority equipment alerts (filters the alerts above)</p>
                 </div>
                 <Toggle
                   checked={settings.smsCriticalOnly}

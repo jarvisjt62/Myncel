@@ -1,9 +1,10 @@
 /**
  * Centralized notification helper.
- * Sends in-app notifications and optional emails to users.
+ * Sends in-app notifications, emails, and SMS to users.
  */
 import { db } from '@/lib/db';
 import { sendWorkOrderAssignedEmail, sendAlertNotificationEmail } from '@/lib/email';
+import { broadcastSms, workOrderSmsMessage, alertSmsMessage } from '@/lib/notifications/sms';
 
 // ─── In-app notification ──────────────────────────────────────────────────────
 
@@ -99,6 +100,32 @@ export async function notifyWorkOrderAssigned({
         assignerName
       ).catch(console.error);
     }
+
+    // SMS notification — send to the org's SMS settings phone number if enabled
+    try {
+      const orgId = (await db.user.findUnique({
+        where: { id: assignedToId },
+        select: { organizationId: true },
+      }))?.organizationId;
+      if (orgId) {
+        const settings = await db.notificationSetting.findFirst({
+          where: { organizationId: orgId },
+        });
+        if (settings?.smsEnabled && settings?.smsWorkOrders && settings?.phoneNumber) {
+          const smsText = workOrderSmsMessage({
+            workOrderNumber: wo.woNumber,
+            title: wo.title,
+            machineName: wo.machine?.name || 'Unknown Machine',
+            priority: wo.priority,
+          });
+          broadcastSms(orgId, smsText, settings.smsCriticalOnly).catch(err =>
+            console.error('[notify] SMS dispatch error:', err)
+          );
+        }
+      }
+    } catch (err) {
+      console.error('[notify] SMS notification check error:', err);
+    }
   } catch (error) {
     console.error('[notify] Failed to notify work order assignment:', error);
   }
@@ -179,6 +206,28 @@ export async function notifyAlert({
         }
       })
     );
+
+    // SMS notification for alerts
+    try {
+      const settings = await db.notificationSetting.findFirst({
+        where: { organizationId },
+      });
+      if (settings?.smsEnabled && settings?.smsAlerts && settings?.phoneNumber) {
+        const isCritical = alert.severity === 'CRITICAL' || alert.severity === 'HIGH';
+        if (!settings.smsCriticalOnly || isCritical) {
+          const smsText = alertSmsMessage({
+            alertTitle: alert.title,
+            machineName,
+            severity: alert.severity,
+          });
+          broadcastSms(organizationId, smsText, settings.smsCriticalOnly).catch(err =>
+            console.error('[notify] SMS alert dispatch error:', err)
+          );
+        }
+      }
+    } catch (err) {
+      console.error('[notify] SMS alert notification check error:', err);
+    }
   } catch (error) {
     console.error('[notify] Failed to notify alert:', error);
   }
