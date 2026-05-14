@@ -72,6 +72,17 @@ export async function dispatchNotifications(
       null
     );
 
+    // Load the organization name so we can include it in SMS/email messages
+    const organization = await safeQuery(
+      db.organization.findUnique({
+        where: { id: organizationId },
+        select: { name: true },
+      }),
+      null
+    );
+    const orgName = organization?.name || 'Myncel';
+    const dashboardUrl = `${APP_URL}/dashboard`;
+
     // If no settings row exists yet, check if platform SMS is available and auto-create
     if (!settings) {
       console.log(`${logPrefix} no NotificationSetting row exists — auto-creating`);
@@ -154,11 +165,11 @@ export async function dispatchNotifications(
         let smsText = '';
 
         if (event.type === 'work_order.created') {
-          smsText = workOrderSmsMessage(event);
+          smsText = workOrderSmsMessage({ ...event, orgName, dashboardUrl });
         } else if (event.type === 'alert.triggered') {
-          smsText = alertSmsMessage(event);
+          smsText = alertSmsMessage({ ...event, orgName, dashboardUrl });
         } else if (event.type === 'pm.overdue') {
-          smsText = pmOverdueSmsMessage(event);
+          smsText = pmOverdueSmsMessage({ ...event, orgName, dashboardUrl });
         }
 
         if (smsText) {

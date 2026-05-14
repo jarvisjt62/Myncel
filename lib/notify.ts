@@ -103,20 +103,25 @@ export async function notifyWorkOrderAssigned({
 
     // SMS notification — send to the org's SMS settings phone number if enabled
     try {
-      const orgId = (await db.user.findUnique({
+      const assigneeUser = await db.user.findUnique({
         where: { id: assignedToId },
         select: { organizationId: true },
-      }))?.organizationId;
+      });
+      const orgId = assigneeUser?.organizationId;
       if (orgId) {
-        const settings = await db.notificationSetting.findFirst({
-          where: { organizationId: orgId },
-        });
+        const [settings, organization] = await Promise.all([
+          db.notificationSetting.findFirst({ where: { organizationId: orgId } }),
+          db.organization.findUnique({ where: { id: orgId }, select: { name: true } }),
+        ]);
         if (settings?.smsEnabled && settings?.smsWorkOrders && settings?.phoneNumber) {
+          const appUrl = process.env.NEXTAUTH_URL || 'https://myncel.com';
           const smsText = workOrderSmsMessage({
             workOrderNumber: wo.woNumber,
             title: wo.title,
             machineName: wo.machine?.name || 'Unknown Machine',
             priority: wo.priority,
+            orgName: organization?.name,
+            dashboardUrl: `${appUrl}/dashboard`,
           });
           broadcastSms(orgId, smsText, settings.smsCriticalOnly).catch(err =>
             console.error('[notify] SMS dispatch error:', err)
@@ -209,16 +214,20 @@ export async function notifyAlert({
 
     // SMS notification for alerts
     try {
-      const settings = await db.notificationSetting.findFirst({
-        where: { organizationId },
-      });
+      const [settings, organization] = await Promise.all([
+        db.notificationSetting.findFirst({ where: { organizationId } }),
+        db.organization.findUnique({ where: { id: organizationId }, select: { name: true } }),
+      ]);
       if (settings?.smsEnabled && settings?.smsAlerts && settings?.phoneNumber) {
         const isCritical = alert.severity === 'CRITICAL' || alert.severity === 'HIGH';
         if (!settings.smsCriticalOnly || isCritical) {
+          const appUrl = process.env.NEXTAUTH_URL || 'https://myncel.com';
           const smsText = alertSmsMessage({
             alertTitle: alert.title,
             machineName,
             severity: alert.severity,
+            orgName: organization?.name,
+            dashboardUrl: `${appUrl}/dashboard`,
           });
           broadcastSms(organizationId, smsText, settings.smsCriticalOnly).catch(err =>
             console.error('[notify] SMS alert dispatch error:', err)

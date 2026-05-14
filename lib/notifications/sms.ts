@@ -68,8 +68,9 @@ export async function sendSmsNotification(
 
     const { accountSid, authToken, fromNumber } = config;
 
-    // Truncate to SMS max length
-    const truncatedMessage = message.length > 160 ? message.slice(0, 157) + '…' : message;
+    // Allow multi-segment SMS up to 1600 chars (Twilio auto-splits into 160-char segments).
+    // A single GSM-7 SMS is 160 chars; with a URL included we typically use 2 segments max.
+    const truncatedMessage = message.length > 1600 ? message.slice(0, 1597) + '…' : message;
 
     console.log(`${logPrefix} calling Twilio API from=${fromNumber} sid=${accountSid.substring(0, 8)}...`);
 
@@ -156,29 +157,41 @@ export async function broadcastSms(
   return { sent, failed };
 }
 
-// ── Pre-built SMS message formatters ─────────────────────────────
+// ── Pre-built SMS message formatters ───────────────────────────
 
 export function workOrderSmsMessage(opts: {
   workOrderNumber: string;
   title: string;
   machineName: string;
   priority: string;
+  orgName?: string;
+  dashboardUrl?: string;
 }): string {
-  return `[Myncel] New ${opts.priority} work order WO#${opts.workOrderNumber}: "${opts.title}" on ${opts.machineName}. Log in to view.`;
+  const prefix = opts.orgName ? `[${opts.orgName}]` : '[Myncel]';
+  const cta = opts.dashboardUrl ? ` View: ${opts.dashboardUrl}` : ' Log in to view.';
+  return `${prefix} New ${opts.priority} work order WO#${opts.workOrderNumber}: "${opts.title}" on ${opts.machineName}.${cta}`;
 }
 
 export function alertSmsMessage(opts: {
   alertTitle: string;
   machineName: string;
   severity: string;
+  orgName?: string;
+  dashboardUrl?: string;
 }): string {
-  return `[Myncel] ${opts.severity} Alert: ${opts.alertTitle} on ${opts.machineName}. Check your dashboard immediately.`;
+  const prefix = opts.orgName ? `[${opts.orgName}]` : '[Myncel]';
+  const cta = opts.dashboardUrl ? ` View: ${opts.dashboardUrl}` : ' Check your dashboard immediately.';
+  return `${prefix} ${opts.severity} Alert: ${opts.alertTitle} on ${opts.machineName}.${cta}`;
 }
 
 export function pmOverdueSmsMessage(opts: {
   taskTitle: string;
   machineName: string;
   daysOverdue: number;
+  orgName?: string;
+  dashboardUrl?: string;
 }): string {
-  return `[Myncel] PM Overdue: "${opts.taskTitle}" on ${opts.machineName} is ${opts.daysOverdue} day(s) overdue. Schedule maintenance now.`;
+  const prefix = opts.orgName ? `[${opts.orgName}]` : '[Myncel]';
+  const cta = opts.dashboardUrl ? ` View: ${opts.dashboardUrl}` : ' Schedule maintenance now.';
+  return `${prefix} PM Overdue: "${opts.taskTitle}" on ${opts.machineName} is ${opts.daysOverdue} day(s) overdue.${cta}`;
 }
