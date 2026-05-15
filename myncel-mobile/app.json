@@ -103,17 +103,8 @@
       "router": {
         "origin": false
       },
-      "eas": {
-        "projectId": "00000000-0000-0000-0000-000000000000"
-      },
       "apiBaseUrl": "https://www.myncel.com"
     },
-    "owner": "jarvisitconsults",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/00000000-0000-0000-0000-000000000000"
-    }
+    "owner": "jarvisitconsults"
   }
 }
