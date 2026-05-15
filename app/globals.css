@@ -929,3 +929,16 @@ html, body {
     gap: 0.5rem;
   }
 }
+
+/* 9. Mobile sidebar slide-in animation */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.animate-slide-in-left {
+  animation: slideInLeft 0.2s ease-out forwards;
+}

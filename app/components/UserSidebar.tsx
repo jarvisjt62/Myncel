@@ -41,6 +41,16 @@ function UserShellInner({ user, children }: UserSidebarProps) {
   const [currentHash, setCurrentHash] = useState('');
   const accountRef = useRef<HTMLDivElement>(null);
 
+  // Prevent body scrolling when mobile sidebar is open
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [sidebarOpen]);
+
   // Track URL hash changes so sidebar highlights update in real-time
   useEffect(() => {
     const syncHash = () => setCurrentHash(window.location.hash.replace('#', ''));
@@ -593,11 +603,23 @@ function UserShellInner({ user, children }: UserSidebarProps) {
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="w-60 flex flex-col">
+        <div className="lg:hidden fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
+          {/* Sidebar panel with slide-in */}
+          <div className="relative w-60 max-w-[80vw] flex flex-col flex-shrink-0 shadow-2xl animate-slide-in-left" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
+            {/* Close button */}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="absolute top-3 right-3 p-1 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-muted)] z-10"
+              aria-label="Close menu"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
             <Sidebar />
           </div>
-          <div className="flex-1 bg-black/30" onClick={() => setSidebarOpen(false)} />
         </div>
       )}
 
