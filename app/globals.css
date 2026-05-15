@@ -942,3 +942,11 @@ html, body {
 .animate-slide-in-left {
   animation: slideInLeft 0.2s ease-out forwards;
 }
+
+/* 10. Mobile sidebar: shrink icons, tighten spacing for compact look */
+@media (max-width: 1023px) {
+  .mobile-sidebar-nav svg.w-4.h-4 {
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+  }
+}

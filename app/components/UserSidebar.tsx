@@ -229,7 +229,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
         prefetch={true}
         onClick={() => setSidebarOpen(false)}
         onMouseEnter={handleMouseEnter}
-        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+        className={`w-full flex items-center gap-2 lg:gap-2.5 px-2.5 py-1.5 lg:px-3 lg:py-2 rounded-lg text-xs lg:text-sm font-medium transition-all ${
           isActive
             ? 'bg-[#635bff]/10 text-[#635bff]'
             : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] hover:text-[var(--text-primary)]'
@@ -255,7 +255,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
           e.preventDefault();
           navigateToTab(hash);
         }}
-        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+        className={`w-full flex items-center gap-2 lg:gap-2.5 px-2.5 py-1.5 lg:px-3 lg:py-2 rounded-lg text-xs lg:text-sm font-medium transition-all ${
           isActive
             ? 'bg-[#635bff]/10 text-[#635bff]'
             : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] hover:text-[var(--text-primary)]'
@@ -294,12 +294,12 @@ function UserShellInner({ user, children }: UserSidebarProps) {
   const Sidebar = () => (
     <aside className="w-full lg:w-60 flex flex-col h-screen lg:h-full" style={{ backgroundColor: 'var(--bg-sidebar)', borderRight: '1px solid var(--border)' }}>
       {/* Logo */}
-      <div className="p-5" style={{ borderBottom: '1px solid var(--border)' }}>
+      <div className="p-3 lg:p-5" style={{ borderBottom: '1px solid var(--border)' }}>
         <Link href="/dashboard" prefetch={true} className="flex items-center gap-1.5">
-          <img src="/logo.png" alt="Myncel" className="w-9 h-9" />
+          <img src="/logo.png" alt="Myncel" className="w-7 h-7 lg:w-9 lg:h-9" />
           <div>
-            <div className="font-bold text-sm text-[var(--text-primary)]">Myncel</div>
-            <div className="text-xs text-[var(--text-muted)] flex items-center gap-1">
+            <div className="font-bold text-xs lg:text-sm text-[var(--text-primary)]">Myncel</div>
+            <div className="text-[10px] lg:text-xs text-[var(--text-muted)] flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
               {user.organizationName}
             </div>
@@ -308,7 +308,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      <nav className="mobile-sidebar-nav flex-1 p-2 lg:p-3 space-y-0 lg:space-y-0.5 overflow-y-auto">
 
         {/* Dashboard — uses hashTabButton with empty hash so clicking it while already
             on /dashboard clears the hash and resets DashboardClient to the main tab */}
@@ -363,8 +363,8 @@ function UserShellInner({ user, children }: UserSidebarProps) {
 
         {/* IoT & Tools section — only shown if at least one item is enabled */}
         {showIotSection && (
-          <div className="pt-3 mt-1" style={{ borderTop: '1px solid var(--border)' }}>
-            <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>IoT & Tools</p>
+          <div className="pt-2 lg:pt-3 mt-1" style={{ borderTop: '1px solid var(--border)' }}>
+            <p className="px-2.5 lg:px-3 py-0.5 lg:py-1 text-[9px] lg:text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>IoT & Tools</p>
 
             {isEnabled('feature.hmi.enabled') && navLink('/dashboard/hmi', 'hmi', 'HMI Monitor',
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -397,8 +397,8 @@ function UserShellInner({ user, children }: UserSidebarProps) {
         )}
 
         {/* Docs & Guides section */}
-        <div className="pt-3 mt-1" style={{ borderTop: '1px solid var(--border)' }}>
-          <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Docs & Guides</p>
+        <div className="pt-2 lg:pt-3 mt-1" style={{ borderTop: '1px solid var(--border)' }}>
+          <p className="px-2.5 lg:px-3 py-0.5 lg:py-1 text-[9px] lg:text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Docs & Guides</p>
 
           {showApiDocs && navLink('/docs/api', 'api-docs', 'API Docs',
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -426,7 +426,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
         </div>
 
         {/* Settings */}
-        <div className="pt-3 mt-1" style={{ borderTop: '1px solid var(--border)' }}>
+        <div className="pt-2 lg:pt-3 mt-1" style={{ borderTop: '1px solid var(--border)' }}>
           {navLink('/settings', 'settings', 'Settings',
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -457,19 +457,19 @@ function UserShellInner({ user, children }: UserSidebarProps) {
       </nav>
 
       {/* —— Account Footer with Dropdown —— */}
-      <div className="p-3" style={{ borderTop: '1px solid var(--border)' }} ref={accountRef}>
+      <div className="p-2 lg:p-3" style={{ borderTop: '1px solid var(--border)' }} ref={accountRef}>
         {/* Account dropdown trigger button */}
         <button
           onClick={() => setAccountOpen(o => !o)}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-[var(--bg-surface-2)]"
+          className="w-full flex items-center gap-2 lg:gap-3 px-2.5 py-1.5 lg:px-3 lg:py-2.5 rounded-xl transition-all hover:bg-[var(--bg-surface-2)]"
           style={{ border: '1px solid var(--border)' }}
         >
-          <div className="w-8 h-8 rounded-full bg-[#635bff] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+          <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-[#635bff] flex items-center justify-center text-white text-[10px] lg:text-xs font-bold flex-shrink-0">
             {user.name.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0 text-left">
-            <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user.name}</p>
-            <p className="text-[10px] font-medium" style={{ color: 'var(--accent)', opacity: 0.85 }}>{user.role}</p>
+            <p className="text-[10px] lg:text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user.name}</p>
+            <p className="text-[9px] lg:text-[10px] font-medium" style={{ color: 'var(--accent)', opacity: 0.85 }}>{user.role}</p>
           </div>
           <svg
             className="w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200"
@@ -607,14 +607,14 @@ function UserShellInner({ user, children }: UserSidebarProps) {
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
           {/* Sidebar panel — pinned to left edge with slide-in, full viewport height */}
-          <div className="absolute left-0 top-0 h-screen w-52 max-w-[75vw] flex flex-col shadow-2xl animate-slide-in-left" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
+          <div className="absolute left-0 top-0 h-screen w-48 max-w-[75vw] flex flex-col shadow-2xl animate-slide-in-left" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
             {/* Close button */}
             <button
               onClick={() => setSidebarOpen(false)}
-              className="absolute top-3 right-3 p-1 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-muted)] z-10"
+              className="absolute top-2 right-2 p-1 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-muted)] z-10"
               aria-label="Close menu"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>

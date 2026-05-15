@@ -1217,7 +1217,7 @@ function DashboardClientInner({ user, data }: Props) {
                       return events.slice(0, 10).map((event, idx) => (
                         <div key={idx} className="flex gap-3 relative">
                           {/* Timeline dot */}
-                          <div className={`relative z-10 w-8 h-8 rounded-full ${event.color} flex items-center justify-center text-white flex-shrink-0`}>
+                          <div className={`relative z-10 w-8 h-8 aspect-square rounded-full ${event.color} flex items-center justify-center text-white flex-shrink-0`}>
                             {event.icon}
                           </div>
                           {/* Event content */}
@@ -1794,7 +1794,7 @@ function DashboardClientInner({ user, data }: Props) {
       {/* User */}
       <div className="p-4" style={{ borderTop: '1px solid var(--border)' }}>
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-[#635bff] flex items-center justify-center text-white text-xs font-bold">
+          <div className="w-8 h-8 aspect-square rounded-full bg-[#635bff] flex items-center justify-center text-white text-xs font-bold">
             {user.name.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
@@ -2474,7 +2474,7 @@ function DashboardClientInner({ user, data }: Props) {
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <button
                           onClick={(e) => { e.stopPropagation(); markTaskDone(task.id); }}
-                          className="flex-shrink-0 w-5 h-5 rounded-full border-2 border-[var(--border)] hover:border-emerald-400 hover:bg-emerald-50 transition-colors flex items-center justify-center group"
+                          className="flex-shrink-0 w-5 h-5 aspect-square min-w-5 min-h-5 rounded-full border-2 border-[var(--border)] hover:border-emerald-400 hover:bg-emerald-50 transition-colors flex items-center justify-center group"
                           title="Mark as done"
                         >
                           <svg className="w-3 h-3 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2542,7 +2542,7 @@ function DashboardClientInner({ user, data }: Props) {
                     {maintenanceTasks.filter(t => doneTasks.has(t.id)).map((task) => (
                       <div key={task.id} className="px-3 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between bg-emerald-50/30 gap-2">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                          <div className="flex-shrink-0 w-5 h-5 aspect-square min-w-5 min-h-5 rounded-full bg-emerald-500 flex items-center justify-center">
                             <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
