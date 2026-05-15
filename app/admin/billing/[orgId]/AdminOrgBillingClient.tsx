@@ -210,7 +210,7 @@ export default function AdminOrgBillingClient({ org, auditLogs, stripeConfigured
 
       {/* Overview Tab */}
       {activeTab === 'overview' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
           {/* Billing Info Card */}
           <div style={{
@@ -248,7 +248,7 @@ export default function AdminOrgBillingClient({ org, auditLogs, stripeConfigured
               <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px' }}>
                 📈 Usage
               </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <div className="grid grid-cols-3 gap-3">
                 {[
                   { label: 'Users', value: org.userCount, icon: '👥' },
                   { label: 'Machines', value: org.machineCount, icon: '⚙️' },

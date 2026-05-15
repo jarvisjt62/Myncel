@@ -190,22 +190,22 @@ export default function ExportActionsBar({
   };
 
   const btnBase =
-    'inline-flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-colors disabled:opacity-50';
+    'inline-flex items-center gap-1 text-[10px] sm:text-xs px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50';
 
   return (
-    <div ref={wrapRef} className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+    <div ref={wrapRef} className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
       {/* CSV download */}
       <a
         href={downloadUrl('csv')}
         className={`${btnBase} border border-[var(--border)] text-[var(--text-secondary)] hover:border-[#635bff] hover:text-[#635bff]`}
         title="Download as CSV"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="sm:w-[14px] sm:h-[14px]">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
           <polyline points="7 10 12 15 17 10" />
           <line x1="12" y1="15" x2="12" y2="3" />
         </svg>
-        CSV
+        <span className="hidden xs:inline sm:inline">CSV</span>
       </a>
 
       {/* PDF (print-ready HTML) */}
@@ -216,11 +216,11 @@ export default function ExportActionsBar({
         className={`${btnBase} border border-[var(--border)] text-[var(--text-secondary)] hover:border-[#635bff] hover:text-[#635bff]`}
         title="Open print-ready PDF in a new tab"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="sm:w-[14px] sm:h-[14px]">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
           <polyline points="14 2 14 8 20 8" />
         </svg>
-        PDF
+        <span className="hidden xs:inline sm:inline">PDF</span>
       </a>
 
       {/* Google Sheets */}
@@ -240,7 +240,7 @@ export default function ExportActionsBar({
           title={`Create a new Google Sheet with your ${DATASET_LABELS[dataset].toLowerCase()}`}
         >
           <span>📊</span>
-          {busy === 'google_sheets' ? 'Exporting…' : 'Sheets'}
+          <span className="hidden sm:inline">{busy === 'google_sheets' ? 'Exporting…' : 'Sheets'}</span>
         </button>
       )}
 
@@ -273,7 +273,7 @@ export default function ExportActionsBar({
           title={dataset === 'work_orders' ? 'Create QuickBooks invoices from completed work orders' : 'Sync parts inventory as QuickBooks items'}
         >
           <span>💰</span>
-          {busy === 'quickbooks' ? 'Creating…' : 'QuickBooks'}
+          <span className="hidden sm:inline">{busy === 'quickbooks' ? 'Creating…' : 'QuickBooks'}</span>
         </button>
       )}
 
@@ -294,7 +294,7 @@ export default function ExportActionsBar({
           title="Send a maintenance digest to Slack"
         >
           <span>💬</span>
-          {busy === 'slack' ? 'Sending…' : 'Slack'}
+          <span className="hidden sm:inline">{busy === 'slack' ? 'Sending…' : 'Slack'}</span>
         </button>
       )}
 

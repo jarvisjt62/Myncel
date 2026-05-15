@@ -155,7 +155,7 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
   };
 
   return (
-    <div style={{ padding:'24px 32px', maxWidth:1400, margin:'0 auto' }}>
+    <div className="px-4 sm:px-6 lg:px-8 py-5 sm:py-6 max-w-[1400px] mx-auto min-w-0">
       {/* Toast */}
       {toast && (
         <div style={{ position:'fixed',top:20,right:20,zIndex:9999,padding:'12px 20px',borderRadius:8,fontWeight:600,fontSize:14,
@@ -173,9 +173,9 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
 
       {/* Header */}
       <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20,gap:16,flexWrap:'wrap' }}>
-        <div>
+        <div style={{minWidth:0}}>
           <div style={{ display:'flex',alignItems:'center',gap:10,flexWrap:'wrap' }}>
-            <h1 style={{ fontSize:24,fontWeight:700,color:'var(--text-primary)',margin:0 }}>{org.name}</h1>
+            <h1 style={{ fontSize:20,fontWeight:700,color:'var(--text-primary)',margin:0 }} className="sm:text-2xl">{org.name}</h1>
             <Badge label={org.plan} color={PLAN_COLORS[org.plan]} />
             {org.isSuspended && <Badge label="SUSPENDED" color="#ef4444" />}
             {!org.isSuspended && org.subscriptionStatus && <Badge label={org.subscriptionStatus} color="#10b981" />}
@@ -204,15 +204,15 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
           <p style={{ fontWeight:700,color:'#ef4444',margin:'0 0 10px',fontSize:14 }}>Suspend "{org.name}"?</p>
           <input value={suspendReason} onChange={e=>setSuspendReason(e.target.value)} placeholder="Reason for suspension (optional)"
             style={{ width:'100%',padding:'8px 12px',borderRadius:7,border:'1px solid var(--border)',background:'var(--bg-surface)',color:'var(--text-primary)',fontSize:13,outline:'none',marginBottom:10,boxSizing:'border-box' }} />
-          <div style={{ display:'flex',gap:8 }}>
+          <div style={{ display:'flex',gap:8,flexWrap:'wrap' }}>
             <button onClick={suspendOrg} style={{ padding:'7px 18px',borderRadius:7,border:'none',background:'#ef4444',color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer' }}>Confirm Suspend</button>
             <button onClick={()=>setShowSuspendForm(false)} style={{ padding:'7px 18px',borderRadius:7,border:'1px solid var(--border)',background:'var(--bg-surface)',color:'var(--text-primary)',fontWeight:600,fontSize:13,cursor:'pointer' }}>Cancel</button>
           </div>
         </div>
       )}
 
-      {/* KPI strip */}
-      <div style={{ display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:12,marginBottom:24 }}>
+      {/* KPI strip — responsive: 2 cols on mobile, 3 on sm, 5 on lg */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
         {[
           { label:'Users',       val:org.counts.users,      icon:'👥', color:'#6366f1' },
           { label:'Machines',    val:org.counts.machines,   icon:'⚙️', color:'#10b981' },
@@ -220,22 +220,22 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
           { label:'Alerts',      val:org.counts.alerts,     icon:'🔔', color:'#ef4444' },
           { label:'Parts',       val:org.counts.parts,      icon:'🔩', color:'#8b5cf6' },
         ].map(k=>(
-          <div key={k.label} style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 16px' }}>
-            <div style={{ fontSize:20,marginBottom:4 }}>{k.icon}</div>
-            <div style={{ fontSize:22,fontWeight:700,color:k.color }}>{k.val}</div>
-            <div style={{ fontSize:12,color:'var(--text-secondary)',marginTop:2 }}>{k.label}</div>
+          <div key={k.label} style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 14px' }}>
+            <div style={{ fontSize:18,marginBottom:2 }}>{k.icon}</div>
+            <div style={{ fontSize:20,fontWeight:700,color:k.color }} className="sm:text-2xl">{k.val}</div>
+            <div style={{ fontSize:11,color:'var(--text-secondary)',marginTop:2 }} className="sm:text-xs">{k.label}</div>
           </div>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div style={{ display:'flex',gap:2,marginBottom:24,borderBottom:'1px solid var(--border)',overflowX:'auto' }}>
+      {/* Tabs — scrollable on mobile */}
+      <div className="flex gap-0.5 mb-6 border-b overflow-x-auto flex-nowrap -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap" style={{ borderColor:'var(--border)' }}>
         {TABS.map(tab=>(
           <button key={tab} onClick={()=>setActiveTab(tab)} style={{
-            padding:'8px 14px',fontSize:13,fontWeight:600,border:'none',background:'transparent',cursor:'pointer',whiteSpace:'nowrap',
+            padding:'8px 12px',fontSize:13,fontWeight:600,border:'none',background:'transparent',cursor:'pointer',whiteSpace:'nowrap',
             color:activeTab===tab?'var(--accent)':'var(--text-secondary)',
             borderBottom:activeTab===tab?'2px solid var(--accent)':'2px solid transparent',
-            marginBottom:-1,textTransform:'capitalize',
+            marginBottom:-1,textTransform:'capitalize',flexShrink:0,
           }}>
             {tabIcons[tab]} {tab.replace('-',' ')}
           </button>
@@ -244,7 +244,7 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
 
       {/* ═══════════════ OVERVIEW TAB ═══════════════ */}
       {activeTab==='overview' && (
-        <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:20 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Edit org info */}
           <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:22 }}>
             <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:'0 0 16px' }}>✏️ Edit Organization Info</h2>
@@ -315,7 +315,7 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
               ].map(([k,v])=>(
                 <div key={k} style={{ display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--border)',fontSize:13 }}>
                   <span style={{ color:'var(--text-secondary)',fontWeight:500 }}>{k}</span>
-                  <span style={{ color:'var(--text-primary)',fontWeight:600,maxWidth:220,textAlign:'right',wordBreak:'break-all' }}>{v as string}</span>
+                  <span style={{ color:'var(--text-primary)',fontWeight:600,textAlign:'right',wordBreak:'break-all' }} className="max-w-[180px] sm:max-w-[220px]">{v as string}</span>
                 </div>
               ))}
             </div>
@@ -406,6 +406,7 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
           <div style={{ padding:'16px 20px',borderBottom:'1px solid var(--border)' }}>
             <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:0 }}>⚙️ Machines ({org.counts.machines})</h2>
           </div>
+          <div style={{ overflowX:'auto' }}>
           <table style={{ width:'100%',borderCollapse:'collapse' }}>
             <thead>
               <tr style={{ background:'var(--bg-surface-2)' }}>
@@ -427,6 +428,7 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
               {org.machines.length===0 && <tr><td colSpan={5} style={{ padding:28,textAlign:'center',color:'var(--text-secondary)' }}>No machines</td></tr>}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -436,6 +438,7 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
           <div style={{ padding:'16px 20px',borderBottom:'1px solid var(--border)' }}>
             <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:0 }}>📋 Work Orders ({org.counts.workOrders}) — recent 20</h2>
           </div>
+          <div style={{ overflowX:'auto' }}>
           <table style={{ width:'100%',borderCollapse:'collapse' }}>
             <thead>
               <tr style={{ background:'var(--bg-surface-2)' }}>
@@ -458,6 +461,7 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
               {org.workOrders.length===0 && <tr><td colSpan={6} style={{ padding:28,textAlign:'center',color:'var(--text-secondary)' }}>No work orders</td></tr>}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -467,6 +471,7 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
           <div style={{ padding:'16px 20px',borderBottom:'1px solid var(--border)' }}>
             <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:0 }}>🔔 Alerts ({org.counts.alerts}) — recent 20</h2>
           </div>
+          <div style={{ overflowX:'auto' }}>
           <table style={{ width:'100%',borderCollapse:'collapse' }}>
             <thead>
               <tr style={{ background:'var(--bg-surface-2)' }}>
@@ -488,12 +493,13 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
               {org.alerts.length===0 && <tr><td colSpan={5} style={{ padding:28,textAlign:'center',color:'var(--text-secondary)' }}>No alerts</td></tr>}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
       {/* ═══════════════ BILLING TAB ═══════════════ */}
       {activeTab==='billing' && (
-        <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:20 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:22 }}>
             <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:'0 0 14px' }}>💳 Billing Summary</h2>
             {[
@@ -545,6 +551,7 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
             <div style={{ padding:'16px 20px',borderBottom:'1px solid var(--border)' }}>
               <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:0 }}>🔌 Integrations ({org.integrations.length})</h2>
             </div>
+            <div style={{ overflowX:'auto' }}>
             <table style={{ width:'100%',borderCollapse:'collapse' }}>
               <thead>
                 <tr style={{ background:'var(--bg-surface-2)' }}>
@@ -568,11 +575,13 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
               </tbody>
             </table>
           </div>
+          </div>
 
           <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,overflow:'hidden' }}>
             <div style={{ padding:'16px 20px',borderBottom:'1px solid var(--border)' }}>
               <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:0 }}>🪝 Webhooks ({org.webhooks.length})</h2>
             </div>
+            <div style={{ overflowX:'auto' }}>
             <table style={{ width:'100%',borderCollapse:'collapse' }}>
               <thead>
                 <tr style={{ background:'var(--bg-surface-2)' }}>
@@ -594,6 +603,7 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
                 {org.webhooks.length===0 && <tr><td colSpan={5} style={{ padding:28,textAlign:'center',color:'var(--text-secondary)' }}>No webhooks configured</td></tr>}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}
@@ -613,8 +623,8 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
                   {log.action.includes('DELETE')?'🗑️':log.action.includes('CREATE')?'✨':log.action.includes('UPDATE')?'✏️':log.action.includes('LOGIN')?'🔐':'📋'}
                 </div>
                 <div style={{ flex:1,minWidth:0 }}>
-                  <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start' }}>
-                    <div>
+                  <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:4 }}>
+                    <div style={{minWidth:0,flex:'1 1 auto'}}>
                       <span style={{ fontWeight:600,fontSize:13,color:'var(--text-primary)' }}>{log.action}</span>
                       <span style={{ fontSize:12,color:'var(--text-secondary)',marginLeft:8 }}>on {log.entity}{log.entityId?` (${log.entityId.slice(0,8)}…)`:''}</span>
                     </div>

@@ -212,10 +212,6 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
           .org-dash-tabnav button { padding: 12px 10px !important; font-size: 13px !important; gap: 5px !important; letter-spacing: -0.01em !important; }
           .org-dash-tabnav button span:first-child { display: none !important; }
           .org-dash-main { padding: 16px 12px !important; }
-          .org-dash-overview-2col { grid-template-columns: 1fr !important; gap: 14px !important; }
-          .org-dash-kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
-          .org-dash-kpi-grid > div { padding: 14px 12px !important; }
-          .org-dash-kpi-grid > div > div:nth-child(2) { font-size: 22px !important; }
           .org-dash-invite-btn { padding: 8px 12px !important; font-size: 12px !important; }
           .org-dash-role-select option { font-size: 12px !important; }
           .org-dash-team-row { padding: 10px 14px !important; gap: 8px !important; }
@@ -286,7 +282,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
           <div className="space-y-6">
 
             {/* KPI Cards */}
-            <div className="org-dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16 }}>
+            <div className="org-dash-kpi-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
               {[
                 { icon: '👥', label: 'Team Members',    value: stats.totalMembers,       color: '#635bff', sub: `${teamMembers.filter(m=>m.role==='TECHNICIAN').length} technicians` },
                 { icon: '📋', label: 'Open Work Orders', value: stats.openWorkOrders,     color: '#3b82f6', sub: `${stats.overdueWorkOrders} overdue` },
@@ -294,17 +290,17 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                 { icon: '⚡', label: 'Sensor Readings', value: stats.sensorReadings24h,   color: '#10b981', sub: 'last 24 hours' },
                 { icon: '⚙️', label: 'Machines',        value: machines.length,           color: '#f59e0b', sub: `${stats.breakdownMachines} breakdown` },
               ].map(s => (
-                <div key={s.label} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px 18px' }}>
-                  <div style={{ fontSize: 24, marginBottom: 8 }}>{s.icon}</div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginTop: 2 }}>{s.label}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{s.sub}</div>
+                <div key={s.label} className="sm:p-5 p-3" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 14 }}>
+                  <div style={{ fontSize: 20, marginBottom: 4 }} className="sm:text-2xl sm:mb-2">{s.icon}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: s.color }} className="sm:text-3xl">{s.value}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginTop: 2 }} className="sm:text-sm">{s.label}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }} className="sm:text-xs">{s.sub}</div>
                 </div>
               ))}
             </div>
 
             {/* Two-column: Team snapshot + Recent WOs */}
-            <div className="org-dash-overview-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div className="org-dash-overview-2col grid grid-cols-1 lg:grid-cols-2 gap-5">
 
               {/* Team Snapshot */}
               <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
@@ -519,7 +515,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                 <Link href="/dashboard#equipment" style={{ ...S.dashLink, textDecoration: 'none' }}>Manage →</Link>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {machines.map(m => {
                 const s = MACHINE_STATUS[m.status] ?? MACHINE_STATUS.IDLE;
                 return (
@@ -712,10 +708,10 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
 
 const S = {
   root: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
-  topbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', background: 'var(--bg-nav)', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' as const, gap: 10, position: 'sticky' as const, top: 0, zIndex: 50 },
-  tabNav: { display: 'flex', gap: 0, padding: '0 24px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', overflowX: 'auto' as const },
-  tab: { display: 'flex', alignItems: 'center', gap: 6, padding: '13px 18px', fontSize: 14, border: 'none', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' as const, background: 'transparent' },
-  main: { padding: '24px', maxWidth: 1400, margin: '0 auto' },
+  topbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-nav)', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' as const, gap: 10, position: 'sticky' as const, top: 0, zIndex: 50 },
+  tabNav: { display: 'flex', gap: 0, padding: '0 16px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', overflowX: 'auto' as const },
+  tab: { display: 'flex', alignItems: 'center', gap: 6, padding: '11px 14px', fontSize: 13, border: 'none', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' as const, background: 'transparent', flexShrink: 0 },
+  main: { padding: '16px 16px 24px', maxWidth: 1400, margin: '0 auto', minWidth: 0, overflowX: 'hidden' as const },
   inviteBtn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, background: '#635bff', color: '#fff', border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer', textDecoration: 'none' as const },
   dashLink: { display: 'inline-flex', alignItems: 'center', padding: '9px 16px', borderRadius: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: 13, textDecoration: 'none' as const },
   alertBadge: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', fontWeight: 700, fontSize: 13, textDecoration: 'none' as const, animation: 'pulse 2s infinite' as const },

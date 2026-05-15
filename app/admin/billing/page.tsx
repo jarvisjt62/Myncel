@@ -106,7 +106,7 @@ export default async function AdminBillingPage() {
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 32 }}>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-8">
         {[
           { label: 'Total Organizations', value: totalOrgs, icon: '🏢', color: '#6366f1' },
           { label: 'Active Subscriptions', value: activeSubscriptions, icon: '✅', color: '#10b981' },
@@ -128,7 +128,7 @@ export default async function AdminBillingPage() {
       </div>
 
       {/* Plan Distribution */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 24, marginBottom: 32 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
         <div style={{
           background: 'var(--bg-surface)', border: '1px solid var(--border)',
           borderRadius: 12, padding: 24,
