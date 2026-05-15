@@ -882,10 +882,16 @@ html, body {
   min-width: unset;
 }
 
-/* 3. Work Orders + Parts + Equipment: table cell with max-width
-      constraint — title cells get natural width, never zero */
-.dash-theme table td {
-  max-width: 400px;
+/* 3. Table cells: ensure no cell forces the entire table to overflow.
+      Desktop table wrappers use overflow-x-auto so horizontal scrolling
+      handles wide tables; cells shouldn't cause vertical overflow. */
+.dash-theme table {
+  table-layout: auto;
+  width: 100%;
+}
+.dash-theme table td, .dash-theme table th {
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 /* 4. Mobile table horizontal scroll: ensure the entire table wrapper
@@ -896,28 +902,23 @@ html, body {
   }
 }
 
-/* 5. Ensure KPI cards on mobile (2-col grid) keep their text inside */
-@media (max-width: 640px) {
-  .dash-theme .rounded-xl.border.p-5 {
-    padding: 0.875rem;
-  }
+/* 5. KPI card value font size: reduce slightly on very small screens so
+      the value doesn't overflow the 2-column grid cards.
+      Only affects .text-3xl inside the dashboard theme. */
+@media (max-width: 400px) {
   .dash-theme .text-3xl {
-    font-size: 1.5rem;
-    line-height: 2rem;
+    font-size: 1.5rem !important;
+    line-height: 2rem !important;
   }
 }
 
-/* 6. Schedule task items: ensure long task names truncate on mobile */
-@media (max-width: 640px) {
-  .dash-theme .px-5.py-4 {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-  }
-}
+/* 6. For very small screens, general horizontal padding reduction.
+      Schedules task items have px-5 that can be tight on 320px screens.
+      Removed: was too broad — inline sm:px-3 fixes preferred. */
 
 /* 7. Fix potential overflow in the tab bar itself on small landscape devices */
 @media (max-width: 1023px) {
-  .dash-theme .flex-1.p-3.sm\\:p-6 {
+  .dash-theme .flex-1.p-3.sm\:p-6 {
     overflow-x: hidden;
   }
 }
