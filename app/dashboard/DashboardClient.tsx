@@ -2209,7 +2209,7 @@ function DashboardClientInner({ user, data }: Props) {
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); openEditMachine(m); }}
-                                className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] hidden sm:inline-block"
+                                className="text-[10px] sm:text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] inline-block"
                               >
                                 Edit
                               </button>
@@ -2218,7 +2218,7 @@ function DashboardClientInner({ user, data }: Props) {
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); setConfirmDeleteMachine(m); }}
-                                className="text-xs font-semibold text-red-500 hover:text-red-600 px-1.5 sm:px-2 py-1 rounded-lg hover:bg-red-50 hidden sm:inline-block"
+                                className="text-[10px] sm:text-xs font-semibold text-red-500 hover:text-red-600 px-1.5 sm:px-2 py-1 rounded-lg hover:bg-red-50 inline-block"
                               >
                                 Delete
                               </button>
@@ -2312,11 +2312,11 @@ function DashboardClientInner({ user, data }: Props) {
                               <span className="text-[var(--text-secondary)]">👤 {wo.assignedTo.name}</span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); openWoDetail(wo); }}
-                              className="text-xs font-semibold text-[#635bff] px-2 py-1 rounded-lg hover:bg-[#635bff]/10"
+                              className="text-[10px] sm:text-xs font-semibold text-[#635bff] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[#635bff]/10"
                             >
                               View
                             </button>
@@ -2324,9 +2324,18 @@ function DashboardClientInner({ user, data }: Props) {
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); openEditWo(wo); }}
-                                className="text-xs font-semibold text-[var(--text-secondary)] px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)]"
+                                className="text-[10px] sm:text-xs font-semibold text-[var(--text-secondary)] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)]"
                               >
                                 Edit
+                              </button>
+                            </Can>
+                            <Can permission="work_orders.delete">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setConfirmDeleteWo(wo); }}
+                                className="text-[10px] sm:text-xs font-semibold text-red-500 px-1.5 sm:px-2 py-1 rounded-lg hover:bg-red-50"
+                              >
+                                Delete
                               </button>
                             </Can>
                           </div>
@@ -2394,7 +2403,7 @@ function DashboardClientInner({ user, data }: Props) {
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); openEditWo(wo); }}
-                                className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] hidden sm:inline-block"
+                                className="text-[10px] sm:text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] inline-block"
                               >
                                 Edit
                               </button>
@@ -2403,7 +2412,7 @@ function DashboardClientInner({ user, data }: Props) {
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); setConfirmDeleteWo(wo); }}
-                                className="text-xs font-semibold text-red-500 hover:text-red-600 px-1.5 sm:px-2 py-1 rounded-lg hover:bg-red-50 hidden sm:inline-block"
+                                className="text-[10px] sm:text-xs font-semibold text-red-500 hover:text-red-600 px-1.5 sm:px-2 py-1 rounded-lg hover:bg-red-50 inline-block"
                               >
                                 Delete
                               </button>
@@ -2461,7 +2470,7 @@ function DashboardClientInner({ user, data }: Props) {
               ) : (
                 <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] divide-y divide-[#e6ebf1]">
                   {maintenanceTasks.filter(t => !doneTasks.has(t.id)).map((task) => (
-                    <div key={task.id} className="px-3 sm:px-5 py-4 flex items-center justify-between hover:bg-[var(--bg-surface-2)] transition-colors cursor-pointer gap-2" onClick={() => openTaskDetail(task)}>
+                    <div key={task.id} className="px-3 sm:px-5 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-[var(--bg-surface-2)] transition-colors cursor-pointer gap-2" onClick={() => openTaskDetail(task)}>
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <button
                           onClick={(e) => { e.stopPropagation(); markTaskDone(task.id); }}
@@ -2477,7 +2486,7 @@ function DashboardClientInner({ user, data }: Props) {
                           <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">{task.machine?.name ?? 'General'}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 flex-wrap">
                         <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${priorityBadge(task.priority)}`}>
                           {task.priority}
                         </span>
@@ -2493,7 +2502,7 @@ function DashboardClientInner({ user, data }: Props) {
                         <Can permission="schedules.edit">
                           <button
                             onClick={(e) => { e.stopPropagation(); openEditTask(task); }}
-                            className="hidden sm:inline-block text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-semibold px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] transition-colors"
+                            className="inline-block text-[10px] sm:text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-semibold px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)] transition-colors"
                           >
                             Edit
                           </button>
@@ -2501,7 +2510,7 @@ function DashboardClientInner({ user, data }: Props) {
                         <Can permission="schedules.complete">
                           <button
                             onClick={(e) => { e.stopPropagation(); markTaskDone(task.id); }}
-                            className="hidden sm:inline-block text-xs text-emerald-600 hover:text-emerald-700 font-semibold px-3 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-50 transition-colors"
+                            className="inline-block text-[10px] sm:text-xs text-emerald-600 hover:text-emerald-700 font-semibold px-1.5 sm:px-3 py-1 rounded-lg border border-emerald-200 hover:bg-emerald-50 transition-colors"
                           >
                             ✓ Done
                           </button>
@@ -2509,7 +2518,7 @@ function DashboardClientInner({ user, data }: Props) {
                         <Can permission="schedules.delete">
                           <button
                             onClick={(e) => { e.stopPropagation(); setConfirmDeleteTask(task.id); }}
-                            className="hidden sm:inline-block text-xs text-red-500 hover:text-red-600 font-semibold px-2 py-1 rounded-lg border border-red-100 hover:bg-red-50 transition-colors"
+                            className="inline-block text-[10px] sm:text-xs text-red-500 hover:text-red-600 font-semibold px-1.5 sm:px-2 py-1 rounded-lg border border-red-100 hover:bg-red-50 transition-colors"
                           >
                             Delete
                           </button>
@@ -2531,7 +2540,7 @@ function DashboardClientInner({ user, data }: Props) {
                   </div>
                   <div className="divide-y divide-[#e6ebf1]">
                     {maintenanceTasks.filter(t => doneTasks.has(t.id)).map((task) => (
-                      <div key={task.id} className="px-3 sm:px-5 py-3 flex items-center justify-between bg-emerald-50/30 gap-2">
+                      <div key={task.id} className="px-3 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between bg-emerald-50/30 gap-2">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
                             <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2543,7 +2552,7 @@ function DashboardClientInner({ user, data }: Props) {
                             <p className="text-xs text-[var(--text-muted)] truncate">{task.machine?.name ?? 'General'} &middot; Marked done</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 flex-wrap">
                           <button
                             onClick={(e) => { e.stopPropagation(); openTaskDetail(task); }}
                             className="text-xs text-[#635bff] hover:text-[#4f46e5] font-medium px-2 py-1 rounded hover:bg-[#635bff]/10 transition-colors"
@@ -2553,7 +2562,7 @@ function DashboardClientInner({ user, data }: Props) {
                           <Can permission="schedules.edit">
                             <button
                               onClick={(e) => { e.stopPropagation(); openEditTask(task); }}
-                              className="hidden sm:inline-block text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium px-2 py-1 rounded hover:bg-[var(--bg-surface-2)] transition-colors"
+                              className="inline-block text-[10px] sm:text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium px-1.5 sm:px-2 py-1 rounded hover:bg-[var(--bg-surface-2)] transition-colors"
                             >
                               Edit
                             </button>
@@ -2562,7 +2571,7 @@ function DashboardClientInner({ user, data }: Props) {
                             <button
                               onClick={(e) => { e.stopPropagation(); setConfirmDeleteTask(task.id); }}
                               disabled={deletingTaskId === task.id}
-                              className="hidden sm:inline-block text-xs text-red-400 hover:text-red-600 font-medium px-2 py-1 rounded border border-red-100 hover:bg-red-50 transition-colors disabled:opacity-50"
+                              className="inline-block text-[10px] sm:text-xs text-red-400 hover:text-red-600 font-medium px-1.5 sm:px-2 py-1 rounded border border-red-100 hover:bg-red-50 transition-colors disabled:opacity-50"
                             >
                               {deletingTaskId === task.id ? '...' : 'Delete'}
                             </button>
@@ -2941,13 +2950,24 @@ function DashboardClientInner({ user, data }: Props) {
                                     <span className="text-[var(--text-muted)]">${part.unitCost.toFixed(2)}/ea</span>
                                   )}
                                 </div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); openPartDetail(part); }}
-                                  className="text-xs font-semibold text-[#635bff] px-2 py-1 rounded-lg hover:bg-[#635bff]/10"
+                                  className="text-[10px] sm:text-xs font-semibold text-[#635bff] px-1.5 sm:px-2 py-1 rounded-lg hover:bg-[#635bff]/10"
                                 >
                                   View
                                 </button>
+                                <Can permission="parts.edit">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setSelectedPart(part); setShowPartDetailModal(true); startEditingPart(part); }}
+                                    className="text-xs font-semibold text-[var(--text-secondary)] px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)]"
+                                  >
+                                    Edit
+                                  </button>
+                                </Can>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -3015,7 +3035,7 @@ function DashboardClientInner({ user, data }: Props) {
                                   />
                                   <button
                                     onClick={e => { e.stopPropagation(); openPartDetail(part); }}
-                                    className="px-2 sm:px-2.5 py-1 rounded-lg text-xs font-medium transition-colors hidden sm:inline-block"
+                                    className="px-2 sm:px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-medium transition-colors inline-block"
                                     style={{ backgroundColor: 'var(--bg-surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
                                   >
                                     View
