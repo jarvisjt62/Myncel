@@ -854,3 +854,77 @@ html, body {
 .dash-theme li {
   min-width: 0;
 }
+
+/* =====================================================================
+   ADDITIONAL MOBILE FIXES (added 2026-05-16)
+   Addresses remaining cut-off issues across all tabs.
+   ===================================================================== */
+
+/* 1. Toast notification: on mobile shrink to fit viewport width and
+      move to bottom-left to avoid overlapping content */
+@media (max-width: 640px) {
+  /* Export/success toast */
+  .fixed.bottom-6.right-6 {
+    right: 0.75rem !important;
+    left: 0.75rem !important;
+    bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
+    max-width: calc(100vw - 1.5rem) !important;
+  }
+}
+
+/* 2. All flex containers in .dash-theme must have min-width:0 to prevent
+      flex children from overflowing the container. */
+.dash-theme .flex > * {
+  min-width: 0;
+}
+/* Exception: flex-shrink-0 items should keep their size */
+.dash-theme .flex-shrink-0 {
+  min-width: unset;
+}
+
+/* 3. Work Orders + Parts + Equipment: table cell with max-width
+      constraint — title cells get natural width, never zero */
+.dash-theme table td {
+  max-width: 400px;
+}
+
+/* 4. Mobile table horizontal scroll: ensure the entire table wrapper
+      is contained and scrolls rather than overflowing the page */
+@media (max-width: 1023px) {
+  .responsive-table-wrap {
+    max-width: calc(100vw - 1.5rem);
+  }
+}
+
+/* 5. Ensure KPI cards on mobile (2-col grid) keep their text inside */
+@media (max-width: 640px) {
+  .dash-theme .rounded-xl.border.p-5 {
+    padding: 0.875rem;
+  }
+  .dash-theme .text-3xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+}
+
+/* 6. Schedule task items: ensure long task names truncate on mobile */
+@media (max-width: 640px) {
+  .dash-theme .px-5.py-4 {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+/* 7. Fix potential overflow in the tab bar itself on small landscape devices */
+@media (max-width: 1023px) {
+  .dash-theme .flex-1.p-3.sm\\:p-6 {
+    overflow-x: hidden;
+  }
+}
+
+/* 8. Notification bell / header icons: ensure no overflow on tiny screens */
+@media (max-width: 360px) {
+  .dash-theme header .flex.items-center.gap-3 {
+    gap: 0.5rem;
+  }
+}

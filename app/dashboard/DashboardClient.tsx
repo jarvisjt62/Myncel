@@ -2027,16 +2027,16 @@ function DashboardClientInner({ user, data }: Props) {
                   </div>
                   <div className="divide-y divide-[#e6ebf1]">
                     {maintenanceTasks.map((task) => (
-                      <div key={task.id} className="px-5 py-3 flex items-center justify-between hover:bg-[var(--bg-surface-2)] transition-colors">
-                        <div>
-                          <p className="text-sm font-medium text-[var(--text-primary)]">{task.title}</p>
-                          <p className="text-xs text-[var(--text-muted)]">{task.machine?.name}</p>
+                      <div key={task.id} className="px-3 sm:px-5 py-3 flex items-center justify-between gap-2 hover:bg-[var(--bg-surface-2)] transition-colors">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-[var(--text-primary)] truncate">{task.title}</p>
+                          <p className="text-xs text-[var(--text-muted)] truncate">{task.machine?.name}</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${priorityBadge(task.priority)}`}>
+                        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                          <span className={`text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${priorityBadge(task.priority)}`}>
                             {task.priority}
                           </span>
-                          <span className={`text-xs font-medium ${task.nextDueAt && new Date(task.nextDueAt) < new Date() ? 'text-red-500' : 'text-[var(--text-secondary)]'}`}>
+                          <span className={`text-xs font-medium whitespace-nowrap hidden sm:inline ${task.nextDueAt && new Date(task.nextDueAt) < new Date() ? 'text-red-500' : 'text-[var(--text-secondary)]'}`}>
                             {formatDate(task.nextDueAt)}
                           </span>
                         </div>
@@ -2360,7 +2360,7 @@ function DashboardClientInner({ user, data }: Props) {
                     ) : workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).map((wo) => (
                       <tr key={wo.id} className="hover:bg-[var(--bg-surface-2)] transition-colors cursor-pointer" onClick={() => openWoDetail(wo)}>
                         <td className="px-3 sm:px-5 py-3.5 font-mono text-xs text-[var(--text-muted)] hidden sm:table-cell">{wo.woNumber}</td>
-                        <td className="px-3 sm:px-5 py-3.5 max-w-0">
+                        <td className="px-3 sm:px-5 py-3.5 min-w-0" style={{maxWidth: '320px'}}>
                           <p className="text-[10px] font-mono text-[var(--text-muted)] sm:hidden truncate">{wo.woNumber}</p>
                           <p className="font-medium text-[var(--text-primary)] truncate">{wo.title}</p>
                           <p className="text-xs text-[var(--text-muted)] truncate">{wo.machine?.name ?? '—'}</p>
@@ -2614,11 +2614,11 @@ function DashboardClientInner({ user, data }: Props) {
               ) : (
                 <div className="space-y-3">
                   {alerts.map((alert) => (
-                    <div key={alert.id} className={`rounded-xl [background:var(--bg-surface)] border border-[var(--border)] border-l-4 px-5 py-4 ${severityColor(alert.severity)}`}>
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                    <div key={alert.id} className={`rounded-xl [background:var(--bg-surface)] border border-[var(--border)] border-l-4 px-3 sm:px-5 py-3 sm:py-4 ${severityColor(alert.severity)}`}>
+                      <div className="flex items-start justify-between gap-2 sm:gap-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${
                               alert.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' :
                               alert.severity === 'HIGH' ? 'bg-orange-100 text-orange-700' :
                               'bg-amber-100 text-amber-700'
@@ -2629,20 +2629,20 @@ function DashboardClientInner({ user, data }: Props) {
                               {new Date(alert.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             </span>
                           </div>
-                          <p className="font-semibold text-[var(--text-primary)] text-sm">{alert.title}</p>
-                          <p className="text-sm text-[var(--text-secondary)] mt-1">{alert.message}</p>
+                          <p className="font-semibold text-[var(--text-primary)] text-sm break-words">{alert.title}</p>
+                          <p className="text-sm text-[var(--text-secondary)] mt-1 break-words">{alert.message}</p>
                           {alert.machine && (
-                            <p className="text-xs text-[var(--text-muted)] mt-1">Machine: {alert.machine.name}</p>
+                            <p className="text-xs text-[var(--text-muted)] mt-1 break-words">Machine: {alert.machine.name}</p>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 sm:gap-2 flex-shrink-0">
                           <RowExportMenu
                             dataset="alerts"
                             recordId={alert.id}
                             recordLabel={alert.title}
                             onResult={(r) => setExportToast({ type: r.success ? 'success' : 'error', text: r.message, url: r.url })}
                           />
-                          <button onClick={() => resolveAlert(alert.id)} className="text-xs text-white bg-[#635bff] hover:bg-[#4f46e5] px-3 py-1 rounded-lg font-medium transition-colors">✓ Resolve</button>
+                          <button onClick={() => resolveAlert(alert.id)} className="text-xs text-white bg-[#635bff] hover:bg-[#4f46e5] px-2.5 py-1 rounded-lg font-medium transition-colors whitespace-nowrap">✓ Resolve</button>
                         </div>
                       </div>
                     </div>
@@ -2810,15 +2810,15 @@ function DashboardClientInner({ user, data }: Props) {
                     const pct = Math.round((totalCost / maxCost) * 100);
                     const colorMap: Record<string, string> = { CRITICAL: '#ef4444', HIGH: '#f97316', MEDIUM: '#635bff', LOW: '#94a3b8' };
                     return (
-                      <div key={priority} className="flex items-center gap-3">
-                        <span className="text-xs font-medium w-16" style={{ color: 'var(--text-secondary)' }}>{priority}</span>
-                        <div className="flex-1 h-6 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-surface-2)' }}>
+                      <div key={priority} className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <span className="text-xs font-medium w-14 sm:w-16 shrink-0" style={{ color: 'var(--text-secondary)' }}>{priority}</span>
+                        <div className="flex-1 h-5 sm:h-6 rounded-full overflow-hidden min-w-0" style={{ backgroundColor: 'var(--bg-surface-2)' }}>
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: colorMap[priority] || '#635bff', minWidth: filtered.length > 0 ? '8px' : '0' }} />
                         </div>
-                        <span className="text-xs font-mono w-24 text-right" style={{ color: 'var(--text-primary)' }}>
+                        <span className="text-xs font-mono w-16 sm:w-24 text-right shrink-0" style={{ color: 'var(--text-primary)' }}>
                           ${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
-                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{filtered.length} WO</span>
+                        <span className="text-xs hidden sm:inline shrink-0" style={{ color: 'var(--text-muted)' }}>{filtered.length} WO</span>
                       </div>
                     );
                   })}
@@ -2833,14 +2833,14 @@ function DashboardClientInner({ user, data }: Props) {
                 ) : (
                   <div className="space-y-2">
                     {workOrders.filter(wo => wo.status === 'COMPLETED').slice(0, 10).map(wo => (
-                      <div key={wo.id} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--border)' }}>
-                        <div>
-                          <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{wo.title}</div>
-                          <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      <div key={wo.id} className="flex items-center justify-between gap-2 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--border)' }}>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{wo.title}</div>
+                          <div className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>
                             {wo.machine?.name ?? '—'} · {wo.woNumber}
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex-shrink-0">
                           <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                             {wo.totalCost != null ? `$${wo.totalCost.toFixed(2)}` : '—'}
                           </div>
@@ -2905,7 +2905,58 @@ function DashboardClientInner({ user, data }: Props) {
                     <p className="text-sm">Add parts to track stock levels and costs.</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto responsive-table-wrap">
+                  <>
+                  {/* Mobile card list (<sm) */}
+                  <div className="sm:hidden divide-y divide-[var(--border)]">
+                    {parts.map(part => {
+                      const isLow = part.quantity <= part.minQuantity;
+                      const isOut = part.quantity === 0;
+                      return (
+                        <div
+                          key={part.id}
+                          className="px-4 py-3 active:bg-[var(--bg-surface-2)] transition-colors cursor-pointer"
+                          onClick={() => openPartDetail(part)}
+                        >
+                          <div className="flex items-start gap-3 min-w-0">
+                            {part.imageUrl ? (
+                              <img src={part.imageUrl} alt={part.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border" style={{ borderColor: 'var(--border)' }} />
+                            ) : (
+                              <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-xl" style={{ backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--border)' }}>🔧</div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="font-semibold text-[var(--text-primary)] text-sm break-words">{part.name}</p>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap flex-shrink-0 ${isOut ? 'bg-red-100 text-red-600' : isLow ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                  {isOut ? 'Out' : isLow ? 'Low' : 'OK'}
+                                </span>
+                              </div>
+                              {part.partNumber && <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">{part.partNumber}</p>}
+                              {part.description && <p className="text-xs text-[var(--text-secondary)] break-words mt-0.5 line-clamp-2">{part.description}</p>}
+                              <div className="flex items-center justify-between mt-2 gap-2 flex-wrap">
+                                <div className="flex items-center gap-3 text-xs">
+                                  <span style={{ color: isOut ? '#ef4444' : isLow ? '#f59e0b' : 'var(--text-primary)' }}>
+                                    Qty: <strong>{part.quantity}</strong>/{part.minQuantity} min
+                                  </span>
+                                  {part.unitCost != null && (
+                                    <span className="text-[var(--text-muted)]">${part.unitCost.toFixed(2)}/ea</span>
+                                  )}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); openPartDetail(part); }}
+                                  className="text-xs font-semibold text-[#635bff] px-2 py-1 rounded-lg hover:bg-[#635bff]/10"
+                                >
+                                  View
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* Desktop table (≥sm) */}
+                  <div className="overflow-x-auto responsive-table-wrap hidden sm:block">
                     <table className="w-full text-sm">
                       <thead>
                         <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -2977,6 +3028,7 @@ function DashboardClientInner({ user, data }: Props) {
                       </tbody>
                     </table>
                   </div>
+                  </>
                 )}
               </div>
             </div>
