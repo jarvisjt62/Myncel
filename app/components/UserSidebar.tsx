@@ -607,7 +607,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
           {/* Sidebar panel — pinned to left edge with slide-in, full viewport height */}
-          <div className="compact-sidebar absolute left-0 top-0 h-screen w-48 max-w-[75vw] flex flex-col shadow-2xl animate-slide-in-left" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
+          <div className="compact-sidebar absolute left-0 top-0 h-screen w-52 max-w-[80vw] flex flex-col shadow-2xl animate-slide-in-left" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
             {/* Close button */}
             <button
               onClick={() => setSidebarOpen(false)}
