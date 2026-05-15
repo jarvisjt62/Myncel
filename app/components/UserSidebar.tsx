@@ -292,7 +292,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
   const showApiDocs = isEnabled('feature.api.enabled');
 
   const Sidebar = () => (
-    <aside className="w-full lg:w-60 flex flex-col h-full" style={{ backgroundColor: 'var(--bg-sidebar)', borderRight: '1px solid var(--border)' }}>
+    <aside className="w-full lg:w-60 flex flex-col h-screen lg:h-full" style={{ backgroundColor: 'var(--bg-sidebar)', borderRight: '1px solid var(--border)' }}>
       {/* Logo */}
       <div className="p-5" style={{ borderBottom: '1px solid var(--border)' }}>
         <Link href="/dashboard" prefetch={true} className="flex items-center gap-1.5">
@@ -606,8 +606,8 @@ function UserShellInner({ user, children }: UserSidebarProps) {
         <div className="lg:hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
-          {/* Sidebar panel — pinned to left edge with slide-in */}
-          <div className="absolute left-0 top-0 bottom-0 w-52 max-w-[75vw] flex flex-col shadow-2xl animate-slide-in-left" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
+          {/* Sidebar panel — pinned to left edge with slide-in, full viewport height */}
+          <div className="absolute left-0 top-0 h-screen w-52 max-w-[75vw] flex flex-col shadow-2xl animate-slide-in-left" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
             {/* Close button */}
             <button
               onClick={() => setSidebarOpen(false)}
