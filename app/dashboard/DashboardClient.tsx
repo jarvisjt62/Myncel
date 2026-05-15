@@ -2082,7 +2082,74 @@ function DashboardClientInner({ user, data }: Props) {
                 </div>
               </div>
               <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] overflow-hidden">
-                <div className="overflow-x-auto responsive-table-wrap mobile-stack-table">
+                {/* Mobile card list (<sm) */}
+                <div className="sm:hidden divide-y divide-[var(--border)]">
+                  {machines.length === 0 ? (
+                    <div className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">
+                      No machines yet. Add your first machine to get started.
+                    </div>
+                  ) : machines.map((m) => (
+                    <div
+                      key={m.id}
+                      className="px-4 py-3 active:bg-[var(--bg-surface-2)] transition-colors cursor-pointer"
+                      onClick={() => openMachineDetail(m)}
+                    >
+                      <div className="flex items-start gap-2 min-w-0">
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-2 ${statusDot(m.status)}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="font-semibold text-[var(--text-primary)] text-sm break-words">{m.name}</p>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap flex-shrink-0 ${
+                              m.status === 'OPERATIONAL' || m.status === 'OK' ? 'bg-green-100 text-green-700' :
+                              m.status === 'WARNING' ? 'bg-amber-100 text-amber-700' :
+                              m.status === 'CRITICAL' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              {m.status}
+                            </span>
+                          </div>
+                          {m.model && <p className="text-xs text-[var(--text-muted)] break-words mt-0.5">{m.model}</p>}
+                          {m.location && <p className="text-xs text-[var(--text-secondary)] break-words mt-0.5">📍 {m.location}</p>}
+                          <div className="flex items-center justify-between mt-2 gap-2">
+                            <span className="text-xs text-[var(--text-muted)]">
+                              {m._count.workOrders} work order{m._count.workOrders === 1 ? '' : 's'}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); openMachineDetail(m); }}
+                                className="text-xs font-semibold text-[#635bff] px-2 py-1 rounded-lg hover:bg-[#635bff]/10"
+                              >
+                                View
+                              </button>
+                              <Can permission="machines.edit">
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); openEditMachine(m); }}
+                                  className="text-xs font-semibold text-[var(--text-secondary)] px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)]"
+                                >
+                                  Edit
+                                </button>
+                              </Can>
+                              <Can permission="machines.delete">
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setConfirmDeleteMachine(m); }}
+                                  className="text-xs font-semibold text-red-500 px-2 py-1 rounded-lg hover:bg-red-50"
+                                >
+                                  Delete
+                                </button>
+                              </Can>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table (≥sm) */}
+                <div className="overflow-x-auto responsive-table-wrap hidden sm:block">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--border)] bg-[var(--bg-surface-2)]">
@@ -2206,7 +2273,71 @@ function DashboardClientInner({ user, data }: Props) {
                 ))}
               </div>
               <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] overflow-hidden">
-                <div className="overflow-x-auto responsive-table-wrap mobile-stack-table">
+                {/* Mobile card list (<sm) */}
+                <div className="sm:hidden divide-y divide-[var(--border)]">
+                  {(() => {
+                    const filtered = workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter);
+                    if (filtered.length === 0) {
+                      return (
+                        <div className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">
+                          No work orders match this filter.
+                        </div>
+                      );
+                    }
+                    return filtered.map((wo) => (
+                      <div
+                        key={wo.id}
+                        className="px-4 py-3 active:bg-[var(--bg-surface-2)] transition-colors cursor-pointer"
+                        onClick={() => openWoDetail(wo)}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <span className="text-[10px] font-mono text-[var(--text-muted)]">{wo.woNumber}</span>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap ${priorityBadge(wo.priority)}`}>
+                              {wo.priority}
+                            </span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap ${statusBadge(wo.status)}`}>
+                              {wo.status.replace('_', ' ')}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="font-semibold text-[var(--text-primary)] text-sm break-words">{wo.title}</p>
+                        <p className="text-xs text-[var(--text-muted)] break-words mt-0.5">🔧 {wo.machine?.name ?? '—'}</p>
+                        <div className="flex items-center justify-between mt-2 gap-2 flex-wrap">
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className={wo.dueAt && new Date(wo.dueAt) < new Date() ? 'text-red-500 font-semibold' : 'text-[var(--text-secondary)]'}>
+                              {formatDate(wo.dueAt)}
+                            </span>
+                            {wo.assignedTo?.name && (
+                              <span className="text-[var(--text-secondary)]">👤 {wo.assignedTo.name}</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); openWoDetail(wo); }}
+                              className="text-xs font-semibold text-[#635bff] px-2 py-1 rounded-lg hover:bg-[#635bff]/10"
+                            >
+                              View
+                            </button>
+                            <Can permission="work_orders.edit">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); openEditWo(wo); }}
+                                className="text-xs font-semibold text-[var(--text-secondary)] px-2 py-1 rounded-lg hover:bg-[var(--bg-surface-2)]"
+                              >
+                                Edit
+                              </button>
+                            </Can>
+                          </div>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+
+                {/* Desktop table (≥sm) */}
+                <div className="overflow-x-auto responsive-table-wrap hidden sm:block">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--border)] bg-[var(--bg-surface-2)]">
