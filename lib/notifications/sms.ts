@@ -9,7 +9,7 @@ export async function sendSmsNotification(
   organizationId: string,
   toNumber: string,
   message: string
-): Promise<{ success: boolean; sid?: string; error?: string }> {
+): Promise<{ success: boolean; sid?: string; error?: string; twilioCode?: number; twilioStatus?: string; twilioMoreInfo?: string }> {
   // Normalize phone number to E.164 format.
   // If it already starts with + it's good. If it starts with 00, treat as international prefix.
   // Strip all spaces, dashes, parens.
@@ -111,8 +111,15 @@ export async function sendSmsNotification(
       console.log(`${logPrefix} Twilio SUCCESS sid=${data.sid}`);
       return { success: true, sid: data.sid };
     } else {
-      console.error(`${logPrefix} Twilio API error status=${res.status}:`, data);
-      return { success: false, error: data.message || `Twilio send failed (status ${res.status})` };
+      // Log the full Twilio error including error code (e.g. 21408 = geo-permissions)
+      console.error(`${logPrefix} Twilio API error status=${res.status} code=${data.code} message="${data.message}":`, JSON.stringify(data));
+      return {
+        success: false,
+        error: data.message || `Twilio send failed (status ${res.status})`,
+        twilioCode: data.code,
+        twilioStatus: data.status,
+        twilioMoreInfo: data.more_info,
+      };
     }
   } catch (err) {
     console.error(`${logPrefix} exception:`, err);
