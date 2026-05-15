@@ -603,11 +603,11 @@ function UserShellInner({ user, children }: UserSidebarProps) {
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
+        <div className="lg:hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
-          {/* Sidebar panel with slide-in */}
-          <div className="relative w-60 max-w-[80vw] flex flex-col flex-shrink-0 shadow-2xl animate-slide-in-left" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
+          {/* Sidebar panel — pinned to left edge with slide-in */}
+          <div className="absolute left-0 top-0 bottom-0 w-60 max-w-[80vw] flex flex-col shadow-2xl animate-slide-in-left" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
             {/* Close button */}
             <button
               onClick={() => setSidebarOpen(false)}
