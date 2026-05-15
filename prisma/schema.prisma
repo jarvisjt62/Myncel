@@ -52,7 +52,26 @@ model User {
   roleAssignments UserRoleAssignment[]
   createdRoles    Role[]               @relation("RoleCreatedBy")
 
+  // Mobile app
+  mobilePushTokens MobilePushToken[]
+
   @@map("users")
+}
+
+model MobilePushToken {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @unique // Expo push token (ExponentPushToken[...])
+  platform   String // "ios" | "android"
+  deviceName String?
+  appVersion String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  lastUsedAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("mobile_push_tokens")
 }
 
 model Account {
