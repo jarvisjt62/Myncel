@@ -404,7 +404,8 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
               <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
                 <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>Active Members</span>
               </div>
-              <div style={{ overflowX: 'auto' }}>
+              {/* Desktop table view */}
+              <div className="hidden sm:block" style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: 'var(--bg-page)' }}>
@@ -462,6 +463,47 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                     ))}
                   </tbody>
                 </table>
+              </div>
+              {/* Mobile card view */}
+              <div className="sm:hidden">
+                {teamMembers.map(m => (
+                  <div key={m.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(99,91,255,0.15)', color: '#635bff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
+                        {(m.name || m.email).charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>{m.name || '(no name)'}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{m.email}</div>
+                      </div>
+                      <RoleBadge role={m.role} />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+                      <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--text-secondary)' }}>
+                        <span>{m.activeWorkOrders > 0 ? <span style={{ color: '#635bff', fontWeight: 600 }}>{m.activeWorkOrders} open WOs</span> : 'No open WOs'}</span>
+                        <span>{timeAgo(m.lastLoginAt)}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        {m.role !== 'OWNER' && hasPerm('team.edit_roles') && (
+                          <select
+                            defaultValue={m.role}
+                            disabled={updatingRole === m.id}
+                            onChange={e => handleRoleChange(m.id, e.target.value)}
+                            className="org-dash-role-select"
+                            style={{ fontSize: 11, fontWeight: 600, padding: '3px 6px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-page)', color: 'var(--text-primary)' }}
+                          >
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="TECHNICIAN">TECHNICIAN</option>
+                            <option value="MEMBER">MEMBER</option>
+                          </select>
+                        )}
+                        <Link href={`/dashboard`} style={{ fontSize: 10, fontWeight: 600, color: '#635bff', textDecoration: 'none', padding: '3px 8px', borderRadius: 5, background: 'rgba(99,91,255,0.1)', border: '1px solid rgba(99,91,255,0.2)' }}>
+                          WOs
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -553,7 +595,8 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
               <Link href="/dashboard#work-orders" style={{ ...S.inviteBtn, textDecoration: 'none' }}>View All Work Orders →</Link>
             </div>
             <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
-              <div style={{ overflowX: 'auto' }}>
+              {/* Desktop table view */}
+              <div className="hidden sm:block" style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: 'var(--bg-page)' }}>
@@ -596,6 +639,39 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
                     )}
                   </tbody>
                 </table>
+              </div>
+              {/* Mobile card view */}
+              <div className="sm:hidden">
+                {recentWorkOrders.length === 0 && (
+                  <div style={{ padding: '30px 16px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>No work orders yet.</div>
+                )}
+                {recentWorkOrders.map(wo => {
+                  const sc = STATUS_COLORS[wo.status] ?? STATUS_COLORS.OPEN;
+                  const pc = PRIORITY_COLORS[wo.priority] ?? '#635bff';
+                  const isOverdue = wo.dueAt && new Date(wo.dueAt) < new Date() && wo.status !== 'COMPLETED';
+                  return (
+                    <div key={wo.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                            <span style={{ color: '#635bff', fontWeight: 700, fontFamily: 'monospace', fontSize: 11 }}>{wo.woNumber}</span>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: pc, background: `${pc}18`, padding: '2px 6px', borderRadius: 999 }}>{wo.priority}</span>
+                          </div>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{wo.title}</div>
+                        </div>
+                        <span style={{ fontSize: 10, fontWeight: 700, background: sc.bg, color: sc.color, padding: '2px 7px', borderRadius: 5, flexShrink: 0 }}>{wo.status.replace('_', ' ')}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, fontSize: 11, color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
+                        <span>{wo.machine?.name || '—'}</span>
+                        <span>{wo.assignedTo?.name || <span style={{ color: '#ef4444', fontWeight: 600 }}>Unassigned</span>}</span>
+                        <span style={{ color: isOverdue ? '#ef4444' : 'var(--text-secondary)', fontWeight: isOverdue ? 700 : 400 }}>
+                          {wo.dueAt ? new Date(wo.dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+                          {isOverdue && ' ⚠'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
