@@ -4,6 +4,219 @@ import { useState, useEffect } from 'react';
 import { NotificationSkeleton } from '@/app/components/LoadingSkeleton';
 import { fetchWithCache, invalidateCache } from '@/app/lib/client-cache';
 
+// Full international country code list (E.164)
+const COUNTRY_CODES = [
+  { code: '+1',    flag: '🇺🇸', name: 'USA / Canada' },
+  { code: '+7',    flag: '🇷🇺', name: 'Russia / Kazakhstan' },
+  { code: '+20',   flag: '🇪🇬', name: 'Egypt' },
+  { code: '+27',   flag: '🇿🇦', name: 'South Africa' },
+  { code: '+30',   flag: '🇬🇷', name: 'Greece' },
+  { code: '+31',   flag: '🇳🇱', name: 'Netherlands' },
+  { code: '+32',   flag: '🇧🇪', name: 'Belgium' },
+  { code: '+33',   flag: '🇫🇷', name: 'France' },
+  { code: '+34',   flag: '🇪🇸', name: 'Spain' },
+  { code: '+36',   flag: '🇭🇺', name: 'Hungary' },
+  { code: '+39',   flag: '🇮🇹', name: 'Italy' },
+  { code: '+40',   flag: '🇷🇴', name: 'Romania' },
+  { code: '+41',   flag: '🇨🇭', name: 'Switzerland' },
+  { code: '+43',   flag: '🇦🇹', name: 'Austria' },
+  { code: '+44',   flag: '🇬🇧', name: 'UK' },
+  { code: '+45',   flag: '🇩🇰', name: 'Denmark' },
+  { code: '+46',   flag: '🇸🇪', name: 'Sweden' },
+  { code: '+47',   flag: '🇳🇴', name: 'Norway' },
+  { code: '+48',   flag: '🇵🇱', name: 'Poland' },
+  { code: '+49',   flag: '🇩🇪', name: 'Germany' },
+  { code: '+51',   flag: '🇵🇪', name: 'Peru' },
+  { code: '+52',   flag: '🇲🇽', name: 'Mexico' },
+  { code: '+54',   flag: '🇦🇷', name: 'Argentina' },
+  { code: '+55',   flag: '🇧🇷', name: 'Brazil' },
+  { code: '+56',   flag: '🇨🇱', name: 'Chile' },
+  { code: '+57',   flag: '🇨🇴', name: 'Colombia' },
+  { code: '+58',   flag: '🇻🇪', name: 'Venezuela' },
+  { code: '+60',   flag: '🇲🇾', name: 'Malaysia' },
+  { code: '+61',   flag: '🇦🇺', name: 'Australia' },
+  { code: '+62',   flag: '🇮🇩', name: 'Indonesia' },
+  { code: '+63',   flag: '🇵🇭', name: 'Philippines' },
+  { code: '+65',   flag: '🇸🇬', name: 'Singapore' },
+  { code: '+66',   flag: '🇹🇭', name: 'Thailand' },
+  { code: '+81',   flag: '🇯🇵', name: 'Japan' },
+  { code: '+82',   flag: '🇰🇷', name: 'South Korea' },
+  { code: '+84',   flag: '🇻🇳', name: 'Vietnam' },
+  { code: '+86',   flag: '🇨🇳', name: 'China' },
+  { code: '+90',   flag: '🇹🇷', name: 'Turkey' },
+  { code: '+91',   flag: '🇮🇳', name: 'India' },
+  { code: '+92',   flag: '🇵🇰', name: 'Pakistan' },
+  { code: '+93',   flag: '🇦🇫', name: 'Afghanistan' },
+  { code: '+94',   flag: '🇱🇰', name: 'Sri Lanka' },
+  { code: '+95',   flag: '🇲🇲', name: 'Myanmar' },
+  { code: '+98',   flag: '🇮🇷', name: 'Iran' },
+  { code: '+212',  flag: '🇲🇦', name: 'Morocco' },
+  { code: '+213',  flag: '🇩🇿', name: 'Algeria' },
+  { code: '+216',  flag: '🇹🇳', name: 'Tunisia' },
+  { code: '+218',  flag: '🇱🇾', name: 'Libya' },
+  { code: '+220',  flag: '🇬🇲', name: 'Gambia' },
+  { code: '+221',  flag: '🇸🇳', name: 'Senegal' },
+  { code: '+222',  flag: '🇲🇷', name: 'Mauritania' },
+  { code: '+223',  flag: '🇲🇱', name: 'Mali' },
+  { code: '+224',  flag: '🇬🇳', name: 'Guinea' },
+  { code: '+225',  flag: '🇨🇮', name: "Côte d'Ivoire" },
+  { code: '+226',  flag: '🇧🇫', name: 'Burkina Faso' },
+  { code: '+227',  flag: '🇳🇪', name: 'Niger' },
+  { code: '+228',  flag: '🇹🇬', name: 'Togo' },
+  { code: '+229',  flag: '🇧🇯', name: 'Benin' },
+  { code: '+230',  flag: '🇲🇺', name: 'Mauritius' },
+  { code: '+231',  flag: '🇱🇷', name: 'Liberia' },
+  { code: '+232',  flag: '🇸🇱', name: 'Sierra Leone' },
+  { code: '+233',  flag: '🇬🇭', name: 'Ghana' },
+  { code: '+234',  flag: '🇳🇬', name: 'Nigeria' },
+  { code: '+235',  flag: '🇹🇩', name: 'Chad' },
+  { code: '+236',  flag: '🇨🇫', name: 'Central African Rep.' },
+  { code: '+237',  flag: '🇨🇲', name: 'Cameroon' },
+  { code: '+238',  flag: '🇨🇻', name: 'Cape Verde' },
+  { code: '+240',  flag: '🇬🇶', name: 'Equatorial Guinea' },
+  { code: '+241',  flag: '🇬🇦', name: 'Gabon' },
+  { code: '+242',  flag: '🇨🇬', name: 'Congo' },
+  { code: '+243',  flag: '🇨🇩', name: 'DR Congo' },
+  { code: '+244',  flag: '🇦🇴', name: 'Angola' },
+  { code: '+245',  flag: '🇬🇼', name: 'Guinea-Bissau' },
+  { code: '+248',  flag: '🇸🇨', name: 'Seychelles' },
+  { code: '+249',  flag: '🇸🇩', name: 'Sudan' },
+  { code: '+250',  flag: '🇷🇼', name: 'Rwanda' },
+  { code: '+251',  flag: '🇪🇹', name: 'Ethiopia' },
+  { code: '+252',  flag: '🇸🇴', name: 'Somalia' },
+  { code: '+253',  flag: '🇩🇯', name: 'Djibouti' },
+  { code: '+254',  flag: '🇰🇪', name: 'Kenya' },
+  { code: '+255',  flag: '🇹🇿', name: 'Tanzania' },
+  { code: '+256',  flag: '🇺🇬', name: 'Uganda' },
+  { code: '+257',  flag: '🇧🇮', name: 'Burundi' },
+  { code: '+258',  flag: '🇲🇿', name: 'Mozambique' },
+  { code: '+260',  flag: '🇿🇲', name: 'Zambia' },
+  { code: '+261',  flag: '🇲🇬', name: 'Madagascar' },
+  { code: '+263',  flag: '🇿🇼', name: 'Zimbabwe' },
+  { code: '+264',  flag: '🇳🇦', name: 'Namibia' },
+  { code: '+265',  flag: '🇲🇼', name: 'Malawi' },
+  { code: '+266',  flag: '🇱🇸', name: 'Lesotho' },
+  { code: '+267',  flag: '🇧🇼', name: 'Botswana' },
+  { code: '+268',  flag: '🇸🇿', name: 'Eswatini' },
+  { code: '+269',  flag: '🇰🇲', name: 'Comoros' },
+  { code: '+290',  flag: '🇸🇭', name: 'Saint Helena' },
+  { code: '+297',  flag: '🇦🇼', name: 'Aruba' },
+  { code: '+298',  flag: '🇫🇴', name: 'Faroe Islands' },
+  { code: '+299',  flag: '🇬🇱', name: 'Greenland' },
+  { code: '+351',  flag: '🇵🇹', name: 'Portugal' },
+  { code: '+352',  flag: '🇱🇺', name: 'Luxembourg' },
+  { code: '+353',  flag: '🇮🇪', name: 'Ireland' },
+  { code: '+354',  flag: '🇮🇸', name: 'Iceland' },
+  { code: '+355',  flag: '🇦🇱', name: 'Albania' },
+  { code: '+356',  flag: '🇲🇹', name: 'Malta' },
+  { code: '+357',  flag: '🇨🇾', name: 'Cyprus' },
+  { code: '+358',  flag: '🇫🇮', name: 'Finland' },
+  { code: '+359',  flag: '🇧🇬', name: 'Bulgaria' },
+  { code: '+370',  flag: '🇱🇹', name: 'Lithuania' },
+  { code: '+371',  flag: '🇱🇻', name: 'Latvia' },
+  { code: '+372',  flag: '🇪🇪', name: 'Estonia' },
+  { code: '+373',  flag: '🇲🇩', name: 'Moldova' },
+  { code: '+374',  flag: '🇦🇲', name: 'Armenia' },
+  { code: '+375',  flag: '🇧🇾', name: 'Belarus' },
+  { code: '+376',  flag: '🇦🇩', name: 'Andorra' },
+  { code: '+380',  flag: '🇺🇦', name: 'Ukraine' },
+  { code: '+381',  flag: '🇷🇸', name: 'Serbia' },
+  { code: '+382',  flag: '🇲🇪', name: 'Montenegro' },
+  { code: '+385',  flag: '🇭🇷', name: 'Croatia' },
+  { code: '+386',  flag: '🇸🇮', name: 'Slovenia' },
+  { code: '+387',  flag: '🇧🇦', name: 'Bosnia & Herzegovina' },
+  { code: '+389',  flag: '🇲🇰', name: 'North Macedonia' },
+  { code: '+420',  flag: '🇨🇿', name: 'Czech Republic' },
+  { code: '+421',  flag: '🇸🇰', name: 'Slovakia' },
+  { code: '+423',  flag: '🇱🇮', name: 'Liechtenstein' },
+  { code: '+500',  flag: '🇫🇰', name: 'Falkland Islands' },
+  { code: '+502',  flag: '🇬🇹', name: 'Guatemala' },
+  { code: '+503',  flag: '🇸🇻', name: 'El Salvador' },
+  { code: '+504',  flag: '🇭🇳', name: 'Honduras' },
+  { code: '+505',  flag: '🇳🇮', name: 'Nicaragua' },
+  { code: '+506',  flag: '🇨🇷', name: 'Costa Rica' },
+  { code: '+507',  flag: '🇵🇦', name: 'Panama' },
+  { code: '+509',  flag: '🇭🇹', name: 'Haiti' },
+  { code: '+590',  flag: '🇬🇵', name: 'Guadeloupe' },
+  { code: '+591',  flag: '🇧🇴', name: 'Bolivia' },
+  { code: '+592',  flag: '🇬🇾', name: 'Guyana' },
+  { code: '+593',  flag: '🇪🇨', name: 'Ecuador' },
+  { code: '+595',  flag: '🇵🇾', name: 'Paraguay' },
+  { code: '+597',  flag: '🇸🇷', name: 'Suriname' },
+  { code: '+598',  flag: '🇺🇾', name: 'Uruguay' },
+  { code: '+599',  flag: '🇨🇼', name: 'Curaçao' },
+  { code: '+670',  flag: '🇹🇱', name: 'Timor-Leste' },
+  { code: '+673',  flag: '🇧🇳', name: 'Brunei' },
+  { code: '+675',  flag: '🇵🇬', name: 'Papua New Guinea' },
+  { code: '+676',  flag: '🇹🇴', name: 'Tonga' },
+  { code: '+677',  flag: '🇸🇧', name: 'Solomon Islands' },
+  { code: '+678',  flag: '🇻🇺', name: 'Vanuatu' },
+  { code: '+679',  flag: '🇫🇯', name: 'Fiji' },
+  { code: '+680',  flag: '🇵🇼', name: 'Palau' },
+  { code: '+682',  flag: '🇨🇰', name: 'Cook Islands' },
+  { code: '+685',  flag: '🇼🇸', name: 'Samoa' },
+  { code: '+686',  flag: '🇰🇮', name: 'Kiribati' },
+  { code: '+688',  flag: '🇹🇻', name: 'Tuvalu' },
+  { code: '+689',  flag: '🇵🇫', name: 'French Polynesia' },
+  { code: '+690',  flag: '🇹🇰', name: 'Tokelau' },
+  { code: '+691',  flag: '🇫🇲', name: 'Micronesia' },
+  { code: '+692',  flag: '🇲🇭', name: 'Marshall Islands' },
+  { code: '+850',  flag: '🇰🇵', name: 'North Korea' },
+  { code: '+852',  flag: '🇭🇰', name: 'Hong Kong' },
+  { code: '+853',  flag: '🇲🇴', name: 'Macau' },
+  { code: '+855',  flag: '🇰🇭', name: 'Cambodia' },
+  { code: '+856',  flag: '🇱🇦', name: 'Laos' },
+  { code: '+880',  flag: '🇧🇩', name: 'Bangladesh' },
+  { code: '+886',  flag: '🇹🇼', name: 'Taiwan' },
+  { code: '+960',  flag: '🇲🇻', name: 'Maldives' },
+  { code: '+961',  flag: '🇱🇧', name: 'Lebanon' },
+  { code: '+962',  flag: '🇯🇴', name: 'Jordan' },
+  { code: '+963',  flag: '🇸🇾', name: 'Syria' },
+  { code: '+964',  flag: '🇮🇶', name: 'Iraq' },
+  { code: '+965',  flag: '🇰🇼', name: 'Kuwait' },
+  { code: '+966',  flag: '🇸🇦', name: 'Saudi Arabia' },
+  { code: '+967',  flag: '🇾🇪', name: 'Yemen' },
+  { code: '+968',  flag: '🇴🇲', name: 'Oman' },
+  { code: '+970',  flag: '🇵🇸', name: 'Palestine' },
+  { code: '+971',  flag: '🇦🇪', name: 'UAE' },
+  { code: '+972',  flag: '🇮🇱', name: 'Israel' },
+  { code: '+973',  flag: '🇧🇭', name: 'Bahrain' },
+  { code: '+974',  flag: '🇶🇦', name: 'Qatar' },
+  { code: '+975',  flag: '🇧🇹', name: 'Bhutan' },
+  { code: '+976',  flag: '🇲🇳', name: 'Mongolia' },
+  { code: '+977',  flag: '🇳🇵', name: 'Nepal' },
+  { code: '+992',  flag: '🇹🇯', name: 'Tajikistan' },
+  { code: '+993',  flag: '🇹🇲', name: 'Turkmenistan' },
+  { code: '+994',  flag: '🇦🇿', name: 'Azerbaijan' },
+  { code: '+995',  flag: '🇬🇪', name: 'Georgia' },
+  { code: '+996',  flag: '🇰🇬', name: 'Kyrgyzstan' },
+  { code: '+998',  flag: '🇺🇿', name: 'Uzbekistan' },
+];
+
+/** Normalise any phone input to E.164. Strips spaces/dashes/parens.
+ *  If the number already starts with + it is returned as-is (after stripping whitespace).
+ *  If it starts with 00 that is treated as the international prefix.
+ *  Otherwise the supplied countryCode is prepended, stripping a leading 0 if present. */
+function toE164(raw: string, countryCode: string): string {
+  let n = raw.trim().replace(/[\s()\-\.]/g, '');
+  if (n.startsWith('+')) return n;
+  if (n.startsWith('00')) return '+' + n.slice(2);
+  if (n.startsWith('0')) n = n.slice(1);
+  return countryCode + n;
+}
+
+/** Given a full E.164 number, try to find the matching country-code entry. */
+function splitE164(e164: string): { code: string; local: string } {
+  // Try longest prefix first
+  const sorted = [...COUNTRY_CODES].sort((a, b) => b.code.length - a.code.length);
+  for (const c of sorted) {
+    if (e164.startsWith(c.code)) {
+      return { code: c.code, local: e164.slice(c.code.length) };
+    }
+  }
+  return { code: '+1', local: e164.replace(/^\+/, '') };
+}
+
 interface NotificationSettings {
   emailWorkOrders: boolean;
   emailAlerts: boolean;
@@ -54,6 +267,9 @@ export default function NotificationsPage() {
     smsEnabled: false, smsWorkOrders: false, smsAlerts: false, smsCriticalOnly: true, phoneNumber: '',
     slackEnabled: false, slackWorkOrders: false, slackAlerts: false, slackChannel: '',
   });
+  // Country code selector state — split from the local number
+  const [countryCode, setCountryCode] = useState('+1');
+  const [localNumber, setLocalNumber] = useState('');
   const [capabilities, setCapabilities] = useState<Capabilities>({ email: true, slack: false, sms: false });
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -81,7 +297,15 @@ export default function NotificationsPage() {
         },
         { staleWhileRevalidate: useCache }
       );
-      if (data.settings) setSettings(prev => ({ ...prev, ...data.settings }));
+      if (data.settings) {
+        setSettings(prev => ({ ...prev, ...data.settings }));
+        // Split stored E.164 number back into country code + local number
+        if (data.settings.phoneNumber) {
+          const { code, local } = splitE164(data.settings.phoneNumber);
+          setCountryCode(code);
+          setLocalNumber(local);
+        }
+      }
       if (data.capabilities) setCapabilities(data.capabilities);
       if (data.isAdmin !== undefined) setIsAdmin(data.isAdmin);
     } catch (e) {
@@ -96,46 +320,26 @@ export default function NotificationsPage() {
   };
 
   const handleSave = async () => {
+    // Build the full E.164 number from country code + local number
+    const fullE164 = localNumber.trim() ? toE164(localNumber, countryCode) : '';
+
     // Validate: if SMS is enabled, phone number must be provided
-    if (settings.smsEnabled && (!settings.phoneNumber || !settings.phoneNumber.trim())) {
-      setSaveError('Please enter your mobile phone number to receive SMS alerts.');
+    if (settings.smsEnabled && !fullE164) {
+      setSaveError('Please select your country and enter your phone number to receive SMS alerts.');
       return;
     }
-    // Validate phone number format if provided
-    if (settings.phoneNumber && settings.phoneNumber.trim()) {
-      let cleaned = settings.phoneNumber.trim().replace(/[\s()\-]/g, '');
-
-      // Auto-fix Nigerian local format: 0801... → +234801...
-      if (/^0[7-9]\d{9}$/.test(cleaned)) {
-        cleaned = '+234' + cleaned.slice(1);
-        setSettings(prev => ({ ...prev, phoneNumber: cleaned }));
-      }
-
-      // Auto-fix Nigerian format without leading 0: 801... → +234801...
-      if (/^[7-9]\d{9}$/.test(cleaned)) {
-        cleaned = '+234' + cleaned;
-        setSettings(prev => ({ ...prev, phoneNumber: cleaned }));
-      }
-
-      if (!/^\+\d{10,15}$/.test(cleaned)) {
-        setSaveError('Phone number must include country code. Nigeria: +2348012345678  |  USA: +12125551234');
-        return;
-      }
+    // Validate E.164 format
+    if (fullE164 && !/^\+\d{7,15}$/.test(fullE164)) {
+      setSaveError('Phone number looks invalid. Please enter only digits after selecting your country code.');
+      return;
     }
 
     setSaveError('');
     setSaving(true);
     try {
-      // Normalize phone number before saving (strip spaces, dashes, parens)
-      // Also auto-convert Nigerian local formats to E.164
-      let normalizedPhone = settings.phoneNumber ? settings.phoneNumber.replace(/[\s()\-]/g, '') : null;
-      if (normalizedPhone) {
-        if (/^0[7-9]\d{9}$/.test(normalizedPhone)) normalizedPhone = '+234' + normalizedPhone.slice(1);
-        else if (/^[7-9]\d{9}$/.test(normalizedPhone)) normalizedPhone = '+234' + normalizedPhone;
-      }
       const payload = {
         ...settings,
-        phoneNumber: normalizedPhone,
+        phoneNumber: fullE164 || null,
       };
       const res = await fetch('/api/settings/notifications', {
         method: 'PUT',
@@ -275,23 +479,41 @@ export default function NotificationsPage() {
             <>
               <div>
                 <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>Mobile Phone Number</label>
-                <p className="text-xs mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                  Enter the mobile number where you want to receive SMS text messages from Myncel. Standard messaging rates apply.
+                <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
+                  Select your country then enter your number without the leading 0. Standard messaging rates apply.
                 </p>
-                <input
-                  type="tel"
-                  value={settings.phoneNumber || ''}
-                  onChange={e => setSettings(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                  placeholder="+234 801 234 5678 or +1 212 555 1234"
-                  className="w-full max-w-xs rounded-lg px-3 py-2 text-sm focus:outline-none"
-                  style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
-                />
-                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                  Include your country code. Nigeria: <strong>+234</strong> 801 234 5678 &nbsp;|&nbsp; USA: <strong>+1</strong> 212 555 1234
-                </p>
-                {(!settings.phoneNumber || !settings.phoneNumber.trim()) && (
+                <div className="flex gap-2 max-w-sm">
+                  {/* Country code dropdown */}
+                  <select
+                    value={countryCode}
+                    onChange={e => setCountryCode(e.target.value)}
+                    className="rounded-lg px-2 py-2 text-sm focus:outline-none flex-shrink-0"
+                    style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', minWidth: '140px' }}
+                  >
+                    {COUNTRY_CODES.map(c => (
+                      <option key={c.code} value={c.code}>
+                        {c.flag} {c.name} ({c.code})
+                      </option>
+                    ))}
+                  </select>
+                  {/* Local number input */}
+                  <input
+                    type="tel"
+                    value={localNumber}
+                    onChange={e => setLocalNumber(e.target.value.replace(/[^\d\s\-()]/g, ''))}
+                    placeholder="801 234 5678"
+                    className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                    style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
+                  />
+                </div>
+                {localNumber.trim() && (
+                  <p className="text-xs mt-1.5" style={{ color: 'var(--text-secondary)' }}>
+                    Will be saved as: <strong>{toE164(localNumber, countryCode)}</strong>
+                  </p>
+                )}
+                {settings.smsEnabled && !localNumber.trim() && (
                   <p className="text-xs mt-1.5" style={{ color: '#dc2626' }}>
-                    ⚠️ Phone number is required. Include country code — Nigeria: +2348012345678 &nbsp;|&nbsp; USA: +12125551234
+                    ⚠️ Phone number is required to receive SMS alerts.
                   </p>
                 )}
               </div>
