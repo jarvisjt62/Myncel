@@ -1946,7 +1946,7 @@ function DashboardClientInner({ user, data }: Props) {
                 </div>
 
                 {/* Recent Work Orders + Alerts */}
-              <div className="grid lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Work Orders */}
                 <div className="lg:col-span-2 rounded-xl [background:var(--bg-surface)] border border-[var(--border)]">
                   <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
@@ -2047,7 +2047,7 @@ function DashboardClientInner({ user, data }: Props) {
               )}
 
                 {/* Dashboard Enhancement Widgets */}
-                <div className="grid lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Activity Feed */}
                   <div className="lg:col-span-1">
                     <ActivityFeed />
