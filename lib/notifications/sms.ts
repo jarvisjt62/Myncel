@@ -200,3 +200,33 @@ export function pmOverdueSmsMessage(opts: {
   const cta = opts.dashboardUrl ? ` View: ${opts.dashboardUrl}` : ' Schedule maintenance now.';
   return `PM Overdue: "${opts.taskTitle}" on ${opts.machineName} is ${opts.daysOverdue} day(s) overdue.${cta}`;
 }
+
+export function scheduleTaskAssignedSmsMessage(opts: {
+  taskTitle: string;
+  machineName: string;
+  frequency?: string;
+  nextDueAt?: string;
+  assignee?: string;
+  orgName?: string;
+  dashboardUrl?: string;
+}): string {
+  const cta = opts.dashboardUrl ? ` View: ${opts.dashboardUrl}` : ' Open your dashboard to view.';
+  const due = opts.nextDueAt ? ` Due ${opts.nextDueAt}.` : '';
+  const assignee = opts.assignee ? ` Assigned to ${opts.assignee}.` : '';
+  const freq = opts.frequency ? ` (${opts.frequency})` : '';
+  return `New schedule task: "${opts.taskTitle}" on ${opts.machineName}${freq}.${assignee}${due}${cta}`;
+}
+
+export function equipmentAddedSmsMessage(opts: {
+  machineName: string;
+  category?: string;
+  location?: string;
+  criticality?: string;
+  orgName?: string;
+  dashboardUrl?: string;
+}): string {
+  const cta = opts.dashboardUrl ? ` View: ${opts.dashboardUrl}` : ' Open your dashboard to view.';
+  const loc = opts.location ? ` at ${opts.location}` : '';
+  const crit = opts.criticality ? ` [${opts.criticality}]` : '';
+  return `New equipment added: ${opts.machineName}${loc}${crit}.${cta}`;
+}

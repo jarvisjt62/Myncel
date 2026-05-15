@@ -17,6 +17,8 @@ import {
   workOrderSmsMessage,
   alertSmsMessage,
   pmOverdueSmsMessage,
+  scheduleTaskAssignedSmsMessage,
+  equipmentAddedSmsMessage,
 } from './sms';
 import {
   sendEmail,
@@ -55,6 +57,22 @@ export type NotificationEvent =
       taskTitle: string;
       machineName: string;
       daysOverdue: number;
+    }
+  | {
+      type: 'schedule.task_assigned';
+      taskTitle: string;
+      machineName: string;
+      frequency?: string;
+      nextDueAt?: string;
+      assignee?: string;
+      priority?: string;
+    }
+  | {
+      type: 'equipment.added';
+      machineName: string;
+      category?: string;
+      location?: string;
+      criticality?: string;
     };
 
 export async function dispatchNotifications(
@@ -82,10 +100,11 @@ export async function dispatchNotifications(
     );
     const orgName = organization?.name || 'Myncel';
     const dashboardUrl = `${APP_URL}/dashboard`;
-    // SMS-safe URL: redirects to /dashboard but emits no Open Graph / Twitter
-    // card metadata, so SMS apps (iMessage, Android Messages, WhatsApp) won't
-    // render a Myncel logo preview card under the message.
-    const smsDashboardUrl = `${APP_URL}/r/d`;
+    // SMS-safe URL: a) lives on canonical www host so SMS crawlers don't
+    // bounce apex->www and pick up homepage OG metadata; b) /r/d returns
+    // HTML with explicitly EMPTY Open Graph tags so no preview card renders.
+    const SMS_URL_BASE = 'https://www.myncel.com';
+    const smsDashboardUrl = `${SMS_URL_BASE}/r/d`;
 
     // If no settings row exists yet, check if platform SMS is available and auto-create
     if (!settings) {
@@ -161,7 +180,10 @@ export async function dispatchNotifications(
         (event.type === 'work_order.created' && settings.smsWorkOrders) ||
         (event.type === 'alert.triggered' && settings.smsAlerts &&
           (!settings.smsCriticalOnly || isCritical)) ||
-        (event.type === 'pm.overdue' && settings.smsAlerts);
+        (event.type === 'pm.overdue' && settings.smsAlerts) ||
+        // New event types: gate them on the existing toggles closest in spirit
+        (event.type === 'schedule.task_assigned' && settings.smsWorkOrders) ||
+        (event.type === 'equipment.added' && settings.smsWorkOrders);
 
       console.log(`${logPrefix} SMS: shouldSend=${shouldSendSms} hasPhone=${!!settings.phoneNumber}`);
 
@@ -174,6 +196,10 @@ export async function dispatchNotifications(
           smsText = alertSmsMessage({ ...event, orgName, dashboardUrl: smsDashboardUrl });
         } else if (event.type === 'pm.overdue') {
           smsText = pmOverdueSmsMessage({ ...event, orgName, dashboardUrl: smsDashboardUrl });
+        } else if (event.type === 'schedule.task_assigned') {
+          smsText = scheduleTaskAssignedSmsMessage({ ...event, orgName, dashboardUrl: smsDashboardUrl });
+        } else if (event.type === 'equipment.added') {
+          smsText = equipmentAddedSmsMessage({ ...event, orgName, dashboardUrl: smsDashboardUrl });
         }
 
         if (smsText) {
@@ -267,6 +293,11 @@ export async function dispatchNotifications(
     // ── Webhook notifications ───────────────────────────────────
     dispatchWebhooks(organizationId, event).catch(err =>
       console.error('Webhook dispatch error:', err)
+    );
+
+    // In-app notifications (bell icon)
+    createInAppNotifications(organizationId, event).catch(err =>
+      console.error('In-app notification error:', err)
     );
   } catch (err) {
     console.error('Notification dispatch error:', err);
@@ -375,4 +406,101 @@ async function computeHmac(secret: string, payload: string): Promise<string> {
   return Array.from(new Uint8Array(signature))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
+}
+/**
+ * Create in-app (bell icon) notifications for all members of the org.
+ * Mirrors the SMS/email events into Notification rows so users can see
+ * recent activity in the app even if they have SMS/email disabled.
+ */
+async function createInAppNotifications(
+  organizationId: string,
+  event: NotificationEvent
+): Promise<void> {
+  try {
+    const users = await safeQuery(
+      db.user.findMany({
+        where: { organizationId },
+        select: { id: true },
+      }),
+      [] as { id: string }[]
+    );
+    if (!users || users.length === 0) return;
+
+    let title = '';
+    let message = '';
+    let type: any = 'SYSTEM_ANNOUNCEMENT';
+    let priority: any = 'NORMAL';
+    let link = '/dashboard';
+    let relatedType: string | null = null;
+
+    if (event.type === 'work_order.created') {
+      type = 'WORK_ORDER_ASSIGNED';
+      priority = event.priority === 'HIGH' || event.priority === 'CRITICAL' ? 'HIGH' : 'NORMAL';
+      title = `New work order: ${event.workOrderNumber}`;
+      message = `${event.priority} priority — "${event.title}" on ${event.machineName}`;
+      link = '/dashboard#work-orders';
+      relatedType = 'work_order';
+    } else if (event.type === 'work_order.completed') {
+      type = 'WORK_ORDER_COMPLETED';
+      title = `Work order completed: ${event.workOrderNumber}`;
+      message = `${event.title} — completed by ${event.completedBy}`;
+      link = '/dashboard#work-orders';
+      relatedType = 'work_order';
+    } else if (event.type === 'alert.triggered') {
+      type = 'MACHINE_ALERT';
+      priority = event.severity === 'CRITICAL' ? 'URGENT' : 'HIGH';
+      title = `${event.severity} alert: ${event.alertTitle}`;
+      message = `${event.machineName} — ${event.message}`;
+      link = '/dashboard#alerts';
+      relatedType = 'alert';
+    } else if (event.type === 'pm.overdue') {
+      type = 'MAINTENANCE_OVERDUE';
+      priority = 'HIGH';
+      title = `PM overdue: ${event.taskTitle}`;
+      message = `${event.machineName} — ${event.daysOverdue} day(s) overdue`;
+      link = '/dashboard#schedules';
+      relatedType = 'maintenance_task';
+    } else if (event.type === 'schedule.task_assigned') {
+      type = 'MAINTENANCE_DUE';
+      priority = event.priority === 'HIGH' || event.priority === 'CRITICAL' ? 'HIGH' : 'NORMAL';
+      title = `New schedule task: ${event.taskTitle}`;
+      const parts: string[] = [event.machineName];
+      if (event.frequency) parts.push(event.frequency);
+      if (event.assignee) parts.push(`assigned to ${event.assignee}`);
+      if (event.nextDueAt) parts.push(`due ${event.nextDueAt}`);
+      message = parts.join(' · ');
+      link = '/dashboard#schedules';
+      relatedType = 'maintenance_task';
+    } else if (event.type === 'equipment.added') {
+      type = 'SYSTEM_ANNOUNCEMENT';
+      priority = event.criticality === 'HIGH' || event.criticality === 'CRITICAL' ? 'HIGH' : 'NORMAL';
+      title = `New equipment added: ${event.machineName}`;
+      const parts: string[] = [];
+      if (event.category) parts.push(event.category);
+      if (event.location) parts.push(event.location);
+      if (event.criticality) parts.push(`criticality: ${event.criticality}`);
+      message = parts.length > 0 ? parts.join(' · ') : `${event.machineName} is now in the registry.`;
+      link = '/dashboard#machines';
+      relatedType = 'machine';
+    } else {
+      return;
+    }
+
+    await safeQuery(
+      db.notification.createMany({
+        data: users.map(u => ({
+          userId: u.id,
+          type,
+          title,
+          message,
+          priority,
+          link,
+          relatedType,
+        })),
+      }),
+      null
+    );
+  } catch (err) {
+    console.error('createInAppNotifications error:', err);
+  }
 }

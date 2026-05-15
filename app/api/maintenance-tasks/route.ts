@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { guardPermission } from '@/lib/permissions';
+import { dispatchNotifications } from '@/lib/notifications/dispatch';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,6 +57,16 @@ export async function POST(req: NextRequest) {
         machine: { select: { name: true } },
       },
     });
+
+    // Fire-and-forget notifications (SMS/email/in-app/slack/webhooks)
+    dispatchNotifications(session.user.organizationId, {
+      type: 'schedule.task_assigned',
+      taskTitle: task.title,
+      machineName: task.machine?.name || 'Unknown machine',
+      frequency: task.frequency,
+      nextDueAt: task.nextDueAt ? task.nextDueAt.toISOString().slice(0, 10) : undefined,
+      priority: task.priority,
+    }).catch(err => console.error('[maintenance-tasks] dispatch failed', err));
 
     return NextResponse.json({ success: true, task }, { status: 201 });
   } catch (error) {

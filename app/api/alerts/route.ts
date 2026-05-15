@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { guardPermission } from '@/lib/permissions';
+import { dispatchNotifications } from '@/lib/notifications/dispatch';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,6 +84,25 @@ export async function POST(req: NextRequest) {
         organizationId: effectiveOrgId,
       },
     });
+
+    // Resolve machine name for notification body
+    let machineName = 'Unknown machine';
+    if (alert.machineId) {
+      const m = await db.machine.findUnique({
+        where: { id: alert.machineId },
+        select: { name: true },
+      });
+      if (m?.name) machineName = m.name;
+    }
+
+    // Fire-and-forget notifications (SMS/email/in-app/slack/webhooks)
+    dispatchNotifications(effectiveOrgId, {
+      type: 'alert.triggered',
+      alertTitle: alert.title,
+      machineName,
+      severity: alert.severity,
+      message: alert.message,
+    }).catch(err => console.error('[alerts] dispatch failed', err));
 
     return NextResponse.json({ success: true, alert }, { status: 201 });
   } catch (error) {

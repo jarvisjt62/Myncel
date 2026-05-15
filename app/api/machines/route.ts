@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { checkPlanLimit, checkPlanFeature } from '@/lib/plan-limits';
 import { guardPermission } from '@/lib/permissions';
+import { dispatchNotifications } from '@/lib/notifications/dispatch';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +52,15 @@ export async function POST(req: NextRequest) {
         organizationId: session.user.organizationId,
       },
     });
+
+    // Fire-and-forget notifications (SMS/email/in-app/slack/webhooks)
+    dispatchNotifications(session.user.organizationId, {
+      type: 'equipment.added',
+      machineName: machine.name,
+      category: machine.category,
+      location: machine.location || undefined,
+      criticality: machine.criticality,
+    }).catch(err => console.error('[machines] dispatch failed', err));
 
     return NextResponse.json({ success: true, machine }, { status: 201 });
   } catch (error) {
