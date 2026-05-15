@@ -36,6 +36,7 @@ export default function LiveChat() {
   const notifiedAdminMessageIds = useRef<Set<string>>(new Set());
   const originalTitle = useRef<string>('Myncel');
   const [mode, setMode] = useState<'ai' | 'live'>('ai'); // 'ai' for AI assistance, 'live' for live chat
+  const [chatButtonVisible, setChatButtonVisible] = useState(false); // Hidden by default — shown via support tab
 
   // Don't show live chat for system admins (ADMIN, SUPER_ADMIN). OWNER is organization owner - they should see chat.
   const isAdminRole = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN';
@@ -110,7 +111,7 @@ export default function LiveChat() {
       Notification.requestPermission();
     }
 
-    window.openMyncelChat = () => setIsOpen(true);
+    window.openMyncelChat = () => { setChatButtonVisible(true); setIsOpen(true); };
 
     return () => {
       delete window.openMyncelChat;
@@ -444,27 +445,60 @@ export default function LiveChat() {
 
   return (
     <>
-      {/* Chat Button - Fixed position on RIGHT side */}
-      <button
-        onClick={() => {
-          setIsOpen(true);
-          setHasNewMessage(false);
-        }}
-        className={`fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] z-[9999] bg-[#635bff] text-white p-3.5 sm:p-4 rounded-full shadow-lg hover:bg-[#4f46e5] transition-all hover:scale-105 sm:bottom-6 sm:right-6 ${isOpen ? 'hidden' : 'flex'} items-center justify-center group overflow-visible`}
-        aria-label="Open live chat"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-        {hasNewMessage && (
-          <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-red-500 rounded-full animate-pulse text-[10px] font-bold flex items-center justify-center">
-            {unreadAdminCount > 0 ? unreadAdminCount : ''}
+      {/* Support Tab — small edge tab that reveals the chat button on tap */}
+      {!isOpen && !chatButtonVisible && (
+        <button
+          onClick={() => setChatButtonVisible(true)}
+          className={`fixed right-0 top-1/2 -translate-y-1/2 z-[9998] bg-[#635bff] text-white py-3 px-1.5 sm:px-2 rounded-l-lg shadow-md hover:bg-[#4f46e5] transition-all hover:pl-2.5 ${hasNewMessage ? 'animate-pulse' : ''}`}
+          aria-label="Show support chat"
+        >
+          <div className="flex flex-col items-center gap-1">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span className="text-[9px] sm:text-[10px] font-medium leading-tight" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
+              Support
+            </span>
+          </div>
+          {hasNewMessage && (
+            <span className="absolute -top-1 -left-1 min-w-4 h-4 px-0.5 bg-red-500 rounded-full text-[8px] font-bold flex items-center justify-center">
+              {unreadAdminCount > 0 ? unreadAdminCount : '!'}
+            </span>
+          )}
+        </button>
+      )}
+
+      {/* Chat Button — only shown after user taps the support tab */}
+      {chatButtonVisible && !isOpen && (
+        <button
+          onClick={() => {
+            setIsOpen(true);
+            setHasNewMessage(false);
+          }}
+          className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] z-[9999] bg-[#635bff] text-white p-3.5 sm:p-4 rounded-full shadow-lg hover:bg-[#4f46e5] transition-all hover:scale-105 sm:bottom-6 sm:right-6 flex items-center justify-center group overflow-visible"
+          aria-label="Open live chat"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          {hasNewMessage && (
+            <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-red-500 rounded-full animate-pulse text-[10px] font-bold flex items-center justify-center">
+              {unreadAdminCount > 0 ? unreadAdminCount : ''}
+            </span>
+          )}
+          {/* Dismiss button — hide chat button back to support tab */}
+          <span
+            onClick={(e) => { e.stopPropagation(); setChatButtonVisible(false); }}
+            className="absolute -top-2 -left-2 w-5 h-5 bg-gray-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-gray-700"
+            title="Hide chat button"
+          >
+            ×
           </span>
-        )}
-        <span className="absolute right-full mr-3 bg-[#0a2540] text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-          Chat with us
-        </span>
-      </button>
+          <span className="absolute right-full mr-3 bg-[#0a2540] text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+            Chat with us
+          </span>
+        </button>
+      )}
 
       {/* Chat Window - Fixed position on RIGHT side */}
       {isOpen && (
