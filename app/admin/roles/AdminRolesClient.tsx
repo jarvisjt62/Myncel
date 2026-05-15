@@ -174,10 +174,10 @@ export default function AdminRolesClient({ initialRoles, permissions, organizati
                       <button onClick={() => setEditing(r)} className="text-xs font-semibold text-[#635bff] hover:text-[#4f46e5] px-2 py-1 rounded hover:bg-[#635bff]/10 transition-colors">View / Edit</button>
                       {!r.isSystem && (
                         <>
-                          <button onClick={() => handleToggleDisable(r)} className="hidden sm:inline-block ml-1 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 py-1 rounded hover:bg-[var(--bg-surface-2)] transition-colors">
+                          <button onClick={() => handleToggleDisable(r)} className="inline-block ml-1 text-[10px] sm:text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-1.5 sm:px-2 py-1 rounded hover:bg-[var(--bg-surface-2)] transition-colors">
                             {r.isDisabled ? 'Enable' : 'Disable'}
                           </button>
-                          <button onClick={() => handleDelete(r)} className="hidden sm:inline-block ml-1 text-xs font-medium text-red-500 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors">Delete</button>
+                          <button onClick={() => handleDelete(r)} className="inline-block ml-1 text-[10px] sm:text-xs font-medium text-red-500 hover:text-red-600 px-1.5 sm:px-2 py-1 rounded hover:bg-red-50 transition-colors">Delete</button>
                         </>
                       )}
                     </td>
