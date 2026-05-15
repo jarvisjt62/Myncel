@@ -7,12 +7,8 @@ type RowDataset = 'work_orders' | 'machines' | 'alerts' | 'parts';
 interface RowExportMenuProps {
   dataset: RowDataset;
   recordId: string;
-  recordLabel?: string; // displayed in toast messages
-  onResult?: (r: {
-    success: boolean;
-    message: string;
-    url?: string;
-  }) => void;
+  recordLabel?: string;
+  onResult?: (r: { success: boolean; message: string; url?: string }) => void;
 }
 
 // Single in-app click state so only one popover is open at a time
@@ -32,19 +28,62 @@ export default function RowExportMenu({
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [avail, setAvail] = useState({ googleSheets: false, quickbooks: false, slack: false });
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const uid = useRef<string>(`${dataset}-${recordId}-${Math.random().toString(36).slice(2, 8)}`);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const uid = useRef<string>(
+    `${dataset}-${recordId}-${Math.random().toString(36).slice(2, 8)}`
+  );
 
-  // Sync with global "only one open at a time"
+  // ── Global "only one open" sync ───────────────────────────────────────────
   useEffect(() => {
     const l = (id: string | null) => setOpen(id === uid.current);
     listeners.add(l);
-    return () => {
-      listeners.delete(l);
-    };
+    return () => { listeners.delete(l); };
   }, []);
 
-  // Fetch available integrations once (cached at window level)
+  // ── Smart positioning: fixed coords, opens UP when near bottom ───────────
+  useEffect(() => {
+    if (!open || !btnRef.current) {
+      setMenuPos(null);
+      return;
+    }
+
+    const calculate = () => {
+      if (!btnRef.current) return;
+      const rect = btnRef.current.getBoundingClientRect();
+      const menuH = menuRef.current?.offsetHeight || 220; // approx before first paint
+      const menuW = 192; // w-48 = 12rem
+
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUp = spaceBelow < menuH + 12;
+
+      const top = openUp
+        ? rect.top - menuH - 4  // open above button
+        : rect.bottom + 4;      // open below button
+
+      // Right-align to button, clamped to viewport
+      const left = Math.min(
+        rect.right - menuW,
+        window.innerWidth - menuW - 8
+      );
+
+      setMenuPos({ top: Math.max(8, top), left: Math.max(8, left) });
+    };
+
+    calculate();
+    requestAnimationFrame(calculate); // re-calc after DOM paint for real height
+
+    window.addEventListener('scroll', calculate, true);
+    window.addEventListener('resize', calculate);
+    return () => {
+      window.removeEventListener('scroll', calculate, true);
+      window.removeEventListener('resize', calculate);
+    };
+  }, [open]);
+
+  // ── Fetch integration availability (cached) ───────────────────────────────
   useEffect(() => {
     const w = window as any;
     if (w.__myncelIntegrationsCache) {
@@ -72,17 +111,16 @@ export default function RowExportMenu({
       .catch(() => {});
   }, []);
 
-  // Close on outside click
+  // ── Close on outside click or Escape ─────────────────────────────────────
   useEffect(() => {
     if (!open) return;
     const onClick = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+      const t = e.target as Node;
+      if (!wrapRef.current?.contains(t) && !menuRef.current?.contains(t)) {
         setGlobalOpen(null);
       }
     };
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setGlobalOpen(null);
-    };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setGlobalOpen(null); };
     document.addEventListener('mousedown', onClick);
     document.addEventListener('keydown', onEsc);
     return () => {
@@ -91,19 +129,20 @@ export default function RowExportMenu({
     };
   }, [open]);
 
-  const csvUrl = () => {
-    if (dataset === 'work_orders') return `/api/work-orders/export?format=csv&id=${recordId}`;
-    return `/api/exports/${dataset}?format=csv&id=${recordId}`;
-  };
-  const pdfUrl = () => {
-    if (dataset === 'work_orders')
-      return `/api/work-orders/export?format=pdf&id=${recordId}&autoprint=1`;
-    return `/api/exports/${dataset}?format=pdf&id=${recordId}&autoprint=1`;
-  };
+  // ── URL helpers ───────────────────────────────────────────────────────────
+  const csvUrl = () =>
+    dataset === 'work_orders'
+      ? `/api/work-orders/export?format=csv&id=${recordId}`
+      : `/api/exports/${dataset}?format=csv&id=${recordId}`;
 
-  const toast = (success: boolean, message: string, url?: string) => {
+  const pdfUrl = () =>
+    dataset === 'work_orders'
+      ? `/api/work-orders/export?format=pdf&id=${recordId}&autoprint=1`
+      : `/api/exports/${dataset}?format=pdf&id=${recordId}&autoprint=1`;
+
+  // ── Integration export ────────────────────────────────────────────────────
+  const toast = (success: boolean, message: string, url?: string) =>
     onResult?.({ success, message, url });
-  };
 
   const runExport = async (
     integration: 'google_sheets' | 'quickbooks' | 'slack',
@@ -149,6 +188,7 @@ export default function RowExportMenu({
     }
   };
 
+  // ── Menu item helper ──────────────────────────────────────────────────────
   const menuItem = (
     icon: string,
     label: string,
@@ -158,10 +198,7 @@ export default function RowExportMenu({
   ) => (
     <button
       type="button"
-      onClick={e => {
-        e.stopPropagation();
-        onClick();
-      }}
+      onClick={e => { e.stopPropagation(); onClick(); }}
       disabled={disabled}
       className="w-full text-left px-3 py-2 text-xs hover:bg-black/5 disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
       style={{ color: color || 'var(--text-primary)' }}
@@ -171,9 +208,12 @@ export default function RowExportMenu({
     </button>
   );
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div ref={wrapRef} className="relative inline-block" onClick={e => e.stopPropagation()}>
+      {/* Trigger button */}
       <button
+        ref={btnRef}
         type="button"
         onClick={e => {
           e.stopPropagation();
@@ -198,47 +238,77 @@ export default function RowExportMenu({
         )}
       </button>
 
-      {open && (
+      {/*
+        Dropdown uses `position: fixed` with calculated coordinates so it is
+        NEVER clipped by a parent overflow:hidden or scroll container.
+        Position is recalculated on every open + scroll + resize so it always
+        stays anchored to the trigger button.
+        Opens UPWARD automatically when there isn't enough space below.
+      */}
+      {open && menuPos && (
         <div
-          className="absolute right-0 mt-1 w-48 rounded-lg shadow-xl border z-50 py-1"
-          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
+          ref={menuRef}
+          className="fixed w-48 rounded-lg shadow-xl border z-[9999] py-1"
+          style={{
+            top: menuPos.top,
+            left: menuPos.left,
+            background: 'var(--bg-surface)',
+            borderColor: 'var(--border)',
+          }}
+          onClick={e => e.stopPropagation()}
         >
-          <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+          {/* ── Download section ── */}
+          <div
+            className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider"
+            style={{ color: 'var(--text-muted)' }}
+          >
             Download
           </div>
+
           <a
             href={csvUrl()}
             onClick={() => setGlobalOpen(null)}
-            className="block px-3 py-2 text-xs hover:bg-black/5 flex items-center gap-2"
+            className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/5"
             style={{ color: 'var(--text-primary)' }}
           >
             <span>📥</span>
             <span>CSV</span>
           </a>
+
           <a
             href={pdfUrl()}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setGlobalOpen(null)}
-            className="block px-3 py-2 text-xs hover:bg-black/5 flex items-center gap-2"
+            className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/5"
             style={{ color: 'var(--text-primary)' }}
           >
             <span>📄</span>
             <span>PDF</span>
           </a>
 
+          {/* ── Send to integrations ── */}
           {(avail.googleSheets || avail.quickbooks || avail.slack) && (
             <>
               <div className="border-t my-1" style={{ borderColor: 'var(--border)' }} />
-              <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+              <div
+                className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider"
+                style={{ color: 'var(--text-muted)' }}
+              >
                 Send to
               </div>
               {avail.googleSheets &&
-                menuItem('📊', 'Google Sheets', () => runExport('google_sheets', { dataset, id: recordId }))}
+                menuItem('📊', 'Google Sheets', () =>
+                  runExport('google_sheets', { dataset, id: recordId })
+                )}
               {avail.quickbooks && dataset === 'work_orders' &&
-                menuItem('💰', 'QuickBooks Invoice', () => runExport('quickbooks', { dataset: 'invoices', limit: 1 }))}
+                menuItem('💰', 'QuickBooks Invoice', () =>
+                  runExport('quickbooks', { dataset: 'invoices', limit: 1 })
+                )}
               {avail.slack &&
-                menuItem('💬', 'Slack Digest', () => runExport('slack', { mode: 'digest' }))}
+                menuItem('💬', 'Slack Digest', () =>
+                  runExport('slack', { mode: 'digest' })
+                )}
             </>
           )}
         </div>
