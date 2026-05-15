@@ -64,9 +64,14 @@ export async function POST(req: NextRequest) {
       null
     );
 
-    // Fallback: if the user's org doesn't have its own Slack integration,
+    // Skip platform stubs (self-healing creates CONNECTED records with
+    // { platformManaged: true } but no accessToken — must use admin's real record)
+    const isStub = integration && !integration.accessToken &&
+      (integration.config as any)?.platformManaged === true;
+
+    // Fallback: if the user's org doesn't have its own Slack integration (or only has a stub),
     // check if the platform admin org has one connected (platform-inherited model).
-    let effectiveIntegration = integration;
+    let effectiveIntegration = isStub ? null : integration;
     if (!effectiveIntegration) {
       const adminUser = await safeQuery(
         db.user.findFirst({

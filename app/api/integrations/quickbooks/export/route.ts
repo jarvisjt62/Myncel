@@ -48,7 +48,12 @@ export async function POST(req: NextRequest) {
     const requestedOrgId: string | undefined = body.targetOrgId;
     const dataOrgId = isPlatformAdmin && requestedOrgId ? requestedOrgId : user.organizationId;
 
-    // Find connected QuickBooks integration, with platform-managed fallback
+    // Find connected QuickBooks integration, with platform-managed fallback.
+    //
+    // IMPORTANT: self-healing in GET /api/integrations creates stub records for
+    // non-admin orgs with { platformManaged: true } and status CONNECTED but NO
+    // accessToken/refreshToken. We must skip those stubs and fall through to the
+    // admin's real token-bearing record.
     let integration = await safeQuery(
       db.integration.findFirst({
         where: {
@@ -60,7 +65,11 @@ export async function POST(req: NextRequest) {
       null
     );
 
-    if (!integration) {
+    // Skip platform stubs (no real credentials)
+    const isStub = integration && !integration.accessToken &&
+      (integration.config as any)?.platformManaged === true;
+
+    if (!integration || isStub) {
       const adminUser = await safeQuery(
         db.user.findFirst({
           where: { email: 'admin@myncel.com' },

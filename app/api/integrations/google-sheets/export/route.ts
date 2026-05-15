@@ -52,6 +52,11 @@ export async function POST(req: NextRequest) {
     // Myncel supports platform-managed integrations: when the admin org has
     // Google Sheets connected and the current org hasn't opted out, we use
     // the admin's integration on behalf of this user.
+    //
+    // IMPORTANT: self-healing in GET /api/integrations creates stub records for
+    // non-admin orgs with { platformManaged: true } and status CONNECTED but NO
+    // accessToken. We must skip those stubs and always fall through to the admin's
+    // real token-bearing record.
     let integration = await safeQuery(
       db.integration.findFirst({
         where: {
@@ -63,7 +68,12 @@ export async function POST(req: NextRequest) {
       null
     );
 
-    if (!integration) {
+    // If the org record is a platform stub (no real token), treat it as missing
+    // so we fall through to the admin's real integration below.
+    const isStub = integration && !integration.accessToken &&
+      (integration.config as any)?.platformManaged === true;
+
+    if (!integration || isStub) {
       // Fallback to admin org's platform-managed integration
       const adminUser = await safeQuery(
         db.user.findFirst({
@@ -73,7 +83,7 @@ export async function POST(req: NextRequest) {
         null
       );
       if (adminUser?.organizationId && adminUser.organizationId !== user.organizationId) {
-        // Check this org hasn't opted out of the platform integration
+        // Check this org hasn't explicitly opted out of the platform integration
         const optOut = await safeQuery(
           db.integration.findFirst({
             where: {

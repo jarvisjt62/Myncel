@@ -34,8 +34,13 @@ export async function sendSlackNotification(
       null
     );
 
-    // If org doesn't have Slack, check the platform-level (admin) integration
-    if (!integration) {
+    // Skip platform stubs — self-healing creates CONNECTED records with
+    // { platformManaged: true } but no accessToken or webhookUrl.
+    const isStub = integration && !integration.accessToken && !integration.webhookUrl &&
+      (integration.config as any)?.platformManaged === true;
+
+    // If org doesn't have real Slack credentials, check the platform-level (admin) integration
+    if (!integration || isStub) {
       const adminUser = await safeQuery(
         db.user.findFirst({
           where: { email: 'admin@myncel.com' },
