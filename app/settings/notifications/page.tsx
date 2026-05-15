@@ -103,9 +103,22 @@ export default function NotificationsPage() {
     }
     // Validate phone number format if provided
     if (settings.phoneNumber && settings.phoneNumber.trim()) {
-      const cleaned = settings.phoneNumber.trim();
-      if (!/^\+\d{10,15}$/.test(cleaned.replace(/[\s()\-]/g, ''))) {
-        setSaveError('Phone number must include country code, e.g. +12125551234');
+      let cleaned = settings.phoneNumber.trim().replace(/[\s()\-]/g, '');
+
+      // Auto-fix Nigerian local format: 0801... → +234801...
+      if (/^0[7-9]\d{9}$/.test(cleaned)) {
+        cleaned = '+234' + cleaned.slice(1);
+        setSettings(prev => ({ ...prev, phoneNumber: cleaned }));
+      }
+
+      // Auto-fix Nigerian format without leading 0: 801... → +234801...
+      if (/^[7-9]\d{9}$/.test(cleaned)) {
+        cleaned = '+234' + cleaned;
+        setSettings(prev => ({ ...prev, phoneNumber: cleaned }));
+      }
+
+      if (!/^\+\d{10,15}$/.test(cleaned)) {
+        setSaveError('Phone number must include country code. Nigeria: +2348012345678  |  USA: +12125551234');
         return;
       }
     }
@@ -114,9 +127,15 @@ export default function NotificationsPage() {
     setSaving(true);
     try {
       // Normalize phone number before saving (strip spaces, dashes, parens)
+      // Also auto-convert Nigerian local formats to E.164
+      let normalizedPhone = settings.phoneNumber ? settings.phoneNumber.replace(/[\s()\-]/g, '') : null;
+      if (normalizedPhone) {
+        if (/^0[7-9]\d{9}$/.test(normalizedPhone)) normalizedPhone = '+234' + normalizedPhone.slice(1);
+        else if (/^[7-9]\d{9}$/.test(normalizedPhone)) normalizedPhone = '+234' + normalizedPhone;
+      }
       const payload = {
         ...settings,
-        phoneNumber: settings.phoneNumber ? settings.phoneNumber.replace(/[\s()\-]/g, '') : null,
+        phoneNumber: normalizedPhone,
       };
       const res = await fetch('/api/settings/notifications', {
         method: 'PUT',
@@ -263,13 +282,16 @@ export default function NotificationsPage() {
                   type="tel"
                   value={settings.phoneNumber || ''}
                   onChange={e => setSettings(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                  placeholder="+1 (234) 567-8900"
+                  placeholder="+234 801 234 5678 or +1 212 555 1234"
                   className="w-full max-w-xs rounded-lg px-3 py-2 text-sm focus:outline-none"
                   style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
                 />
+                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                  Include your country code. Nigeria: <strong>+234</strong> 801 234 5678 &nbsp;|&nbsp; USA: <strong>+1</strong> 212 555 1234
+                </p>
                 {(!settings.phoneNumber || !settings.phoneNumber.trim()) && (
                   <p className="text-xs mt-1.5" style={{ color: '#dc2626' }}>
-                    ⚠️ Phone number is required to receive SMS alerts. Include country code, e.g. +12125551234.
+                    ⚠️ Phone number is required. Include country code — Nigeria: +2348012345678 &nbsp;|&nbsp; USA: +12125551234
                   </p>
                 )}
               </div>

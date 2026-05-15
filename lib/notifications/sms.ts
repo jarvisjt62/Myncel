@@ -10,6 +10,13 @@ export async function sendSmsNotification(
   toNumber: string,
   message: string
 ): Promise<{ success: boolean; sid?: string; error?: string }> {
+  // Normalize phone number to E.164 format
+  // Handles Nigerian local numbers: 0801... → +234801..., 801... → +234801...
+  let normalizedTo = toNumber.trim().replace(/[\s()\-]/g, '');
+  if (/^0[7-9]\d{9}$/.test(normalizedTo)) normalizedTo = '+234' + normalizedTo.slice(1);
+  else if (/^[7-9]\d{9}$/.test(normalizedTo)) normalizedTo = '+234' + normalizedTo;
+  toNumber = normalizedTo;
+
   const logPrefix = `[sms] org=${organizationId} to=${toNumber}`;
   try {
     // Fetch Twilio integration config — first check org, then fall back to platform (admin) config.
