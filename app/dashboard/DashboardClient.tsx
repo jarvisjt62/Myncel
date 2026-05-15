@@ -1516,7 +1516,7 @@ function DashboardClientInner({ user, data }: Props) {
 
                   {/* Token table */}
                   {gwTokens.length > 0 && (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto responsive-table-wrap">
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="text-[#8898aa]">
@@ -1863,7 +1863,7 @@ function DashboardClientInner({ user, data }: Props) {
         </div>
       )}
 
-      <div className="flex-1 p-3 sm:p-6">
+      <div className="flex-1 p-3 sm:p-6 min-w-0 max-w-full">
 
 
           {/* ── DASHBOARD TAB ── */}
@@ -2082,7 +2082,7 @@ function DashboardClientInner({ user, data }: Props) {
                 </div>
               </div>
               <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto responsive-table-wrap mobile-stack-table">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--border)] bg-[var(--bg-surface-2)]">
@@ -2190,7 +2190,7 @@ function DashboardClientInner({ user, data }: Props) {
                 </div>
               </div>
               {/* Status filter pills */}
-              <div className="flex gap-2 overflow-x-auto flex-nowrap -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap pb-1 sm:pb-0">
+              <div className="flex gap-2 overflow-x-auto flex-nowrap -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap pb-1 sm:pb-0 scroll-fade-x">
                 {(['ALL', 'OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] as const).map(f => (
                   <button
                     key={f}
@@ -2206,7 +2206,7 @@ function DashboardClientInner({ user, data }: Props) {
                 ))}
               </div>
               <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto responsive-table-wrap mobile-stack-table">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--border)] bg-[var(--bg-surface-2)]">
@@ -2774,7 +2774,7 @@ function DashboardClientInner({ user, data }: Props) {
                     <p className="text-sm">Add parts to track stock levels and costs.</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto responsive-table-wrap">
                     <table className="w-full text-sm">
                       <thead>
                         <tr style={{ borderBottom: '1px solid var(--border)' }}>

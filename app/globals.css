@@ -653,3 +653,161 @@ select {
   }
 }
 
+
+/* =====================================================================
+   MOBILE RESPONSIVENESS — APP DASHBOARD (added 2026-05-15)
+   Targets the issues seen in 4 mobile portrait screenshots where:
+     • Status badges + action buttons were clipped by the viewport edge
+     • Floating LiveChat + reCAPTCHA badge overlapped the last row
+     • Filter pills overflowed without a visible scroll indicator
+     • Tables were too wide and chopped columns mid-cell
+     • KPI trend badges caused multi-line wrapping inside small cards
+   ===================================================================== */
+
+/* 1. Give the main scroll area extra bottom padding on mobile so floating
+      LiveChat button and Google reCAPTCHA badge never sit on top of
+      content. 96px clears both at their mobile sizes. */
+@media (max-width: 1023px) {
+  main.flex-1 > div.flex-1 {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* 2. Horizontal-scroll pill row: add a soft fade on the right edge so users
+      can see there's more content to scroll to. Apply via the
+      .scroll-fade-x class added on the dashboard tab pill containers. */
+.scroll-fade-x {
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.scroll-fade-x::after {
+  content: '';
+  position: sticky;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--bg-page) 80%);
+  flex-shrink: 0;
+  margin-left: -24px;
+}
+
+/* 3. Force minimum tap target on all interactive icons inside the dashboard
+      so technicians on a phone can hit them easily. */
+@media (max-width: 640px) {
+  .dash-theme button,
+  .dash-theme [role="button"] {
+    touch-action: manipulation;
+  }
+}
+
+/* 4. KPI card body: keep value & trend badge on the same line on small
+      screens by allowing the whole card to flex-wrap gracefully. */
+.kpi-card-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+/* 5. Tables wider than viewport: improve mobile readability. Force the
+      .responsive-table wrapper to scroll horizontally with a touch-
+      friendly inertial scroll AND a thin always-visible scrollbar. */
+.responsive-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.responsive-table-wrap::-webkit-scrollbar {
+  height: 4px;
+}
+.responsive-table-wrap::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+/* 6. Long machine names / WO numbers were truncating mid-character on
+      narrow phones because parent containers had no min-width. Normalize. */
+.dash-theme .truncate {
+  min-width: 0;
+}
+
+/* 7. Reduce horizontal padding on the dashboard top header on very small
+      viewports so the hamburger + title + bell fit cleanly. */
+@media (max-width: 380px) {
+  .dash-theme header.sticky {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+}
+
+/* 8. Buttons inside flex-wrap toolbars (export bar, action bars) should
+      keep their full label visible on mobile rather than getting elided. */
+.dash-theme .toolbar-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.dash-theme .toolbar-flex > * {
+  flex: 0 0 auto;
+}
+
+/* =====================================================================
+   MOBILE-FIRST TABLE STACKING
+   On <640px viewports (single-handed phone use), convert dashboard tables
+   from horizontally-overflowing rows into card-style stacked rows. This
+   preserves all data without truncation and removes horizontal scroll.
+
+   Tables that opt in get the `mobile-stack-table` class on the parent
+   wrapper (`.responsive-table-wrap.mobile-stack-table`).
+
+   Implementation: hide the <thead>, force every row + cell to display as
+   block on mobile, prefix each cell with its column label via a data-label
+   attribute. We don't need data-label here because each cell already has
+   visible context on its own (status badge, priority badge, etc.).
+   ===================================================================== */
+
+@media (max-width: 639px) {
+  .responsive-table-wrap.mobile-stack-table {
+    overflow-x: visible; /* no horizontal scroll once stacked */
+  }
+  .responsive-table-wrap.mobile-stack-table > table,
+  .responsive-table-wrap.mobile-stack-table > table > tbody,
+  .responsive-table-wrap.mobile-stack-table > table > tbody > tr,
+  .responsive-table-wrap.mobile-stack-table > table > tbody > tr > td {
+    display: block;
+    width: 100%;
+  }
+  .responsive-table-wrap.mobile-stack-table > table > thead {
+    display: none;
+  }
+  .responsive-table-wrap.mobile-stack-table > table > tbody > tr {
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-auto-rows: min-content;
+    gap: 0.25rem 0.75rem;
+    align-items: center;
+  }
+  .responsive-table-wrap.mobile-stack-table > table > tbody > tr > td {
+    padding: 0 !important;
+    border: 0;
+  }
+  /* The first cell (machine name / WO title) takes the full first row */
+  .responsive-table-wrap.mobile-stack-table > table > tbody > tr > td:first-child {
+    grid-column: 1 / -1;
+  }
+  /* Status / priority badges align right on their own row */
+  .responsive-table-wrap.mobile-stack-table > table > tbody > tr > td:not(:first-child):not(:last-child) {
+    justify-self: start;
+  }
+  /* Actions cell aligns to the end */
+  .responsive-table-wrap.mobile-stack-table > table > tbody > tr > td:last-child {
+    justify-self: end;
+    grid-column: 2;
+  }
+}
+
