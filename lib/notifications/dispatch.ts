@@ -82,6 +82,10 @@ export async function dispatchNotifications(
     );
     const orgName = organization?.name || 'Myncel';
     const dashboardUrl = `${APP_URL}/dashboard`;
+    // SMS-safe URL: redirects to /dashboard but emits no Open Graph / Twitter
+    // card metadata, so SMS apps (iMessage, Android Messages, WhatsApp) won't
+    // render a Myncel logo preview card under the message.
+    const smsDashboardUrl = `${APP_URL}/r/d`;
 
     // If no settings row exists yet, check if platform SMS is available and auto-create
     if (!settings) {
@@ -165,11 +169,11 @@ export async function dispatchNotifications(
         let smsText = '';
 
         if (event.type === 'work_order.created') {
-          smsText = workOrderSmsMessage({ ...event, orgName, dashboardUrl });
+          smsText = workOrderSmsMessage({ ...event, orgName, dashboardUrl: smsDashboardUrl });
         } else if (event.type === 'alert.triggered') {
-          smsText = alertSmsMessage({ ...event, orgName, dashboardUrl });
+          smsText = alertSmsMessage({ ...event, orgName, dashboardUrl: smsDashboardUrl });
         } else if (event.type === 'pm.overdue') {
-          smsText = pmOverdueSmsMessage({ ...event, orgName, dashboardUrl });
+          smsText = pmOverdueSmsMessage({ ...event, orgName, dashboardUrl: smsDashboardUrl });
         }
 
         if (smsText) {
