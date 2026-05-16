@@ -81,10 +81,12 @@
         {
           "android": {
             "kotlinVersion": "1.9.24",
-            "compileSdkVersion": 34,
-            "targetSdkVersion": 34,
-            "buildToolsVersion": "34.0.0",
-            "minSdkVersion": 24
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0",
+            "minSdkVersion": 24,
+            "gradleVersion": "8.13",
+            "gradleWrapperVersion": "8.13"
           },
           "ios": {
             "deploymentTarget": "15.1",
@@ -130,7 +132,6 @@
       },
       "apiBaseUrl": "https://www.myncel.com"
     },
-    "owner": "jarvisitconsults",
-    "sdkVersion": "51.0.0"
+    "owner": "jarvisitconsults"
   }
 }
