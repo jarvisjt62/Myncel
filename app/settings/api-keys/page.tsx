@@ -246,19 +246,20 @@ function ApiKeysPage() {
             </div>
             <div>
               {platformKeys.map(key => (
-                <div key={key.id} className="px-6 py-4 flex items-center gap-4 transition-colors"
+                <div key={key.id} className="px-4 py-4 flex flex-wrap items-start gap-3 transition-colors"
                   style={{ borderBottom: '1px solid var(--border)' }}>
 
-                  {/* Status dot */}
-                  <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                    key.status === 'CONNECTED' ? 'bg-emerald-400' : 'bg-gray-400'
-                  }`} />
+                  {/* Status dot + Key info */}
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5 ${
+                      key.status === 'CONNECTED' ? 'bg-emerald-400' : 'bg-gray-400'
+                    }`} />
 
                   {/* Key info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{key.name}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${
+                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium flex-shrink-0 ${
                         key.status === 'CONNECTED'
                           ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
                           : 'bg-gray-500/15 text-gray-500 border-gray-400/30'
@@ -267,20 +268,21 @@ function ApiKeysPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <code className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
+                      <code className="text-xs font-mono truncate" style={{ color: 'var(--text-secondary)' }}>
                         {key.apiKeyMasked || '••••••••••••••••'}
                       </code>
                     </div>
-                    <div className="flex items-center gap-4 mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-                      <span>Created {formatDate(key.createdAt)}</span>
-                      {key.lastUsed && <span>Last used {formatDate(key.lastUsed)}</span>}
-                      {key.usageCount > 0 && <span>{key.usageCount.toLocaleString()} requests</span>}
+                    <div className="flex flex-wrap items-center gap-3 mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                      <span className="whitespace-nowrap">Created {formatDate(key.createdAt)}</span>
+                      {key.lastUsed && <span className="whitespace-nowrap">Last used {formatDate(key.lastUsed)}</span>}
+                      {key.usageCount > 0 && <span className="whitespace-nowrap">{key.usageCount.toLocaleString()} requests</span>}
                     </div>
+                  </div>
                   </div>
 
                   {/* No actions for platform-managed keys */}
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                    <span className="text-xs px-3 py-1.5 rounded-lg whitespace-nowrap" style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                       Managed by Admin
                     </span>
                   </div>
@@ -336,19 +338,20 @@ function ApiKeysPage() {
           ) : (
             <div>
               {ownKeys.map(key => (
-                <div key={key.id} className="px-6 py-4 flex items-center gap-4 transition-colors hover:bg-[var(--bg-hover,rgba(0,0,0,0.03))]"
+                <div key={key.id} className="px-4 py-4 flex flex-wrap items-start gap-3 transition-colors hover:bg-[var(--bg-hover,rgba(0,0,0,0.03))]"
                   style={{ borderBottom: '1px solid var(--border)' }}>
 
-                  {/* Status dot */}
-                  <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                    key.status === 'CONNECTED' ? 'bg-emerald-400' : 'bg-gray-400'
-                  }`} />
+                  {/* Status dot + Key info */}
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5 ${
+                      key.status === 'CONNECTED' ? 'bg-emerald-400' : 'bg-gray-400'
+                    }`} />
 
                   {/* Key info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{key.name}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${
+                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium flex-shrink-0 ${
                         key.status === 'CONNECTED'
                           ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
                           : 'bg-gray-500/15 text-gray-500 border-gray-400/30'
@@ -357,43 +360,44 @@ function ApiKeysPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <code className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
+                      <code className="text-xs font-mono truncate" style={{ color: 'var(--text-secondary)' }}>
                         {key.apiKeyMasked || '••••••••••••••••'}
                       </code>
                       {key.apiKeyFull && (
                         <button
                           onClick={() => copyKey(key.apiKeyFull!, key.id)}
-                          className="text-[#635bff] text-xs hover:underline"
+                          className="text-[#635bff] text-xs hover:underline flex-shrink-0"
                         >
                           {copiedId === key.id ? '✓ Copied' : 'Copy'}
                         </button>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-                      <span>Created {formatDate(key.createdAt)}</span>
-                      {key.lastUsed && <span>Last used {formatDate(key.lastUsed)}</span>}
-                      {key.usageCount > 0 && <span>{key.usageCount.toLocaleString()} requests</span>}
+                    <div className="flex flex-wrap items-center gap-3 mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                      <span className="whitespace-nowrap">Created {formatDate(key.createdAt)}</span>
+                      {key.lastUsed && <span className="whitespace-nowrap">Last used {formatDate(key.lastUsed)}</span>}
+                      {key.usageCount > 0 && <span className="whitespace-nowrap">{key.usageCount.toLocaleString()} requests</span>}
                     </div>
+                  </div>
                   </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={() => handleToggle(key)}
-                      className="text-xs px-3 py-1.5 rounded-lg transition-colors"
+                      className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
                       style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
                     >
                       {key.status === 'CONNECTED' ? 'Disable' : 'Enable'}
                     </button>
                     <button
                       onClick={() => setModal({ kind: 'rotate', key })}
-                      className="text-xs px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20 rounded-lg transition-colors"
+                      className="text-xs px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20 rounded-lg transition-colors whitespace-nowrap"
                     >
                       🔄 Rotate
                     </button>
                     <button
                       onClick={() => setModal({ kind: 'delete', key })}
-                      className="text-xs px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 rounded-lg transition-colors"
+                      className="text-xs px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 rounded-lg transition-colors whitespace-nowrap"
                     >
                       🗑️ Revoke
                     </button>

@@ -569,10 +569,10 @@ function IntegrationsPage() {
                             <button
                               onClick={() => handleDisconnect(id)}
                               disabled={working === id}
-                              className="relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 bg-[#635bff]"
+                              className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 bg-[#635bff]"
                               title="Disable this integration for your organization"
                             >
-                              <span className="inline-block h-5 w-5 transform rounded-full bg-white transition-transform translate-x-6 shadow-sm" />
+                              <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6 shadow-sm" />
                             </button>
                           </div>
                         ) : (
@@ -821,10 +821,10 @@ function IntegrationsPage() {
                           <button
                             onClick={() => handleReenable(id)}
                             disabled={working === id}
-                            className="relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 bg-gray-300"
+                            className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#635bff]/30 bg-gray-300"
                             title="Re-enable this platform integration for your organization"
                           >
-                            <span className="inline-block h-5 w-5 transform rounded-full bg-white transition-transform translate-x-1 shadow-sm" />
+                            <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1 shadow-sm" />
                           </button>
                         </div>
                       </div>

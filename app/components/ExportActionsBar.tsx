@@ -240,7 +240,7 @@ export default function ExportActionsBar({
           title={`Create a new Google Sheet with your ${DATASET_LABELS[dataset].toLowerCase()}`}
         >
           <span>📊</span>
-          <span className="hidden sm:inline">{busy === 'google_sheets' ? 'Exporting…' : 'Sheets'}</span>
+          <span>{busy === 'google_sheets' ? 'Exporting…' : 'Sheets'}</span>
         </button>
       )}
 
@@ -273,7 +273,7 @@ export default function ExportActionsBar({
           title={dataset === 'work_orders' ? 'Create QuickBooks invoices from completed work orders' : 'Sync parts inventory as QuickBooks items'}
         >
           <span>💰</span>
-          <span className="hidden sm:inline">{busy === 'quickbooks' ? 'Creating…' : 'QuickBooks'}</span>
+          <span>{busy === 'quickbooks' ? 'Creating…' : 'QuickBooks'}</span>
         </button>
       )}
 
@@ -294,7 +294,7 @@ export default function ExportActionsBar({
           title="Send a maintenance digest to Slack"
         >
           <span>💬</span>
-          <span className="hidden sm:inline">{busy === 'slack' ? 'Sending…' : 'Slack'}</span>
+          <span>{busy === 'slack' ? 'Sending…' : 'Slack'}</span>
         </button>
       )}
 
