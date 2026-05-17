@@ -1,6 +1,6 @@
 /**
  * Unified notification dispatcher
- * Sends notifications across all enabled channels (Email, Slack, SMS)
+ * Sends notifications across all enabled channels (Email, Slack, SMS, Push)
  * based on the organization's notification settings.
  */
 
@@ -25,6 +25,7 @@ import {
   sendAlertNotificationEmail,
   sendWorkOrderAssignedEmail,
 } from '@/lib/email';
+import { sendPushToUsers } from './push';
 
 const APP_URL = process.env.NEXTAUTH_URL || 'https://myncel.com';
 
@@ -215,6 +216,83 @@ export async function dispatchNotifications(
       }
     } else {
       console.log(`${logPrefix} SMS SKIPPED: smsEnabled is false`);
+    }
+
+
+    // ── Mobile Push notifications ────────────────────────────────────────────
+    // Push goes to every user in the org who has registered a device token
+    // (Capacitor / FCM / Expo). Push is "always-on" — there's no per-org toggle
+    // because users opt out by simply not granting notification permission on
+    // their device, or by uninstalling the mobile app. If they have a token
+    // registered, they expect notifications; that's the whole point.
+    //
+    // We fire push for the same events that produce in-app notifications:
+    //   work_order.created, work_order.completed, alert.triggered, pm.overdue,
+    //   schedule.task_assigned, equipment.added.
+    // The actual delivery library (sendPushToUsers) safely no-ops if no tokens
+    // exist or if FCM env vars aren't configured, so this is always safe to call.
+    try {
+      const pushUsers = await safeQuery(
+        db.user.findMany({
+          where: {
+            organizationId,
+            mobilePushTokens: { some: {} }, // only users who have ≥1 device token
+          },
+          select: { id: true },
+        }),
+        []
+      );
+
+      if (pushUsers.length > 0) {
+        let pushTitle = '';
+        let pushBody = '';
+        let pushLink = `${APP_URL}/dashboard`;
+        const pushKind = event.type;
+
+        if (event.type === 'work_order.created') {
+          pushTitle = `New work order: ${event.workOrderNumber}`;
+          pushBody = `${event.title}${event.machineName ? ` · ${event.machineName}` : ''} (${event.priority})`;
+          pushLink = `${APP_URL}/dashboard?tab=work-orders`;
+        } else if (event.type === 'work_order.completed') {
+          pushTitle = `Work order completed: ${event.workOrderNumber}`;
+          pushBody = `${event.title}${event.machineName ? ` · ${event.machineName}` : ''}`;
+          pushLink = `${APP_URL}/dashboard?tab=work-orders`;
+        } else if (event.type === 'alert.triggered') {
+          pushTitle = `${(event as any).severity || 'Alert'}: ${(event as any).alertTitle}`;
+          pushBody = `${(event as any).message}${(event as any).machineName ? ` — ${(event as any).machineName}` : ''}`;
+          pushLink = `${APP_URL}/dashboard#alerts`;
+        } else if (event.type === 'pm.overdue') {
+          pushTitle = `Overdue: ${(event as any).taskTitle}`;
+          pushBody = `${(event as any).machineName} · ${(event as any).daysOverdue} day(s) overdue`;
+          pushLink = `${APP_URL}/dashboard#schedules`;
+        } else if (event.type === 'schedule.task_assigned') {
+          pushTitle = `Task assigned: ${(event as any).title || (event as any).taskTitle || ''}`;
+          pushBody = `${(event as any).machineName || ''}${(event as any).assignee ? ` · ${(event as any).assignee}` : ''}`;
+          pushLink = `${APP_URL}/dashboard#schedules`;
+        } else if (event.type === 'equipment.added') {
+          pushTitle = `New equipment: ${(event as any).machineName || (event as any).name || ''}`;
+          pushBody = `${(event as any).category || ''}${(event as any).location ? ` · ${(event as any).location}` : ''}`;
+          pushLink = `${APP_URL}/dashboard?tab=equipment`;
+        }
+
+        if (pushTitle) {
+          console.log(`${logPrefix} PUSH: fanning out to ${pushUsers.length} user(s)`);
+          sendPushToUsers(
+            pushUsers.map(u => u.id),
+            { title: pushTitle, body: pushBody, link: pushLink, kind: pushKind }
+          ).then(() => {
+            console.log(`${logPrefix} PUSH: dispatch complete`);
+          }).catch(err => {
+            console.error(`${logPrefix} PUSH dispatch error:`, err);
+          });
+        } else {
+          console.log(`${logPrefix} PUSH SKIPPED: no message template for event type`);
+        }
+      } else {
+        console.log(`${logPrefix} PUSH SKIPPED: no users with registered device tokens`);
+      }
+    } catch (err) {
+      console.error(`${logPrefix} PUSH block error:`, err);
     }
 
 
