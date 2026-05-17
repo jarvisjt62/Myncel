@@ -15,18 +15,50 @@ export async function GET(request: Request) {
 
     const orgId = session.user.organizationId;
     const { searchParams } = new URL(request.url);
-    const monthParam = searchParams.get('month'); // format: YYYY-MM
-    
+    const monthParam = searchParams.get('month'); // legacy format: YYYY-MM, or numeric "1"-"12"
+    const yearParam = searchParams.get('year');   // optional separate year, e.g. ?year=2026&month=5
+
     let startDate: Date, endDate: Date;
-    
+    let yearNum: number | null = null;
+    let monthNum: number | null = null; // 1-12
+
     if (monthParam) {
-      const [year, month] = monthParam.split('-').map(Number);
-      startDate = new Date(year, month - 1, 1);
-      endDate = new Date(year, month, 0, 23, 59, 59);
-    } else {
+      if (monthParam.includes('-')) {
+        // "YYYY-MM"
+        const [yStr, mStr] = monthParam.split('-');
+        const y = Number(yStr);
+        const m = Number(mStr);
+        if (Number.isFinite(y) && Number.isFinite(m) && m >= 1 && m <= 12) {
+          yearNum = y;
+          monthNum = m;
+        }
+      } else {
+        // numeric "1"-"12" with optional separate year
+        const m = Number(monthParam);
+        const y = yearParam ? Number(yearParam) : new Date().getFullYear();
+        if (Number.isFinite(y) && Number.isFinite(m) && m >= 1 && m <= 12) {
+          yearNum = y;
+          monthNum = m;
+        }
+      }
+    }
+
+    if (yearNum === null || monthNum === null) {
+      const now = new Date();
+      yearNum = now.getFullYear();
+      monthNum = now.getMonth() + 1;
+    }
+
+    startDate = new Date(yearNum, monthNum - 1, 1);
+    endDate = new Date(yearNum, monthNum, 0, 23, 59, 59);
+
+    // Final guard against any invalid date math
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
       const now = new Date();
       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
       endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      yearNum = now.getFullYear();
+      monthNum = now.getMonth() + 1;
     }
 
     // Get work orders due in the month
@@ -63,7 +95,9 @@ export async function GET(request: Request) {
     const eventsByDate: Record<string, { workOrders: any[]; tasks: any[] }> = {};
 
     workOrders.forEach(wo => {
-      const dateKey = (wo.dueAt || wo.createdAt).toISOString().split('T')[0];
+      const d = wo.dueAt || wo.createdAt;
+      if (!d || Number.isNaN(new Date(d).getTime())) return;
+      const dateKey = new Date(d).toISOString().split('T')[0];
       if (!eventsByDate[dateKey]) eventsByDate[dateKey] = { workOrders: [], tasks: [] };
       eventsByDate[dateKey].workOrders.push({
         id: wo.id,
@@ -77,8 +111,8 @@ export async function GET(request: Request) {
     });
 
     tasks.forEach(task => {
-      if (task.nextDueAt) {
-        const dateKey = task.nextDueAt.toISOString().split('T')[0];
+      if (task.nextDueAt && !Number.isNaN(new Date(task.nextDueAt).getTime())) {
+        const dateKey = new Date(task.nextDueAt).toISOString().split('T')[0];
         if (!eventsByDate[dateKey]) eventsByDate[dateKey] = { workOrders: [], tasks: [] };
         eventsByDate[dateKey].tasks.push({
           id: task.id,
@@ -91,8 +125,10 @@ export async function GET(request: Request) {
       }
     });
 
-    return NextResponse.json({ 
-      month: monthParam || `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`,
+    return NextResponse.json({
+      month: `${yearNum}-${String(monthNum).padStart(2, '0')}`,
+      year: yearNum,
+      monthIndex: monthNum,
       eventsByDate,
       stats: {
         totalWorkOrders: workOrders.length,

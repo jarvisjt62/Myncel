@@ -65,7 +65,10 @@ export async function initNativeNotifications(): Promise<void> {
   if (nativeReady) return;
   nativeReady = true;
 
-  if (detectCapacitor()) {
+  const inCap = detectCapacitor();
+  console.log('[myncel-push] initNativeNotifications start. capacitor=' + inCap + ', platform=' + detectPlatform());
+
+  if (inCap) {
     try {
       // The @capacitor/* packages live in the Capacitor mobile-shell repo, not in
       // the web Next.js build. We must hide these specifiers from webpack's static
@@ -103,12 +106,16 @@ export async function initNativeNotifications(): Promise<void> {
       }
 
       if (PushNotifications) {
+        console.log('[myncel-push] PushNotifications plugin loaded, requesting permission…');
         const perm = await PushNotifications.requestPermissions();
+        console.log('[myncel-push] permission result:', perm);
         if (perm?.receive === 'granted') {
+          console.log('[myncel-push] permission granted, calling register()…');
           await PushNotifications.register();
           PushNotifications.addListener('registration', async (token: { value: string }) => {
+            console.log('[myncel-push] ✅ FCM token received (len=' + (token?.value?.length ?? 0) + '), POSTing to /api/notifications/devices…');
             try {
-              await fetch('/api/notifications/devices', {
+              const resp = await fetch('/api/notifications/devices', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({
@@ -117,13 +124,15 @@ export async function initNativeNotifications(): Promise<void> {
                   appVersion: getAppVersion(),
                 }),
               });
-              registeredOnServer = true;
-            } catch {
-              /* network errors are non-fatal */
+              const j = await resp.json().catch(() => ({}));
+              console.log('[myncel-push] device-register response:', resp.status, j);
+              registeredOnServer = resp.ok;
+            } catch (e) {
+              console.warn('[myncel-push] device-register network error:', e);
             }
           });
           PushNotifications.addListener('registrationError', (err: unknown) => {
-            console.warn('[myncel] push registration error', err);
+            console.warn('[myncel-push] ❌ registrationError', err);
           });
           // Foreground: when a push arrives while the app is open, mirror it as a
           // local notification with the Myncel icon so the user sees a banner.
@@ -152,7 +161,7 @@ export async function initNativeNotifications(): Promise<void> {
         }
       }
     } catch (e) {
-      console.warn('[myncel] capacitor notifications unavailable, falling back to web', e);
+      console.warn('[myncel-push] capacitor notifications unavailable, falling back to web', e);
     }
     return;
   }
