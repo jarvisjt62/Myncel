@@ -292,9 +292,9 @@ function UserShellInner({ user, children }: UserSidebarProps) {
   const showApiDocs = isEnabled('feature.api.enabled');
 
   const Sidebar = () => (
-    <aside className="w-full lg:w-60 flex flex-col h-screen lg:h-full" style={{ backgroundColor: 'var(--bg-sidebar)', borderRight: '1px solid var(--border)' }}>
+    <aside className="w-full lg:w-60 flex flex-col h-screen lg:h-full min-h-0" style={{ backgroundColor: 'var(--bg-sidebar)', borderRight: '1px solid var(--border)' }}>
       {/* Logo */}
-      <div className="p-5" style={{ borderBottom: '1px solid var(--border)' }}>
+      <div className="p-5 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
         <Link href="/dashboard" prefetch={true} className="flex items-center gap-1.5">
           <img src="/logo.png" alt="Myncel" className="w-9 h-9" />
           <div>
@@ -307,8 +307,11 @@ function UserShellInner({ user, children }: UserSidebarProps) {
         </Link>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      {/* Nav — only this region scrolls; the logo above and account footer below stay pinned.
+          `min-h-0` is required for `overflow-y-auto` to actually clip inside a flex-col parent
+          (without it, flex children default to min-height:auto and the inner content would
+          push the footer out of view as the user scrolls). */}
+      <nav className="flex-1 min-h-0 p-3 space-y-0.5 overflow-y-auto overscroll-contain">
 
         {/* Dashboard — uses hashTabButton with empty hash so clicking it while already
             on /dashboard clears the hash and resets DashboardClient to the main tab */}
@@ -456,8 +459,8 @@ function UserShellInner({ user, children }: UserSidebarProps) {
         </div>
       </nav>
 
-      {/* —— Account Footer with Dropdown —— */}
-      <div className="p-3" style={{ borderTop: '1px solid var(--border)' }} ref={accountRef}>
+      {/* —— Account Footer with Dropdown —— Pinned to the bottom of the sidebar; never scrolls. */}
+      <div className="p-3 flex-shrink-0" style={{ borderTop: '1px solid var(--border)' }} ref={accountRef}>
         {/* Account dropdown trigger button */}
         <button
           onClick={() => setAccountOpen(o => !o)}
