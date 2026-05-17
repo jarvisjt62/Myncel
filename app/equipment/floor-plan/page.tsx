@@ -157,14 +157,14 @@ export default function FloorPlanPage() {
 
       {/* Header */}
       <div className="bg-[var(--bg-surface)] border-b border-[var(--border)]">
-        <div className="max-w-7xl mx-auto px-6 py-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link href="/equipment" className="text-[#635bff] hover:underline text-sm">← Equipment</Link>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <Link href="/equipment" className="text-[#635bff] hover:underline text-sm whitespace-nowrap">← Equipment</Link>
               <span className="text-[#e6ebf1]">/</span>
-              <h1 className="text-xl font-bold text-[var(--text-primary)]">Floor Plan</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] whitespace-nowrap">Floor Plan</h1>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3 flex-wrap">
               <input
                 ref={fileInputRef}
                 type="file"

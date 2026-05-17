@@ -18,8 +18,8 @@ export default async function IoTSimulatorPage() {
     <PlanGate featureKey="feature.iot.sensors" featureName="IoT Sensor Simulator" requiredPlan="GROWTH">
     <div className="p-6 max-w-7xl mx-auto">
       {/* Page header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
+        <div className="min-w-0">
           <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
             IoT Sensor Simulator
           </h1>
@@ -27,7 +27,7 @@ export default async function IoTSimulatorPage() {
             Generate realistic sensor readings to test your monitoring setup — no physical hardware required.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-full font-semibold"
+        <div className="self-start flex items-center gap-2 text-xs px-3 py-1.5 rounded-full font-semibold whitespace-nowrap shrink-0"
           style={{ backgroundColor: 'rgba(14,165,233,0.1)', color: '#0ea5e9', border: '1px solid rgba(14,165,233,0.25)' }}>
           <span className="w-1.5 h-1.5 rounded-full bg-[#0ea5e9] animate-pulse" />
           Simulation Mode

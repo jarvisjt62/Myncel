@@ -238,20 +238,20 @@ function OEEPageInner() {
         <div className="bg-white rounded-xl border border-[#e6ebf1] p-5">
           <div className="flex items-center gap-4 flex-wrap">
             <div className="text-sm font-semibold text-[#0a2540]">OEE Formula:</div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-semibold">Availability</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm flex-wrap">
+              <span className="bg-blue-100 text-blue-700 px-2 sm:px-3 py-1 rounded-full font-semibold whitespace-nowrap">Availability</span>
               <span className="text-[#8898aa]">×</span>
-              <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-semibold">Performance</span>
+              <span className="bg-purple-100 text-purple-700 px-2 sm:px-3 py-1 rounded-full font-semibold whitespace-nowrap">Performance</span>
               <span className="text-[#8898aa]">×</span>
-              <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-semibold">Quality</span>
+              <span className="bg-emerald-100 text-emerald-700 px-2 sm:px-3 py-1 rounded-full font-semibold whitespace-nowrap">Quality</span>
               <span className="text-[#8898aa]">=</span>
-              <span className="bg-[#635bff] text-white px-3 py-1 rounded-full font-semibold">OEE</span>
+              <span className="bg-[#635bff] text-white px-2 sm:px-3 py-1 rounded-full font-semibold whitespace-nowrap">OEE</span>
             </div>
-            <div className="ml-auto flex items-center gap-4 text-xs text-[#8898aa]">
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> ≥{OEE_BENCHMARKS.worldClass}% World Class</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" /> ≥{OEE_BENCHMARKS.good}% Good</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" /> ≥{OEE_BENCHMARKS.fair}% Fair</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> Below Fair</span>
+            <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-3 sm:gap-4 text-xs text-[#8898aa] flex-wrap">
+              <span className="flex items-center gap-1 whitespace-nowrap"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> ≥{OEE_BENCHMARKS.worldClass}% World Class</span>
+              <span className="flex items-center gap-1 whitespace-nowrap"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" /> ≥{OEE_BENCHMARKS.good}% Good</span>
+              <span className="flex items-center gap-1 whitespace-nowrap"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" /> ≥{OEE_BENCHMARKS.fair}% Fair</span>
+              <span className="flex items-center gap-1 whitespace-nowrap"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> Below Fair</span>
             </div>
           </div>
         </div>

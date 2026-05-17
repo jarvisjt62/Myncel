@@ -290,14 +290,14 @@ export default function SensorSimulator() {
                 logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
               }
             }}
-            className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+            className={`text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
               autoScroll ? 'text-[#635bff] border-[#635bff]/30 bg-[#635bff]/10' : ''
             }`}
             style={{ backgroundColor: autoScroll ? undefined : 'var(--bg-page)', border: autoScroll ? undefined : '1px solid var(--border)', color: autoScroll ? undefined : 'var(--text-secondary)' }}>
             {autoScroll ? '↓ Auto-scroll ON' : '↓ Auto-scroll OFF'}
           </button>
           <button onClick={clearLogs}
-            className="text-xs px-3 py-1.5 rounded-lg transition-colors"
+            className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
             style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
             Clear
           </button>

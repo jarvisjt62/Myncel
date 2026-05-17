@@ -2350,7 +2350,7 @@ function DashboardClientInner({ user, data }: Props) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--border)] bg-[var(--bg-surface-2)]">
-                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">WO #</th>
+                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell whitespace-nowrap">WO #</th>
                       <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Task</th>
                       <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden md:table-cell">Priority</th>
                       <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Status</th>
