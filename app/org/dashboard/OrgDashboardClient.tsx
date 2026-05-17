@@ -202,7 +202,7 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
   ];
 
   return (
-    <div className="p-3 sm:p-6 lg:px-8 min-w-0 max-w-full">
+    <div className="p-3 sm:p-6 lg:px-10 lg:py-8 min-w-0 max-w-full">
       {/* Mobile-responsive tweaks scoped to this dashboard */}
       <style jsx global>{`
         @media (max-width: 640px) {
