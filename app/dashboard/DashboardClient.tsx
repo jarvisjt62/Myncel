@@ -14,7 +14,7 @@ import CalendarWidget from '../components/dashboard/CalendarWidget';
 import QuickActions from '../components/dashboard/QuickActions';
 import ExportButtons from '../components/dashboard/ExportButtons';
 import RolesTab from './RolesTab';
-import { PermissionsProvider, Can } from '../components/PermissionsProvider';
+import { PermissionsProvider, Can, usePermissions } from '../components/PermissionsProvider';
 
 // ── Change Password Component ──────────────────────────────────────────────
 function ChangePasswordSection() {
@@ -342,11 +342,16 @@ const Modal = ({ show, onClose, title, children }: { show: boolean; onClose: () 
 
 function DashboardClientInner({ user, data }: Props) {
   const { isDark } = useTheme();
+  const perms = usePermissions();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [remoteSessions, setRemoteSessions] = useState<any[]>([]);
   const [remoteSessionsLoading, setRemoteSessionsLoading] = useState(false);
   const [remoteSessionsLoaded, setRemoteSessionsLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Reports tab — selection state for bulk actions on the work-order records table
+  const [reportsSelected, setReportsSelected] = useState<Set<string>>(new Set());
+  const [reportsBulkBusy, setReportsBulkBusy] = useState(false);
+  const [reportsToast, setReportsToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   // Hash-based tab navigation — keeps hash in URL for proper routing
   const validTabs = ['dashboard', 'workorders', 'equipment', 'schedules', 'alerts', 'reports', 'parts', 'roles', 'settings', 'remote-support'];
 
@@ -602,6 +607,53 @@ function DashboardClientInner({ user, data }: Props) {
       }
     } catch { setSaveError('Something went wrong'); }
     finally { setDeletingWoId(null); }
+  };
+
+  // ── Reports tab — bulk selection helpers ──────────────────────────────────
+  const toggleReportRow = (id: string) => {
+    setReportsSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleAllReportRows = (rows: Array<{ id: string }>) => {
+    setReportsSelected(prev => {
+      // If every visible row already selected, clear; otherwise select all
+      const allSelected = rows.length > 0 && rows.every(r => prev.has(r.id));
+      if (allSelected) return new Set();
+      return new Set(rows.map(r => r.id));
+    });
+  };
+  const clearReportSelection = () => setReportsSelected(new Set());
+  const bulkDeleteReports = async () => {
+    if (reportsSelected.size === 0) return;
+    if (!confirm(`Delete ${reportsSelected.size} record${reportsSelected.size === 1 ? '' : 's'}? This cannot be undone.`)) return;
+    setReportsBulkBusy(true);
+    try {
+      const res = await fetch('/api/work-orders/bulk-delete', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(reportsSelected) }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const deletedIds = new Set(Array.from(reportsSelected));
+        setWorkOrders(prev => prev.filter(w => !deletedIds.has(w.id)));
+        setReportsSelected(new Set());
+        setReportsToast({
+          type: 'success',
+          text: `Deleted ${data.deleted} record${data.deleted === 1 ? '' : 's'}${data.skipped ? ` (${data.skipped} skipped)` : ''}.`,
+        });
+      } else {
+        setReportsToast({ type: 'error', text: data.error || 'Bulk delete failed' });
+      }
+    } catch (e) {
+      setReportsToast({ type: 'error', text: 'Network error during bulk delete' });
+    } finally {
+      setReportsBulkBusy(false);
+      setTimeout(() => setReportsToast(null), 4000);
+    }
   };
 
   // Done tasks tracking (client-side visual state)
@@ -2880,6 +2932,181 @@ function DashboardClientInner({ user, data }: Props) {
                   </div>
                 )}
               </div>
+
+              {/* ── Report Records (RBAC-gated view / edit / delete + bulk) ── */}
+              <Can permission="reports.view">
+                <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 border-b" style={{ borderColor: 'var(--border)' }}>
+                    <div>
+                      <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Report Records</h2>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        All work-order records that feed this report. Edit / delete actions respect your role's permissions.
+                      </p>
+                    </div>
+                    {/* Bulk action bar — only when at least one row is selected AND user has bulk + delete perms */}
+                    {reportsSelected.size > 0 && (
+                      <Can permissions={['reports.bulk', 'reports.delete']} mode="all">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#635bff]/10 border border-[#635bff]/30">
+                          <span className="text-xs font-semibold text-[#635bff]">
+                            {reportsSelected.size} selected
+                          </span>
+                          <button
+                            onClick={clearReportSelection}
+                            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] underline"
+                          >
+                            clear
+                          </button>
+                          <button
+                            onClick={bulkDeleteReports}
+                            disabled={reportsBulkBusy}
+                            className="ml-2 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-50 flex items-center gap-1.5"
+                          >
+                            {reportsBulkBusy ? 'Deleting…' : <>🗑 Bulk Delete</>}
+                          </button>
+                        </div>
+                      </Can>
+                    )}
+                  </div>
+
+                  {workOrders.length === 0 ? (
+                    <div className="p-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                      No records yet. Work orders will appear here as they're created.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead style={{ backgroundColor: 'var(--bg-surface-2)' }}>
+                          <tr className="text-left text-xs uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                            {/* Select-all checkbox — only visible if user can do bulk */}
+                            <th className="px-4 py-3 w-10">
+                              <Can permissions={['reports.bulk', 'reports.delete']} mode="all">
+                                <input
+                                  type="checkbox"
+                                  aria-label="Select all rows"
+                                  checked={workOrders.length > 0 && workOrders.every(w => reportsSelected.has(w.id))}
+                                  onChange={() => toggleAllReportRows(workOrders)}
+                                  className="cursor-pointer accent-[#635bff]"
+                                />
+                              </Can>
+                            </th>
+                            <th className="px-4 py-3 font-semibold">WO #</th>
+                            <th className="px-4 py-3 font-semibold">Title</th>
+                            <th className="px-4 py-3 font-semibold hidden md:table-cell">Status</th>
+                            <th className="px-4 py-3 font-semibold hidden lg:table-cell">Priority</th>
+                            <th className="px-4 py-3 font-semibold text-right">Total</th>
+                            <th className="px-4 py-3 font-semibold hidden md:table-cell">Completed</th>
+                            <th className="px-4 py-3 font-semibold text-right w-32">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {workOrders.map((wo: any) => (
+                            <tr
+                              key={wo.id}
+                              className="border-t hover:bg-[var(--bg-surface-2)] transition-colors"
+                              style={{ borderColor: 'var(--border)' }}
+                            >
+                              <td className="px-4 py-3">
+                                <Can permissions={['reports.bulk', 'reports.delete']} mode="all">
+                                  <input
+                                    type="checkbox"
+                                    aria-label={`Select ${wo.woNumber}`}
+                                    checked={reportsSelected.has(wo.id)}
+                                    onChange={() => toggleReportRow(wo.id)}
+                                    className="cursor-pointer accent-[#635bff]"
+                                  />
+                                </Can>
+                              </td>
+                              <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>{wo.woNumber}</td>
+                              <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
+                                <div className="truncate max-w-[200px] sm:max-w-none">{wo.title}</div>
+                                <div className="text-[11px] md:hidden mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                                  {wo.status} · {wo.priority}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 hidden md:table-cell">
+                                <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                                  wo.status === 'COMPLETED' ? 'bg-emerald-500/15 text-emerald-600' :
+                                  wo.status === 'IN_PROGRESS' ? 'bg-blue-500/15 text-blue-600' :
+                                  wo.status === 'OPEN' ? 'bg-purple-500/15 text-[#635bff]' :
+                                  'bg-gray-500/15 text-gray-500'
+                                }`}>{wo.status}</span>
+                              </td>
+                              <td className="px-4 py-3 hidden lg:table-cell text-xs" style={{ color: 'var(--text-secondary)' }}>{wo.priority}</td>
+                              <td className="px-4 py-3 text-right font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
+                                {wo.totalCost != null ? `$${Number(wo.totalCost).toFixed(2)}` : '—'}
+                              </td>
+                              <td className="px-4 py-3 hidden md:table-cell text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                                {wo.completedAt ? new Date(wo.completedAt).toLocaleDateString() : '—'}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center justify-end gap-1">
+                                  {/* View — always available with reports.view */}
+                                  <button
+                                    onClick={() => openWoDetail(wo)}
+                                    title="View record"
+                                    aria-label={`View ${wo.woNumber}`}
+                                    className="p-1.5 rounded-lg hover:bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[#635bff] transition-colors"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                  </button>
+                                  {/* Edit — gated on reports.edit */}
+                                  <Can permission="reports.edit">
+                                    <button
+                                      onClick={() => setEditingWo(wo)}
+                                      title="Edit record"
+                                      aria-label={`Edit ${wo.woNumber}`}
+                                      className="p-1.5 rounded-lg hover:bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[#635bff] transition-colors"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                      </svg>
+                                    </button>
+                                  </Can>
+                                  {/* Delete — gated on reports.delete */}
+                                  <Can permission="reports.delete">
+                                    <button
+                                      onClick={() => setConfirmDeleteWo(wo.id)}
+                                      title="Delete record"
+                                      aria-label={`Delete ${wo.woNumber}`}
+                                      className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-600 transition-colors"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  </Can>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Read-only hint when user lacks edit/delete (Members, Operators, Employees) */}
+                  {perms.loaded && !perms.hasAny('reports.edit', 'reports.delete', 'reports.bulk') && (
+                    <div className="px-5 py-3 text-[11px] border-t flex items-center gap-2" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+                      <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Read-only access. Ask your owner / admin to grant <code className="px-1 rounded bg-[var(--bg-surface-2)]">reports.edit</code>, <code className="px-1 rounded bg-[var(--bg-surface-2)]">reports.delete</code> or <code className="px-1 rounded bg-[var(--bg-surface-2)]">reports.bulk</code> from the Roles &amp; Permissions tab.
+                    </div>
+                  )}
+                </div>
+              </Can>
+
+              {/* Bulk-action toast */}
+              {reportsToast && (
+                <div className={`fixed bottom-6 right-6 z-[70] px-5 py-3 rounded-xl shadow-lg text-sm font-medium ${
+                  reportsToast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
+                }`}>
+                  {reportsToast.text}
+                </div>
+              )}
             </div>
           )}
 

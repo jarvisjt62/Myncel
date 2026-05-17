@@ -70,6 +70,9 @@ const PERMISSIONS: PermissionSeed[] = [
   // Reports
   { key: 'reports.view',   category: 'Reports', label: 'View reports' },
   { key: 'reports.export', category: 'Reports', label: 'Export reports' },
+  { key: 'reports.edit',   category: 'Reports', label: 'Edit underlying records from the Reports tab' },
+  { key: 'reports.delete', category: 'Reports', label: 'Delete records from the Reports tab' },
+  { key: 'reports.bulk',   category: 'Reports', label: 'Perform bulk actions (multi-select delete) on reports' },
 
   // Alerts
   { key: 'alerts.view',        category: 'Alerts', label: 'View alerts' },
@@ -128,7 +131,7 @@ const SYSTEM_ROLES: SystemRole[] = [
       'schedules.view','schedules.create','schedules.edit','schedules.delete','schedules.complete',
       'team.view','team.invite','team.edit_roles','team.remove',
       'roles.view','roles.create','roles.edit','roles.delete',
-      'reports.view','reports.export',
+      'reports.view','reports.export','reports.edit','reports.delete','reports.bulk',
       'alerts.view','alerts.create','alerts.acknowledge','alerts.resolve','alerts.edit','alerts.delete',
       'integrations.view','integrations.configure',
       'settings.view','settings.edit',
