@@ -2082,8 +2082,8 @@ function DashboardClientInner({ user, data }: Props) {
                 </div>
               </div>
               <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] overflow-hidden">
-                {/* Mobile card list (<sm) */}
-                <div className="sm:hidden divide-y divide-[var(--border)]">
+                {/* Mobile card list (<md — covers portrait + landscape mobile) */}
+                <div className="md:hidden divide-y divide-[var(--border)]">
                   {machines.length === 0 ? (
                     <div className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">
                       No machines yet. Add your first machine to get started.
@@ -2148,8 +2148,8 @@ function DashboardClientInner({ user, data }: Props) {
                   ))}
                 </div>
 
-                {/* Desktop table (≥sm) */}
-                <div className="overflow-x-auto responsive-table-wrap hidden sm:block">
+                {/* Desktop table (≥md) */}
+                <div className="overflow-x-auto responsive-table-wrap hidden md:block">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--border)] bg-[var(--bg-surface-2)]">
@@ -2273,8 +2273,8 @@ function DashboardClientInner({ user, data }: Props) {
                 ))}
               </div>
               <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] overflow-hidden">
-                {/* Mobile card list (<sm) */}
-                <div className="sm:hidden divide-y divide-[var(--border)]">
+                {/* Mobile card list (<md) */}
+                <div className="md:hidden divide-y divide-[var(--border)]">
                   {(() => {
                     const filtered = workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter);
                     if (filtered.length === 0) {
@@ -2345,12 +2345,12 @@ function DashboardClientInner({ user, data }: Props) {
                   })()}
                 </div>
 
-                {/* Desktop table (≥sm) */}
-                <div className="overflow-x-auto responsive-table-wrap hidden sm:block">
+                {/* Desktop table (≥md) */}
+                <div className="overflow-x-auto responsive-table-wrap hidden md:block">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--border)] bg-[var(--bg-surface-2)]">
-                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell whitespace-nowrap">WO #</th>
+                      <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden md:table-cell whitespace-nowrap">WO #</th>
                       <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Task</th>
                       <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide hidden md:table-cell">Priority</th>
                       <th className="px-3 sm:px-5 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Status</th>
@@ -2368,9 +2368,9 @@ function DashboardClientInner({ user, data }: Props) {
                       </tr>
                     ) : workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).map((wo) => (
                       <tr key={wo.id} className="hover:bg-[var(--bg-surface-2)] transition-colors cursor-pointer" onClick={() => openWoDetail(wo)}>
-                        <td className="px-3 sm:px-5 py-3.5 font-mono text-xs text-[var(--text-muted)] hidden sm:table-cell whitespace-nowrap">{wo.woNumber}</td>
+                        <td className="px-3 sm:px-5 py-3.5 font-mono text-xs text-[var(--text-muted)] hidden md:table-cell whitespace-nowrap">{wo.woNumber}</td>
                         <td className="px-3 sm:px-5 py-3.5 min-w-0" style={{maxWidth: '320px'}}>
-                          <p className="text-[10px] font-mono text-[var(--text-muted)] sm:hidden truncate">{wo.woNumber}</p>
+                          <p className="text-[10px] font-mono text-[var(--text-muted)] md:hidden truncate">{wo.woNumber}</p>
                           <p className="font-medium text-[var(--text-primary)] truncate">{wo.title}</p>
                           <p className="text-xs text-[var(--text-muted)] truncate">{wo.machine?.name ?? '—'}</p>
                         </td>
@@ -2869,24 +2869,24 @@ function DashboardClientInner({ user, data }: Props) {
           {activeTab === 'parts' && (
             <div className="space-y-6">
               {/* Parts Summary */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                  <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Total Parts</div>
-                  <div className="text-2xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>{parts.length}</div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                <div className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                  <div className="text-[10px] sm:text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Total Parts</div>
+                  <div className="text-lg sm:text-2xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>{parts.length}</div>
                 </div>
-                <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                  <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Low Stock Items</div>
-                  <div className="text-2xl font-bold mt-1" style={{ color: parts.filter(p => p.quantity <= p.minQuantity).length > 0 ? '#ef4444' : 'var(--text-primary)' }}>
+                <div className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                  <div className="text-[10px] sm:text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Low Stock</div>
+                  <div className="text-lg sm:text-2xl font-bold mt-1" style={{ color: parts.filter(p => p.quantity <= p.minQuantity).length > 0 ? '#ef4444' : 'var(--text-primary)' }}>
                     {parts.filter(p => p.quantity <= p.minQuantity).length}
                   </div>
-                  <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>At or below min quantity</div>
+                  <div className="text-[10px] sm:text-xs mt-1 hidden sm:block" style={{ color: 'var(--text-muted)' }}>At or below min quantity</div>
                 </div>
-                <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                  <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Inventory Value</div>
-                  <div className="text-2xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>
+                <div className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                  <div className="text-[10px] sm:text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Inventory Value</div>
+                  <div className="text-sm sm:text-2xl font-bold mt-1 truncate" style={{ color: 'var(--text-primary)' }}>
                     ${parts.reduce((sum, p) => sum + (p.unitCost ?? 0) * p.quantity, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
-                  <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Estimated total value</div>
+                  <div className="text-[10px] sm:text-xs mt-1 hidden sm:block" style={{ color: 'var(--text-muted)' }}>Estimated total value</div>
                 </div>
               </div>
 
@@ -2915,8 +2915,8 @@ function DashboardClientInner({ user, data }: Props) {
                   </div>
                 ) : (
                   <>
-                  {/* Mobile card list (<sm) */}
-                  <div className="sm:hidden divide-y divide-[var(--border)]">
+                  {/* Mobile card list (<md — covers portrait + landscape mobile) */}
+                  <div className="md:hidden divide-y divide-[var(--border)]">
                     {parts.map(part => {
                       const isLow = part.quantity <= part.minQuantity;
                       const isOut = part.quantity === 0;
@@ -2975,20 +2975,20 @@ function DashboardClientInner({ user, data }: Props) {
                       );
                     })}
                   </div>
-                  {/* Desktop table (≥sm) */}
-                  <div className="overflow-x-auto responsive-table-wrap hidden sm:block">
+                  {/* Desktop table (≥md) */}
+                  <div className="overflow-x-auto responsive-table-wrap hidden md:block">
                     <table className="w-full text-sm">
                       <thead>
                         <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                          <th className="text-left px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Part</th>
-                          <th className="text-left px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden md:table-cell" style={{ color: 'var(--text-secondary)' }}>Part #</th>
-                          <th className="text-center px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Qty</th>
-                          <th className="text-center px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden sm:table-cell" style={{ color: 'var(--text-secondary)' }}>Min</th>
-                          <th className="text-right px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden lg:table-cell" style={{ color: 'var(--text-secondary)' }}>Unit Cost</th>
-                          <th className="text-left px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden lg:table-cell" style={{ color: 'var(--text-secondary)' }}>Supplier</th>
-                          <th className="text-left px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden lg:table-cell" style={{ color: 'var(--text-secondary)' }}>Location</th>
-                          <th className="text-center px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Status</th>
-                          <th className="text-center px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Action</th>
+                          <th className="text-left px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Part</th>
+                          <th className="text-left px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden md:table-cell whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Part #</th>
+                          <th className="text-center px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Qty</th>
+                          <th className="text-center px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden sm:table-cell whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Min</th>
+                          <th className="text-right px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden lg:table-cell whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Unit Cost</th>
+                          <th className="text-left px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden lg:table-cell whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Supplier</th>
+                          <th className="text-left px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase hidden lg:table-cell whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Location</th>
+                          <th className="text-center px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Status</th>
+                          <th className="text-center px-3 sm:px-4 py-2.5 text-xs font-semibold uppercase whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Action</th>
                         </tr>
                       </thead>
                       <tbody>

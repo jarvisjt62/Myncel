@@ -5,6 +5,7 @@
 import { db } from '@/lib/db';
 import { sendWorkOrderAssignedEmail, sendAlertNotificationEmail } from '@/lib/email';
 import { broadcastSms, workOrderSmsMessage, alertSmsMessage } from '@/lib/notifications/sms';
+import { sendPushToUser } from '@/lib/notifications/push';
 
 // ─── In-app notification ──────────────────────────────────────────────────────
 
@@ -24,7 +25,7 @@ export async function createNotification({
   priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
 }) {
   try {
-    return await db.notification.create({
+    const created = await db.notification.create({
       data: {
         userId,
         type: type as any,
@@ -34,6 +35,10 @@ export async function createNotification({
         priority,
       },
     });
+    // Also fan-out to mobile push devices (Capacitor / Expo). Non-blocking.
+    sendPushToUser(userId, { title, body: message, link, kind: type })
+      .catch(err => console.warn('[notify] push fan-out failed:', err));
+    return created;
   } catch (error) {
     console.error('[notify] Failed to create notification:', error);
     return null;

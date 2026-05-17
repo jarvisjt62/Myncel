@@ -147,10 +147,13 @@ export default function RolesTab({ currentUserRole, organizationId }: Props) {
                 </div>
                 <div className="flex items-center gap-2 mt-auto">
                   <button onClick={() => setEditing(r)} className="text-xs font-semibold text-[#635bff] hover:text-[#4f46e5] px-3 py-1.5 rounded-lg bg-[#635bff]/10 hover:bg-[#635bff]/15">
-                    {isOwnCustom ? 'Edit' : 'View'}
+                    Edit
                   </button>
                   {isOwnCustom && (
                     <button onClick={() => deleteRole(r)} className="text-xs font-medium text-red-500 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50">Delete</button>
+                  )}
+                  {!isOwnCustom && (
+                    <span className="text-[10px] text-[var(--text-muted)] italic">Editing creates an org-scoped copy</span>
                   )}
                 </div>
               </div>

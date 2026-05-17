@@ -37,13 +37,19 @@ export default function RoleEditorModal({
   const byCategory = useMemo(() => groupByCategory(permissions), [permissions]);
 
   // When is this modal read-only?
-  //   - Editing a system role AND not platform admin (org users can only view).
-  //   - Editing a role not owned by the current org (global / other-org) from the org side.
+  //   - Org users can now CUSTOMIZE built-in (system) and global roles by forking
+  //     them into their org's namespace on save. So they are no longer read-only.
+  //   - The only true read-only case is editing a role owned by another org, which
+  //     should not normally be reachable through the org UI (defensive).
   //   - Never read-only for platform admin.
-  const isSystemRole = !isNew && role!.isSystem;
-  const isOwnOrgRole = !isNew && role!.organizationId && role!.organizationId === forceOrgId;
-  const isReadOnly = !isNew && !isPlatformAdmin && !isOwnOrgRole; // covers system + global + other-org
-  const readOnlyMeta = isReadOnly || (isSystemRole && !isPlatformAdmin);
+  const isSystemRole  = !isNew && role!.isSystem;
+  const isGlobalRole  = !isNew && role!.isGlobal;
+  const isOwnOrgRole  = !isNew && !!role!.organizationId && role!.organizationId === forceOrgId;
+  const isOtherOrgRole = !isNew && !!role!.organizationId && role!.organizationId !== forceOrgId;
+  // Forking is what an org user does when editing a built-in / global role.
+  const willForkOnSave = !isNew && !isPlatformAdmin && (isSystemRole || isGlobalRole);
+  const isReadOnly = !isNew && !isPlatformAdmin && isOtherOrgRole;
+  const readOnlyMeta = isReadOnly;
 
   function toggleKey(k: string) {
     setSelectedKeys(prev => {
@@ -88,14 +94,24 @@ export default function RoleEditorModal({
         }
       } else {
         // editing
-        const canUseAdminApi = isPlatformAdmin;
-        url = canUseAdminApi ? `/api/admin/roles/${role!.id}` : `/api/org/roles/${role!.id}`;
-        method = 'PATCH';
+        if (isPlatformAdmin) {
+          url = `/api/admin/roles/${role!.id}`;
+          method = 'PATCH';
+        } else if (willForkOnSave) {
+          // Org user editing a system / global role → fork into their org.
+          url = `/api/org/roles/${role!.id}/fork`;
+          method = 'POST';
+        } else {
+          url = `/api/org/roles/${role!.id}`;
+          method = 'PATCH';
+        }
       }
       const res = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
-      onSaved(data.role as RoleWithMeta, isNew);
+      // If we forked, treat it as a "new" role being added so the parent list updates.
+      const wasEffectivelyNew = isNew || (willForkOnSave && data.forked === true);
+      onSaved(data.role as RoleWithMeta, wasEffectivelyNew);
     } catch (e: any) {
       setError(e.message || 'Failed to save');
     } finally {
@@ -129,12 +145,17 @@ export default function RoleEditorModal({
               <strong>View-only.</strong> This role is managed by the platform and cannot be edited from your organization. Contact support if changes are needed.
             </div>
           )}
+          {willForkOnSave && (
+            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-600 text-sm">
+              <strong>{role!.isSystem ? 'Built-in role.' : 'Global role.'}</strong> When you save, an editable copy will be created for your organization. The original template stays untouched and other orgs aren't affected.
+            </div>
+          )}
           {/* Basic fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] mb-1.5">Name</label>
               <input
-                value={name} onChange={e => setName(e.target.value)} disabled={readOnlyMeta || (!isNew && role!.isSystem)}
+                value={name} onChange={e => setName(e.target.value)} disabled={readOnlyMeta}
                 className="w-full px-3 py-2 rounded-lg bg-[var(--bg-surface-2)] border border-[var(--border)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#635bff] disabled:opacity-60"
                 placeholder="e.g. Senior Technician"
               />

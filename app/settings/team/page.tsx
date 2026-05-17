@@ -101,20 +101,20 @@ export default function TeamPage() {
       {/* Invite Form */}
       <div className="rounded-xl border p-6" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
         <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Invite Team Member</h3>
-        <form onSubmit={handleInvite} className="flex gap-3 flex-wrap">
+        <form onSubmit={handleInvite} className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
           <input
             type="email"
             value={inviteEmail}
             onChange={e => setInviteEmail(e.target.value)}
             placeholder="Enter email address"
-            className="flex-1 min-w-[200px] rounded-lg px-4 py-2 text-sm focus:outline-none"
+            className="w-full sm:flex-1 sm:min-w-[220px] rounded-lg px-4 py-2 text-sm focus:outline-none"
             style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
             required
           />
           <select
             value={inviteRole}
             onChange={e => setInviteRole(e.target.value)}
-            className="rounded-lg px-4 py-2 text-sm focus:outline-none"
+            className="w-full sm:w-auto rounded-lg px-4 py-2 text-sm focus:outline-none"
             style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
           >
             <option value="MEMBER">Member</option>
@@ -126,7 +126,7 @@ export default function TeamPage() {
           <button
             type="submit"
             disabled={inviting}
-            className="px-6 py-2 bg-[#635bff] text-white rounded-lg font-medium hover:bg-[#4f46e5] disabled:opacity-50 transition-colors text-sm"
+            className="w-full sm:w-auto px-6 py-2 bg-[#635bff] text-white rounded-lg font-medium hover:bg-[#4f46e5] disabled:opacity-50 transition-colors text-sm"
           >
             {inviting ? 'Inviting...' : 'Invite'}
           </button>
