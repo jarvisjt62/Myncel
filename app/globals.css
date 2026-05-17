@@ -170,6 +170,11 @@ body.capacitor-app {
   position: sticky;
   top: 0;
   z-index: 100;
+  /* Safe-area padding for Capacitor / iOS / Samsung edge displays so the
+     status bar (clock, battery, signal icons) does not overlap the logo
+     and menu. On regular browsers env() resolves to 0 so layout is
+     unchanged. */
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* Stripe-style feature card */
