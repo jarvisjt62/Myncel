@@ -63,9 +63,9 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f6f9fc] flex flex-col">
+    <div className="auth-mobile-shell min-h-[100dvh] bg-[#f6f9fc] flex flex-col">
       {/* Nav */}
-      <nav className="bg-white border-b border-[#e6ebf1] px-6 py-4">
+      <nav className="auth-mobile-nav bg-white border-b border-[#e6ebf1] px-6 pb-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-lg text-[#0a2540]">
             <img src="/logo.png" alt="Myncel" className="w-8 h-8" />

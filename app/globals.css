@@ -355,6 +355,40 @@ button {
   }
 }
 
+/* ────────────────────────────────────────────────────────────────────────
+   Auth pages (signin / signup / forgot-password / verify-email).
+   These pages do NOT use `.stripe-nav` — they have their own custom <nav>
+   bar. Without explicit safe-area padding, the nav contents (logo + Sign
+   up link) overlap the Samsung / iOS status bar icons.
+   We also extend the page background BEHIND the status bar so it doesn't
+   look transparent at the top, and behind the gesture nav at the bottom.
+   ──────────────────────────────────────────────────────────────────────── */
+.auth-mobile-shell {
+  /* Ensure the auth page background fills under status & nav bars. */
+  background-color: #f6f9fc;
+}
+
+html:has(.auth-mobile-shell),
+body:has(.auth-mobile-shell) {
+  /* Match the auth shell color so the area under the safe-area insets
+     (status bar at top, gesture bar at bottom) does not appear transparent
+     or fall back to the default site background. */
+  background-color: #f6f9fc;
+}
+
+.auth-mobile-nav {
+  /* Push nav contents (logo + "Sign up free" link) below the device
+     status bar on Capacitor / mobile browsers. The white nav background
+     extends BEHIND the status bar for a clean look. */
+  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+}
+
+@media (min-width: 640px) {
+  .auth-mobile-nav {
+    padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+  }
+}
+
 /* Selection color */
 ::selection {
   background: rgba(99, 91, 255, 0.15);

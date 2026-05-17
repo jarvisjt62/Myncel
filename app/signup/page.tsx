@@ -110,7 +110,7 @@ export default function SignUp() {
   return (
     <div className="auth-mobile-shell min-h-[100dvh] bg-[#f6f9fc] flex flex-col">
       {/* Nav */}
-      <nav className="bg-white border-b border-[#e6ebf1] px-4 py-3 sm:px-6 sm:py-4">
+      <nav className="auth-mobile-nav bg-white border-b border-[#e6ebf1] px-4 pb-3 sm:px-6 sm:pb-4">
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2 font-bold text-lg text-[#0a2540]">
             <img src="/logo.png" alt="Myncel" className="w-8 h-8" />

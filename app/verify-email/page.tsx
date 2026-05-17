@@ -112,7 +112,7 @@ function VerifyEmailContent() {
   // Show spinner while auto-verifying token
   if (verifying && token && !success && !error) {
     return (
-      <div className="min-h-screen bg-[#f6f9fc] flex items-center justify-center">
+      <div className="auth-mobile-shell min-h-[100dvh] bg-[#f6f9fc] flex items-center justify-center">
         <div className="bg-white rounded-2xl shadow-sm border border-[#e6ebf1] p-10 text-center max-w-sm w-full mx-4">
           <div className="w-16 h-16 rounded-full bg-[#635bff]/10 flex items-center justify-center mx-auto mb-4">
             <div className="animate-spin w-8 h-8 border-4 border-[#635bff] border-t-transparent rounded-full"></div>
@@ -125,9 +125,9 @@ function VerifyEmailContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f9fc] flex flex-col">
+    <div className="auth-mobile-shell min-h-[100dvh] bg-[#f6f9fc] flex flex-col">
       {/* Nav */}
-      <nav className="bg-white border-b border-[#e6ebf1] px-6 py-4">
+      <nav className="auth-mobile-nav bg-white border-b border-[#e6ebf1] px-6 pb-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-lg text-[#0a2540]">
             <img src="/logo.png" alt="Myncel" className="w-8 h-8" />
@@ -269,7 +269,7 @@ function VerifyEmailContent() {
 export default function VerifyEmailPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#f6f9fc] flex items-center justify-center">
+      <div className="auth-mobile-shell min-h-[100dvh] bg-[#f6f9fc] flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-[#635bff] border-t-transparent rounded-full"></div>
       </div>
     }>
