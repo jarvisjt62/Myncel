@@ -3068,7 +3068,7 @@ function DashboardClientInner({ user, data }: Props) {
                                   {/* Delete — gated on reports.delete */}
                                   <Can permission="reports.delete">
                                     <button
-                                      onClick={() => setConfirmDeleteWo(wo.id)}
+                                      onClick={() => setConfirmDeleteWo(wo)}
                                       title="Delete record"
                                       aria-label={`Delete ${wo.woNumber}`}
                                       className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-600 transition-colors"
@@ -4041,7 +4041,15 @@ function DashboardClientInner({ user, data }: Props) {
       )}
 
       {/* Confirm Delete Work Order */}
-      {confirmDeleteWo && (
+      {confirmDeleteWo && (() => {
+        // Defensive: support both shapes — a full WO object {id,title,woNumber}
+        // or a bare string id (legacy callers). Without this, passing a string
+        // would render "Delete ?" and the Delete button would call deleteWo(undefined).
+        const woObj = typeof confirmDeleteWo === 'string'
+          ? { id: confirmDeleteWo, title: '', woNumber: '' }
+          : confirmDeleteWo;
+        const label = woObj.title || woObj.woNumber || 'this work order';
+        return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmDeleteWo(null)} />
           <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-sm p-6">
@@ -4050,17 +4058,18 @@ function DashboardClientInner({ user, data }: Props) {
                 <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </div>
               <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Delete Work Order?</h3>
-              <p className="text-sm text-[var(--text-secondary)] mb-6">Delete <strong>{confirmDeleteWo.title}</strong>? This action cannot be undone.</p>
+              <p className="text-sm text-[var(--text-secondary)] mb-6">Delete <strong>{label}</strong>? This action cannot be undone.</p>
               <div className="flex gap-3">
                 <button onClick={() => setConfirmDeleteWo(null)} className="flex-1 px-4 py-2 border border-[var(--border)] rounded-lg text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)]">Cancel</button>
-                <button onClick={() => deleteWo(confirmDeleteWo.id)} disabled={!!deletingWoId} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50">
+                <button onClick={() => deleteWo(woObj.id)} disabled={!!deletingWoId || !woObj.id} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50">
                   {deletingWoId ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Alert Detail Modal */}
       {selectedAlert && (
