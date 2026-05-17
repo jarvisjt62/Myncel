@@ -17,10 +17,13 @@
  *   3. Server-side rendering
  *      → all calls are no-ops (guarded by `typeof window !== 'undefined'`).
  *
- * The Capacitor packages are imported dynamically so this file remains buildable
- * inside the Next.js web build even before the @capacitor/* packages are added
- * to the mobile-shell repo. When they are missing, the dynamic import simply
- * fails and we silently fall back to web behavior.
+ * IMPORTANT — accessing Capacitor plugins:
+ *   We use the Capacitor bridge global `window.Capacitor.Plugins.<Name>`
+ *   instead of `import('@capacitor/push-notifications')`. The npm packages
+ *   are NOT present in the deployed Next.js bundle (they only exist in the
+ *   Capacitor shell's node_modules). The Capacitor native bridge injects
+ *   `window.Capacitor.Plugins.<PluginName>` at runtime for every plugin
+ *   registered in the shell, so we read those globals directly.
  */
 
 export type MyncelNotificationKind =
@@ -56,6 +59,12 @@ function detectCapacitor(): boolean {
   return isCapacitorEnv;
 }
 
+function getCapPlugin(name: string): any {
+  if (typeof window === 'undefined') return null;
+  // @ts-ignore
+  return (window as any).Capacitor?.Plugins?.[name] ?? null;
+}
+
 /**
  * Initialize notifications. Call once after the user is authenticated
  * (e.g. in a top-level client component once `session.status === 'authenticated'`).
@@ -70,20 +79,14 @@ export async function initNativeNotifications(): Promise<void> {
 
   if (inCap) {
     try {
-      // The @capacitor/* packages live in the Capacitor mobile-shell repo, not in
-      // the web Next.js build. We must hide these specifiers from webpack's static
-      // analyzer or the web build fails with "Module not found". Using a runtime
-      // variable + `webpackIgnore: true` magic comment ensures webpack will not
-      // try to resolve or bundle them — they only get loaded by the WebView at
-      // runtime where the packages ARE present.
-      const __pushSpec = '@capacitor/push-notifications';
-      const __localSpec = '@capacitor/local-notifications';
-      const PushNotifications: any = await import(/* webpackIgnore: true */ /* @vite-ignore */ __pushSpec)
-        .then((m: any) => m.PushNotifications ?? m.default?.PushNotifications ?? null)
-        .catch(() => null);
-      const LocalNotifications: any = await import(/* webpackIgnore: true */ /* @vite-ignore */ __localSpec)
-        .then((m: any) => m.LocalNotifications ?? m.default?.LocalNotifications ?? null)
-        .catch(() => null);
+      // Read plugins from the Capacitor bridge global. These are injected by
+      // the native shell when the plugins are registered (i.e. installed in
+      // the shell's package.json + `npx cap sync` ran).
+      const PushNotifications: any = getCapPlugin('PushNotifications');
+      const LocalNotifications: any = getCapPlugin('LocalNotifications');
+
+      console.log('[myncel-push] plugins on bridge: PushNotifications=' + !!PushNotifications +
+        ', LocalNotifications=' + !!LocalNotifications);
 
       if (LocalNotifications) {
         // Create a default Android channel so local notifications use the Myncel icon + sound.
@@ -111,7 +114,8 @@ export async function initNativeNotifications(): Promise<void> {
         console.log('[myncel-push] permission result:', perm);
         if (perm?.receive === 'granted') {
           console.log('[myncel-push] permission granted, calling register()…');
-          await PushNotifications.register();
+
+          // Wire listeners BEFORE register() so we don't miss the registration event.
           PushNotifications.addListener('registration', async (token: { value: string }) => {
             console.log('[myncel-push] ✅ FCM token received (len=' + (token?.value?.length ?? 0) + '), POSTing to /api/notifications/devices…');
             try {
@@ -158,10 +162,18 @@ export async function initNativeNotifications(): Promise<void> {
               window.location.href = link;
             }
           });
+
+          await PushNotifications.register();
+          console.log('[myncel-push] register() returned, waiting for "registration" event…');
+        } else {
+          console.warn('[myncel-push] permission NOT granted, skipping register()');
         }
+      } else {
+        console.warn('[myncel-push] PushNotifications plugin not on window.Capacitor.Plugins. ' +
+          'Verify @capacitor/push-notifications is installed in the shell and `npx cap sync` was run.');
       }
     } catch (e) {
-      console.warn('[myncel-push] capacitor notifications unavailable, falling back to web', e);
+      console.warn('[myncel-push] capacitor notifications init failed', e);
     }
     return;
   }
@@ -198,11 +210,7 @@ export async function showLocalNotification(p: MyncelNotificationPayload): Promi
 
   if (detectCapacitor()) {
     try {
-      // See note in initNativeNotifications above — hide the specifier from webpack.
-      const __localSpec2 = '@capacitor/local-notifications';
-      const LocalNotifications: any = await import(/* webpackIgnore: true */ /* @vite-ignore */ __localSpec2)
-        .then((m: any) => m.LocalNotifications ?? m.default?.LocalNotifications ?? null)
-        .catch(() => null);
+      const LocalNotifications: any = getCapPlugin('LocalNotifications');
       if (!LocalNotifications) return;
       await LocalNotifications.schedule({
         notifications: [{
