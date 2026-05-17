@@ -26,8 +26,8 @@ import { useEffect } from 'react';
  *   MAX_VISIBLE_MS — hard upper bound safety net
  */
 
-const MIN_VISIBLE_MS = 2000;
-const MAX_VISIBLE_MS = 6000;
+const MIN_VISIBLE_MS = 2500;
+const MAX_VISIBLE_MS = 7000;
 
 declare global {
   interface Window {
