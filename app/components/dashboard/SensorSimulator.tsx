@@ -266,7 +266,7 @@ export default function SensorSimulator() {
     <div className="rounded-2xl overflow-hidden" style={surfaceStyle}>
 
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4"
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4"
         style={{ borderBottom: '1px solid var(--border)', background: 'linear-gradient(to right, rgba(99,91,255,0.07), transparent)' }}>
         <div className="flex items-center gap-3">
           <span className="text-xl">📡</span>
@@ -275,7 +275,7 @@ export default function SensorSimulator() {
             <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Test your IoT integration without physical hardware</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {running && (
             <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
