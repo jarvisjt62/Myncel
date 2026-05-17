@@ -196,4 +196,6 @@ export const viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
+  viewportFit: 'cover' as const, // enables env(safe-area-inset-*) under camera notches / status bars
+  themeColor: '#ffffff',
 };

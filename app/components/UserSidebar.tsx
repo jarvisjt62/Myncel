@@ -292,7 +292,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
   const showApiDocs = isEnabled('feature.api.enabled');
 
   const Sidebar = () => (
-    <aside className="w-full lg:w-60 flex flex-col h-screen lg:h-full min-h-0" style={{ backgroundColor: 'var(--bg-sidebar)', borderRight: '1px solid var(--border)' }}>
+    <aside className="w-full lg:w-60 flex flex-col h-[100dvh] lg:h-full min-h-0 pt-safe pb-safe" style={{ backgroundColor: 'var(--bg-sidebar)', borderRight: '1px solid var(--border)' }}>
       {/* Logo */}
       <div className="p-5 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
         <Link href="/dashboard" prefetch={true} className="flex items-center gap-1.5">
@@ -609,12 +609,14 @@ function UserShellInner({ user, children }: UserSidebarProps) {
         <div className="lg:hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
-          {/* Sidebar panel — pinned to left edge with slide-in, full viewport height */}
-          <div className="compact-sidebar absolute left-0 top-0 h-screen w-72 max-w-[85vw] flex flex-col shadow-2xl animate-slide-in-left" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
-            {/* Close button */}
+          {/* Sidebar panel — pinned to left edge with slide-in, full viewport height (uses 100dvh so it respects system bars on mobile) */}
+          <div className="compact-sidebar absolute left-0 top-0 h-[100dvh] w-72 max-w-[85vw] flex flex-col shadow-2xl animate-slide-in-left overflow-hidden" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
+            {/* Close button — positioned with top:env(safe-area-inset-top) so
+                it sits BELOW the Samsung / iOS status bar instead of behind it. */}
             <button
               onClick={() => setSidebarOpen(false)}
-              className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-muted)] z-10"
+              className="absolute right-3 p-1.5 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-muted)] z-10"
+              style={{ top: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
               aria-label="Close menu"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -628,8 +630,19 @@ function UserShellInner({ user, children }: UserSidebarProps) {
 
       {/* Main */}
       <main className="flex-1 lg:ml-60 flex flex-col min-h-screen min-w-0 overflow-x-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
-        {/* Top bar */}
-        <header className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between sticky top-0 z-10" style={{ backgroundColor: 'var(--bg-nav)', borderBottom: '1px solid var(--border)' }}>
+        {/* Top bar — uses calc() so the header pads itself below the system
+            status bar in Capacitor / PWA mode (Samsung clock + battery icons).
+            On normal browsers env(safe-area-inset-top) resolves to 0 so the
+            layout matches the previous py-3 / sm:py-4. */}
+        <header
+          className="px-3 sm:px-6 flex items-center justify-between sticky top-0 z-10"
+          style={{
+            backgroundColor: 'var(--bg-nav)',
+            borderBottom: '1px solid var(--border)',
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
+            paddingBottom: '0.75rem',
+          }}
+        >
           <div className="flex items-center gap-3">
             <button
               className="lg:hidden p-2 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-secondary)]"

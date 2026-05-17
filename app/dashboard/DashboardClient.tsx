@@ -2973,7 +2973,84 @@ function DashboardClientInner({ user, data }: Props) {
                       No records yet. Work orders will appear here as they're created.
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
+                    <>
+                    {/* ── Mobile card layout (< md) ───────────────────────────────────────── */}
+                    <div className="md:hidden divide-y" style={{ borderColor: 'var(--border)' }}>
+                      {workOrders.map((wo: any) => (
+                        <div key={wo.id} className="p-4 flex items-start gap-3" style={{ borderColor: 'var(--border)' }}>
+                          <Can permissions={['reports.bulk', 'reports.delete']} mode="all">
+                            <input
+                              type="checkbox"
+                              aria-label={`Select ${wo.woNumber}`}
+                              checked={reportsSelected.has(wo.id)}
+                              onChange={() => toggleReportRow(wo.id)}
+                              className="cursor-pointer accent-[#635bff] mt-1 flex-shrink-0"
+                            />
+                          </Can>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className="font-mono text-[11px] whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{wo.woNumber}</span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
+                                wo.status === 'COMPLETED' ? 'bg-emerald-500/15 text-emerald-600' :
+                                wo.status === 'IN_PROGRESS' ? 'bg-blue-500/15 text-blue-600' :
+                                wo.status === 'OPEN' ? 'bg-purple-500/15 text-[#635bff]' :
+                                'bg-gray-500/15 text-gray-500'
+                              }`}>{wo.status?.replace('_', ' ')}</span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${priorityBadge(wo.priority)}`}>
+                                {wo.priority}
+                              </span>
+                            </div>
+                            <div className="text-sm font-medium truncate mb-1" style={{ color: 'var(--text-primary)' }}>{wo.title}</div>
+                            <div className="flex items-center gap-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                              <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                                {wo.totalCost != null ? `$${Number(wo.totalCost).toFixed(2)}` : '—'}
+                              </span>
+                              {wo.completedAt && <span>✓ {new Date(wo.completedAt).toLocaleDateString()}</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <button
+                              onClick={() => openWoDetail(wo)}
+                              title="View record"
+                              aria-label={`View ${wo.woNumber}`}
+                              className="p-1.5 rounded-lg hover:bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[#635bff] transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                            </button>
+                            <Can permission="reports.edit">
+                              <button
+                                onClick={() => setEditingWo(wo)}
+                                title="Edit record"
+                                aria-label={`Edit ${wo.woNumber}`}
+                                className="p-1.5 rounded-lg hover:bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[#635bff] transition-colors"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                            </Can>
+                            <Can permission="reports.delete">
+                              <button
+                                onClick={() => setConfirmDeleteWo(wo)}
+                                title="Delete record"
+                                aria-label={`Delete ${wo.woNumber}`}
+                                className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-600 transition-colors"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </Can>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* ── Desktop table layout (md+) ─────────────────────────────────────── */}
+                    <div className="overflow-x-auto hidden md:block">
                       <table className="w-full text-sm">
                         <thead style={{ backgroundColor: 'var(--bg-surface-2)' }}>
                           <tr className="text-left text-xs uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
@@ -2989,12 +3066,12 @@ function DashboardClientInner({ user, data }: Props) {
                                 />
                               </Can>
                             </th>
-                            <th className="px-4 py-3 font-semibold">WO #</th>
+                            <th className="px-4 py-3 font-semibold whitespace-nowrap">WO #</th>
                             <th className="px-4 py-3 font-semibold">Title</th>
-                            <th className="px-4 py-3 font-semibold hidden md:table-cell">Status</th>
+                            <th className="px-4 py-3 font-semibold">Status</th>
                             <th className="px-4 py-3 font-semibold hidden lg:table-cell">Priority</th>
-                            <th className="px-4 py-3 font-semibold text-right">Total</th>
-                            <th className="px-4 py-3 font-semibold hidden md:table-cell">Completed</th>
+                            <th className="px-4 py-3 font-semibold text-right whitespace-nowrap">Total</th>
+                            <th className="px-4 py-3 font-semibold whitespace-nowrap">Completed</th>
                             <th className="px-4 py-3 font-semibold text-right w-32">Actions</th>
                           </tr>
                         </thead>
@@ -3016,26 +3093,23 @@ function DashboardClientInner({ user, data }: Props) {
                                   />
                                 </Can>
                               </td>
-                              <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>{wo.woNumber}</td>
+                              <td className="px-4 py-3 font-mono text-xs whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>{wo.woNumber}</td>
                               <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
-                                <div className="truncate max-w-[200px] sm:max-w-none">{wo.title}</div>
-                                <div className="text-[11px] md:hidden mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                                  {wo.status} · {wo.priority}
-                                </div>
+                                <div className="truncate max-w-[260px]">{wo.title}</div>
                               </td>
-                              <td className="px-4 py-3 hidden md:table-cell">
-                                <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap ${
                                   wo.status === 'COMPLETED' ? 'bg-emerald-500/15 text-emerald-600' :
                                   wo.status === 'IN_PROGRESS' ? 'bg-blue-500/15 text-blue-600' :
                                   wo.status === 'OPEN' ? 'bg-purple-500/15 text-[#635bff]' :
                                   'bg-gray-500/15 text-gray-500'
-                                }`}>{wo.status}</span>
+                                }`}>{wo.status?.replace('_', ' ')}</span>
                               </td>
                               <td className="px-4 py-3 hidden lg:table-cell text-xs" style={{ color: 'var(--text-secondary)' }}>{wo.priority}</td>
                               <td className="px-4 py-3 text-right font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
                                 {wo.totalCost != null ? `$${Number(wo.totalCost).toFixed(2)}` : '—'}
                               </td>
-                              <td className="px-4 py-3 hidden md:table-cell text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                              <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
                                 {wo.completedAt ? new Date(wo.completedAt).toLocaleDateString() : '—'}
                               </td>
                               <td className="px-4 py-3">
@@ -3085,6 +3159,7 @@ function DashboardClientInner({ user, data }: Props) {
                         </tbody>
                       </table>
                     </div>
+                    </>
                   )}
 
                   {/* Read-only hint when user lacks edit/delete (Members, Operators, Employees) */}

@@ -72,6 +72,12 @@ export default function CapacitorSplashHide() {
       return;
     }
 
+    // Mark <body> so global CSS can apply safe-area padding. This makes
+    // the top header / bottom nav respect Samsung / iOS system bars.
+    try {
+      document.body.classList.add('capacitor-app');
+    } catch {}
+
     const hide = async (reason: string) => {
       if (hidden) return;
       hidden = true;
