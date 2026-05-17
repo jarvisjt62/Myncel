@@ -45,18 +45,42 @@ export async function GET(req: NextRequest) {
 
     const planData = getPlanById(org.plan);
     const now = new Date();
-    const trialDaysLeft = org.trialEndsAt
-      ? Math.max(0, Math.ceil((org.trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+
+    // Trial-end self-correction (same logic as app/settings/billing/page.tsx).
+    // Recomputes trialEndsAt = createdAt + platform.trialDays if the stored
+    // value drifted forward by more than 1 day (e.g. from a buggy retroactive
+    // admin-settings update).
+    let trialEndsAt: Date | null = org.trialEndsAt;
+    if (org.plan === 'TRIAL' || org.plan === 'TRIAL_RESTRICTED') {
+      let trialDays = 14;
+      try {
+        const setting = await prisma.adminSetting.findUnique({ where: { key: 'platform.trialDays' } });
+        if (setting?.value) {
+          const parsed = JSON.parse(setting.value);
+          if (typeof parsed === 'number' && parsed > 0) trialDays = parsed;
+        }
+      } catch {}
+      const correctEnd = new Date(org.createdAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
+      if (!trialEndsAt || trialEndsAt.getTime() - correctEnd.getTime() > 24 * 60 * 60 * 1000) {
+        trialEndsAt = correctEnd;
+        prisma.organization
+          .update({ where: { id: org.id }, data: { trialEndsAt: correctEnd } })
+          .catch(err => console.error('[api/billing] auto-correct trialEndsAt failed:', err));
+      }
+    }
+
+    const trialDaysLeft = trialEndsAt
+      ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
       : 0;
 
-    const isTrialExpired = org.plan === 'TRIAL' && org.trialEndsAt && org.trialEndsAt < now;
-    const effectivePlan = getEffectivePlan(org.plan, org.trialEndsAt);
+    const isTrialExpired = org.plan === 'TRIAL' && trialEndsAt && trialEndsAt < now;
+    const effectivePlan = getEffectivePlan(org.plan, trialEndsAt);
 
     return NextResponse.json({
       plan: org.plan,
       effectivePlan,
       planData,
-      trialEndsAt: org.trialEndsAt,
+      trialEndsAt,
       trialDaysLeft,
       isTrialExpired,
       subscriptionStatus: org.subscriptionStatus,

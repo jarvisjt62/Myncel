@@ -73,12 +73,42 @@ export default async function BillingPage() {
   };
 
   const now = new Date();
-  const trialDaysLeft = org.trialEndsAt
-    ? Math.max(0, Math.ceil((org.trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+
+  // ── Trial-end self-correction ──────────────────────────────────────────────
+  // The legitimate trial-end is `createdAt + platform.trialDays`. If the stored
+  // value drifted forward (e.g. from a buggy retroactive update that used "now"
+  // instead of "createdAt"), recompute it on read AND persist the fix so other
+  // surfaces (admin dashboards, /api/billing) stay consistent.
+  let trialEndsAt: Date | null = org.trialEndsAt;
+  if (org.plan === 'TRIAL' || org.plan === 'TRIAL_RESTRICTED') {
+    const trialDaysSetting = await prisma.adminSetting
+      .findUnique({ where: { key: 'platform.trialDays' } })
+      .catch(() => null);
+    let trialDays = (DEFAULT_SETTINGS as any)['platform.trialDays']?.value ?? 14;
+    if (trialDaysSetting?.value) {
+      try {
+        const parsed = JSON.parse(trialDaysSetting.value);
+        if (typeof parsed === 'number' && parsed > 0) trialDays = parsed;
+      } catch {}
+    }
+    const correctEnd = new Date(org.createdAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
+    // Only correct if the stored value is MORE than 1 day later than correct.
+    // (Drifting backward is fine — could be a manual admin extension cancellation.)
+    if (!trialEndsAt || trialEndsAt.getTime() - correctEnd.getTime() > 24 * 60 * 60 * 1000) {
+      trialEndsAt = correctEnd;
+      // Persist so the next read is already clean (best-effort, non-blocking).
+      prisma.organization
+        .update({ where: { id: org.id }, data: { trialEndsAt: correctEnd } })
+        .catch(err => console.error('[billing] auto-correct trialEndsAt failed:', err));
+    }
+  }
+
+  const trialDaysLeft = trialEndsAt
+    ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
-  const isTrialExpired = (org.plan === 'TRIAL' || org.plan === 'TRIAL_RESTRICTED') && org.trialEndsAt ? org.trialEndsAt < now : false;
+  const isTrialExpired = (org.plan === 'TRIAL' || org.plan === 'TRIAL_RESTRICTED') && trialEndsAt ? trialEndsAt < now : false;
   // effectivePlan: active TRIAL → 'GROWTH', expired TRIAL → 'TRIAL_RESTRICTED', others unchanged
-  const effectivePlan = getEffectivePlan(org.plan, org.trialEndsAt ?? null);
+  const effectivePlan = getEffectivePlan(org.plan, trialEndsAt ?? null);
 
   return (
     <BillingClient
@@ -87,7 +117,7 @@ export default async function BillingPage() {
       plan={org.plan}
       effectivePlan={effectivePlan}
       planData={getPlanById(org.plan)}
-      trialEndsAt={org.trialEndsAt?.toISOString() || null}
+      trialEndsAt={trialEndsAt?.toISOString() || null}
       trialDaysLeft={trialDaysLeft}
       isTrialExpired={isTrialExpired}
       subscriptionStatus={org.subscriptionStatus}

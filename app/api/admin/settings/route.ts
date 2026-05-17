@@ -73,23 +73,35 @@ export async function PATCH(req: NextRequest) {
     });
     results.push(key);
 
-    // When trial days is updated, retroactively update all active TRIAL organizations
-    if (key === 'platform.trialDays' && typeof value === 'number') {
+    // When trial days is updated, retroactively recompute each active TRIAL org's
+    // trial-end date from THAT ORG's createdAt — NOT from "now". Setting it from
+    // "now" would silently extend every existing trial (an org that signed up
+    // 20 days ago would suddenly get another full trial period), which is the
+    // bug that produced "29d left" countdowns on long-existing orgs.
+    if (key === 'platform.trialDays' && typeof value === 'number' && value > 0) {
       try {
-        const newTrialEnd = new Date(Date.now() + value * 24 * 60 * 60 * 1000);
-        const updatedOrgs = await db.organization.updateMany({
+        const ms = value * 24 * 60 * 60 * 1000;
+        const now = new Date();
+        const orgs = await db.organization.findMany({
           where: {
             plan: 'TRIAL',
             OR: [
-              { trialEndsAt: { gt: new Date() } }, // Active trials with future expiry
-              { trialEndsAt: null },                // Trials with no expiry set yet
+              { trialEndsAt: { gt: now } }, // Active trials with future expiry
+              { trialEndsAt: null },         // Trials with no expiry set yet
             ],
           },
-          data: {
-            trialEndsAt: newTrialEnd,
-          },
+          select: { id: true, createdAt: true },
         });
-        console.log(`[Admin Settings] Updated trial period to ${value} days. ${updatedOrgs.count} active trial org(s) updated.`);
+        let updatedCount = 0;
+        for (const org of orgs) {
+          const correctEnd = new Date(org.createdAt.getTime() + ms);
+          await db.organization.update({
+            where: { id: org.id },
+            data: { trialEndsAt: correctEnd },
+          });
+          updatedCount++;
+        }
+        console.log(`[Admin Settings] Recomputed trial period to ${value} days from each org's createdAt. ${updatedCount} active trial org(s) updated.`);
       } catch (err) {
         console.error('[Admin Settings] Failed to update trial orgs:', err);
       }
