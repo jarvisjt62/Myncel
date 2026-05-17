@@ -28,7 +28,7 @@ export default function ApiDocsPage() {
           justify-content: space-between;
           position: sticky;
           top: 0;
-          z-index: 100;
+          z-index: 5;
           flex-wrap: wrap;
           gap: 10px;
         }
@@ -42,6 +42,12 @@ export default function ApiDocsPage() {
           gap: 5px;
         }
         .docs-back:hover { opacity: 0.8; }
+        /* Hide the redundant "← Dashboard" link & divider on mobile —
+           the shell hamburger already exposes the Dashboard link. */
+        @media (max-width: 767px) {
+          .docs-back, .docs-divider { display: none !important; }
+          .docs-header { padding: 12px 16px; }
+        }
         .docs-title { color: var(--text-primary); font-weight: 700; font-size: 16px; }
         .docs-badge {
           background: var(--accent-bg);

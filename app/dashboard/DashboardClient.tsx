@@ -3519,7 +3519,7 @@ function DashboardClientInner({ user, data }: Props) {
 
 
           {activeTab === 'remote-support' && (
-            <div className="space-y-6">
+            <div className="space-y-6 p-3 sm:p-6 lg:px-10 lg:py-8">
               <div>
                 <h2 className="text-lg font-bold text-[var(--text-primary)]">Remote Support Sessions</h2>
                 <p className="text-sm text-[var(--text-muted)] mt-0.5">Live video support sessions scheduled by your admin team</p>
