@@ -31,11 +31,19 @@ interface Props {
   organizationId: string;
 }
 
-const SCOPE_BADGE: Record<'system'|'global'|'org', { label: string; cls: string }> = {
-  system: { label: 'Built-in', cls: 'bg-purple-500/15 text-purple-500 border-purple-500/30' },
-  global: { label: 'Global',   cls: 'bg-blue-500/15 text-blue-500 border-blue-500/30' },
-  org:    { label: 'Custom',   cls: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30' },
+const SCOPE_BADGE: Record<'system'|'global'|'org'|'org_builtin', { label: string; cls: string }> = {
+  system:      { label: 'Built-in',              cls: 'bg-purple-500/15 text-purple-500 border-purple-500/30' },
+  global:      { label: 'Global',                cls: 'bg-blue-500/15 text-blue-500 border-blue-500/30' },
+  org:         { label: 'Custom',                cls: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30' },
+  org_builtin: { label: 'Built-in · Customized', cls: 'bg-purple-500/15 text-purple-500 border-purple-500/30' },
 };
+
+// The 6 built-in role slugs. If an org-scoped role has one of these slugs, it
+// means it's a customized fork of the platform's built-in role (not a brand
+// new custom role). We label it "Built-in · Customized" instead of "Custom"
+// so the org owner isn't confused by two "Admin" cards (one CUSTOM, one BUILT-IN)
+// when really it's just their edited copy of the built-in.
+const BUILTIN_SLUGS = new Set(['owner', 'admin', 'technician', 'operator', 'employee', 'member']);
 
 export default function RolesTab({ currentUserRole, organizationId }: Props) {
   const canManage = currentUserRole === 'OWNER' || currentUserRole === 'ADMIN';
@@ -123,7 +131,10 @@ export default function RolesTab({ currentUserRole, organizationId }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {visibleRoles.map(r => {
             const sc = roleScope(r);
-            const meta = SCOPE_BADGE[sc];
+            // Treat org-scoped roles whose slug matches a platform built-in as
+            // "Built-in · Customized" rather than plain "Custom".
+            const badgeKey = (sc === 'org' && BUILTIN_SLUGS.has(r.slug)) ? 'org_builtin' : sc;
+            const meta = SCOPE_BADGE[badgeKey];
             const isOwnCustom = sc === 'org' && r.organizationId === organizationId;
             return (
               <div key={r.id} className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] p-4 flex flex-col gap-3">

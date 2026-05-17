@@ -2140,6 +2140,15 @@ function DashboardClientInner({ user, data }: Props) {
                                   Delete
                                 </button>
                               </Can>
+                              {/* Per-row export menu (CSV / PDF / Sheets / Slack) — same as desktop */}
+                              <div onClick={(e) => e.stopPropagation()}>
+                                <RowExportMenu
+                                  dataset="machines"
+                                  recordId={m.id}
+                                  recordLabel={m.name}
+                                  onResult={(r) => setExportToast({ type: r.success ? 'success' : 'error', text: r.message, url: r.url })}
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -2338,6 +2347,15 @@ function DashboardClientInner({ user, data }: Props) {
                                 Delete
                               </button>
                             </Can>
+                            {/* Per-row export menu (CSV / PDF / Sheets / QuickBooks / Slack) */}
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <RowExportMenu
+                                dataset="work_orders"
+                                recordId={wo.id}
+                                recordLabel={wo.woNumber}
+                                onResult={(r) => setExportToast({ type: r.success ? 'success' : 'error', text: r.message, url: r.url })}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2967,6 +2985,15 @@ function DashboardClientInner({ user, data }: Props) {
                                     Edit
                                   </button>
                                 </Can>
+                                {/* Per-row export menu (CSV / PDF / Sheets / Slack) */}
+                                <div onClick={(e) => e.stopPropagation()}>
+                                  <RowExportMenu
+                                    dataset="parts"
+                                    recordId={part.id}
+                                    recordLabel={part.name}
+                                    onResult={(r) => setExportToast({ type: r.success ? 'success' : 'error', text: r.message, url: r.url })}
+                                  />
+                                </div>
                                 </div>
                               </div>
                             </div>

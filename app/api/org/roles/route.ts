@@ -20,16 +20,21 @@ async function requireOrgUser() {
 }
 
 // GET /api/org/roles — list roles visible to this org:
-//   - all system roles (base)
-//   - all non-disabled global roles
+//   - all system roles (base, but shadowed by an org-scoped fork with the same slug)
+//   - all non-disabled global roles (also shadowed by an org fork on same slug)
 //   - custom roles belonging to this org
+//
+// "Shadowing": when this org has its own role with the same slug as a system/global
+// role (because the org owner clicked Edit on a built-in and we forked it), we hide
+// the system/global original from this org's list so the user doesn't see two
+// "Admin" cards (one BUILT-IN, one CUSTOM) for what is conceptually the same role.
 export async function GET() {
   const auth = await requireOrgUser();
   if (auth.error) return auth.error;
 
   const { organizationId } = auth.user!;
 
-  const roles = await db.role.findMany({
+  const allRoles = await db.role.findMany({
     where: {
       isDisabled: false,
       OR: [
@@ -43,6 +48,17 @@ export async function GET() {
       permissions: { select: { permission: { select: { id: true, key: true, category: true, label: true } } } },
       _count: { select: { assignments: true } },
     },
+  });
+
+  // Build set of slugs the org has its OWN copy of.
+  const orgSlugs = new Set(
+    allRoles.filter(r => !r.isSystem && !r.isGlobal && r.organizationId === organizationId).map(r => r.slug)
+  );
+
+  // Drop any system/global role whose slug already exists as an org-scoped role for this org.
+  const roles = allRoles.filter(r => {
+    if ((r.isSystem || r.isGlobal) && orgSlugs.has(r.slug)) return false;
+    return true;
   });
 
   return NextResponse.json({ roles });
