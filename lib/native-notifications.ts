@@ -67,10 +67,20 @@ export async function initNativeNotifications(): Promise<void> {
 
   if (detectCapacitor()) {
     try {
-      // @ts-ignore — packages live in the Capacitor mobile-shell repo, not the web build
-      const { PushNotifications } = await import('@capacitor/push-notifications').catch(() => ({ PushNotifications: null as any }));
-      // @ts-ignore — packages live in the Capacitor mobile-shell repo, not the web build
-      const { LocalNotifications } = await import('@capacitor/local-notifications').catch(() => ({ LocalNotifications: null as any }));
+      // The @capacitor/* packages live in the Capacitor mobile-shell repo, not in
+      // the web Next.js build. We must hide these specifiers from webpack's static
+      // analyzer or the web build fails with "Module not found". Using a runtime
+      // variable + `webpackIgnore: true` magic comment ensures webpack will not
+      // try to resolve or bundle them — they only get loaded by the WebView at
+      // runtime where the packages ARE present.
+      const __pushSpec = '@capacitor/push-notifications';
+      const __localSpec = '@capacitor/local-notifications';
+      const PushNotifications: any = await import(/* webpackIgnore: true */ /* @vite-ignore */ __pushSpec)
+        .then((m: any) => m.PushNotifications ?? m.default?.PushNotifications ?? null)
+        .catch(() => null);
+      const LocalNotifications: any = await import(/* webpackIgnore: true */ /* @vite-ignore */ __localSpec)
+        .then((m: any) => m.LocalNotifications ?? m.default?.LocalNotifications ?? null)
+        .catch(() => null);
 
       if (LocalNotifications) {
         // Create a default Android channel so local notifications use the Myncel icon + sound.
@@ -179,8 +189,11 @@ export async function showLocalNotification(p: MyncelNotificationPayload): Promi
 
   if (detectCapacitor()) {
     try {
-      // @ts-ignore — package lives in the Capacitor mobile-shell repo
-      const { LocalNotifications } = await import('@capacitor/local-notifications').catch(() => ({ LocalNotifications: null as any }));
+      // See note in initNativeNotifications above — hide the specifier from webpack.
+      const __localSpec2 = '@capacitor/local-notifications';
+      const LocalNotifications: any = await import(/* webpackIgnore: true */ /* @vite-ignore */ __localSpec2)
+        .then((m: any) => m.LocalNotifications ?? m.default?.LocalNotifications ?? null)
+        .catch(() => null);
       if (!LocalNotifications) return;
       await LocalNotifications.schedule({
         notifications: [{
