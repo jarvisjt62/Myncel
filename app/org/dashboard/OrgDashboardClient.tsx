@@ -202,16 +202,16 @@ export default function OrgDashboardClient({ data }: { data: OrgData }) {
   ];
 
   return (
-    <div>
+    <div className="p-3 sm:p-6 lg:px-8 min-w-0 max-w-full">
       {/* Mobile-responsive tweaks scoped to this dashboard */}
       <style jsx global>{`
         @media (max-width: 640px) {
-          .org-dash-page { padding: 16px 12px 12px 12px !important; }
+          .org-dash-page { padding: 4px 0 12px 0 !important; }
           .org-dash-title { font-size: 17px !important; line-height: 1.25 !important; word-break: break-word; }
-          .org-dash-tabnav { padding: 0 8px !important; gap: 0 !important; }
+          .org-dash-tabnav { padding: 0 0 !important; gap: 0 !important; }
           .org-dash-tabnav button { padding: 12px 10px !important; font-size: 13px !important; gap: 5px !important; letter-spacing: -0.01em !important; }
           .org-dash-tabnav button span:first-child { display: none !important; }
-          .org-dash-main { padding: 16px 12px !important; }
+          .org-dash-main { padding: 16px 0 !important; }
           .org-dash-invite-btn { padding: 8px 12px !important; font-size: 12px !important; }
           .org-dash-role-select option { font-size: 12px !important; }
           .org-dash-team-row { padding: 10px 14px !important; gap: 8px !important; }

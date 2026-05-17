@@ -1863,7 +1863,7 @@ function DashboardClientInner({ user, data }: Props) {
         </div>
       )}
 
-      <div className="flex-1 p-3 sm:p-6 min-w-0 max-w-full">
+      <div className="flex-1 p-3 sm:p-6 lg:px-8 min-w-0 max-w-full">
 
 
           {/* ── DASHBOARD TAB ── */}
