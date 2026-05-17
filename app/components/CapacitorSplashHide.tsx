@@ -6,93 +6,116 @@ import { useEffect } from 'react';
  * CapacitorSplashHide
  *
  * Mounted once globally (inside <Providers>). When running inside the
- * Capacitor WebView shell, this component dynamically imports
- * @capacitor/splash-screen and explicitly calls SplashScreen.hide() after
- * a short delay.
+ * Capacitor WebView shell, this component explicitly hides the native
+ * splash screen after a minimum visible duration AND once the page is
+ * ready.
  *
- * We set `launchAutoHide: false` in capacitor.config.json so the native
- * splash stays visible until we tell it to go away. This way:
- *   - The user always sees the full-frame Myncel splash PNG (with logo)
- *     for at least 2 seconds — not a half-second flash
- *   - The fade-out happens after the page has hydrated, so there is no
- *     gap between splash hiding and the dashboard appearing
- *
- * Safe on the desktop web build — the dynamic import fails silently when
- * the @capacitor/splash-screen package isn't present (and on non-Capacitor
- * environments `window.Capacitor` is undefined, so we no-op).
+ * IMPORTANT — we use the Capacitor bridge global (window.Capacitor.Plugins.SplashScreen)
+ * NOT a dynamic import of '@capacitor/splash-screen'. Reasons:
+ *   1. The Next.js bundle served from https://www.myncel.com cannot resolve
+ *      '@capacitor/splash-screen' at runtime (the package only exists in the
+ *      Capacitor shell's node_modules, not in the deployed web bundle).
+ *   2. Capacitor injects window.Capacitor.Plugins.<PluginName> at runtime
+ *      whenever a plugin is registered in the native shell. So as long as
+ *      @capacitor/splash-screen is in the shell's package.json (it is) and
+ *      synced, window.Capacitor.Plugins.SplashScreen.hide() works directly
+ *      with no module resolution needed.
  *
  * Tunables:
- *   MIN_VISIBLE_MS — minimum time the splash must remain on screen,
- *     measured from the moment this component mounts. Even on a
- *     blazing-fast connection where the page is interactive in 200ms,
- *     the splash will stay up for this long.
- *
- *   MAX_VISIBLE_MS — hard upper bound. If for any reason the page is
- *     unusually slow we still hide the splash so the user is never
- *     stuck looking at it.
+ *   MIN_VISIBLE_MS — minimum time the splash must remain on screen
+ *   MAX_VISIBLE_MS — hard upper bound safety net
  */
 
 const MIN_VISIBLE_MS = 2000;
 const MAX_VISIBLE_MS = 6000;
 
+declare global {
+  interface Window {
+    Capacitor?: {
+      isNativePlatform?: () => boolean;
+      Plugins?: {
+        SplashScreen?: {
+          hide: (opts?: { fadeOutDuration?: number }) => Promise<void>;
+          show?: (opts?: any) => Promise<void>;
+        };
+      };
+    };
+  }
+}
+
 function isCapacitorNative(): boolean {
   if (typeof window === 'undefined') return false;
-  // @ts-ignore
-  const cap = (window as any).Capacitor;
+  const cap = window.Capacitor;
   return !!cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform();
+}
+
+function getSplashScreenPlugin() {
+  if (typeof window === 'undefined') return null;
+  return window.Capacitor?.Plugins?.SplashScreen ?? null;
 }
 
 export default function CapacitorSplashHide() {
   useEffect(() => {
-    if (!isCapacitorNative()) return;
+    if (typeof window === 'undefined') return;
 
     const startedAt = Date.now();
     let hidden = false;
 
+    // Log capacitor state immediately so we can see in chrome://inspect
+    // exactly what's happening even if the bridge isn't ready yet.
+    console.log('[myncel-splash] mount. window.Capacitor=', !!window.Capacitor,
+      'isNative=', !!window.Capacitor?.isNativePlatform?.(),
+      'plugin=', !!getSplashScreenPlugin());
+
+    if (!isCapacitorNative()) {
+      console.log('[myncel-splash] not running in Capacitor — skipping splash hide');
+      return;
+    }
+
     const hide = async (reason: string) => {
       if (hidden) return;
       hidden = true;
+      const plugin = getSplashScreenPlugin();
+      if (!plugin) {
+        console.warn(`[myncel-splash] hide(${reason}): SplashScreen plugin not on window.Capacitor.Plugins — skipping`);
+        return;
+      }
       try {
-        // Hide the @capacitor/splash-screen package's splash at runtime.
-        // We use the same webpackIgnore pattern as native-notifications.ts so
-        // the desktop web build doesn't try to bundle this package.
-        const __spec = '@capacitor/splash-screen';
-        const mod: any = await import(/* webpackIgnore: true */ /* @vite-ignore */ __spec)
-          .catch(() => null);
-        const SplashScreen: any = mod?.SplashScreen ?? mod?.default?.SplashScreen ?? null;
-        if (!SplashScreen) {
-          console.log('[myncel-splash] plugin not found, splash will time out on its own');
-          return;
-        }
-        await SplashScreen.hide({ fadeOutDuration: 400 }).catch(() => {});
-        console.log(`[myncel-splash] hidden (reason=${reason}, t=${Date.now() - startedAt}ms)`);
+        await plugin.hide({ fadeOutDuration: 400 });
+        console.log(`[myncel-splash] ✅ hidden (reason=${reason}, t=${Date.now() - startedAt}ms)`);
       } catch (e) {
-        console.warn('[myncel-splash] hide() failed', e);
+        console.warn('[myncel-splash] hide() threw', e);
       }
     };
 
     // Schedule the hide once the minimum visible duration has elapsed AND
-    // the page is ready to be shown (or the max timeout fires first).
-    const elapsed = Date.now() - startedAt;
-    const remaining = Math.max(0, MIN_VISIBLE_MS - elapsed);
-
+    // the page is ready. Plus a hard timeout safety net.
     const minTimer = window.setTimeout(() => {
-      // After the minimum splash duration, hide once the document is
-      // interactive/complete. If it already is, hide immediately.
       if (document.readyState === 'complete' || document.readyState === 'interactive') {
         void hide('ready+min');
       } else {
         const onReady = () => void hide('readystatechange');
         document.addEventListener('readystatechange', onReady, { once: true });
+        // Also try again on load
+        window.addEventListener('load', () => void hide('window.load'), { once: true });
       }
-    }, remaining);
+    }, MIN_VISIBLE_MS);
 
-    // Safety net: hide no matter what after MAX_VISIBLE_MS
     const maxTimer = window.setTimeout(() => void hide('max-timeout'), MAX_VISIBLE_MS);
+
+    // Belt-and-suspenders: also try to hide on any visibility change
+    // (some Android variants delay readyState).
+    const onVis = () => {
+      if (document.visibilityState === 'visible' && Date.now() - startedAt >= MIN_VISIBLE_MS) {
+        void hide('visibility');
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
 
     return () => {
       window.clearTimeout(minTimer);
       window.clearTimeout(maxTimer);
+      document.removeEventListener('visibilitychange', onVis);
     };
   }, []);
 
