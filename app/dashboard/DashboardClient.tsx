@@ -2368,7 +2368,7 @@ function DashboardClientInner({ user, data }: Props) {
                       </tr>
                     ) : workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).map((wo) => (
                       <tr key={wo.id} className="hover:bg-[var(--bg-surface-2)] transition-colors cursor-pointer" onClick={() => openWoDetail(wo)}>
-                        <td className="px-3 sm:px-5 py-3.5 font-mono text-xs text-[var(--text-muted)] hidden sm:table-cell">{wo.woNumber}</td>
+                        <td className="px-3 sm:px-5 py-3.5 font-mono text-xs text-[var(--text-muted)] hidden sm:table-cell whitespace-nowrap">{wo.woNumber}</td>
                         <td className="px-3 sm:px-5 py-3.5 min-w-0" style={{maxWidth: '320px'}}>
                           <p className="text-[10px] font-mono text-[var(--text-muted)] sm:hidden truncate">{wo.woNumber}</p>
                           <p className="font-medium text-[var(--text-primary)] truncate">{wo.title}</p>

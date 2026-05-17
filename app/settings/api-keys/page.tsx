@@ -258,7 +258,7 @@ function ApiKeysPage() {
                   {/* Key info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{key.name}</span>
+                      <span className="text-sm font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{key.name}</span>
                       <span className={`text-xs px-2 py-0.5 rounded-full border font-medium flex-shrink-0 ${
                         key.status === 'CONNECTED'
                           ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
@@ -338,7 +338,7 @@ function ApiKeysPage() {
           ) : (
             <div>
               {ownKeys.map(key => (
-                <div key={key.id} className="px-4 py-4 flex flex-wrap items-start gap-3 transition-colors hover:bg-[var(--bg-hover,rgba(0,0,0,0.03))]"
+                <div key={key.id} className="px-4 py-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-start gap-3 transition-colors hover:bg-[var(--bg-hover,rgba(0,0,0,0.03))]"
                   style={{ borderBottom: '1px solid var(--border)' }}>
 
                   {/* Status dot + Key info */}
@@ -350,7 +350,7 @@ function ApiKeysPage() {
                   {/* Key info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{key.name}</span>
+                      <span className="text-sm font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{key.name}</span>
                       <span className={`text-xs px-2 py-0.5 rounded-full border font-medium flex-shrink-0 ${
                         key.status === 'CONNECTED'
                           ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
@@ -381,7 +381,7 @@ function ApiKeysPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-wrap sm:flex-shrink-0 w-full sm:w-auto">
                     <button
                       onClick={() => handleToggle(key)}
                       className="text-xs px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"

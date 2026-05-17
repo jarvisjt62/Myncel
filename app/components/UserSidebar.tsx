@@ -607,14 +607,14 @@ function UserShellInner({ user, children }: UserSidebarProps) {
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
           {/* Sidebar panel — pinned to left edge with slide-in, full viewport height */}
-          <div className="compact-sidebar absolute left-0 top-0 h-screen w-52 max-w-[80vw] flex flex-col shadow-2xl animate-slide-in-left" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
+          <div className="compact-sidebar absolute left-0 top-0 h-screen w-72 max-w-[85vw] flex flex-col shadow-2xl animate-slide-in-left" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
             {/* Close button */}
             <button
               onClick={() => setSidebarOpen(false)}
-              className="absolute top-2 right-2 p-1 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-muted)] z-10"
+              className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-muted)] z-10"
               aria-label="Close menu"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -629,17 +629,18 @@ function UserShellInner({ user, children }: UserSidebarProps) {
         <header className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between sticky top-0 z-10" style={{ backgroundColor: 'var(--bg-nav)', borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3">
             <button
-              className="lg:hidden p-1.5 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-secondary)]"
+              className="lg:hidden p-2 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-secondary)]"
               onClick={() => setSidebarOpen(true)}
+              aria-label="Open menu"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <div className="hidden sm:block">
-              <h1 className="text-lg font-bold text-[var(--text-primary)]">{getPageTitle()}</h1>
-              <p className="text-xs text-[var(--text-muted)]">
-                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            <div className="block">
+              <h1 className="text-base sm:text-lg font-bold text-[var(--text-primary)] leading-tight">{getPageTitle()}</h1>
+              <p className="text-[11px] sm:text-xs text-[var(--text-muted)]">
+                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
               </p>
             </div>
           </div>
