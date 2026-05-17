@@ -286,6 +286,27 @@ button {
     min-height: 44px;
   }
 
+  /* Exclude toggle switches, small icon buttons, and other small UI controls
+     where 44px min-height would break the visual design. These elements
+     are typically wrapped inside larger tap-target containers anyway. */
+  button.inline-flex.rounded-full,
+  button[class*="h-6 w-11"],
+  button[class*="h-7 w-12"],
+  button[class*="h-5 w-9"],
+  button[class*="h-4 w-7"],
+  button[role="switch"],
+  button[aria-pressed],
+  /* Small icon-only utility buttons (close, copy, etc.) */
+  button.w-2,
+  button.w-3,
+  button.w-4,
+  button.w-5,
+  button.w-6,
+  button.w-7,
+  button.w-8 {
+    min-height: 0;
+  }
+
   .auth-mobile-shell {
     min-height: 100dvh;
     min-height: 100svh;

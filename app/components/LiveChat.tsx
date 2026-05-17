@@ -449,7 +449,7 @@ export default function LiveChat() {
       {!isOpen && !chatButtonVisible && (
         <button
           onClick={() => setChatButtonVisible(true)}
-          className={`fixed right-0 top-1/2 -translate-y-1/2 z-[9998] bg-[#635bff] text-white py-3 px-1.5 sm:px-2 rounded-l-lg shadow-md hover:bg-[#4f46e5] transition-all hover:pl-2.5 ${hasNewMessage ? 'animate-pulse' : ''}`}
+          className={`fixed right-0 bottom-20 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 z-[9998] bg-[#635bff] text-white py-2 sm:py-3 px-1.5 sm:px-2 rounded-l-lg shadow-md hover:bg-[#4f46e5] transition-all hover:pl-2.5 ${hasNewMessage ? 'animate-pulse' : ''}`}
           aria-label="Show support chat"
         >
           <div className="flex flex-col items-center gap-1">
