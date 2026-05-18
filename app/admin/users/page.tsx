@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { safeQuery } from '@/lib/admin-helpers';
 import Link from 'next/link';
+import PrepareForReviewButton from './PrepareForReviewButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -127,12 +128,15 @@ export default async function AdminUsers({ searchParams }: { searchParams: { rol
                     </p>
                   </td>
                   <td className="px-4 py-3">
-                    {user.organization && (
-                      <Link href={`/admin/organizations/${user.organization.id}#users`}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--accent)] text-white whitespace-nowrap hover:opacity-90 transition-opacity">
-                        Manage →
-                      </Link>
-                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {user.organization && (
+                        <Link href={`/admin/organizations/${user.organization.id}#users`}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--accent)] text-white whitespace-nowrap hover:opacity-90 transition-opacity">
+                          Manage →
+                        </Link>
+                      )}
+                      <PrepareForReviewButton userId={user.id} userEmail={user.email} />
+                    </div>
                   </td>
                 </tr>
               ))}
