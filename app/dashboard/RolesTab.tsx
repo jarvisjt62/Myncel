@@ -314,7 +314,7 @@ function AssignRolesModal({ member, roles, onClose, onSaved }: {
           ))}
           {error && <p className="text-sm text-red-500">{error}</p>}
         </div>
-        <div className="flex justify-end gap-2 px-4 sm:px-6 py-3 border-t border-[var(--border)]">
+        <div className="flex justify-end gap-2 px-4 sm:px-6 py-3 border-t border-[var(--border)] safe-bottom">
           <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)]">Cancel</button>
           <button onClick={save} disabled={saving} className="px-4 py-2 rounded-lg bg-[#635bff] text-white text-sm font-semibold hover:bg-[#4f46e5] disabled:opacity-60">{saving ? 'Saving…' : 'Save'}</button>
         </div>

@@ -258,7 +258,7 @@ export default function RoleEditorModal({
           {error && <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-500 text-sm">{error}</div>}
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-4 sm:px-6 py-3 border-t border-[var(--border)]">
+        <div className="flex items-center justify-end gap-2 px-4 sm:px-6 py-3 border-t border-[var(--border)] safe-bottom">
           <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)]">
             {isReadOnly ? 'Close' : 'Cancel'}
           </button>

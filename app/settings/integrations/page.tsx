@@ -462,7 +462,7 @@ function IntegrationsPage() {
       {exportResult && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50" onClick={() => setExportResult(null)}>
           <div
-            className="rounded-2xl border p-6 max-w-lg w-full shadow-2xl"
+            className="rounded-2xl border p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl"
             style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
             onClick={e => e.stopPropagation()}
           >
@@ -963,7 +963,7 @@ function IntegrationsPage() {
       {/* ── Modals ── */}
       {modal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setModal(null)}>
-          <div className="rounded-2xl shadow-2xl w-full max-w-md" style={{ background: 'var(--bg-surface)' }} onClick={e => e.stopPropagation()}>
+          <div className="rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" style={{ background: 'var(--bg-surface)' }} onClick={e => e.stopPropagation()}>
 
             {/* Twilio */}
             {modal.kind === 'twilio' && (

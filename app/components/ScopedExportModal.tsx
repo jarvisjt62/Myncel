@@ -436,7 +436,7 @@ export default function ScopedExportModal({
 
         {/* Footer */}
         <div
-          className="px-6 py-4 border-t flex items-center justify-end gap-3"
+          className="px-6 py-4 border-t flex items-center justify-end gap-3 safe-bottom"
           style={{ borderColor: 'var(--border)', background: 'var(--bg-surface-2)' }}
         >
           <button

@@ -1130,13 +1130,60 @@ html, body {
    Override the utility globally with a `dvh`-based calc that subtracts
    safe-area insets. We also bump overscroll-contain so background
    pages don't scroll when the modal hits its top/bottom.
+
+   Covers the variants we actually use across the app:
+     90vh / 92vh / 95vh
    ────────────────────────────────────────────────────────────────────── */
-.max-h-\[90vh\] {
+.max-h-\[90vh\],
+.max-h-\[92vh\],
+.max-h-\[95vh\],
+.sm\:max-h-\[90vh\] {
   max-height: min(
     90dvh,
     calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 16px)
   ) !important;
   overscroll-behavior: contain;
+}
+
+/* Some modals are slightly taller (HMI / admin role editor). Give them
+   a touch more breathing room but still respect safe-area. */
+.max-h-\[92vh\] {
+  max-height: min(
+    92dvh,
+    calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 12px)
+  ) !important;
+}
+.max-h-\[95vh\] {
+  max-height: min(
+    95dvh,
+    calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 8px)
+  ) !important;
+}
+
+/* Universal hook for modal panels that use sticky footers (action
+   button row pinned to bottom). Add the `safe-bottom` class to the
+   sticky footer container and it'll pad above the gesture nav bar. */
+.safe-bottom {
+  padding-bottom: calc(var(--safe-bottom-padding, 1rem) + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* Auto-apply safe-area bottom padding to the LAST child of any
+   overflow-scrolling modal panel (the typical pattern is
+   `max-h-[XXvh] overflow-y-auto` on the panel itself, with the form
+   action buttons as the last child). This means most modals get the
+   fix automatically without per-file edits.
+
+   We only target the LAST child so we don't double-pad when a sticky
+   footer (`safe-bottom`) is also present — the sticky footer would be
+   the last child anyway.
+
+   Margin not padding so it doesn't shift the visual border of cards
+   inside the modal. */
+.max-h-\[90vh\].overflow-y-auto > :last-child,
+.max-h-\[90dvh\].overflow-y-auto > :last-child,
+.max-h-\[92vh\].overflow-y-auto > :last-child,
+.max-h-\[95vh\].overflow-y-auto > :last-child {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Modal inner content padding: when the panel itself uses overflow-y:auto
