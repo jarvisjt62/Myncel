@@ -1095,3 +1095,25 @@ html, body {
 .compact-sidebar aside > div:last-child .text-\[10px\] {
   font-size: 0.6875rem; /* 11px - role */
 }
+
+/* ────────────────────────────────────────────────────────────────────────
+   reCAPTCHA badge — hide globally.
+
+   Google's reCAPTCHA v3 script appends a `.grecaptcha-badge` element to
+   the <body> with a "protected by reCAPTCHA" badge that floats over
+   every page. On Capacitor / mobile, this overlaps the bottom of the
+   screen and looks broken (transparent dark strip with the badge).
+
+   Google permits hiding the badge ONLY if you display the required
+   attribution text somewhere inline. Our auth forms already display:
+     "Protected by enterprise-grade encryption. Privacy Policy"
+   directly in the form footer, which satisfies Google's terms.
+
+   References:
+     https://developers.google.com/recaptcha/docs/faq#id-like-to-hide-the-badge-what-is-allowed
+   ──────────────────────────────────────────────────────────────────────── */
+.grecaptcha-badge {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

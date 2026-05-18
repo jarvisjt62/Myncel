@@ -51,6 +51,26 @@ function UserShellInner({ user, children }: UserSidebarProps) {
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen]);
 
+  // Mobile/Capacitor: paint <html> with the dashboard page background so
+  // the area behind the gesture-nav bar (under safe-area-inset-bottom) is
+  // not transparent or showing a different color. Without this, on
+  // Samsung in dark mode the bottom strip appears dark.
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    const prevHtmlBg = root.style.backgroundColor;
+    const prevBodyBg = body.style.backgroundColor;
+    const pageBg = getComputedStyle(root).getPropertyValue('--bg-page').trim() || '#ffffff';
+    root.style.backgroundColor = pageBg;
+    body.style.backgroundColor = pageBg;
+    body.classList.add('dashboard-route');
+    return () => {
+      root.style.backgroundColor = prevHtmlBg;
+      body.style.backgroundColor = prevBodyBg;
+      body.classList.remove('dashboard-route');
+    };
+  }, []);
+
   // Track URL hash changes so sidebar highlights update in real-time
   useEffect(() => {
     const syncHash = () => setCurrentHash(window.location.hash.replace('#', ''));
@@ -598,7 +618,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: 'var(--bg-page)' }}>
+    <div className="min-h-[100dvh] flex" style={{ backgroundColor: 'var(--bg-page)' }}>
       {/* Sidebar desktop */}
       <div className="hidden lg:flex flex-col fixed h-full z-10 w-60">
         <Sidebar />
@@ -629,7 +649,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
       )}
 
       {/* Main */}
-      <main className="flex-1 lg:ml-60 flex flex-col min-h-screen min-w-0 overflow-x-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
+      <main className="flex-1 lg:ml-60 flex flex-col min-h-[100dvh] min-w-0 overflow-x-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
         {/* Top bar — uses calc() so the header pads itself below the system
             status bar in Capacitor / PWA mode (Samsung clock + battery icons).
             On normal browsers env(safe-area-inset-top) resolves to 0 so the
