@@ -409,48 +409,68 @@ function DashboardClientInner({ user, data }: Props) {
   const [editingPart, setEditingPart] = useState(false);
   const [partEditForm, setPartEditForm] = useState<Record<string, string>>({});
 
-  // Quick-Actions modal trigger via ?modal=... query param.
-  // QuickActions.tsx uses router.push('/dashboard?modal=work-order#workorders')
-  // (and similar for machine / task) to open creation modals from the
-  // mobile dashboard. This effect reads the param, opens the matching
-  // modal, and strips the param so it doesn't re-fire on back/forward.
+  // Quick-Actions modal trigger.
+  //
+  // QuickActions.tsx (the mobile Quick Actions section) needs to open
+  // creation modals that live here in DashboardClient. We support two
+  // entry points:
+  //
+  //   1. CustomEvent 'myncel:open-modal' — dispatched by QuickActions
+  //      when the user is already on /dashboard. This is instant and
+  //      doesn't depend on router state at all.
+  //
+  //   2. ?modal=work-order|machine|task query param — used when the
+  //      user navigates to /dashboard from somewhere else (page mounts
+  //      fresh, this effect runs and reads the param).
+  //
+  // Both paths converge on the same setShow*Modal(true) call. The query
+  // param is stripped after use via history.replaceState so it doesn't
+  // re-fire on back/forward.
   useEffect(() => {
+    const openByName = (modal: string | null) => {
+      if (!modal) return false;
+      if (modal === 'work-order') {
+        setShowWorkOrderModal(true);
+        return true;
+      }
+      if (modal === 'machine') {
+        setShowMachineModal(true);
+        return true;
+      }
+      if (modal === 'task') {
+        setShowTaskModal(true);
+        return true;
+      }
+      return false;
+    };
+
     const applyModalParam = () => {
       if (typeof window === 'undefined') return;
       const params = new URLSearchParams(window.location.search);
       const modal = params.get('modal');
-      if (!modal) return;
+      if (!openByName(modal)) return;
+      // Strip ?modal=... from the URL while keeping the hash.
+      params.delete('modal');
+      const qs = params.toString();
+      const newUrl =
+        window.location.pathname +
+        (qs ? `?${qs}` : '') +
+        window.location.hash;
+      window.history.replaceState(null, '', newUrl);
+    };
 
-      let opened = false;
-      if (modal === 'work-order') {
-        setShowWorkOrderModal(true);
-        opened = true;
-      } else if (modal === 'machine') {
-        setShowMachineModal(true);
-        opened = true;
-      } else if (modal === 'task') {
-        setShowTaskModal(true);
-        opened = true;
-      }
-
-      if (opened) {
-        // Remove ?modal=... from the URL without reloading, but keep
-        // the hash (e.g. #workorders).
-        params.delete('modal');
-        const qs = params.toString();
-        const newUrl =
-          window.location.pathname +
-          (qs ? `?${qs}` : '') +
-          window.location.hash;
-        window.history.replaceState(null, '', newUrl);
-      }
+    const handleOpenModalEvent = (e: Event) => {
+      const detail = (e as CustomEvent<{ modal?: string }>).detail;
+      openByName(detail?.modal ?? null);
     };
 
     applyModalParam();
-    // Also listen for popstate so back/forward into a ?modal=... URL
-    // re-opens the modal.
     window.addEventListener('popstate', applyModalParam);
-    return () => window.removeEventListener('popstate', applyModalParam);
+    window.addEventListener('myncel:open-modal', handleOpenModalEvent as EventListener);
+    return () => {
+      window.removeEventListener('popstate', applyModalParam);
+      window.removeEventListener('myncel:open-modal', handleOpenModalEvent as EventListener);
+    };
   }, []);
   const [partImageUploading, setPartImageUploading] = useState(false);
   const [saving, setSaving] = useState(false);

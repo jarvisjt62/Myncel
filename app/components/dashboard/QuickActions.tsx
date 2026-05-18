@@ -11,6 +11,46 @@ interface Machine {
 
 export default function QuickActions() {
   const router = useRouter();
+
+  /**
+   * Open one of the dashboard creation modals (work-order / machine / task).
+   *
+   * The dashboard tabs and these modals all live inside DashboardClient,
+   * which is already mounted when QuickActions renders. Using router.push
+   * with a query param does NOT remount DashboardClient on a same-route
+   * navigation, so an effect with [] deps reading window.location.search
+   * never fires. Instead we:
+   *   1. Switch the dashboard tab by setting window.location.hash (the
+   *      DashboardClient already listens for 'hashchange').
+   *   2. Dispatch a CustomEvent that DashboardClient listens for and
+   *      uses to open the matching modal. This is instant, in-page,
+   *      and works whether or not the user is already on /dashboard.
+   *
+   * If the user is NOT currently on /dashboard, we fall back to a
+   * router.push so the page loads first, then DashboardClient's mount
+   * effect picks up the ?modal= query param.
+   */
+  const openCreateModal = (
+    modal: 'work-order' | 'machine' | 'task',
+    hash: string,
+  ) => {
+    if (typeof window === 'undefined') return;
+    const onDashboard = window.location.pathname.startsWith('/dashboard');
+    if (onDashboard) {
+      // Switch tab via hash (DashboardClient listens for hashchange).
+      if (window.location.hash !== hash) {
+        window.location.hash = hash;
+      }
+      // Fire event on next tick so the tab switch happens first.
+      setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent('myncel:open-modal', { detail: { modal } }),
+        );
+      }, 0);
+    } else {
+      router.push(`/dashboard?modal=${modal}${hash}`);
+    }
+  };
   const [showBreakdownModal, setShowBreakdownModal] = useState(false);
   const [machines, setMachines] = useState<Machine[]>([]);
   const [breakdownForm, setBreakdownForm] = useState({
@@ -47,7 +87,7 @@ export default function QuickActions() {
       // Alt+W = New Work Order
       if (e.altKey && e.key === 'w') {
         e.preventDefault();
-        router.push('/dashboard?modal=work-order#workorders');
+        openCreateModal('work-order', '#workorders');
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -109,7 +149,7 @@ export default function QuickActions() {
         </svg>
       ),
       color: 'bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20',
-      action: () => router.push('/dashboard?modal=work-order#workorders'),
+      action: () => openCreateModal('work-order', '#workorders'),
     },
     {
       id: 'schedule-maintenance',
@@ -121,7 +161,7 @@ export default function QuickActions() {
         </svg>
       ),
       color: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 hover:bg-emerald-500/20',
-      action: () => router.push('/dashboard?modal=task#schedules'),
+      action: () => openCreateModal('task', '#schedules'),
     },
     {
       id: 'add-machine',
@@ -133,7 +173,7 @@ export default function QuickActions() {
         </svg>
       ),
       color: 'bg-purple-500/10 text-purple-600 border border-purple-500/20 hover:bg-purple-500/20',
-      action: () => router.push('/dashboard?modal=machine#equipment'),
+      action: () => openCreateModal('machine', '#equipment'),
     },
     {
       id: 'view-alerts',
@@ -145,7 +185,13 @@ export default function QuickActions() {
         </svg>
       ),
       color: 'bg-amber-500/10 text-amber-600 border border-amber-500/20 hover:bg-amber-500/20',
-      action: () => router.push('/dashboard#alerts'),
+      action: () => {
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/dashboard')) {
+          window.location.hash = '#alerts';
+        } else {
+          router.push('/dashboard#alerts');
+        }
+      },
     },
     {
       id: 'settings',
