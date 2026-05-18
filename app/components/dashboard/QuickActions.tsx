@@ -47,7 +47,7 @@ export default function QuickActions() {
       // Alt+W = New Work Order
       if (e.altKey && e.key === 'w') {
         e.preventDefault();
-        router.push('/dashboard?modal=work-order');
+        router.push('/dashboard?modal=work-order#workorders');
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -109,7 +109,7 @@ export default function QuickActions() {
         </svg>
       ),
       color: 'bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20',
-      action: () => router.push('/dashboard#workorders'),
+      action: () => router.push('/dashboard?modal=work-order#workorders'),
     },
     {
       id: 'schedule-maintenance',
@@ -121,7 +121,7 @@ export default function QuickActions() {
         </svg>
       ),
       color: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 hover:bg-emerald-500/20',
-      action: () => router.push('/dashboard#schedules'),
+      action: () => router.push('/dashboard?modal=task#schedules'),
     },
     {
       id: 'add-machine',
@@ -133,7 +133,7 @@ export default function QuickActions() {
         </svg>
       ),
       color: 'bg-purple-500/10 text-purple-600 border border-purple-500/20 hover:bg-purple-500/20',
-      action: () => router.push('/dashboard#equipment'),
+      action: () => router.push('/dashboard?modal=machine#equipment'),
     },
     {
       id: 'view-alerts',

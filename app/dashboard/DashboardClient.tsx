@@ -408,6 +408,50 @@ function DashboardClientInner({ user, data }: Props) {
   const [showPartDetailModal, setShowPartDetailModal] = useState(false);
   const [editingPart, setEditingPart] = useState(false);
   const [partEditForm, setPartEditForm] = useState<Record<string, string>>({});
+
+  // Quick-Actions modal trigger via ?modal=... query param.
+  // QuickActions.tsx uses router.push('/dashboard?modal=work-order#workorders')
+  // (and similar for machine / task) to open creation modals from the
+  // mobile dashboard. This effect reads the param, opens the matching
+  // modal, and strips the param so it doesn't re-fire on back/forward.
+  useEffect(() => {
+    const applyModalParam = () => {
+      if (typeof window === 'undefined') return;
+      const params = new URLSearchParams(window.location.search);
+      const modal = params.get('modal');
+      if (!modal) return;
+
+      let opened = false;
+      if (modal === 'work-order') {
+        setShowWorkOrderModal(true);
+        opened = true;
+      } else if (modal === 'machine') {
+        setShowMachineModal(true);
+        opened = true;
+      } else if (modal === 'task') {
+        setShowTaskModal(true);
+        opened = true;
+      }
+
+      if (opened) {
+        // Remove ?modal=... from the URL without reloading, but keep
+        // the hash (e.g. #workorders).
+        params.delete('modal');
+        const qs = params.toString();
+        const newUrl =
+          window.location.pathname +
+          (qs ? `?${qs}` : '') +
+          window.location.hash;
+        window.history.replaceState(null, '', newUrl);
+      }
+    };
+
+    applyModalParam();
+    // Also listen for popstate so back/forward into a ?modal=... URL
+    // re-opens the modal.
+    window.addEventListener('popstate', applyModalParam);
+    return () => window.removeEventListener('popstate', applyModalParam);
+  }, []);
   const [partImageUploading, setPartImageUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
