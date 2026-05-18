@@ -1117,3 +1117,31 @@ html, body {
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+/* ──────────────────────────────────────────────────────────────────────
+   Modal safe-area fix (Capacitor / mobile).
+
+   Many dashboard modals use Tailwind's arbitrary value `max-h-[90vh]`
+   on their inner panel. On Capacitor (Android gesture-nav bar / iOS
+   home indicator) `vh` units include the area BEHIND those system
+   bars, so the bottom of the modal — including action buttons like
+   "Cancel" / "+ Register Machine" — gets clipped.
+
+   Override the utility globally with a `dvh`-based calc that subtracts
+   safe-area insets. We also bump overscroll-contain so background
+   pages don't scroll when the modal hits its top/bottom.
+   ────────────────────────────────────────────────────────────────────── */
+.max-h-\[90vh\] {
+  max-height: min(
+    90dvh,
+    calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 16px)
+  ) !important;
+  overscroll-behavior: contain;
+}
+
+/* Modal inner content padding: when the panel itself uses overflow-y:auto
+   we want the LAST child to clear the gesture-nav bar. Apply a bottom
+   safe-area to the immediate child of those overflow-scroll modal panels.
+   We can't target generically without adding a hook, so individual
+   modals that need it set inline padding-bottom (see Modal in
+   DashboardClient.tsx and ExportButtons.tsx). */

@@ -327,14 +327,34 @@ const Modal = ({ show, onClose, title, children }: { show: boolean; onClose: () 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-0">
-        <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
+      <div
+        className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-2xl max-h-[90dvh] overflow-y-auto mx-0 overscroll-contain"
+        style={{
+          // Reserve room for the Android gesture-nav bar / iOS home
+          // indicator so the modal's bottom action buttons (Cancel /
+          // Register Machine, etc.) aren't clipped on phones in the
+          // Capacitor WebView. env(safe-area-inset-bottom) is 0 on
+          // desktops/browsers without a home indicator.
+          maxHeight: 'min(90dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px))',
+        }}
+      >
+        <div className="flex items-center justify-between p-5 border-b border-[var(--border)] sticky top-0 [background:var(--bg-surface)] z-10">
           <h3 className="text-lg font-bold text-[var(--text-primary)]">{title}</h3>
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
-        <div className="p-5">{children}</div>
+        <div
+          className="p-5"
+          style={{
+            // Extra bottom padding so the last form row / action buttons
+            // are above the gesture-nav bar on Android & the home
+            // indicator on iOS.
+            paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
+          }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );

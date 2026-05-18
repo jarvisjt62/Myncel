@@ -248,9 +248,14 @@ export default function QuickActions() {
 
       {/* Log Breakdown Modal */}
       {showBreakdownModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => !submitting && setShowBreakdownModal(false)} />
-          <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-2xl w-full max-w-md border border-[var(--border)]">
+          <div
+            className="relative rounded-2xl [background:var(--bg-surface)] shadow-2xl w-full max-w-md border border-[var(--border)] overflow-y-auto overscroll-contain"
+            style={{
+              maxHeight: 'min(90dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px))',
+            }}
+          >
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
               <div className="flex items-center gap-2">
@@ -275,7 +280,12 @@ export default function QuickActions() {
             </div>
 
             {/* Form */}
-            <div className="p-5 space-y-4">
+            <div
+              className="p-5 space-y-4"
+              style={{
+                paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
+              }}
+            >
               {submitSuccess ? (
                 <div className="text-center py-6">
                   <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-3">

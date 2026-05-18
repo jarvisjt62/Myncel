@@ -345,7 +345,16 @@ export default function ExportButtons() {
       {showReportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowReportModal(false)} />
-          <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-2xl w-full max-w-2xl max-h-[90dvh] overflow-y-auto border border-[var(--border)]">
+          <div
+            className="relative rounded-2xl [background:var(--bg-surface)] shadow-2xl w-full max-w-2xl overflow-y-auto border border-[var(--border)] overscroll-contain"
+            style={{
+              // Capacitor / mobile safe-area aware max height so the
+              // bottom of the report (tables, action buttons) is never
+              // hidden behind the Android gesture-nav bar / iOS home
+              // indicator.
+              maxHeight: 'min(90dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px))',
+            }}
+          >
             {/* Modal Header */}
             <div className="flex items-center justify-between gap-2 p-4 sm:p-5 border-b border-[var(--border)] sticky top-0 [background:var(--bg-surface)] z-10">
               <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -366,7 +375,12 @@ export default function ExportButtons() {
               </button>
             </div>
 
-            <div className="p-5">
+            <div
+              className="p-5"
+              style={{
+                paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
+              }}
+            >
               {/* Period Selector */}
               <div className="flex items-center flex-wrap gap-2 mb-5">
                 <span className="text-xs text-[var(--text-muted)] font-medium">Period:</span>
