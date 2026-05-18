@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import AuthRouteClass from '../components/AuthRouteClass';
 import { Suspense } from 'react';
 
 function VerifyEmailContent() {
@@ -125,7 +126,7 @@ function VerifyEmailContent() {
   }
 
   return (
-    <div className="auth-mobile-shell min-h-[100dvh] bg-[#f6f9fc] flex flex-col">
+    <div className="auth-mobile-shell min-h-[100dvh] bg-[#f6f9fc] flex flex-col"><AuthRouteClass />
       {/* Nav */}
       <nav className="auth-mobile-nav bg-white border-b border-[#e6ebf1] px-6 pb-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">

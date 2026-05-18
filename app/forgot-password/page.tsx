@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import AuthRouteClass from '../components/AuthRouteClass';
 
 declare global {
   interface Window {
@@ -63,7 +64,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="auth-mobile-shell min-h-[100dvh] bg-[#f6f9fc] flex flex-col">
+    <div className="auth-mobile-shell min-h-[100dvh] bg-[#f6f9fc] flex flex-col"><AuthRouteClass />
       {/* Nav */}
       <nav className="auth-mobile-nav bg-white border-b border-[#e6ebf1] px-6 pb-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">

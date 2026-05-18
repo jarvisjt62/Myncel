@@ -4,6 +4,7 @@ import { useState, Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
+import AuthRouteClass from '../components/AuthRouteClass';
 
 declare global {
   interface Window {
@@ -115,6 +116,7 @@ function SignInForm() {
 
   return (
     <div className="auth-mobile-shell min-h-[100dvh] bg-[#f6f9fc] flex flex-col">
+      <AuthRouteClass />
       {/* Nav */}
       <nav className="auth-mobile-nav bg-white border-b border-[#e6ebf1] px-4 pb-3 sm:px-6 sm:pb-4">
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">

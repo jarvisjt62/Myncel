@@ -376,6 +376,14 @@ body:has(.auth-mobile-shell) {
   background-color: #f6f9fc;
 }
 
+/* Fallback for older WebView engines that don't support :has() — apply
+   the auth bg via direct selector chain. The :root pseudo also gets it
+   when an auth-shell is mounted via the body class set by client code. */
+body.auth-route,
+html.auth-route {
+  background-color: #f6f9fc;
+}
+
 .auth-mobile-nav {
   /* Push nav contents (logo + "Sign up free" link) below the device
      status bar on Capacitor / mobile browsers. The white nav background

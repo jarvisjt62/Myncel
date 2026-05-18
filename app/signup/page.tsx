@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import AuthRouteClass from '../components/AuthRouteClass';
 
 declare global {
   interface Window {
@@ -108,7 +109,7 @@ export default function SignUp() {
   };
 
   return (
-    <div className="auth-mobile-shell min-h-[100dvh] bg-[#f6f9fc] flex flex-col">
+    <div className="auth-mobile-shell min-h-[100dvh] bg-[#f6f9fc] flex flex-col"><AuthRouteClass />
       {/* Nav */}
       <nav className="auth-mobile-nav bg-white border-b border-[#e6ebf1] px-4 pb-3 sm:px-6 sm:pb-4">
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
