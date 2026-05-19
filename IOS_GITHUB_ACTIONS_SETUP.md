@@ -28,7 +28,7 @@ You're already enrolled in the Apple Developer Program. Now you need three thing
 1. Go to https://developer.apple.com/account/resources/identifiers/list
 2. Click **+** → **App IDs** → **App** → Continue
 3. Description: `Myncel`
-4. Bundle ID: **Explicit** → `com.jarvisitconsults.myncel`
+4. Bundle ID: **Explicit** → `com.myncel.app`
    *(Must match `appId` in your Capacitor `capacitor.config.ts`)*
 5. Capabilities: enable **Push Notifications** (you'll need this later) — leave others off
 6. Click Continue → Register
@@ -40,7 +40,7 @@ You're already enrolled in the Apple Developer Program. Now you need three thing
 3. Platform: **iOS**
 4. Name: `Myncel`
 5. Primary Language: English (U.S.)
-6. Bundle ID: pick the `com.jarvisitconsults.myncel` you just created
+6. Bundle ID: pick the `com.myncel.app` you just created
 7. SKU: `myncel-ios-001` (any unique string)
 8. User Access: Full Access
 9. Click Create
@@ -171,7 +171,7 @@ myncel-webview/
 │       ├── App.xcworkspace
 │       ├── App.xcodeproj
 │       └── App/Info.plist
-├── capacitor.config.ts           ← appId must be com.jarvisitconsults.myncel
+├── capacitor.config.ts           ← appId must be com.myncel.app
 ├── package.json                  ← must list @capacitor/ios as a dependency
 └── .github/workflows/
     ├── ios-bootstrap.yml
