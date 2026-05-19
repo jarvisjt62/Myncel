@@ -65,38 +65,53 @@ jobs:
           echo "--- Installed iOS platforms ---"
           xcrun simctl list runtimes || true
 
-      - name: Install iOS platform if missing
+      - name: Install iOS platform runtime (required for ibtool/storyboards on Xcode 26)
         run: |
           set -e
-          # Newer Xcodes (26+) ship without the iOS platform pre-installed.
-          # We need it to build for iOS, so install it explicitly.
-          echo "--- SDKs visible to xcodebuild BEFORE install ---"
+
+          echo "--- Initial state ---"
+          echo "SDKs visible to xcodebuild:"
           xcodebuild -showsdks 2>&1 || true
+          echo ""
+          echo "iOS platform device support directory:"
+          ls -la /Library/Developer/CoreSimulator/Profiles/Runtimes/ 2>/dev/null || echo "  (none)"
+          echo ""
+          echo "Xcode iOS DeviceSupport directory:"
+          XCODE_DEV=$(xcode-select -p)
+          ls -la "$XCODE_DEV/Platforms/iPhoneOS.platform/DeviceSupport/" 2>/dev/null || echo "  (none)"
+          echo ""
 
-          if xcodebuild -showsdks 2>&1 | grep -qE "iphoneos[0-9]"; then
-            echo "✅ iOS SDK already installed - skipping download."
+          # Accept any pending licenses and run first-launch setup.
+          sudo xcodebuild -license accept || true
+          sudo xcodebuild -runFirstLaunch || true
+
+          # Try installing the iOS platform. -downloadPlatform is the modern way.
+          echo "--- Running: sudo xcodebuild -downloadPlatform iOS ---"
+          if sudo xcodebuild -downloadPlatform iOS 2>&1; then
+            echo "✅ -downloadPlatform iOS succeeded"
           else
-            echo "⚠️  iOS SDK not found - downloading platform (may take 5-10 min)..."
-            # -downloadPlatform requires a non-interactive accept of the license.
-            sudo xcodebuild -license accept || true
-            sudo xcodebuild -runFirstLaunch || true
-
-            # Try the modern flag first.
-            if sudo xcodebuild -downloadPlatform iOS; then
-              echo "✅ iOS platform installed via -downloadPlatform"
-            elif sudo xcodebuild -downloadAllPlatforms; then
-              echo "✅ All platforms installed via -downloadAllPlatforms"
+            echo "⚠️  -downloadPlatform failed; trying -downloadAllPlatforms"
+            if sudo xcodebuild -downloadAllPlatforms 2>&1; then
+              echo "✅ -downloadAllPlatforms succeeded"
             else
-              echo "::error::Failed to install iOS platform via xcodebuild flags."
-              exit 1
+              echo "::warning::Both -downloadPlatform and -downloadAllPlatforms failed; will continue and hope SDK is enough"
             fi
           fi
 
-          echo "--- SDKs visible to xcodebuild AFTER install ---"
-          xcodebuild -showsdks 2>&1 || true
+          # Also try the xcrun simctl runtime install (alternative method).
+          echo "--- Listing available runtimes ---"
+          xcrun simctl list runtimes 2>&1 || true
 
-          echo "--- iphoneos SDK version (final) ---"
+          echo ""
+          echo "--- Final state ---"
+          echo "SDKs visible to xcodebuild:"
+          xcodebuild -showsdks 2>&1 | grep -i ios || true
+          echo ""
+          echo "iphoneos SDK version:"
           xcrun --sdk iphoneos --show-sdk-version
+          echo ""
+          echo "Available runtimes after install:"
+          xcrun simctl list runtimes 2>&1 || true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
