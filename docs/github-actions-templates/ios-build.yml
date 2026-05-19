@@ -108,6 +108,36 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" App/Info.plist
           echo "Set CFBundleVersion to $BUILD_NUMBER"
 
+      - name: Configure App target signing (App target only, not Pods)
+        working-directory: ios/App
+        run: |
+          # Use Ruby + xcodeproj gem to surgically set signing on ONLY the App target.
+          # This avoids the "X does not support provisioning profiles" error for Pods.
+          gem install xcodeproj -NV
+
+          ruby <<'RUBY'
+          require 'xcodeproj'
+          project_path = 'App.xcodeproj'
+          project = Xcodeproj::Project.open(project_path)
+          team_id = ENV['APPLE_TEAM_ID']
+          bundle_id = ENV['BUNDLE_ID']
+          profile_name = "match AppStore #{bundle_id}"
+
+          project.targets.each do |target|
+            next unless target.name == 'App'   # ONLY the App target
+            target.build_configurations.each do |config|
+              config.build_settings['DEVELOPMENT_TEAM'] = team_id
+              config.build_settings['CODE_SIGN_STYLE'] = 'Manual'
+              config.build_settings['CODE_SIGN_IDENTITY'] = 'Apple Distribution'
+              config.build_settings['CODE_SIGN_IDENTITY[sdk=iphoneos*]'] = 'Apple Distribution'
+              config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = profile_name
+              config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = bundle_id
+              puts "Set signing for App target / #{config.name}: team=#{team_id}, profile=#{profile_name}"
+            end
+          end
+          project.save
+          RUBY
+
       - name: Build & archive .ipa
         working-directory: ios/App
         run: |
@@ -119,18 +149,16 @@ jobs:
           echo "--- Available signing identities ---"
           security find-identity -v -p codesigning build.keychain || true
 
-          # Run xcodebuild WITHOUT xcpretty so errors are visible in logs.
-          # Save raw log to a file, also stream to stdout.
+          # Note: signing is now set on the App target itself (see previous step).
+          # We do NOT pass DEVELOPMENT_TEAM / PROVISIONING_PROFILE_SPECIFIER on the
+          # command line, because that would force them onto the Pods targets too,
+          # which don't accept provisioning profiles.
           xcodebuild \
             -workspace App.xcworkspace \
             -scheme App \
             -configuration Release \
             -archivePath build/App.xcarchive \
             -destination "generic/platform=iOS" \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            CODE_SIGN_STYLE=Manual \
-            PROVISIONING_PROFILE_SPECIFIER="match AppStore $BUNDLE_ID" \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
             archive 2>&1 | tee build/xcodebuild-archive.log
 
           if [ ! -d build/App.xcarchive ]; then
