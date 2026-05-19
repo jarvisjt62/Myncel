@@ -72,14 +72,17 @@ jobs:
           security set-keychain-settings -t 7200 -u "$KEYCHAIN"
 
       - name: Run match to generate ${{ inputs.type }} cert + profile
+        env:
+          MATCH_READONLY: "false"
+          MATCH_FORCE: "false"
         run: |
-          fastlane match ${{ inputs.type }} \
+          fastlane match "${{ inputs.type }}" \
             --app_identifier "$BUNDLE_ID" \
             --team_id "$APPLE_TEAM_ID" \
             --git_url "$MATCH_GIT_URL" \
             --keychain_name build.keychain \
             --keychain_password "$KEYCHAIN_PASSWORD" \
-            --readonly false \
+            --readonly=false \
             --verbose
 
       - name: Done
