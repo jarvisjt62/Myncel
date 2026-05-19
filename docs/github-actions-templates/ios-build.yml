@@ -111,8 +111,16 @@ jobs:
       - name: Build & archive .ipa
         working-directory: ios/App
         run: |
+          set -o pipefail
           mkdir -p build
 
+          # Show what provisioning profile match installed (helps debug signing issues)
+          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/ || true
+          echo "--- Available signing identities ---"
+          security find-identity -v -p codesigning build.keychain || true
+
+          # Run xcodebuild WITHOUT xcpretty so errors are visible in logs.
+          # Save raw log to a file, also stream to stdout.
           xcodebuild \
             -workspace App.xcworkspace \
             -scheme App \
@@ -123,7 +131,13 @@ jobs:
             CODE_SIGN_STYLE=Manual \
             PROVISIONING_PROFILE_SPECIFIER="match AppStore $BUNDLE_ID" \
             CODE_SIGN_IDENTITY="Apple Distribution" \
-            archive | xcpretty
+            archive 2>&1 | tee build/xcodebuild-archive.log
+
+          if [ ! -d build/App.xcarchive ]; then
+            echo "::error::Archive not created. Last 100 lines of build log:"
+            tail -n 100 build/xcodebuild-archive.log
+            exit 1
+          fi
 
           # Export the archive into an .ipa file
           cat > build/exportOptions.plist <<EOF
@@ -157,7 +171,7 @@ jobs:
             -archivePath build/App.xcarchive \
             -exportOptionsPlist build/exportOptions.plist \
             -exportPath build/ipa \
-            | xcpretty
+            2>&1 | tee build/xcodebuild-export.log
 
           ls -lah build/ipa/
 
@@ -167,6 +181,16 @@ jobs:
           name: Myncel-iOS-${{ github.run_number }}.ipa
           path: ios/App/build/ipa/*.ipa
           retention-days: 30
+
+      - name: Upload xcodebuild logs (always, for debugging)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-logs-${{ github.run_number }}
+          path: |
+            ios/App/build/xcodebuild-*.log
+          retention-days: 14
+          if-no-files-found: ignore
 
       - name: Upload to TestFlight via App Store Connect API
         working-directory: ios/App
