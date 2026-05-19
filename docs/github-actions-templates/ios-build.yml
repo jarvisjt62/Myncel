@@ -76,6 +76,18 @@ jobs:
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
           security set-keychain-settings -t 7200 -u "$KEYCHAIN"
 
+      - name: Write App Store Connect API key JSON
+        run: |
+          mkdir -p ~/.appstoreconnect
+          cat > ~/.appstoreconnect/api_key.json <<EOF
+          {
+            "key_id": "${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}",
+            "issuer_id": "${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}",
+            "key": $(printf '%s' "${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}" | jq -Rs .),
+            "in_house": false
+          }
+          EOF
+
       - name: Fetch signing certificate via match (read-only)
         run: |
           fastlane match appstore \
@@ -84,7 +96,8 @@ jobs:
             --git_url "$MATCH_GIT_URL" \
             --keychain_name build.keychain \
             --keychain_password "$KEYCHAIN_PASSWORD" \
-            --readonly true
+            --api_key_path ~/.appstoreconnect/api_key.json \
+            --readonly=true
 
       - name: Set build number from GitHub run number
         working-directory: ios/App
@@ -158,23 +171,12 @@ jobs:
       - name: Upload to TestFlight via App Store Connect API
         working-directory: ios/App
         run: |
-          # Write the API key to a file fastlane pilot can read.
-          API_KEY_PATH="$RUNNER_TEMP/api_key.json"
-          cat > "$API_KEY_PATH" <<EOF
-          {
-            "key_id": "$APP_STORE_CONNECT_API_KEY_KEY_ID",
-            "issuer_id": "$APP_STORE_CONNECT_API_KEY_ISSUER_ID",
-            "key": $(printf '%s' "$APP_STORE_CONNECT_API_KEY_KEY" | jq -R -s '.'),
-            "in_house": false
-          }
-          EOF
-
           IPA_PATH=$(ls build/ipa/*.ipa | head -1)
           echo "Uploading $IPA_PATH to TestFlight..."
 
           fastlane pilot upload \
             --ipa "$IPA_PATH" \
-            --api_key_path "$API_KEY_PATH" \
+            --api_key_path ~/.appstoreconnect/api_key.json \
             --skip_waiting_for_build_processing true \
             --skip_submission true
 

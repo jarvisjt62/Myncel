@@ -44,11 +44,10 @@ jobs:
       MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
       MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
       MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTH }}
-      APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-      APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
-      APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
-      APP_STORE_CONNECT_API_KEY_IS_KEY_CONTENT_BASE64: "false"
       KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+      ASC_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
 
     steps:
       - name: Checkout
@@ -71,10 +70,21 @@ jobs:
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
           security set-keychain-settings -t 7200 -u "$KEYCHAIN"
 
+      - name: Write App Store Connect API key JSON
+        run: |
+          mkdir -p ~/.appstoreconnect
+          cat > ~/.appstoreconnect/api_key.json <<EOF
+          {
+            "key_id": "${ASC_KEY_ID}",
+            "issuer_id": "${ASC_ISSUER_ID}",
+            "key": $(printf '%s' "${ASC_KEY_CONTENT}" | jq -Rs .),
+            "in_house": false
+          }
+          EOF
+          # Sanity check (without exposing secrets)
+          echo "API key JSON written. key_id length: ${#ASC_KEY_ID}, issuer_id length: ${#ASC_ISSUER_ID}, key content length: ${#ASC_KEY_CONTENT}"
+
       - name: Run match to generate ${{ inputs.type }} cert + profile
-        env:
-          MATCH_READONLY: "false"
-          MATCH_FORCE: "false"
         run: |
           fastlane match "${{ inputs.type }}" \
             --app_identifier "$BUNDLE_ID" \
@@ -83,6 +93,7 @@ jobs:
             --keychain_name build.keychain \
             --keychain_password "$KEYCHAIN_PASSWORD" \
             --readonly=false \
+            --api_key_path ~/.appstoreconnect/api_key.json \
             --verbose
 
       - name: Done
