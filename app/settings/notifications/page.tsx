@@ -490,11 +490,14 @@ export default function NotificationsPage() {
                     className="rounded-lg px-2 py-2 text-sm focus:outline-none flex-shrink-0"
                     style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', minWidth: '140px' }}
                   >
-                    {COUNTRY_CODES.map(c => (
-                      <option key={c.code} value={c.code}>
-                        {c.flag} {c.name} ({c.code})
-                      </option>
-                    ))}
+                    {/* Render alphabetically by country name so users can scan quickly */}
+                    {[...COUNTRY_CODES]
+                      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+                      .map(c => (
+                        <option key={c.code} value={c.code}>
+                          {c.flag} {c.name} ({c.code})
+                        </option>
+                      ))}
                   </select>
                   {/* Local number input */}
                   <input

@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { ThemeToggle } from '../components/ThemeProvider';
+import { SUPPORTED_CURRENCIES } from '@/app/lib/currency';
 
 interface Props {
   isAdmin: boolean;
@@ -8,6 +10,55 @@ interface Props {
 }
 
 export default function SettingsPageClient({ isAdmin, user }: Props) {
+  const [currency, setCurrency] = useState<string>('USD');
+  const [orgName, setOrgName] = useState<string>('');
+  const [loadingOrg, setLoadingOrg] = useState(true);
+  const [savingCurrency, setSavingCurrency] = useState(false);
+  const [currencyMsg, setCurrencyMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/settings/organization', { cache: 'no-store' });
+        if (!res.ok) throw new Error(await res.text());
+        const json = await res.json();
+        if (!cancelled) {
+          setCurrency(json.organization?.currency ?? 'USD');
+          setOrgName(json.organization?.name ?? '');
+        }
+      } catch (e) {
+        if (!cancelled) setCurrencyMsg({ type: 'err', text: 'Could not load organization settings' });
+      } finally {
+        if (!cancelled) setLoadingOrg(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  async function saveCurrency(newCode: string) {
+    setSavingCurrency(true);
+    setCurrencyMsg(null);
+    try {
+      const res = await fetch('/api/settings/organization', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currency: newCode }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error ?? 'Failed to save');
+      }
+      const json = await res.json();
+      setCurrency(json.organization.currency);
+      setCurrencyMsg({ type: 'ok', text: 'Currency updated. Refresh other tabs to see the change.' });
+    } catch (e: any) {
+      setCurrencyMsg({ type: 'err', text: e?.message ?? 'Failed to save currency' });
+    } finally {
+      setSavingCurrency(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Appearance / Theme */}
@@ -29,6 +80,65 @@ export default function SettingsPageClient({ isAdmin, user }: Props) {
             </div>
           </div>
           <ThemeToggle />
+        </div>
+      </div>
+
+      {/* Organization / Localization */}
+      <div className="rounded-xl border p-6" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+        <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Organization & Localization</h2>
+        <p className="text-sm mb-5" style={{ color: 'var(--text-secondary)' }}>
+          Settings that apply to the entire organization. Currency is used everywhere costs are displayed —
+          dashboards, reports, work orders, parts inventory, and exports.
+        </p>
+
+        <div className="space-y-4">
+          {orgName && (
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text-secondary)' }}>Organization</label>
+              <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{orgName}</p>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+              Currency
+            </label>
+            {loadingOrg ? (
+              <div className="h-10 rounded-lg animate-pulse" style={{ background: 'var(--bg-surface-2)' }} />
+            ) : (
+              <select
+                value={currency}
+                disabled={savingCurrency || !isAdmin}
+                onChange={e => saveCurrency(e.target.value)}
+                className="w-full sm:max-w-xs px-3 py-2.5 rounded-lg text-sm focus:outline-none disabled:opacity-60"
+                style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
+              >
+                {[...SUPPORTED_CURRENCIES]
+                  .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+                  .map(c => (
+                    <option key={c.code} value={c.code}>
+                      {c.symbol} — {c.name} ({c.code})
+                    </option>
+                  ))}
+              </select>
+            )}
+            <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+              {isAdmin
+                ? 'Changes take effect immediately for all users in this organization.'
+                : 'Only admins and owners can change the organization currency.'}
+            </p>
+            {currencyMsg && (
+              <p
+                className="text-xs mt-2 px-2 py-1 rounded inline-block"
+                style={{
+                  background: currencyMsg.type === 'ok' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                  color: currencyMsg.type === 'ok' ? '#059669' : '#dc2626',
+                }}
+              >
+                {currencyMsg.text}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -78,7 +188,7 @@ export default function SettingsPageClient({ isAdmin, user }: Props) {
               className="flex flex-col p-4 rounded-lg border transition-all hover:shadow-sm"
               style={{ background: 'var(--bg-surface-2)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
             >
-              <span className="font-medium text-sm">{link.label}</span>
+              <span className="text-sm font-semibold">{link.label}</span>
               <span className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{link.desc}</span>
             </a>
           ))}

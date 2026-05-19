@@ -13,6 +13,13 @@ export const metadata = {
 
 async function getDashboardData(organizationId: string) {
   try {
+    // Load org-level localization (currency) — falls back to USD on error
+    const org = await db.organization.findUnique({
+      where: { id: organizationId },
+      select: { currency: true },
+    }).catch(() => null);
+    const currency = org?.currency ?? 'USD';
+
     const [machines, workOrders, maintenanceTasks, alerts, parts, orgUsers] = await Promise.all([
       db.machine.findMany({
         where: { organizationId },
@@ -91,6 +98,7 @@ async function getDashboardData(organizationId: string) {
       alerts,
       parts,
       orgUsers,
+      currency,
       stats: {
         totalMachines: machines.length,
         criticalMachines,
@@ -112,6 +120,7 @@ async function getDashboardData(organizationId: string) {
       alerts: [],
       orgUsers: [],
       parts: [],
+      currency: 'USD',
       stats: {
         totalMachines: 0,
         criticalMachines: 0,

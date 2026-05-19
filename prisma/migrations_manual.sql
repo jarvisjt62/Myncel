@@ -140,3 +140,7 @@ ALTER TABLE "organizations"
   ADD COLUMN IF NOT EXISTS "adminNotes" TEXT,
   ADD COLUMN IF NOT EXISTS "suspendedAt" TIMESTAMP(3),
   ADD COLUMN IF NOT EXISTS "suspendedReason" TEXT;
+
+-- Organization localization (currency)
+ALTER TABLE "organizations"
+  ADD COLUMN IF NOT EXISTS "currency" TEXT NOT NULL DEFAULT 'USD';

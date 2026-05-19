@@ -15,6 +15,7 @@ import QuickActions from '../components/dashboard/QuickActions';
 import ExportButtons from '../components/dashboard/ExportButtons';
 import RolesTab from './RolesTab';
 import { PermissionsProvider, Can, usePermissions } from '../components/PermissionsProvider';
+import { formatCurrency, getCurrencySymbol } from '@/app/lib/currency';
 
 // ── Change Password Component ──────────────────────────────────────────────
 function ChangePasswordSection() {
@@ -259,6 +260,7 @@ type Props = {
     alerts: Alert[];
     parts: Part[];
     orgUsers: OrgUser[];
+    currency?: string;
     stats: Stats;
   };
 };
@@ -389,7 +391,11 @@ function DashboardClientInner({ user, data }: Props) {
     return () => window.removeEventListener('hashchange', applyHash);
   }, []);
 
-  const { machines: initialMachines, workOrders: initialWorkOrders, maintenanceTasks: initialTasks, alerts: initialAlerts, parts: initialParts, orgUsers, stats } = data;
+  const { machines: initialMachines, workOrders: initialWorkOrders, maintenanceTasks: initialTasks, alerts: initialAlerts, parts: initialParts, orgUsers, stats, currency: orgCurrencyRaw } = data;
+  const orgCurrency = orgCurrencyRaw ?? 'USD';
+  const currencySymbol = getCurrencySymbol(orgCurrency);
+  const fmtMoney = (amt: number | null | undefined) => formatCurrency(amt, orgCurrency);
+  const fmtMoneyShort = (amt: number | null | undefined) => formatCurrency(amt, orgCurrency, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
   // Local state for live updates
   const [machines, setMachines] = useState(initialMachines);
@@ -1742,8 +1748,8 @@ function DashboardClientInner({ user, data }: Props) {
                 { label: 'Completed At', value: wo.completedAt ? new Date(wo.completedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—' },
                 { label: 'Est. Duration', value: wo.estimatedMinutes ? `${wo.estimatedMinutes} min` : '—' },
                 { label: 'Actual Duration', value: wo.actualMinutes ? `${wo.actualMinutes} min` : '—' },
-                { label: 'Labor Cost', value: wo.laborCost != null ? `$${Number(wo.laborCost).toFixed(2)}` : '—' },
-                { label: 'Parts Cost', value: wo.partsCost != null ? `$${Number(wo.partsCost).toFixed(2)}` : '—' },
+                { label: 'Labor Cost', value: wo.laborCost != null ? fmtMoney(Number(wo.laborCost)) : '—' },
+                { label: 'Parts Cost', value: wo.partsCost != null ? fmtMoney(Number(wo.partsCost)) : '—' },
               ] as {label:string;value:any}[]).map(({ label, value }) => (
                 <div key={label}>
                   <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">{label}</p>
@@ -2056,7 +2062,7 @@ function DashboardClientInner({ user, data }: Props) {
                         icon: <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
                       },
                       {
-                        label: 'Month Cost', value: `$${stats.monthMaintenanceCost.toLocaleString()}`,
+                        label: 'Month Cost', value: fmtMoneyShort(stats.monthMaintenanceCost),
                         sub: 'maintenance spend', subColor: 'text-[var(--text-muted)]',
                         trend: kpiTrends?.cost ? { ...kpiTrends.cost, goodDown: true } : null,
                         bg: 'bg-emerald-500/10',
@@ -2895,21 +2901,21 @@ function DashboardClientInner({ user, data }: Props) {
                 <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                   <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Total Maintenance Cost</div>
                   <div className="text-2xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>
-                    ${workOrders.reduce((sum, wo) => sum + (wo.totalCost ?? 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {fmtMoney(workOrders.reduce((sum, wo) => sum + (wo.totalCost ?? 0), 0))}
                   </div>
                   <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>All work orders</div>
                 </div>
                 <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                   <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Labor Cost</div>
                   <div className="text-2xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>
-                    ${workOrders.reduce((sum, wo) => sum + (wo.laborCost ?? 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {fmtMoney(workOrders.reduce((sum, wo) => sum + (wo.laborCost ?? 0), 0))}
                   </div>
                   <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Total labor</div>
                 </div>
                 <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                   <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Parts Cost</div>
                   <div className="text-2xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>
-                    ${workOrders.reduce((sum, wo) => sum + (wo.partsCost ?? 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {fmtMoney(workOrders.reduce((sum, wo) => sum + (wo.partsCost ?? 0), 0))}
                   </div>
                   <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Total parts</div>
                 </div>
@@ -2979,7 +2985,7 @@ function DashboardClientInner({ user, data }: Props) {
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: colorMap[priority] || '#635bff', minWidth: filtered.length > 0 ? '8px' : '0' }} />
                         </div>
                         <span className="text-xs font-mono w-16 sm:w-24 text-right shrink-0" style={{ color: 'var(--text-primary)' }}>
-                          ${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          {fmtMoney(totalCost)}
                         </span>
                         <span className="text-xs hidden sm:inline shrink-0" style={{ color: 'var(--text-muted)' }}>{filtered.length} WO</span>
                       </div>
@@ -3005,7 +3011,7 @@ function DashboardClientInner({ user, data }: Props) {
                         </div>
                         <div className="text-right flex-shrink-0">
                           <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                            {wo.totalCost != null ? `$${wo.totalCost.toFixed(2)}` : '—'}
+                            {wo.totalCost != null ? fmtMoney(wo.totalCost) : "—"}
                           </div>
                           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                             {wo.completedAt ? new Date(wo.completedAt).toLocaleDateString() : '—'}
@@ -3087,7 +3093,7 @@ function DashboardClientInner({ user, data }: Props) {
                             <div className="text-sm font-medium truncate mb-1" style={{ color: 'var(--text-primary)' }}>{wo.title}</div>
                             <div className="flex items-center gap-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>
                               <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                                {wo.totalCost != null ? `$${Number(wo.totalCost).toFixed(2)}` : '—'}
+                                {wo.totalCost != null ? fmtMoney(Number(wo.totalCost)) : "—"}
                               </span>
                               {wo.completedAt && <span>✓ {new Date(wo.completedAt).toLocaleDateString()}</span>}
                             </div>
@@ -3191,7 +3197,7 @@ function DashboardClientInner({ user, data }: Props) {
                               </td>
                               <td className="px-4 py-3 hidden lg:table-cell text-xs" style={{ color: 'var(--text-secondary)' }}>{wo.priority}</td>
                               <td className="px-4 py-3 text-right font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
-                                {wo.totalCost != null ? `$${Number(wo.totalCost).toFixed(2)}` : '—'}
+                                {wo.totalCost != null ? fmtMoney(Number(wo.totalCost)) : "—"}
                               </td>
                               <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
                                 {wo.completedAt ? new Date(wo.completedAt).toLocaleDateString() : '—'}
@@ -3288,7 +3294,7 @@ function DashboardClientInner({ user, data }: Props) {
                 <div className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                   <div className="text-[10px] sm:text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Inventory Value</div>
                   <div className="text-sm sm:text-2xl font-bold mt-1 truncate" style={{ color: 'var(--text-primary)' }}>
-                    ${parts.reduce((sum, p) => sum + (p.unitCost ?? 0) * p.quantity, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {fmtMoney(parts.reduce((sum, p) => sum + (p.unitCost ?? 0) * p.quantity, 0))}
                   </div>
                   <div className="text-[10px] sm:text-xs mt-1 hidden sm:block" style={{ color: 'var(--text-muted)' }}>Estimated total value</div>
                 </div>
@@ -3351,7 +3357,7 @@ function DashboardClientInner({ user, data }: Props) {
                                     Qty: <strong>{part.quantity}</strong>/{part.minQuantity} min
                                   </span>
                                   {part.unitCost != null && (
-                                    <span className="text-[var(--text-muted)]">${part.unitCost.toFixed(2)}/ea</span>
+                                    <span className="text-[var(--text-muted)]">{fmtMoney(part.unitCost)}/ea</span>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -3426,7 +3432,7 @@ function DashboardClientInner({ user, data }: Props) {
                               <td className="px-3 sm:px-4 py-3 font-mono text-xs hidden md:table-cell" style={{ color: 'var(--text-secondary)' }}>{part.partNumber ?? '—'}</td>
                               <td className="px-3 sm:px-4 py-3 text-center font-semibold" style={{ color: isOut ? '#ef4444' : isLow ? '#f59e0b' : 'var(--text-primary)' }}>{part.quantity}</td>
                               <td className="px-3 sm:px-4 py-3 text-center text-xs hidden sm:table-cell" style={{ color: 'var(--text-muted)' }}>{part.minQuantity}</td>
-                              <td className="px-3 sm:px-4 py-3 text-right font-mono text-xs hidden lg:table-cell" style={{ color: 'var(--text-primary)' }}>{part.unitCost != null ? `$${part.unitCost.toFixed(2)}` : '—'}</td>
+                              <td className="px-3 sm:px-4 py-3 text-right font-mono text-xs hidden lg:table-cell" style={{ color: 'var(--text-primary)' }}>{part.unitCost != null ? fmtMoney(part.unitCost) : '—'}</td>
                               <td className="px-3 sm:px-4 py-3 text-xs hidden lg:table-cell" style={{ color: 'var(--text-secondary)' }}>{part.supplier ?? '—'}</td>
                               <td className="px-3 sm:px-4 py-3 text-xs hidden lg:table-cell" style={{ color: 'var(--text-secondary)' }}>{part.location ?? '—'}</td>
                               <td className="px-3 sm:px-4 py-3 text-center">
@@ -3657,11 +3663,11 @@ function DashboardClientInner({ user, data }: Props) {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelClass}>Est. Labor Cost ($)</label>
+                <label className={labelClass}>Est. Labor Cost ({currencySymbol})</label>
                 <input type="number" value={woForm.laborCost} onChange={e => setWoForm({...woForm, laborCost: e.target.value})} placeholder="0.00" min="0" step="0.01" className={inputClass} />
               </div>
               <div>
-                <label className={labelClass}>Est. Parts Cost ($)</label>
+                <label className={labelClass}>Est. Parts Cost ({currencySymbol})</label>
                 <input type="number" value={woForm.partsCost} onChange={e => setWoForm({...woForm, partsCost: e.target.value})} placeholder="0.00" min="0" step="0.01" className={inputClass} />
               </div>
             </div>
@@ -3750,7 +3756,7 @@ function DashboardClientInner({ user, data }: Props) {
                 <input type="number" value={taskForm.estimatedMinutes} onChange={e => setTaskForm({...taskForm, estimatedMinutes: e.target.value})} placeholder="e.g. 45" min="0" className={inputClass} />
               </div>
               <div>
-                <label className={labelClass}>Est. Cost ($)</label>
+                <label className={labelClass}>Est. Cost ({currencySymbol})</label>
                 <input type="number" value={taskForm.estimatedCost} onChange={e => setTaskForm({...taskForm, estimatedCost: e.target.value})} placeholder="0.00" min="0" step="0.01" className={inputClass} />
               </div>
             </div>
@@ -3794,7 +3800,7 @@ function DashboardClientInner({ user, data }: Props) {
                   { label: 'Frequency', value: selectedTask.frequency },
                   { label: 'Next Due', value: formatDate(selectedTask.nextDueAt) },
                   { label: 'Estimated Time', value: selectedTask.estimatedMinutes ? `${selectedTask.estimatedMinutes} min` : '—' },
-                  { label: 'Estimated Cost', value: selectedTask.estimatedCost ? `$${Number(selectedTask.estimatedCost).toFixed(2)}` : '—' },
+                  { label: 'Estimated Cost', value: selectedTask.estimatedCost ? fmtMoney(Number(selectedTask.estimatedCost)) : '—' },
                 ] as {label:string; value:any}[]).map(item => (
                   <div key={item.label}>
                     <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">{item.label}</p>
@@ -3883,7 +3889,7 @@ function DashboardClientInner({ user, data }: Props) {
                   <input type="number" value={editTaskForm.estimatedMinutes} onChange={e => setEditTaskForm({...editTaskForm, estimatedMinutes: e.target.value})} min="0" className={inputClass} />
                 </div>
                 <div>
-                  <label className={labelClass}>Est. Cost ($)</label>
+                  <label className={labelClass}>Est. Cost ({currencySymbol})</label>
                   <input type="number" value={editTaskForm.estimatedCost} onChange={e => setEditTaskForm({...editTaskForm, estimatedCost: e.target.value})} min="0" step="0.01" className={inputClass} />
                 </div>
               </div>
@@ -4433,7 +4439,7 @@ function DashboardClientInner({ user, data }: Props) {
                         <input type="number" value={String(partEditForm.minQuantity ?? 1)} onChange={e => setPartEditForm(f => ({ ...f, minQuantity: e.target.value }))} min="0" className="w-full px-3 py-2 rounded-lg text-sm" style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
                       </div>
                       <div>
-                        <label className="text-xs font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>Unit Cost ($)</label>
+                        <label className="text-xs font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>Unit Cost ({currencySymbol})</label>
                         <input type="number" value={String(partEditForm.unitCost ?? '')} onChange={e => setPartEditForm(f => ({ ...f, unitCost: e.target.value }))} placeholder="0.00" step="0.01" min="0" className="w-full px-3 py-2 rounded-lg text-sm" style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
                       </div>
                     </div>
@@ -4485,12 +4491,12 @@ function DashboardClientInner({ user, data }: Props) {
                       </div>
                       <div>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Unit Cost</p>
-                        <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text-primary)' }}>{selectedPart.unitCost != null ? `$${selectedPart.unitCost.toFixed(2)}` : '—'}</p>
+                        <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text-primary)' }}>{selectedPart.unitCost != null ? fmtMoney(selectedPart.unitCost) : '—'}</p>
                       </div>
                       <div>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Total Value</p>
                         <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text-primary)' }}>
-                          {selectedPart.unitCost != null ? `$${(selectedPart.unitCost * selectedPart.quantity).toFixed(2)}` : '—'}
+                          {selectedPart.unitCost != null ? fmtMoney(selectedPart.unitCost * selectedPart.quantity) : '—'}
                         </p>
                       </div>
                       <div>
@@ -4590,7 +4596,7 @@ function DashboardClientInner({ user, data }: Props) {
                 <input type="number" value={partForm.minQuantity} onChange={e => setPartForm({...partForm, minQuantity: e.target.value})} min="0" className={inputClass} />
               </div>
               <div>
-                <label className={labelClass}>Unit Cost ($)</label>
+                <label className={labelClass}>Unit Cost ({currencySymbol})</label>
                 <input type="number" value={partForm.unitCost} onChange={e => setPartForm({...partForm, unitCost: e.target.value})} placeholder="0.00" min="0" step="0.01" className={inputClass} />
               </div>
             </div>
