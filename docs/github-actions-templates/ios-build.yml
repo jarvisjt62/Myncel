@@ -67,16 +67,36 @@ jobs:
 
       - name: Install iOS platform if missing
         run: |
+          set -e
           # Newer Xcodes (26+) ship without the iOS platform pre-installed.
-          # Install it explicitly so xcodebuild can target a generic iOS device.
-          if ! xcodebuild -showsdks 2>&1 | grep -qi "iphoneos"; then
-            echo "iOS SDK not found - installing iOS platform..."
-            sudo xcodebuild -downloadPlatform iOS || \
-              sudo xcrun xcodes runtimes install "iOS" || true
+          # We need it to build for iOS, so install it explicitly.
+          echo "--- SDKs visible to xcodebuild BEFORE install ---"
+          xcodebuild -showsdks 2>&1 || true
+
+          if xcodebuild -showsdks 2>&1 | grep -qE "iphoneos[0-9]"; then
+            echo "✅ iOS SDK already installed - skipping download."
           else
-            echo "iOS SDK already installed:"
-            xcodebuild -showsdks | grep -i "iphoneos" || true
+            echo "⚠️  iOS SDK not found - downloading platform (may take 5-10 min)..."
+            # -downloadPlatform requires a non-interactive accept of the license.
+            sudo xcodebuild -license accept || true
+            sudo xcodebuild -runFirstLaunch || true
+
+            # Try the modern flag first.
+            if sudo xcodebuild -downloadPlatform iOS; then
+              echo "✅ iOS platform installed via -downloadPlatform"
+            elif sudo xcodebuild -downloadAllPlatforms; then
+              echo "✅ All platforms installed via -downloadAllPlatforms"
+            else
+              echo "::error::Failed to install iOS platform via xcodebuild flags."
+              exit 1
+            fi
           fi
+
+          echo "--- SDKs visible to xcodebuild AFTER install ---"
+          xcodebuild -showsdks 2>&1 || true
+
+          echo "--- iphoneos SDK version (final) ---"
+          xcrun --sdk iphoneos --show-sdk-version
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
