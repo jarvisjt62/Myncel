@@ -21,7 +21,14 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const period = searchParams.get('period') || '30d'; // 7d, 30d, 90d, 1y
-    
+
+    // Load org currency for response
+    const org = await db.organization.findUnique({
+      where: { id: organizationId },
+      select: { currency: true },
+    }).catch(() => null);
+    const currency = org?.currency || 'USD';
+
     // Calculate date range
     const now = new Date();
     let startDate = new Date();
@@ -224,6 +231,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       period,
+      currency,
       startDate,
       endDate: now,
       summary: {

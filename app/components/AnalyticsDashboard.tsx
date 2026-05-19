@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { formatCurrency } from '@/app/lib/currency';
 
 interface AnalyticsData {
   period: string;
+  currency?: string;
   summary: {
     workOrdersCompleted: number;
     workOrdersCreated: number;
@@ -128,7 +130,7 @@ export default function AnalyticsDashboard() {
         />
         <SummaryCard
           title="Total Cost"
-          value={data.summary.totalCost > 0 ? `$${data.summary.totalCost.toLocaleString()}` : '-'}
+          value={data.summary.totalCost > 0 ? formatCurrency(data.summary.totalCost, data.currency, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '-'}
           icon="💰"
           color="yellow"
         />

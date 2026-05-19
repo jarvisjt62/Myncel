@@ -23,7 +23,7 @@ export async function GET(req: Request) {
 
     // Fetch all report data in parallel
     const [org, machines, workOrders, completedWOs, maintenanceTasks, alerts] = await Promise.all([
-      db.organization.findUnique({ where: { id: orgId }, select: { name: true } }),
+      db.organization.findUnique({ where: { id: orgId }, select: { name: true, currency: true } }),
       db.machine.findMany({
         where: { organizationId: orgId },
         select: {
@@ -78,6 +78,7 @@ export async function GET(req: Request) {
       generatedAt: new Date().toISOString(),
       period: { days: daysBack, startDate: startDate.toISOString(), endDate: new Date().toISOString() },
       organization: org?.name || 'Your Organization',
+      currency: org?.currency || 'USD',
       summary: {
         totalMachines: machines.length,
         operationalMachines: machines.filter(m => m.status === 'OPERATIONAL').length,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { formatCurrency } from '@/app/lib/currency';
 
 type ExportType = 'equipment' | 'workorders' | 'tasks';
 
@@ -200,7 +201,7 @@ export default function ExportButtons() {
     <div class="kpi ${s.overdueWorkOrders > 0 ? 'red' : ''}"><div class="kpi-value">${s.overdueWorkOrders}</div><div class="kpi-label">Overdue WOs</div></div>
   </div>
   <div class="kpi-grid">
-    <div class="kpi"><div class="kpi-value">$${s.totalMaintenanceCost.toLocaleString()}</div><div class="kpi-label">Maint. Cost</div></div>
+    <div class="kpi"><div class="kpi-value">${formatCurrency(s.totalMaintenanceCost, data.currency, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div><div class="kpi-label">Maint. Cost</div></div>
     <div class="kpi"><div class="kpi-value">${completionRate}%</div><div class="kpi-label">Completion Rate</div></div>
     <div class="kpi ${s.criticalAlerts > 0 ? 'red' : ''}"><div class="kpi-value">${s.unresolvedAlerts}</div><div class="kpi-label">Open Alerts</div></div>
     <div class="kpi"><div class="kpi-value">${s.avgCompletionTimeMinutes > 0 ? Math.round(s.avgCompletionTimeMinutes / 60) + 'h' : '—'}</div><div class="kpi-label">Avg. WO Duration</div></div>
@@ -237,7 +238,7 @@ export default function ExportButtons() {
           <td><span class="badge ${wo.priority === 'CRITICAL' ? 'badge-red' : wo.priority === 'HIGH' ? 'badge-yellow' : 'badge-gray'}">${wo.priority}</span></td>
           <td>${wo.assignedTo}</td>
           <td>${wo.created}</td>
-          <td>${wo.cost > 0 ? '$' + wo.cost.toFixed(0) : '—'}</td>
+          <td>${wo.cost > 0 ? formatCurrency(wo.cost, data.currency, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '—'}</td>
         </tr>
       `).join('')}
     </tbody>
@@ -444,7 +445,7 @@ export default function ExportButtons() {
                       { label: 'Equipment', value: reportData.summary.totalMachines, sub: `${reportData.summary.operationalMachines} operational`, color: 'text-[#635bff]' },
                       { label: 'WOs Completed', value: reportData.summary.completedWorkOrders, sub: `of ${reportData.summary.totalWorkOrders} total`, color: 'text-emerald-600' },
                       { label: 'Overdue', value: reportData.summary.overdueWorkOrders, sub: 'work orders', color: reportData.summary.overdueWorkOrders > 0 ? 'text-red-600' : 'text-emerald-600' },
-                      { label: 'Cost', value: `$${reportData.summary.totalMaintenanceCost.toLocaleString()}`, sub: 'maintenance spend', color: 'text-[var(--text-primary)]' },
+                      { label: 'Cost', value: formatCurrency(reportData.summary.totalMaintenanceCost, reportData.currency, { minimumFractionDigits: 0, maximumFractionDigits: 0 }), sub: 'maintenance spend', color: 'text-[var(--text-primary)]' },
                     ].map(kpi => (
                       <div key={kpi.label} className="rounded-xl bg-[var(--bg-surface-2)] border border-[var(--border)] p-3 text-center">
                         <p className={`text-xl font-bold ${kpi.color}`}>{kpi.value}</p>
@@ -481,7 +482,7 @@ export default function ExportButtons() {
                                   </span>
                                 </td>
                                 <td className="px-3 py-2 text-[var(--text-secondary)] whitespace-nowrap">
-                                  {wo.cost > 0 ? `$${wo.cost.toFixed(0)}` : '—'}
+                                  {wo.cost > 0 ? formatCurrency(wo.cost, reportData.currency, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '—'}
                                 </td>
                               </tr>
                             ))}
