@@ -1,0 +1,185 @@
+# iOS Build + TestFlight Upload
+#
+# Triggered on every push to main. Builds the Capacitor iOS app on a free
+# macOS GitHub Actions runner, signs it with the cert from match, and
+# uploads it to TestFlight via the App Store Connect API.
+#
+# Build time: ~15–25 min per run.
+# Cost: $0 (under the GitHub Actions free tier).
+
+name: iOS Build & TestFlight
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 60
+    env:
+      BUNDLE_ID: com.jarvisitconsults.myncel
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+      MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTH }}
+      APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+      APP_STORE_CONNECT_API_KEY_IS_KEY_CONTENT_BASE64: "false"
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Capacitor sync (copy web assets to native iOS project)
+        run: npx cap sync ios
+
+      - name: Setup Ruby + Bundler (for fastlane + cocoapods)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: false
+
+      - name: Install fastlane + cocoapods
+        run: |
+          gem install fastlane -NV
+          gem install cocoapods -NV
+
+      - name: pod install
+        working-directory: ios/App
+        run: pod install --repo-update
+
+      - name: Create temporary keychain
+        run: |
+          KEYCHAIN=build.keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security default-keychain -s "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -t 7200 -u "$KEYCHAIN"
+
+      - name: Fetch signing certificate via match (read-only)
+        run: |
+          fastlane match appstore \
+            --app_identifier "$BUNDLE_ID" \
+            --team_id "$APPLE_TEAM_ID" \
+            --git_url "$MATCH_GIT_URL" \
+            --keychain_name build.keychain \
+            --keychain_password "$KEYCHAIN_PASSWORD" \
+            --readonly true
+
+      - name: Set build number from GitHub run number
+        working-directory: ios/App
+        run: |
+          # Use the GitHub run number as the iOS buildNumber so each push
+          # produces a unique TestFlight build.
+          BUILD_NUMBER=${{ github.run_number }}
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" App/Info.plist
+          echo "Set CFBundleVersion to $BUILD_NUMBER"
+
+      - name: Build & archive .ipa
+        working-directory: ios/App
+        run: |
+          mkdir -p build
+
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath build/App.xcarchive \
+            -destination "generic/platform=iOS" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="match AppStore $BUNDLE_ID" \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            archive | xcpretty
+
+          # Export the archive into an .ipa file
+          cat > build/exportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>teamID</key>
+            <string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>$BUNDLE_ID</key>
+              <string>match AppStore $BUNDLE_ID</string>
+            </dict>
+            <key>uploadBitcode</key>
+            <false/>
+            <key>uploadSymbols</key>
+            <true/>
+            <key>compileBitcode</key>
+            <false/>
+          </dict>
+          </plist>
+          EOF
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportOptionsPlist build/exportOptions.plist \
+            -exportPath build/ipa \
+            | xcpretty
+
+          ls -lah build/ipa/
+
+      - name: Upload .ipa as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Myncel-iOS-${{ github.run_number }}.ipa
+          path: ios/App/build/ipa/*.ipa
+          retention-days: 30
+
+      - name: Upload to TestFlight via App Store Connect API
+        working-directory: ios/App
+        run: |
+          # Write the API key to a file fastlane pilot can read.
+          API_KEY_PATH="$RUNNER_TEMP/api_key.json"
+          cat > "$API_KEY_PATH" <<EOF
+          {
+            "key_id": "$APP_STORE_CONNECT_API_KEY_KEY_ID",
+            "issuer_id": "$APP_STORE_CONNECT_API_KEY_ISSUER_ID",
+            "key": $(printf '%s' "$APP_STORE_CONNECT_API_KEY_KEY" | jq -R -s '.'),
+            "in_house": false
+          }
+          EOF
+
+          IPA_PATH=$(ls build/ipa/*.ipa | head -1)
+          echo "Uploading $IPA_PATH to TestFlight..."
+
+          fastlane pilot upload \
+            --ipa "$IPA_PATH" \
+            --api_key_path "$API_KEY_PATH" \
+            --skip_waiting_for_build_processing true \
+            --skip_submission true
+
+      - name: Done
+        run: |
+          echo "✅ Build #${{ github.run_number }} uploaded to TestFlight."
+          echo "Apple typically processes the build in 5–15 min."
+          echo "Check status at: https://appstoreconnect.apple.com/apps"

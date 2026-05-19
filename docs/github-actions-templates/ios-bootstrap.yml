@@ -1,0 +1,89 @@
+# iOS Bootstrap workflow
+#
+# Run this ONCE manually to generate the signing certificate and provisioning
+# profile, encrypt them with $MATCH_PASSWORD, and store them in your private
+# `myncel-ios-certificates` repo via fastlane match.
+#
+# After this succeeds, you never need to run it again — `ios-build.yml`
+# will reuse the same cert + profile on every build.
+#
+# How to run:
+#   GitHub repo → Actions tab → "iOS Bootstrap (run once)" → Run workflow
+#
+# Required secrets (set in repo Settings → Secrets and variables → Actions):
+#   APPLE_TEAM_ID                       (e.g. 9ABC1234DE)
+#   APP_STORE_CONNECT_API_KEY_ID        (e.g. ABCD1234EF)
+#   APP_STORE_CONNECT_API_ISSUER_ID     (UUID)
+#   APP_STORE_CONNECT_API_KEY_CONTENT   (full .p8 file contents)
+#   MATCH_PASSWORD                      (strong password — DO NOT LOSE)
+#   MATCH_GIT_URL                       (https://github.com/<user>/myncel-ios-certificates.git)
+#   MATCH_GIT_BASIC_AUTH                (base64 of "user:PAT")
+#   KEYCHAIN_PASSWORD                   (any strong string)
+
+name: iOS Bootstrap (run once)
+
+on:
+  workflow_dispatch:
+    inputs:
+      type:
+        description: "Cert type to generate"
+        required: true
+        default: "appstore"
+        type: choice
+        options:
+          - appstore
+          - development
+
+jobs:
+  bootstrap:
+    runs-on: macos-14
+    timeout-minutes: 30
+    env:
+      BUNDLE_ID: com.jarvisitconsults.myncel
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+      MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTH }}
+      APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+      APP_STORE_CONNECT_API_KEY_IS_KEY_CONTENT_BASE64: "false"
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby + Bundler (for fastlane)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: false
+
+      - name: Install fastlane
+        run: gem install fastlane -NV
+
+      - name: Create temporary keychain
+        run: |
+          KEYCHAIN=build.keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security default-keychain -s "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -t 7200 -u "$KEYCHAIN"
+
+      - name: Run match to generate ${{ inputs.type }} cert + profile
+        run: |
+          fastlane match ${{ inputs.type }} \
+            --app_identifier "$BUNDLE_ID" \
+            --team_id "$APPLE_TEAM_ID" \
+            --git_url "$MATCH_GIT_URL" \
+            --keychain_name build.keychain \
+            --keychain_password "$KEYCHAIN_PASSWORD" \
+            --readonly false \
+            --verbose
+
+      - name: Done
+        run: |
+          echo "✅ Certificate + provisioning profile generated and stored in:"
+          echo "   $MATCH_GIT_URL"
+          echo "You can now run the regular ios-build.yml workflow."
