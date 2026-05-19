@@ -41,16 +41,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show available Xcode versions and select latest
+      - name: Show available Xcode versions and select latest stable
         run: |
+          echo "--- Installed Xcodes ---"
           ls /Applications | grep -i "Xcode" || true
-          # Prefer the newest installed Xcode (Apple now requires iOS 26 SDK / Xcode 26+).
-          LATEST_XCODE=$(ls /Applications | grep -E "^Xcode_?[0-9]+(\.[0-9]+)*\.app$" | sort -V | tail -1)
-          if [ -n "$LATEST_XCODE" ]; then
-            sudo xcode-select -s "/Applications/${LATEST_XCODE}/Contents/Developer"
+
+          # Prefer a STABLE Xcode 26 (no "beta") if available; fall back to latest installed.
+          STABLE_XCODE=$(ls /Applications | grep -E "^Xcode_?26(\.[0-9]+)*\.app$" | sort -V | tail -1)
+          if [ -n "$STABLE_XCODE" ]; then
+            CHOSEN="$STABLE_XCODE"
+          else
+            # Fall back to the latest matching Xcode (including betas)
+            CHOSEN=$(ls /Applications | grep -E "^Xcode" | sort -V | tail -1)
           fi
+          echo "--- Selecting Xcode: $CHOSEN ---"
+          sudo xcode-select -s "/Applications/${CHOSEN}/Contents/Developer"
+
           xcodebuild -version
-          xcrun --sdk iphoneos --show-sdk-version
+          echo "--- iphoneos SDK version ---"
+          xcrun --sdk iphoneos --show-sdk-version || true
+          echo "--- Available SDKs ---"
+          xcodebuild -showsdks || true
+          echo "--- Installed iOS platforms ---"
+          xcrun simctl list runtimes || true
+
+      - name: Install iOS platform if missing
+        run: |
+          # Newer Xcodes (26+) ship without the iOS platform pre-installed.
+          # Install it explicitly so xcodebuild can target a generic iOS device.
+          if ! xcodebuild -showsdks 2>&1 | grep -qi "iphoneos"; then
+            echo "iOS SDK not found - installing iOS platform..."
+            sudo xcodebuild -downloadPlatform iOS || \
+              sudo xcrun xcodes runtimes install "iOS" || true
+          else
+            echo "iOS SDK already installed:"
+            xcodebuild -showsdks | grep -i "iphoneos" || true
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
