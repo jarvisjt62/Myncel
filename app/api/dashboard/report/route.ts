@@ -147,13 +147,13 @@ export async function GET(req: Request) {
       lines.push(`Completed,${reportData.summary.completedWorkOrders}`);
       lines.push(`Open,${reportData.summary.openWorkOrders}`);
       lines.push(`Overdue,${reportData.summary.overdueWorkOrders}`);
-      lines.push(`Total Cost,$${reportData.summary.totalMaintenanceCost}`);
+      lines.push(`Total Cost,${reportData.currency} ${reportData.summary.totalMaintenanceCost}`);
       lines.push(`Unresolved Alerts,${reportData.summary.unresolvedAlerts}`);
       lines.push('');
       lines.push('WORK ORDERS');
-      lines.push('WO#,Title,Machine,Status,Priority,Assigned To,Created,Completed,Cost');
+      lines.push(`WO#,Title,Machine,Status,Priority,Assigned To,Created,Completed,Cost (${reportData.currency})`);
       reportData.workOrders.forEach(wo => {
-        lines.push(`${wo.woNumber},"${wo.title}","${wo.machine}",${wo.status},${wo.priority},"${wo.assignedTo}",${wo.created},${wo.completed},$${wo.cost}`);
+        lines.push(`${wo.woNumber},"${wo.title}","${wo.machine}",${wo.status},${wo.priority},"${wo.assignedTo}",${wo.created},${wo.completed},${wo.cost}`);
       });
       lines.push('');
       lines.push('UPCOMING MAINTENANCE');

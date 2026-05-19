@@ -82,6 +82,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         laborCost: true,
         partsCost: true,
         totalCost: true,
+        currency: true,
         completedAt: true,
         createdAt: true,
       },

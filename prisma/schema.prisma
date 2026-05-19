@@ -257,6 +257,8 @@ model MaintenanceTask {
   intervalDays     Int? // for custom intervals
   intervalHours    Float? // for hour-based intervals
   estimatedMinutes Int?
+  estimatedCost    Float?
+  currency         String?   @default("USD") // ISO 4217 — the currency this estimatedCost is denominated in
   priority         Priority  @default(MEDIUM)
   isActive         Boolean   @default(true)
   nextDueAt        DateTime?
@@ -293,6 +295,7 @@ model WorkOrder {
   laborCost        Float?
   partsCost        Float?
   totalCost        Float?
+  currency         String?         @default("USD") // ISO 4217 — the currency these costs are denominated in
   notes            String?         @db.Text
   completionNotes  String?         @db.Text
   createdAt        DateTime        @default(now())
@@ -325,6 +328,7 @@ model Part {
   quantity    Int      @default(0)
   minQuantity Int      @default(1) // reorder point
   unitCost    Float?
+  currency    String?  @default("USD") // ISO 4217 — the currency unitCost is denominated in
   supplier    String?
   location    String? // shelf/bin location
   createdAt   DateTime @default(now())

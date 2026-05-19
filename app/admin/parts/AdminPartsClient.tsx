@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { formatCurrency } from '@/app/lib/currency';
 
 interface Part {
   id: string;
@@ -10,6 +11,7 @@ interface Part {
   quantity: number;
   minQuantity: number;
   unitCost: number | null;
+  currency?: string | null;
   supplier: string | null;
   location: string | null;
   imageUrl: string | null;
@@ -19,11 +21,12 @@ interface Organization {
   id: string;
   name: string;
   plan: string;
+  currency?: string;
   parts: Part[];
   _count: { parts: number };
 }
 
-type PartWithOrg = Part & { orgName: string; orgId: string };
+type PartWithOrg = Part & { orgName: string; orgId: string; orgCurrency?: string };
 
 export default function AdminPartsClient({ organizations: initialOrgs }: { organizations: Organization[] }) {
   const [organizations, setOrganizations] = useState(initialOrgs);
@@ -50,7 +53,7 @@ export default function AdminPartsClient({ organizations: initialOrgs }: { organ
   const [addError, setAddError] = useState('');
 
   const selectedOrgs = selectedOrgId === 'all' ? organizations : organizations.filter(o => o.id === selectedOrgId);
-  const allParts: PartWithOrg[] = selectedOrgs.flatMap(o => o.parts.map(p => ({ ...p, orgName: o.name, orgId: o.id })));
+  const allParts: PartWithOrg[] = selectedOrgs.flatMap(o => o.parts.map(p => ({ ...p, orgName: o.name, orgId: o.id, orgCurrency: o.currency })));
 
   const filteredParts = allParts.filter(p => {
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -66,6 +69,20 @@ export default function AdminPartsClient({ organizations: initialOrgs }: { organ
   const lowStock = allParts.filter(p => p.quantity <= p.minQuantity && p.quantity > 0).length;
   const outOfStock = allParts.filter(p => p.quantity === 0).length;
   const totalValue = allParts.reduce((s, p) => s + (p.unitCost ?? 0) * p.quantity, 0);
+
+  // Currency helpers (super-admin):
+  // - Per-org view -> show that org's currency.
+  // - Cross-org view -> aggregate in USD with "\u2248 USD" label.
+  const isCrossOrg = selectedOrgId === 'all';
+  const selectedOrgCurrency = isCrossOrg
+    ? 'USD'
+    : (organizations.find(o => o.id === selectedOrgId)?.currency || 'USD');
+  const fmtAggregate = (amt: number) =>
+    isCrossOrg ? `${formatCurrency(amt, 'USD')} \u2248 USD` : formatCurrency(amt, selectedOrgCurrency);
+  const fmtPart = (amt: number | null | undefined, p?: { currency?: string | null; orgCurrency?: string }) => {
+    if (amt == null) return '\u2014';
+    return formatCurrency(amt, p?.currency || p?.orgCurrency || selectedOrgCurrency);
+  };
 
   const updatePartInState = (updated: Part) => {
     setOrganizations(prev => prev.map(org => ({
@@ -262,7 +279,7 @@ export default function AdminPartsClient({ organizations: initialOrgs }: { organ
           { label: 'Total Parts', value: totalParts, color: 'var(--text-primary)', sub: 'Across all orgs' },
           { label: 'Low Stock', value: lowStock, color: lowStock > 0 ? '#f59e0b' : 'var(--text-primary)', sub: 'At or below min qty' },
           { label: 'Out of Stock', value: outOfStock, color: outOfStock > 0 ? '#ef4444' : 'var(--text-primary)', sub: 'Zero quantity' },
-          { label: 'Total Inventory Value', value: `$${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: 'var(--text-primary)', sub: 'Estimated value' },
+          { label: 'Total Inventory Value', value: fmtAggregate(totalValue), color: 'var(--text-primary)', sub: isCrossOrg ? 'Cross-org estimate (mixed currencies)' : 'Estimated value' },
         ].map(card => (
           <div key={card.label} className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
             <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{card.label}</div>
@@ -378,8 +395,8 @@ export default function AdminPartsClient({ organizations: initialOrgs }: { organ
                       <td className="px-4 py-3 font-mono text-xs whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>{part.partNumber ?? '—'}</td>
                       <td className="px-4 py-3 text-center font-semibold" style={{ color: isOut ? '#ef4444' : isLow ? '#f59e0b' : 'var(--text-primary)' }}>{part.quantity}</td>
                       <td className="px-4 py-3 text-center text-xs" style={{ color: 'var(--text-muted)' }}>{part.minQuantity}</td>
-                      <td className="px-4 py-3 text-right font-mono text-xs whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{part.unitCost != null ? `$${part.unitCost.toFixed(2)}` : '—'}</td>
-                      <td className="px-4 py-3 text-right font-mono text-xs whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{value > 0 ? `$${value.toFixed(2)}` : '—'}</td>
+                      <td className="px-4 py-3 text-right font-mono text-xs whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{fmtPart(part.unitCost, part)}</td>
+                      <td className="px-4 py-3 text-right font-mono text-xs whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{value > 0 ? fmtPart(value, part) : '—'}</td>
                       <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>{part.supplier ?? '—'}</td>
                       <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>{part.location ?? '—'}</td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">
@@ -678,12 +695,12 @@ export default function AdminPartsClient({ organizations: initialOrgs }: { organ
                       </div>
                       <div>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Unit Cost</p>
-                        <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text-primary)' }}>{selectedPart.unitCost != null ? `$${selectedPart.unitCost.toFixed(2)}` : '—'}</p>
+                        <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text-primary)' }}>{fmtPart(selectedPart.unitCost, selectedPart)}</p>
                       </div>
                       <div>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Total Value</p>
                         <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text-primary)' }}>
-                          {selectedPart.unitCost != null ? `$${(selectedPart.unitCost * selectedPart.quantity).toFixed(2)}` : '—'}
+                          {selectedPart.unitCost != null ? fmtPart(selectedPart.unitCost * selectedPart.quantity, selectedPart) : '—'}
                         </p>
                       </div>
                       <div>

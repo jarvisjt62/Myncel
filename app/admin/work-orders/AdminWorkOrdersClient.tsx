@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { formatCurrency } from '@/app/lib/currency';
 
 interface WorkOrder {
   id: string;
@@ -16,9 +17,11 @@ interface WorkOrder {
   actualMinutes: number | null;
   laborCost: number | null;
   partsCost: number | null;
+  totalCost?: number | null;
+  currency?: string | null;
   notes: string | null;
   machine?: { name: string } | null;
-  organization?: { name: string; plan: string } | null;
+  organization?: { name: string; plan: string; currency?: string } | null;
   assignedTo?: { name: string } | null;
   createdBy?: { name: string } | null;
 }
@@ -399,8 +402,8 @@ export default function AdminWorkOrdersClient({ workOrders: initial }: { workOrd
                       { label: 'Completed', value: selected.completedAt ? new Date(selected.completedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Not completed' },
                       { label: 'Est. Minutes', value: selected.estimatedMinutes ? `${selected.estimatedMinutes} min` : '—' },
                       { label: 'Actual Minutes', value: selected.actualMinutes ? `${selected.actualMinutes} min` : '—' },
-                      { label: 'Labor Cost', value: selected.laborCost != null ? `$${Number(selected.laborCost).toFixed(2)}` : '—' },
-                      { label: 'Parts Cost', value: selected.partsCost != null ? `$${Number(selected.partsCost).toFixed(2)}` : '—' },
+                      { label: 'Labor Cost', value: selected.laborCost != null ? formatCurrency(Number(selected.laborCost), selected.currency || selected.organization?.currency || 'USD') : '—' },
+                      { label: 'Parts Cost', value: selected.partsCost != null ? formatCurrency(Number(selected.partsCost), selected.currency || selected.organization?.currency || 'USD') : '—' },
                     ] as { label: string; value: any }[]).map(({ label, value }) => (
                       <div key={label}>
                         <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">{label}</p>

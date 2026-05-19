@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { formatCurrency } from '@/app/lib/currency';
 
 interface POItem {
   id?: string;
@@ -80,6 +81,19 @@ export default function PurchaseOrdersPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [orgCurrency, setOrgCurrency] = useState<string>('USD');
+
+  // Load org currency once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/settings/organization')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (!cancelled && d?.organization?.currency) setOrgCurrency(d.organization.currency); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const fmt = (amt: number) => formatCurrency(amt, orgCurrency);
 
   const showToast = (type: 'success' | 'error', text: string) => {
     setToast({ type, text });
@@ -208,7 +222,7 @@ export default function PurchaseOrdersPage() {
             { label: 'Drafts', value: stats.draft, color: 'text-gray-600' },
             { label: 'Submitted', value: stats.submitted, color: 'text-blue-600' },
             { label: 'Ordered', value: stats.ordered, color: 'text-amber-600' },
-            { label: 'Total Value', value: `$${(stats.totalValue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: 'text-[#635bff]' },
+            { label: 'Total Value', value: fmt(stats.totalValue || 0), color: 'text-[#635bff]' },
           ].map(s => (
             <div key={s.label} className="bg-white rounded-xl border border-[#e6ebf1] p-4">
               <p className="text-xs text-[#8898aa] uppercase tracking-wide">{s.label}</p>
@@ -281,7 +295,7 @@ export default function PurchaseOrdersPage() {
                       </td>
                       <td className="px-4 py-4 text-[#425466]">{po.items.length} item{po.items.length !== 1 ? 's' : ''}</td>
                       <td className="px-4 py-4 text-right font-semibold text-[#0a2540]">
-                        ${(po.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        {fmt(po.total || 0)}
                       </td>
                       <td className="px-4 py-4 text-center">
                         <span className={`inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full border ${sc.color} ${sc.bg} ${sc.border}`}>
@@ -366,15 +380,15 @@ export default function PurchaseOrdersPage() {
                             {item.partNumber && <p className="text-xs text-[#8898aa] font-mono">{item.partNumber}</p>}
                           </td>
                           <td className="px-3 py-2.5 text-right text-[#425466]">{item.quantity} {item.unit || 'ea'}</td>
-                          <td className="px-3 py-2.5 text-right text-[#425466]">${item.unitPrice.toFixed(2)}</td>
-                          <td className="px-4 py-2.5 text-right font-medium text-[#0a2540]">${(item.quantity * item.unitPrice).toFixed(2)}</td>
+                          <td className="px-3 py-2.5 text-right text-[#425466]">{fmt(item.unitPrice)}</td>
+                          <td className="px-4 py-2.5 text-right font-medium text-[#0a2540]">{fmt(item.quantity * item.unitPrice)}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot className="border-t border-[#e6ebf1]">
-                      <tr><td colSpan={3} className="px-4 py-2 text-right text-sm text-[#8898aa]">Subtotal</td><td className="px-4 py-2 text-right font-medium">${selectedPO.subtotal.toFixed(2)}</td></tr>
-                      {selectedPO.tax > 0 && <tr><td colSpan={3} className="px-4 py-2 text-right text-sm text-[#8898aa]">Tax</td><td className="px-4 py-2 text-right font-medium">${selectedPO.tax.toFixed(2)}</td></tr>}
-                      <tr className="bg-[#f6f9fc]"><td colSpan={3} className="px-4 py-2 text-right font-semibold">Total</td><td className="px-4 py-2 text-right font-bold text-[#635bff]">${selectedPO.total.toFixed(2)}</td></tr>
+                      <tr><td colSpan={3} className="px-4 py-2 text-right text-sm text-[#8898aa]">Subtotal</td><td className="px-4 py-2 text-right font-medium">{fmt(selectedPO.subtotal)}</td></tr>
+                      {selectedPO.tax > 0 && <tr><td colSpan={3} className="px-4 py-2 text-right text-sm text-[#8898aa]">Tax</td><td className="px-4 py-2 text-right font-medium">{fmt(selectedPO.tax)}</td></tr>}
+                      <tr className="bg-[#f6f9fc]"><td colSpan={3} className="px-4 py-2 text-right font-semibold">Total</td><td className="px-4 py-2 text-right font-bold text-[#635bff]">{fmt(selectedPO.total)}</td></tr>
                     </tfoot>
                   </table>
                 </div>
@@ -478,7 +492,7 @@ export default function PurchaseOrdersPage() {
                             placeholder="Price" className="w-full px-2.5 py-2 border border-[#e6ebf1] rounded-lg text-xs focus:outline-none focus:border-[#635bff]" />
                         </div>
                         <div className="col-span-1 text-right text-xs font-medium text-[#0a2540]">
-                          ${(item.quantity * item.unitPrice).toFixed(2)}
+                          {fmt(item.quantity * item.unitPrice)}
                         </div>
                         <div className="col-span-1 flex justify-center">
                           {form.items.length > 1 && (
@@ -495,9 +509,9 @@ export default function PurchaseOrdersPage() {
                         className="w-16 px-2 py-1 border border-[#e6ebf1] rounded text-xs focus:outline-none focus:border-[#635bff]" />
                     </div>
                     <div className="text-right text-sm">
-                      <p className="text-[#8898aa]">Subtotal: ${subtotal.toFixed(2)}</p>
-                      {taxAmt > 0 && <p className="text-[#8898aa]">Tax: ${taxAmt.toFixed(2)}</p>}
-                      <p className="font-bold text-[#0a2540]">Total: ${total.toFixed(2)}</p>
+                      <p className="text-[#8898aa]">Subtotal: {fmt(subtotal)}</p>
+                      {taxAmt > 0 && <p className="text-[#8898aa]">Tax: {fmt(taxAmt)}</p>}
+                      <p className="font-bold text-[#0a2540]">Total: {fmt(total)}</p>
                     </div>
                   </div>
                 </div>

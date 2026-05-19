@@ -19,13 +19,15 @@ export async function GET(req: NextRequest) {
   const user = await safeQuery(
     db.user.findUnique({
       where: { email: session.user.email },
-      select: { id: true, organizationId: true },
+      select: { id: true, organizationId: true, organization: { select: { currency: true } } },
     }),
     null
   );
   if (!user?.organizationId) {
     return NextResponse.json({ error: 'No organization' }, { status: 404 });
   }
+
+  const orgCurrency = (user as any)?.organization?.currency || 'USD';
 
   const { searchParams } = new URL(req.url);
   const dataset = searchParams.get('dataset') || 'work_orders';
@@ -132,6 +134,7 @@ export async function GET(req: NextRequest) {
             quantity: true,
             minQuantity: true,
             unitCost: true,
+            currency: true,
             supplier: true,
           },
         }),
@@ -142,8 +145,8 @@ export async function GET(req: NextRequest) {
         records: (rows || []).map((r: any) => ({
           id: r.id,
           label: r.name,
-          sublabel: `${r.partNumber ? r.partNumber + ' · ' : ''}qty ${r.quantity}/${r.minQuantity} min${r.unitCost != null ? ` · $${r.unitCost}` : ''}${r.supplier ? ` · ${r.supplier}` : ''}`,
-          meta: { quantity: r.quantity, unitCost: r.unitCost },
+          sublabel: `${r.partNumber ? r.partNumber + ' · ' : ''}qty ${r.quantity}/${r.minQuantity} min${r.unitCost != null ? ` · ${r.currency || orgCurrency} ${r.unitCost}` : ''}${r.supplier ? ` · ${r.supplier}` : ''}`,
+          meta: { quantity: r.quantity, unitCost: r.unitCost, currency: r.currency || orgCurrency },
         })),
       });
     }

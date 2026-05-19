@@ -204,6 +204,7 @@ type WorkOrder = {
   laborCost: number | null;
   partsCost: number | null;
   totalCost: number | null;
+  currency: string | null;
   machine: { name: string } | null;
   assignedTo: { id: string; name: string | null } | null;
 };
@@ -216,6 +217,7 @@ type Part = {
   quantity: number;
   minQuantity: number;
   unitCost: number | null;
+  currency: string | null;
   supplier: string | null;
   location: string | null;
   imageUrl: string | null;
@@ -226,6 +228,8 @@ type MaintenanceTask = {
   title: string;
   priority: string;
   nextDueAt: Date | null;
+  estimatedCost: number | null;
+  currency: string | null;
   machine: { name: string } | null;
 };
 
@@ -394,8 +398,42 @@ function DashboardClientInner({ user, data }: Props) {
   const { machines: initialMachines, workOrders: initialWorkOrders, maintenanceTasks: initialTasks, alerts: initialAlerts, parts: initialParts, orgUsers, stats, currency: orgCurrencyRaw } = data;
   const orgCurrency = orgCurrencyRaw ?? 'USD';
   const currencySymbol = getCurrencySymbol(orgCurrency);
-  const fmtMoney = (amt: number | null | undefined) => formatCurrency(amt, orgCurrency);
-  const fmtMoneyShort = (amt: number | null | undefined) => formatCurrency(amt, orgCurrency, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  /**
+   * Format a single cost in a specific currency. If `entryCurrency` is omitted
+   * we fall back to the org's currency. This is the canonical money-display
+   * helper for the dashboard — never use $ + toFixed directly.
+   */
+  const fmtMoney = (amt: number | null | undefined, entryCurrency?: string | null) =>
+    formatCurrency(amt, entryCurrency ?? orgCurrency);
+  const fmtMoneyShort = (amt: number | null | undefined, entryCurrency?: string | null) =>
+    formatCurrency(amt, entryCurrency ?? orgCurrency, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+  /**
+   * Sum a list of {amount, currency} entries.
+   * - If every entry uses the same currency, returns one formatted string.
+   * - If currencies are mixed, returns a string like "$120.00 + ₦5,000.00"
+   *   so we never silently misrepresent totals across currencies.
+   */
+  const fmtMoneyTotal = (
+    items: Array<{ amount: number | null | undefined; currency?: string | null }>,
+    short = false,
+  ): string => {
+    const totals = new Map<string, number>();
+    for (const it of items) {
+      if (it.amount == null || Number.isNaN(it.amount)) continue;
+      const cur = it.currency ?? orgCurrency;
+      totals.set(cur, (totals.get(cur) ?? 0) + Number(it.amount));
+    }
+    if (totals.size === 0) {
+      return short ? fmtMoneyShort(0) : fmtMoney(0);
+    }
+    const opts = short
+      ? { minimumFractionDigits: 0, maximumFractionDigits: 0 }
+      : undefined;
+    return Array.from(totals.entries())
+      .map(([cur, amt]) => formatCurrency(amt, cur, opts))
+      .join(' + ');
+  };
 
   // Local state for live updates
   const [machines, setMachines] = useState(initialMachines);
@@ -1748,8 +1786,8 @@ function DashboardClientInner({ user, data }: Props) {
                 { label: 'Completed At', value: wo.completedAt ? new Date(wo.completedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—' },
                 { label: 'Est. Duration', value: wo.estimatedMinutes ? `${wo.estimatedMinutes} min` : '—' },
                 { label: 'Actual Duration', value: wo.actualMinutes ? `${wo.actualMinutes} min` : '—' },
-                { label: 'Labor Cost', value: wo.laborCost != null ? fmtMoney(Number(wo.laborCost)) : '—' },
-                { label: 'Parts Cost', value: wo.partsCost != null ? fmtMoney(Number(wo.partsCost)) : '—' },
+                { label: 'Labor Cost', value: wo.laborCost != null ? fmtMoney(Number(wo.laborCost), wo.currency) : '—' },
+                { label: 'Parts Cost', value: wo.partsCost != null ? fmtMoney(Number(wo.partsCost), wo.currency) : '—' },
               ] as {label:string;value:any}[]).map(({ label, value }) => (
                 <div key={label}>
                   <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">{label}</p>
@@ -2901,21 +2939,21 @@ function DashboardClientInner({ user, data }: Props) {
                 <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                   <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Total Maintenance Cost</div>
                   <div className="text-2xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>
-                    {fmtMoney(workOrders.reduce((sum, wo) => sum + (wo.totalCost ?? 0), 0))}
+                    {fmtMoneyTotal(workOrders.map(wo => ({ amount: wo.totalCost ?? 0, currency: wo.currency })))}
                   </div>
                   <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>All work orders</div>
                 </div>
                 <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                   <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Labor Cost</div>
                   <div className="text-2xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>
-                    {fmtMoney(workOrders.reduce((sum, wo) => sum + (wo.laborCost ?? 0), 0))}
+                    {fmtMoneyTotal(workOrders.map(wo => ({ amount: wo.laborCost ?? 0, currency: wo.currency })))}
                   </div>
                   <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Total labor</div>
                 </div>
                 <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                   <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Parts Cost</div>
                   <div className="text-2xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>
-                    {fmtMoney(workOrders.reduce((sum, wo) => sum + (wo.partsCost ?? 0), 0))}
+                    {fmtMoneyTotal(workOrders.map(wo => ({ amount: wo.partsCost ?? 0, currency: wo.currency })))}
                   </div>
                   <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Total parts</div>
                 </div>
@@ -2974,6 +3012,8 @@ function DashboardClientInner({ user, data }: Props) {
                 <div className="space-y-2">
                   {['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map(priority => {
                     const filtered = workOrders.filter(wo => wo.priority === priority);
+                    // Bar percentage uses raw numeric sum (cross-currency comparison is approximate).
+                    // The displayed value uses fmtMoneyTotal which preserves per-currency accuracy.
                     const totalCost = filtered.reduce((sum, wo) => sum + (wo.totalCost ?? 0), 0);
                     const maxCost = workOrders.reduce((sum, wo) => sum + (wo.totalCost ?? 0), 0) || 1;
                     const pct = Math.round((totalCost / maxCost) * 100);
@@ -2985,7 +3025,7 @@ function DashboardClientInner({ user, data }: Props) {
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: colorMap[priority] || '#635bff', minWidth: filtered.length > 0 ? '8px' : '0' }} />
                         </div>
                         <span className="text-xs font-mono w-16 sm:w-24 text-right shrink-0" style={{ color: 'var(--text-primary)' }}>
-                          {fmtMoney(totalCost)}
+                          {fmtMoneyTotal(filtered.map(wo => ({ amount: wo.totalCost ?? 0, currency: wo.currency })))}
                         </span>
                         <span className="text-xs hidden sm:inline shrink-0" style={{ color: 'var(--text-muted)' }}>{filtered.length} WO</span>
                       </div>
@@ -3011,7 +3051,7 @@ function DashboardClientInner({ user, data }: Props) {
                         </div>
                         <div className="text-right flex-shrink-0">
                           <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                            {wo.totalCost != null ? fmtMoney(wo.totalCost) : "—"}
+                            {wo.totalCost != null ? fmtMoney(wo.totalCost, wo.currency) : "—"}
                           </div>
                           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                             {wo.completedAt ? new Date(wo.completedAt).toLocaleDateString() : '—'}
@@ -3093,7 +3133,7 @@ function DashboardClientInner({ user, data }: Props) {
                             <div className="text-sm font-medium truncate mb-1" style={{ color: 'var(--text-primary)' }}>{wo.title}</div>
                             <div className="flex items-center gap-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>
                               <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                                {wo.totalCost != null ? fmtMoney(Number(wo.totalCost)) : "—"}
+                                {wo.totalCost != null ? fmtMoney(Number(wo.totalCost), wo.currency) : "—"}
                               </span>
                               {wo.completedAt && <span>✓ {new Date(wo.completedAt).toLocaleDateString()}</span>}
                             </div>
@@ -3197,7 +3237,7 @@ function DashboardClientInner({ user, data }: Props) {
                               </td>
                               <td className="px-4 py-3 hidden lg:table-cell text-xs" style={{ color: 'var(--text-secondary)' }}>{wo.priority}</td>
                               <td className="px-4 py-3 text-right font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
-                                {wo.totalCost != null ? fmtMoney(Number(wo.totalCost)) : "—"}
+                                {wo.totalCost != null ? fmtMoney(Number(wo.totalCost), wo.currency) : "—"}
                               </td>
                               <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
                                 {wo.completedAt ? new Date(wo.completedAt).toLocaleDateString() : '—'}
@@ -3294,7 +3334,7 @@ function DashboardClientInner({ user, data }: Props) {
                 <div className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                   <div className="text-[10px] sm:text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Inventory Value</div>
                   <div className="text-sm sm:text-2xl font-bold mt-1 truncate" style={{ color: 'var(--text-primary)' }}>
-                    {fmtMoney(parts.reduce((sum, p) => sum + (p.unitCost ?? 0) * p.quantity, 0))}
+                    {fmtMoneyTotal(parts.map(p => ({ amount: (p.unitCost ?? 0) * p.quantity, currency: p.currency })))}
                   </div>
                   <div className="text-[10px] sm:text-xs mt-1 hidden sm:block" style={{ color: 'var(--text-muted)' }}>Estimated total value</div>
                 </div>
@@ -3357,7 +3397,7 @@ function DashboardClientInner({ user, data }: Props) {
                                     Qty: <strong>{part.quantity}</strong>/{part.minQuantity} min
                                   </span>
                                   {part.unitCost != null && (
-                                    <span className="text-[var(--text-muted)]">{fmtMoney(part.unitCost)}/ea</span>
+                                    <span className="text-[var(--text-muted)]">{fmtMoney(part.unitCost, part.currency)}/ea</span>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -3432,7 +3472,7 @@ function DashboardClientInner({ user, data }: Props) {
                               <td className="px-3 sm:px-4 py-3 font-mono text-xs hidden md:table-cell" style={{ color: 'var(--text-secondary)' }}>{part.partNumber ?? '—'}</td>
                               <td className="px-3 sm:px-4 py-3 text-center font-semibold" style={{ color: isOut ? '#ef4444' : isLow ? '#f59e0b' : 'var(--text-primary)' }}>{part.quantity}</td>
                               <td className="px-3 sm:px-4 py-3 text-center text-xs hidden sm:table-cell" style={{ color: 'var(--text-muted)' }}>{part.minQuantity}</td>
-                              <td className="px-3 sm:px-4 py-3 text-right font-mono text-xs hidden lg:table-cell" style={{ color: 'var(--text-primary)' }}>{part.unitCost != null ? fmtMoney(part.unitCost) : '—'}</td>
+                              <td className="px-3 sm:px-4 py-3 text-right font-mono text-xs hidden lg:table-cell" style={{ color: 'var(--text-primary)' }}>{part.unitCost != null ? fmtMoney(part.unitCost, part.currency) : '—'}</td>
                               <td className="px-3 sm:px-4 py-3 text-xs hidden lg:table-cell" style={{ color: 'var(--text-secondary)' }}>{part.supplier ?? '—'}</td>
                               <td className="px-3 sm:px-4 py-3 text-xs hidden lg:table-cell" style={{ color: 'var(--text-secondary)' }}>{part.location ?? '—'}</td>
                               <td className="px-3 sm:px-4 py-3 text-center">
@@ -3800,7 +3840,7 @@ function DashboardClientInner({ user, data }: Props) {
                   { label: 'Frequency', value: selectedTask.frequency },
                   { label: 'Next Due', value: formatDate(selectedTask.nextDueAt) },
                   { label: 'Estimated Time', value: selectedTask.estimatedMinutes ? `${selectedTask.estimatedMinutes} min` : '—' },
-                  { label: 'Estimated Cost', value: selectedTask.estimatedCost ? fmtMoney(Number(selectedTask.estimatedCost)) : '—' },
+                  { label: 'Estimated Cost', value: selectedTask.estimatedCost ? fmtMoney(Number(selectedTask.estimatedCost), selectedTask.currency) : '—' },
                 ] as {label:string; value:any}[]).map(item => (
                   <div key={item.label}>
                     <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">{item.label}</p>
@@ -4491,12 +4531,12 @@ function DashboardClientInner({ user, data }: Props) {
                       </div>
                       <div>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Unit Cost</p>
-                        <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text-primary)' }}>{selectedPart.unitCost != null ? fmtMoney(selectedPart.unitCost) : '—'}</p>
+                        <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text-primary)' }}>{selectedPart.unitCost != null ? fmtMoney(selectedPart.unitCost, selectedPart.currency) : '—'}</p>
                       </div>
                       <div>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Total Value</p>
                         <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text-primary)' }}>
-                          {selectedPart.unitCost != null ? fmtMoney(selectedPart.unitCost * selectedPart.quantity) : '—'}
+                          {selectedPart.unitCost != null ? fmtMoney(selectedPart.unitCost * selectedPart.quantity, selectedPart.currency) : '—'}
                         </p>
                       </div>
                       <div>

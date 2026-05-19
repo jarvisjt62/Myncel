@@ -34,6 +34,7 @@ export default async function AdminReports() {
             laborCost: true,
             partsCost: true,
             totalCost: true,
+            currency: true,
             completedAt: true,
             createdAt: true,
           },

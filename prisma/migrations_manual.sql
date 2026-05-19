@@ -144,3 +144,34 @@ ALTER TABLE "organizations"
 -- Organization localization (currency)
 ALTER TABLE "organizations"
   ADD COLUMN IF NOT EXISTS "currency" TEXT NOT NULL DEFAULT 'USD';
+
+-- Per-entry currency (Option A: each cost remembers its own currency).
+-- Backfill existing rows with the org's current currency, then default new rows to 'USD'.
+ALTER TABLE "work_orders"
+  ADD COLUMN IF NOT EXISTS "currency" TEXT DEFAULT 'USD';
+
+ALTER TABLE "parts"
+  ADD COLUMN IF NOT EXISTS "currency" TEXT DEFAULT 'USD';
+
+ALTER TABLE "maintenance_tasks"
+  ADD COLUMN IF NOT EXISTS "estimatedCost" DOUBLE PRECISION,
+  ADD COLUMN IF NOT EXISTS "currency" TEXT DEFAULT 'USD';
+
+-- Backfill: stamp each existing row with its org's currency
+UPDATE "work_orders" wo
+   SET "currency" = COALESCE(o."currency", 'USD')
+  FROM "organizations" o
+ WHERE wo."organizationId" = o."id"
+   AND (wo."currency" IS NULL OR wo."currency" = 'USD');
+
+UPDATE "parts" p
+   SET "currency" = COALESCE(o."currency", 'USD')
+  FROM "organizations" o
+ WHERE p."organizationId" = o."id"
+   AND (p."currency" IS NULL OR p."currency" = 'USD');
+
+UPDATE "maintenance_tasks" mt
+   SET "currency" = COALESCE(o."currency", 'USD')
+  FROM "organizations" o
+ WHERE mt."organizationId" = o."id"
+   AND (mt."currency" IS NULL OR mt."currency" = 'USD');

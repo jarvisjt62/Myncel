@@ -52,6 +52,7 @@ export async function GET() {
               laborCost: true,
               partsCost: true,
               totalCost: true,
+              currency: true,
               completedAt: true,
               createdAt: true,
             },

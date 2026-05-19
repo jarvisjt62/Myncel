@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     if (denied) return denied;
 
     const body = await req.json();
-    const { title, description, machineId, taskType, frequency, priority, estimatedMinutes } = body;
+    const { title, description, machineId, taskType, frequency, priority, estimatedMinutes, estimatedCost, intervalDays, nextDueAt: nextDueAtBody } = body;
 
     if (!title || !title.trim()) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
@@ -39,7 +39,15 @@ export async function POST(req: NextRequest) {
       BIANNUAL: 180,
       ANNUAL: 365,
     };
-    const nextDueAt = new Date(now.getTime() + (frequencyDays[frequency] || 30) * 24 * 60 * 60 * 1000);
+    const nextDueAt = nextDueAtBody
+      ? new Date(nextDueAtBody)
+      : new Date(now.getTime() + (frequencyDays[frequency] || 30) * 24 * 60 * 60 * 1000);
+
+    // Stamp the task with the org's current currency
+    const orgCurrency = await db.organization.findUnique({
+      where: { id: session.user.organizationId },
+      select: { currency: true },
+    }).then(o => o?.currency ?? 'USD').catch(() => 'USD');
 
     const task = await db.maintenanceTask.create({
       data: {
@@ -49,6 +57,9 @@ export async function POST(req: NextRequest) {
         frequency: frequency || 'MONTHLY',
         priority: priority || 'MEDIUM',
         estimatedMinutes: estimatedMinutes ? parseInt(estimatedMinutes) : null,
+        estimatedCost: estimatedCost && String(estimatedCost).trim() !== '' ? parseFloat(String(estimatedCost)) : null,
+        currency: orgCurrency,
+        intervalDays: intervalDays ? parseInt(intervalDays) : null,
         nextDueAt,
         machineId,
         organizationId: session.user.organizationId,

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatCurrency } from '@/app/lib/currency';
 
 interface WorkOrder {
   id: string;
@@ -13,6 +14,7 @@ interface WorkOrder {
   laborCost: number | null;
   partsCost: number | null;
   totalCost: number | null;
+  currency?: string | null;
   completedAt: string | null;
   createdAt: string;
   organizationId?: string;
@@ -29,6 +31,7 @@ interface Organization {
   id: string;
   name: string;
   plan: string;
+  currency?: string;
   machines: Machine[];
   workOrders: WorkOrder[];
   _count: { machines: number; workOrders: number; users: number };
@@ -112,6 +115,23 @@ export default function AdminReportsClient({ organizations: initialOrgs }: { org
   const completionRate = allWOs.length > 0
     ? Math.round((allWOs.filter(wo => wo.status === 'COMPLETED').length / allWOs.length) * 100)
     : 0;
+
+  // Currency helpers for super-admin reports.
+  // - When a specific org is selected: use that org's currency.
+  // - When "All Organizations" is selected: cross-org aggregates use USD with
+  //   an "\u2248 USD" label so we never silently misrepresent mixed currencies.
+  const isCrossOrg = selectedOrgId === 'all';
+  const selectedOrgCurrency = isCrossOrg
+    ? 'USD'
+    : (organizations.find(o => o.id === selectedOrgId)?.currency || 'USD');
+  const fmtAggregate = (amt: number) => {
+    if (isCrossOrg) return `${formatCurrency(amt, 'USD')} \u2248 USD`;
+    return formatCurrency(amt, selectedOrgCurrency);
+  };
+  const fmtRow = (amt: number | null | undefined, woCurrency?: string | null) => {
+    if (amt == null) return '\u2014';
+    return formatCurrency(amt, woCurrency || selectedOrgCurrency);
+  };
 
   const colorMap: Record<string, string> = { CRITICAL: '#ef4444', HIGH: '#f97316', MEDIUM: '#635bff', LOW: '#94a3b8' };
 
@@ -284,9 +304,9 @@ export default function AdminReportsClient({ organizations: initialOrgs }: { org
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Total Maintenance Cost', value: `$${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: 'All work orders' },
-          { label: 'Labor Cost', value: `$${laborCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: 'Total labor' },
-          { label: 'Parts Cost', value: `$${partsCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: 'Total parts' },
+          { label: 'Total Maintenance Cost', value: fmtAggregate(totalCost), sub: isCrossOrg ? 'Cross-org total (mixed currencies)' : 'All work orders' },
+          { label: 'Labor Cost', value: fmtAggregate(laborCost), sub: isCrossOrg ? 'Cross-org total (mixed currencies)' : 'Total labor' },
+          { label: 'Parts Cost', value: fmtAggregate(partsCost), sub: isCrossOrg ? 'Cross-org total (mixed currencies)' : 'Total parts' },
           { label: 'Completion Rate', value: `${completionRate}%`, sub: `${allWOs.filter(wo => wo.status === 'COMPLETED').length} of ${allWOs.length} completed` },
         ].map(card => (
           <div key={card.label} className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
@@ -347,7 +367,7 @@ export default function AdminReportsClient({ organizations: initialOrgs }: { org
                   <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: colorMap[priority] || '#635bff', minWidth: filtered.length > 0 ? '8px' : '0' }} />
                 </div>
                 <span className="text-xs font-mono w-24 text-right" style={{ color: 'var(--text-primary)' }}>
-                  ${cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {fmtAggregate(cost)}
                 </span>
                 <span className="text-xs w-12" style={{ color: 'var(--text-muted)' }}>{filtered.length} WOs</span>
               </div>
@@ -452,7 +472,7 @@ export default function AdminReportsClient({ organizations: initialOrgs }: { org
                     </td>
                     <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{wo.priority}</td>
                     <td className="px-4 py-3 text-right font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
-                      {wo.totalCost != null ? `$${Number(wo.totalCost).toFixed(2)}` : '—'}
+                      {fmtRow(wo.totalCost, wo.currency)}
                     </td>
                     <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
                       {wo.completedAt ? new Date(wo.completedAt).toLocaleDateString() : '—'}
@@ -518,9 +538,9 @@ export default function AdminReportsClient({ organizations: initialOrgs }: { org
                       <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{org._count.machines}</td>
                       <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{wos.length}</td>
                       <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{wos.filter(w => w.status === 'COMPLETED').length}</td>
-                      <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-primary)' }}>${tc.toFixed(2)}</td>
-                      <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>${lc.toFixed(2)}</td>
-                      <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>${pc.toFixed(2)}</td>
+                      <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-primary)' }}>{formatCurrency(tc, org.currency || 'USD')}</td>
+                      <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>{formatCurrency(lc, org.currency || 'USD')}</td>
+                      <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>{formatCurrency(pc, org.currency || 'USD')}</td>
                     </tr>
                   );
                 })}
@@ -549,9 +569,9 @@ export default function AdminReportsClient({ organizations: initialOrgs }: { org
               <Field label="Status">{viewingWo.status}</Field>
               <Field label="Priority">{viewingWo.priority}</Field>
               <Field label="Type">{viewingWo.type}</Field>
-              <Field label="Labor Cost">${Number(viewingWo.laborCost ?? 0).toFixed(2)}</Field>
-              <Field label="Parts Cost">${Number(viewingWo.partsCost ?? 0).toFixed(2)}</Field>
-              <Field label="Total Cost">${Number(viewingWo.totalCost ?? 0).toFixed(2)}</Field>
+              <Field label="Labor Cost">{formatCurrency(Number(viewingWo.laborCost ?? 0), viewingWo.currency || selectedOrgCurrency)}</Field>
+              <Field label="Parts Cost">{formatCurrency(Number(viewingWo.partsCost ?? 0), viewingWo.currency || selectedOrgCurrency)}</Field>
+              <Field label="Total Cost">{formatCurrency(Number(viewingWo.totalCost ?? 0), viewingWo.currency || selectedOrgCurrency)}</Field>
               <Field label="Created">{new Date(viewingWo.createdAt).toLocaleString()}</Field>
               <Field label="Completed">{viewingWo.completedAt ? new Date(viewingWo.completedAt).toLocaleString() : 'Not completed'}</Field>
             </div>

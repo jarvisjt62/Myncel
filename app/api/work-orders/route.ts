@@ -113,6 +113,13 @@ export async function POST(req: NextRequest) {
       ? String(assignedToId)
       : null;
 
+    // Stamp the work order with the org's current currency, so its costs
+    // remain interpretable even if the org changes its currency later.
+    const orgCurrency = await db.organization.findUnique({
+      where: { id: effectiveOrgId },
+      select: { currency: true },
+    }).then(o => o?.currency ?? 'USD').catch(() => 'USD');
+
     const workOrder = await db.workOrder.create({
       data: {
         woNumber,
@@ -126,6 +133,7 @@ export async function POST(req: NextRequest) {
         laborCost: parsedLaborCost,
         partsCost: parsedPartsCost,
         totalCost,
+        currency: orgCurrency,
         assignedToId: resolvedAssignedToId,
         machineId,
         organizationId: effectiveOrgId,

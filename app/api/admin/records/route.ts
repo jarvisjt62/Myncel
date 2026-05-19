@@ -126,6 +126,7 @@ export async function GET(req: NextRequest) {
             quantity: true,
             minQuantity: true,
             unitCost: true,
+            currency: true,
             supplier: true,
           },
         }),
@@ -136,8 +137,8 @@ export async function GET(req: NextRequest) {
         records: (rows || []).map((r: any) => ({
           id: r.id,
           label: r.name,
-          sublabel: `${r.partNumber ? r.partNumber + ' · ' : ''}qty ${r.quantity}/${r.minQuantity} min${r.unitCost != null ? ` · $${r.unitCost}` : ''}${r.supplier ? ` · ${r.supplier}` : ''}`,
-          meta: { quantity: r.quantity, unitCost: r.unitCost },
+          sublabel: `${r.partNumber ? r.partNumber + ' · ' : ''}qty ${r.quantity}/${r.minQuantity} min${r.unitCost != null ? ` · ${r.currency || 'USD'} ${r.unitCost}` : ''}${r.supplier ? ` · ${r.supplier}` : ''}`,
+          meta: { quantity: r.quantity, unitCost: r.unitCost, currency: r.currency || 'USD' },
         })),
       });
     }

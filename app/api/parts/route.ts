@@ -39,6 +39,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Stamp the part with the org's current currency
+    const orgCurrency = await db.organization.findUnique({
+      where: { id: targetOrgId },
+      select: { currency: true },
+    }).then(o => o?.currency ?? 'USD').catch(() => 'USD');
+
     const part = await db.part.create({
       data: {
         name: name.trim(),
@@ -47,6 +53,7 @@ export async function POST(req: NextRequest) {
         quantity: typeof quantity === 'number' ? quantity : parseInt(quantity) || 0,
         minQuantity: typeof minQuantity === 'number' ? minQuantity : parseInt(minQuantity) || 1,
         unitCost: typeof unitCost === 'number' ? unitCost : (unitCost ? parseFloat(unitCost) : null),
+        currency: orgCurrency,
         supplier: supplier?.trim() || null,
         location: location?.trim() || null,
         imageUrl: imageUrl || null,

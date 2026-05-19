@@ -22,7 +22,7 @@ export default async function AdminWorkOrders() {
       take: 100,
       include: {
         machine: { select: { name: true } },
-        organization: { select: { name: true, plan: true } },
+        organization: { select: { name: true, plan: true, currency: true } },
         assignedTo: { select: { name: true } },
         createdBy: { select: { name: true } },
       },
