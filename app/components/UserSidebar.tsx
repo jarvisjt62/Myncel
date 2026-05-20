@@ -312,7 +312,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
   const showApiDocs = isEnabled('feature.api.enabled');
 
   const Sidebar = () => (
-    <aside className="w-full lg:w-60 flex flex-col h-[100dvh] lg:h-full min-h-0 pt-safe pb-safe" style={{ backgroundColor: 'var(--bg-sidebar)', borderRight: '1px solid var(--border)' }}>
+    <aside className="w-full lg:w-60 flex flex-col h-full min-h-0" style={{ backgroundColor: 'var(--bg-sidebar)', borderRight: '1px solid var(--border)' }}>
       {/* Logo */}
       <div className="p-5 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
         <Link href="/dashboard" prefetch={true} className="flex items-center gap-1.5">
@@ -629,8 +629,14 @@ function UserShellInner({ user, children }: UserSidebarProps) {
         <div className="lg:hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
-          {/* Sidebar panel — pinned to left edge with slide-in, full viewport height (uses 100dvh so it respects system bars on mobile) */}
-          <div className="compact-sidebar absolute left-0 top-0 h-[100dvh] w-72 max-w-[85vw] flex flex-col shadow-2xl animate-slide-in-left overflow-hidden" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
+          {/* Sidebar panel — pinned to left edge with slide-in. Uses 100dvh so the
+              panel fills the entire visible viewport (respects mobile browser
+              chrome + system bars). pt-safe/pb-safe push the LOGO and FOOTER into
+              the safe zone, while the panel BACKGROUND still extends edge-to-edge. */}
+          <div
+            className="compact-sidebar absolute left-0 top-0 w-72 max-w-[85vw] flex flex-col shadow-2xl animate-slide-in-left overflow-hidden pt-safe pb-safe"
+            style={{ backgroundColor: 'var(--bg-sidebar)', height: '100dvh' }}
+          >
             {/* Close button — positioned with top:env(safe-area-inset-top) so
                 it sits BELOW the Samsung / iOS status bar instead of behind it. */}
             <button
@@ -655,12 +661,19 @@ function UserShellInner({ user, children }: UserSidebarProps) {
             On normal browsers env(safe-area-inset-top) resolves to 0 so the
             layout matches the previous py-3 / sm:py-4. */}
         <header
-          className="px-3 sm:px-6 flex items-center justify-between sticky top-0 z-10"
+          className="flex items-center justify-between sticky top-0 z-10"
           style={{
             backgroundColor: 'var(--bg-nav)',
             borderBottom: '1px solid var(--border)',
+            // Top: clear the system status bar (Samsung clock / iOS notch) in BOTH portrait + landscape.
             paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
             paddingBottom: '0.75rem',
+            // Left/Right: in landscape on iPhone X+ the camera notch lives on one side and the
+            // home-indicator/rounded corner on the other. Without these insets the page title
+            // and bell/avatar slide UNDER the notch. max() keeps a sane minimum on browsers
+            // where env(safe-area-inset-*) resolves to 0 (desktop, Android portrait, etc.).
+            paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))',
+            paddingRight: 'max(0.75rem, env(safe-area-inset-right, 0px))',
           }}
         >
           <div className="flex items-center gap-3">
@@ -693,8 +706,16 @@ function UserShellInner({ user, children }: UserSidebarProps) {
           </div>
         </header>
 
-        {/* Page content */}
-        <div className="flex-1 min-w-0">
+        {/* Page content — apply landscape-notch safe-area to the body too so
+            cards / tables / charts never slide under the iPhone notch when the
+            device is rotated to landscape. Safe insets resolve to 0 on desktop. */}
+        <div
+          className="flex-1 min-w-0"
+          style={{
+            paddingLeft: 'env(safe-area-inset-left, 0px)',
+            paddingRight: 'env(safe-area-inset-right, 0px)',
+          }}
+        >
           {children}
         </div>
       </main>
