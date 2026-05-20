@@ -632,10 +632,17 @@ function UserShellInner({ user, children }: UserSidebarProps) {
           {/* Sidebar panel — pinned to left edge with slide-in. Uses 100dvh so the
               panel fills the entire visible viewport (respects mobile browser
               chrome + system bars). pt-safe/pb-safe push the LOGO and FOOTER into
-              the safe zone, while the panel BACKGROUND still extends edge-to-edge. */}
+              the safe zone. We also offset `left` by env(safe-area-inset-left)
+              so the panel content (logo + menu items) is NOT clipped by the
+              iPhone Dynamic Island in landscape orientation. The dark backdrop
+              behind it still covers the true left edge of the screen. */}
           <div
-            className="compact-sidebar absolute left-0 top-0 w-72 max-w-[85vw] flex flex-col shadow-2xl animate-slide-in-left overflow-hidden pt-safe pb-safe"
-            style={{ backgroundColor: 'var(--bg-sidebar)', height: '100dvh' }}
+            className="compact-sidebar absolute top-0 w-72 max-w-[85vw] flex flex-col shadow-2xl animate-slide-in-left overflow-hidden pt-safe pb-safe"
+            style={{
+              backgroundColor: 'var(--bg-sidebar)',
+              height: '100dvh',
+              left: 'env(safe-area-inset-left, 0px)',
+            }}
           >
             {/* Close button — positioned with top:env(safe-area-inset-top) so
                 it sits BELOW the Samsung / iOS status bar instead of behind it. */}
