@@ -26,6 +26,7 @@ import {
   sendWorkOrderAssignedEmail,
 } from '@/lib/email';
 import { sendPushToUsers } from './push';
+import { filterPushDelivery } from './push-filter';
 
 const APP_URL = process.env.NEXTAUTH_URL || 'https://myncel.com';
 
@@ -276,15 +277,22 @@ export async function dispatchNotifications(
         }
 
         if (pushTitle) {
-          console.log(`${logPrefix} PUSH: fanning out to ${pushUsers.length} user(s)`);
-          sendPushToUsers(
-            pushUsers.map(u => u.id),
-            { title: pushTitle, body: pushBody, link: pushLink, kind: pushKind }
-          ).then(() => {
-            console.log(`${logPrefix} PUSH: dispatch complete`);
-          }).catch(err => {
-            console.error(`${logPrefix} PUSH dispatch error:`, err);
-          });
+          // Honor org NotificationSetting: master push toggle, per-kind
+          // toggles, and quiet hours. EMERGENCY bypasses quiet hours.
+          const decision = filterPushDelivery(pushKind, settings);
+          if (!decision.allow) {
+            console.log(`${logPrefix} PUSH SKIPPED: ${decision.reason}`);
+          } else {
+            console.log(`${logPrefix} PUSH: fanning out to ${pushUsers.length} user(s)`);
+            sendPushToUsers(
+              pushUsers.map(u => u.id),
+              { title: pushTitle, body: pushBody, link: pushLink, kind: pushKind }
+            ).then(() => {
+              console.log(`${logPrefix} PUSH: dispatch complete`);
+            }).catch(err => {
+              console.error(`${logPrefix} PUSH dispatch error:`, err);
+            });
+          }
         } else {
           console.log(`${logPrefix} PUSH SKIPPED: no message template for event type`);
         }
