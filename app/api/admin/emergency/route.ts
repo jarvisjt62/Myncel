@@ -129,8 +129,18 @@ export async function POST(req: NextRequest) {
         action: 'EMERGENCY_BROADCAST',
         entity: 'Notification',
         entityId: me.organizationId,
-        changes: { title, message, link, recipientCount: userIds.length },
+        changes: {
+          title,
+          message,
+          link,
+          recipientCount: userIds.length,
+          notificationsCreated: createdCount,
+          pushesSent: pushSent,
+          pushesSkipped: pushSkipped,
+          pushSkipReason: decision.allow ? null : decision.reason,
+        },
         userId: me.id,
+        organizationId: me.organizationId,
       },
     });
   } catch (err) {

@@ -284,6 +284,23 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  // Record this run in the AuditLog so /admin/push-debug can show recent
+  // sweeps. Best-effort — don't fail the response if this errors.
+  try {
+    await db.auditLog.create({
+      data: {
+        action: 'NOTIFICATIONS_CRON_RUN',
+        entity: 'CronJob',
+        entityId: 'notifications',
+        changes: {
+          durationMs: Date.now() - startedAt,
+          ranAt: now.toISOString(),
+          counts,
+        } as any,
+      },
+    });
+  } catch { /* swallow */ }
+
   return NextResponse.json({
     ok: true,
     durationMs: Date.now() - startedAt,

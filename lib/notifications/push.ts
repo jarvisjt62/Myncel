@@ -19,6 +19,7 @@
  */
 
 import { db } from '@/lib/db';
+import { logPushAttempt, tokenSuffix } from './push-log';
 
 export interface PushPayload {
   title: string;
@@ -48,8 +49,8 @@ export async function sendPushToUser(userId: string, p: PushPayload): Promise<vo
   }
 
   await Promise.allSettled([
-    expoTokens.length ? sendViaExpo(expoTokens, p) : Promise.resolve(),
-    fcmTokens.length  ? sendViaFcm(fcmTokens, p)   : Promise.resolve(),
+    expoTokens.length ? sendViaExpo(expoTokens, p, userId) : Promise.resolve(),
+    fcmTokens.length  ? sendViaFcm(fcmTokens, p, userId)   : Promise.resolve(),
   ]);
 }
 
@@ -59,7 +60,7 @@ export async function sendPushToUsers(userIds: string[], p: PushPayload): Promis
 
 /* ─────────────────────────── Expo ─────────────────────────── */
 
-async function sendViaExpo(tokens: string[], p: PushPayload): Promise<void> {
+async function sendViaExpo(tokens: string[], p: PushPayload, userId?: string): Promise<void> {
   try {
     const messages = tokens.map(to => ({
       to,
@@ -70,11 +71,22 @@ async function sendViaExpo(tokens: string[], p: PushPayload): Promise<void> {
       priority: 'high',
       channelId: 'myncel-default',
     }));
-    await fetch('https://exp.host/--/api/v2/push/send', {
+    const r = await fetch('https://exp.host/--/api/v2/push/send', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'accept': 'application/json' },
       body: JSON.stringify(messages),
-    }).catch(e => console.warn('[push/expo] dispatch failed', e));
+    }).catch(e => { console.warn('[push/expo] dispatch failed', e); return null; });
+    const ok = !!(r && r.ok);
+    await Promise.allSettled(tokens.map(t => logPushAttempt({
+      channel: 'expo',
+      outcome: ok ? 'sent' : 'error',
+      tokenSuffix: tokenSuffix(t),
+      userId: userId ?? null,
+      title: p.title,
+      body: p.body,
+      kind: p.kind ?? null,
+      status: r?.status ?? null,
+    })));
   } catch (e) {
     console.warn('[push/expo] error', e);
   }
@@ -124,13 +136,24 @@ async function getFcmAccessToken(): Promise<string | null> {
   return cachedAccessToken.token;
 }
 
-async function sendViaFcm(targets: { token: string; platform: 'ios' | 'android' }[], p: PushPayload): Promise<void> {
+async function sendViaFcm(targets: { token: string; platform: 'ios' | 'android' }[], p: PushPayload, userId?: string): Promise<void> {
   const projectId = process.env.FCM_PROJECT_ID;
   const accessToken = await getFcmAccessToken();
   if (!projectId || !accessToken) {
     if (process.env.NODE_ENV !== 'production') {
       console.info('[push/fcm] skipping — FCM env vars not configured. Payload:', p.title);
     }
+    await Promise.allSettled(targets.map(t => logPushAttempt({
+      channel: 'fcm',
+      outcome: 'skipped_no_config',
+      tokenSuffix: tokenSuffix(t.token),
+      platform: t.platform,
+      userId: userId ?? null,
+      title: p.title,
+      body: p.body,
+      kind: p.kind ?? null,
+      errorText: 'FCM_PROJECT_ID or service account env vars missing',
+    })));
     return;
   }
 
@@ -175,12 +198,37 @@ async function sendViaFcm(targets: { token: string; platform: 'ios' | 'android' 
         // 404 / NOT_FOUND / UNREGISTERED → token is dead; clean it up.
         if (r.status === 404 || /UNREGISTERED|INVALID_ARGUMENT/i.test(text)) {
           await db.mobilePushToken.deleteMany({ where: { token } }).catch(() => {});
+          await logPushAttempt({
+            channel: 'fcm', outcome: 'token_dead',
+            tokenSuffix: tokenSuffix(token), platform, userId: userId ?? null,
+            title: p.title, body: p.body, kind: p.kind ?? null,
+            status: r.status, errorText: text,
+          });
         } else {
           console.warn('[push/fcm] send error', r.status, text);
+          await logPushAttempt({
+            channel: 'fcm', outcome: 'error',
+            tokenSuffix: tokenSuffix(token), platform, userId: userId ?? null,
+            title: p.title, body: p.body, kind: p.kind ?? null,
+            status: r.status, errorText: text,
+          });
         }
+      } else {
+        await logPushAttempt({
+          channel: 'fcm', outcome: 'sent',
+          tokenSuffix: tokenSuffix(token), platform, userId: userId ?? null,
+          title: p.title, body: p.body, kind: p.kind ?? null,
+          status: r.status,
+        });
       }
-    } catch (e) {
+    } catch (e: any) {
       console.warn('[push/fcm] network error', e);
+      await logPushAttempt({
+        channel: 'fcm', outcome: 'error',
+        tokenSuffix: tokenSuffix(token), platform, userId: userId ?? null,
+        title: p.title, body: p.body, kind: p.kind ?? null,
+        errorText: String(e?.message ?? e).slice(0, 200),
+      });
     }
   }));
 }
