@@ -5,14 +5,16 @@ import { usePathname } from 'next/navigation';
 import { prefetch } from '@/app/lib/client-cache';
 
 const NAV_ITEMS = [
-  { href: '/settings',               label: 'Profile',       icon: '👤', cacheKey: null },
-  { href: '/settings/security',      label: 'Security',      icon: '🔒', cacheKey: null },
-  { href: '/settings/team',          label: 'Team',          icon: '👥', cacheKey: null },
-  { href: '/settings/notifications', label: 'Notifications', icon: '🔔', cacheKey: 'notifications' },
-  { href: '/settings/integrations',  label: 'Integrations',  icon: '🔌', cacheKey: 'integrations' },
-  { href: '/settings/billing',       label: 'Billing',       icon: '💳', cacheKey: null },
-  { href: '/settings/api-keys',      label: 'API Keys',      icon: '🔑', cacheKey: 'api-keys' },
-  { href: '/settings/webhooks',      label: 'Webhooks',      icon: '🪝', cacheKey: 'webhooks' },
+  { href: '/settings',               label: 'Profile',       icon: '👤', cacheKey: null, adminOnly: false },
+  { href: '/settings/security',      label: 'Security',      icon: '🔒', cacheKey: null, adminOnly: false },
+  { href: '/settings/team',          label: 'Team',          icon: '👥', cacheKey: null, adminOnly: false },
+  { href: '/settings/notifications', label: 'Notifications', icon: '🔔', cacheKey: 'notifications', adminOnly: false },
+  { href: '/settings/integrations',  label: 'Integrations',  icon: '🔌', cacheKey: 'integrations', adminOnly: false },
+  { href: '/settings/billing',       label: 'Billing',       icon: '💳', cacheKey: null, adminOnly: false },
+  { href: '/settings/api-keys',      label: 'API Keys',      icon: '🔑', cacheKey: 'api-keys', adminOnly: false },
+  { href: '/settings/webhooks',      label: 'Webhooks',      icon: '🪝', cacheKey: 'webhooks', adminOnly: false },
+  // Visible only to OWNER / ADMIN. Routes to a per-org Emergency Broadcast page.
+  { href: '/settings/emergency-broadcast', label: 'Emergency Broadcast', icon: '🚨', cacheKey: null, adminOnly: true },
 ];
 
 // Map cache keys to their API endpoints for prefetching
@@ -23,8 +25,11 @@ const PREFETCH_ENDPOINTS: Record<string, string> = {
   'webhooks': '/api/webhooks',
 };
 
-export default function SettingsShell({ children }: { children: React.ReactNode }) {
+export default function SettingsShell({ children, userRole }: { children: React.ReactNode; userRole?: string | null }) {
   const pathname = usePathname();
+
+  const isAdmin = userRole === 'OWNER' || userRole === 'ADMIN';
+  const visibleNavItems = NAV_ITEMS.filter(item => !item.adminOnly || isAdmin);
 
   // Exact match for /settings, prefix match for sub-pages
   const isActive = (href: string) => {
@@ -60,7 +65,7 @@ export default function SettingsShell({ children }: { children: React.ReactNode 
         <aside className="sm:w-52 flex-shrink-0">
           {/* Mobile: horizontal scroll pills */}
           <nav className="flex sm:flex-col gap-1 overflow-x-auto pb-1 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 sm:space-y-0.5 flex-nowrap sm:flex-wrap">
-            {NAV_ITEMS.map(item => {
+            {visibleNavItems.map(item => {
               const active = isActive(item.href);
               return (
                 <Link
