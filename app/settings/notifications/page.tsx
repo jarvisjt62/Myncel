@@ -231,6 +231,19 @@ interface NotificationSettings {
   slackWorkOrders: boolean;
   slackAlerts: boolean;
   slackChannel: string;
+  // Push channels
+  pushEnabled: boolean;
+  pushWorkOrders: boolean;
+  pushAlerts: boolean;
+  pushEmergency: boolean;
+  pushMaintenance: boolean;
+  pushParts: boolean;
+  pushRemoteSupport: boolean;
+  // Quiet hours
+  quietHoursEnabled: boolean;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+  quietHoursTimezone: string;
 }
 
 interface Capabilities {
@@ -266,6 +279,10 @@ export default function NotificationsPage() {
     emailWorkOrders: true, emailAlerts: true, emailReports: true, emailDigest: 'WEEKLY',
     smsEnabled: false, smsWorkOrders: false, smsAlerts: false, smsCriticalOnly: true, phoneNumber: '',
     slackEnabled: false, slackWorkOrders: false, slackAlerts: false, slackChannel: '',
+    pushEnabled: true, pushWorkOrders: true, pushAlerts: true, pushEmergency: true,
+    pushMaintenance: true, pushParts: true, pushRemoteSupport: true,
+    quietHoursEnabled: false, quietHoursStart: '22:00', quietHoursEnd: '07:00',
+    quietHoursTimezone: 'America/New_York',
   });
   // Country code selector state — split from the local number
   const [countryCode, setCountryCode] = useState('+1');
@@ -623,6 +640,117 @@ export default function NotificationsPage() {
             </>
           )}
         </div>
+      </div>
+
+      {/* Push notifications */}
+      <div className="bg-[var(--surface-1)] border border-[var(--border-subtle)] rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>📱 Push Notifications</h3>
+          <span className="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">Mobile + Web</span>
+        </div>
+        <p className="text-xs mb-4" style={{ color: 'var(--text-secondary)' }}>
+          Push notifications are delivered to the Myncel mobile app on iOS and Android, and to web browsers that have granted notification permission. Emergency alerts always bypass quiet hours.
+        </p>
+
+        <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+          <div>
+            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Enable push notifications</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>Master switch — turn off to silence all push notifications.</p>
+          </div>
+          <Toggle checked={settings.pushEnabled} onChange={() => toggle('pushEnabled')} />
+        </div>
+
+        {settings.pushEnabled && (
+          <div className="mt-3 space-y-2">
+            {[
+              { key: 'pushWorkOrders' as const,    label: 'Work Order Updates',     desc: 'Assignments, completions, and overdue work orders' },
+              { key: 'pushMaintenance' as const,   label: 'Maintenance Reminders',  desc: 'Scheduled tasks coming due and overdue' },
+              { key: 'pushAlerts' as const,        label: 'Equipment Alerts',       desc: 'Sensor thresholds, breakdowns, and other machine alerts' },
+              { key: 'pushParts' as const,         label: 'Low / Out of Stock Parts', desc: 'Inventory dropped to or below the reorder point' },
+              { key: 'pushRemoteSupport' as const, label: 'Remote Support Reminders', desc: 'Notifications when a remote session is starting soon' },
+              { key: 'pushEmergency' as const,     label: 'Emergency Alerts',       desc: 'Urgent broadcasts from your administrators (always bypass quiet hours)' },
+            ].map(item => (
+              <div key={item.key} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{item.label}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>
+                </div>
+                <Toggle
+                  checked={settings[item.key]}
+                  onChange={() => toggle(item.key)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quiet hours */}
+      <div className="bg-[var(--surface-1)] border border-[var(--border-subtle)] rounded-xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>🌙 Quiet Hours</h3>
+        </div>
+        <p className="text-xs mb-4" style={{ color: 'var(--text-secondary)' }}>
+          Silence non-emergency push notifications during a daily window — for example, overnight. Emergency alerts always come through.
+        </p>
+
+        <div className="flex items-center justify-between p-3 rounded-lg mb-3" style={{ background: 'var(--surface-2)' }}>
+          <div>
+            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Enable quiet hours</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>Hold all non-emergency pushes during the window below.</p>
+          </div>
+          <Toggle checked={settings.quietHoursEnabled} onChange={() => toggle('quietHoursEnabled')} />
+        </div>
+
+        {settings.quietHoursEnabled && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>Start</label>
+              <input
+                type="time"
+                value={settings.quietHoursStart}
+                onChange={e => setSettings(prev => ({ ...prev, quietHoursStart: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border text-sm"
+                style={{ background: 'var(--surface-2)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>End</label>
+              <input
+                type="time"
+                value={settings.quietHoursEnd}
+                onChange={e => setSettings(prev => ({ ...prev, quietHoursEnd: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border text-sm"
+                style={{ background: 'var(--surface-2)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>Time zone</label>
+              <select
+                value={settings.quietHoursTimezone}
+                onChange={e => setSettings(prev => ({ ...prev, quietHoursTimezone: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border text-sm"
+                style={{ background: 'var(--surface-2)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+              >
+                <option value="America/New_York">Eastern (New York)</option>
+                <option value="America/Chicago">Central (Chicago)</option>
+                <option value="America/Denver">Mountain (Denver)</option>
+                <option value="America/Phoenix">Mountain — no DST (Phoenix)</option>
+                <option value="America/Los_Angeles">Pacific (Los Angeles)</option>
+                <option value="America/Anchorage">Alaska</option>
+                <option value="Pacific/Honolulu">Hawaii</option>
+                <option value="UTC">UTC</option>
+                <option value="Europe/London">London</option>
+                <option value="Europe/Berlin">Berlin</option>
+                <option value="Asia/Tokyo">Tokyo</option>
+                <option value="Australia/Sydney">Sydney</option>
+              </select>
+            </div>
+            <div className="sm:col-span-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+              💡 Window can wrap midnight (e.g. 22:00 → 07:00). Emergency broadcasts from your administrators will always come through.
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Save */}

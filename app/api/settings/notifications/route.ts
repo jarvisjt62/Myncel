@@ -36,10 +36,18 @@ const TOGGLE_KEYS = [
   'emailWorkOrders', 'emailAlerts', 'emailReports', 'emailDigest',
   'smsEnabled', 'smsWorkOrders', 'smsAlerts', 'smsCriticalOnly',
   'slackEnabled', 'slackWorkOrders', 'slackAlerts',
+  // Push channel toggles
+  'pushEnabled', 'pushWorkOrders', 'pushAlerts', 'pushEmergency',
+  'pushMaintenance', 'pushParts', 'pushRemoteSupport',
+  // Quiet hours
+  'quietHoursEnabled',
 ] as const;
 
 // Keys that are always per-org (never inherited from admin)
-const PER_ORG_KEYS = ['phoneNumber', 'slackChannel'] as const;
+const PER_ORG_KEYS = [
+  'phoneNumber', 'slackChannel',
+  'quietHoursStart', 'quietHoursEnd', 'quietHoursTimezone',
+] as const;
 
 // GET - Get notification settings for the organization
 export async function GET(req: NextRequest) {

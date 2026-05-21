@@ -627,6 +627,8 @@ enum NotificationType {
   PARTS_LOW
   SYSTEM_ANNOUNCEMENT
   MENTION
+  EMERGENCY
+  REMOTE_SUPPORT_SCHEDULED
 }
 
 enum NotificationPriority {
@@ -841,6 +843,22 @@ model NotificationSetting {
   slackWorkOrders Boolean @default(false)
   slackAlerts     Boolean @default(false)
   slackChannel    String?
+
+  // Push notifications (mobile + web push via FCM/Expo, fanned out from lib/notifications/push.ts)
+  pushEnabled       Boolean @default(true)
+  pushWorkOrders    Boolean @default(true)
+  pushAlerts        Boolean @default(true)
+  pushEmergency     Boolean @default(true)
+  pushMaintenance   Boolean @default(true)
+  pushParts         Boolean @default(true)
+  pushRemoteSupport Boolean @default(true)
+
+  // Quiet hours — silences non-EMERGENCY pushes during this window.
+  // Times are stored as "HH:MM" 24h strings interpreted in quietHoursTimezone (IANA).
+  quietHoursEnabled  Boolean @default(false)
+  quietHoursStart    String? // e.g. "22:00"
+  quietHoursEnd      String? // e.g. "07:00"
+  quietHoursTimezone String  @default("America/New_York")
 
   // Timestamps
   createdAt DateTime @default(now())

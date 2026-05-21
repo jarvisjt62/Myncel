@@ -175,3 +175,30 @@ UPDATE "maintenance_tasks" mt
   FROM "organizations" o
  WHERE mt."organizationId" = o."id"
    AND (mt."currency" IS NULL OR mt."currency" = 'USD');
+
+-- ===========================================================================
+-- 2026-XX-XX  Notification system extension (push channels + quiet hours +
+--             EMERGENCY / REMOTE_SUPPORT_SCHEDULED enum values)
+-- Safe to run multiple times. No data loss.
+-- ===========================================================================
+
+-- 1. Add new NotificationType enum values (idempotent in Postgres 12+)
+ALTER TYPE "NotificationType" ADD VALUE IF NOT EXISTS 'EMERGENCY';
+ALTER TYPE "NotificationType" ADD VALUE IF NOT EXISTS 'REMOTE_SUPPORT_SCHEDULED';
+
+-- 2. Push channel toggles on notification_settings
+ALTER TABLE "notification_settings"
+  ADD COLUMN IF NOT EXISTS "pushEnabled"       BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "pushWorkOrders"    BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "pushAlerts"        BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "pushEmergency"     BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "pushMaintenance"   BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "pushParts"         BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "pushRemoteSupport" BOOLEAN NOT NULL DEFAULT true;
+
+-- 3. Quiet hours fields on notification_settings
+ALTER TABLE "notification_settings"
+  ADD COLUMN IF NOT EXISTS "quietHoursEnabled"  BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS "quietHoursStart"    TEXT,
+  ADD COLUMN IF NOT EXISTS "quietHoursEnd"      TEXT,
+  ADD COLUMN IF NOT EXISTS "quietHoursTimezone" TEXT NOT NULL DEFAULT 'America/New_York';
