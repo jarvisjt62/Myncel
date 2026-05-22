@@ -293,7 +293,7 @@ export default function Navbar() {
 
   return (
     <nav className="stripe-nav" ref={navRef}>
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between relative">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between relative gap-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-1.5 font-bold text-xl text-[#0a2540] flex-shrink-0">
           <img src="/logo.png" alt="Myncel" className="w-8 h-8 sm:w-10 sm:h-10" />
@@ -344,29 +344,29 @@ export default function Navbar() {
             <ResourcesMenu isOpen={openMenu === 'resources'} onClose={() => setOpenMenu(null)} />
           </div>
 
-          <Link href="/pricing" className="px-3 py-2 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc] transition-colors">
+          <Link href="/pricing" className="px-3 py-2 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc] transition-colors whitespace-nowrap">
             Pricing
           </Link>
-          <Link href="/handbook" className="px-3 py-2 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc] transition-colors">
+          <Link href="/handbook" className="px-3 py-2 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc] transition-colors whitespace-nowrap">
             Handbook
           </Link>
-          <Link href="/customers" className="px-3 py-2 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc] transition-colors">
+          <Link href="/customers" className="px-3 py-2 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc] transition-colors whitespace-nowrap">
             Customers
           </Link>
-          <Link href="/about" className="px-3 py-2 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc] transition-colors">
+          <Link href="/about" className="px-3 py-2 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc] transition-colors whitespace-nowrap">
             Company
           </Link>
         </div>
 
         {/* Right CTA */}
-        <div className="hidden lg:flex items-center gap-3">
-          <Link href="/signin" className="text-sm font-medium text-[#425466] hover:text-[#0a2540] transition-colors px-3 py-2 rounded-lg hover:bg-[#f6f9fc]">
+        <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+          <Link href="/signin" className="text-sm font-medium text-[#425466] hover:text-[#0a2540] transition-colors px-3 py-2 rounded-lg hover:bg-[#f6f9fc] whitespace-nowrap">
             Sign in
           </Link>
-          <Link href="/contact" className="text-sm font-medium text-[#425466] border border-[#e6ebf1] px-4 py-2 rounded-lg hover:bg-[#f6f9fc] hover:border-[#c9d7e3] transition-all">
+          <Link href="/contact" className="text-sm font-medium text-[#425466] border border-[#e6ebf1] px-4 py-2 rounded-lg hover:bg-[#f6f9fc] hover:border-[#c9d7e3] transition-all whitespace-nowrap">
             Contact sales
           </Link>
-          <Link href="/free-trial" className="btn-stripe-primary text-sm">
+          <Link href="/free-trial" className="btn-stripe-primary text-sm whitespace-nowrap">
             Start free trial →
           </Link>
         </div>

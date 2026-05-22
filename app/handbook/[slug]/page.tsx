@@ -4,6 +4,7 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { HANDBOOK_CHAPTERS, findChapter, type HandbookSection } from '@/lib/handbook/content';
 import HandbookSidebar from '../HandbookSidebar';
+import HandbookDownloadButton from '../HandbookDownloadButton';
 
 interface Props {
   params: { slug: string };
@@ -95,10 +96,13 @@ export default function HandbookChapterPage({ params }: Props) {
           <HandbookSidebar activeSlug={chapter.slug} />
 
           <article className="flex-1 min-w-0 bg-white border border-[#e6ebf1] rounded-xl p-6 md:p-10">
-            <div className="text-xs text-[#8898aa] uppercase tracking-wider mb-2">
-              <Link href="/handbook" className="hover:text-[#635bff]">Handbook</Link>
-              {' › '}
-              Chapter {idx + 1} of {HANDBOOK_CHAPTERS.length}
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="text-xs text-[#8898aa] uppercase tracking-wider">
+                <Link href="/handbook" className="hover:text-[#635bff]">Handbook</Link>
+                {' › '}
+                Chapter {idx + 1} of {HANDBOOK_CHAPTERS.length}
+              </div>
+              <HandbookDownloadButton variant="compact" slug={chapter.slug} />
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-[#0a2540] mb-3 flex items-start gap-3">
               <span>{chapter.emoji}</span>

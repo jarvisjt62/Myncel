@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { HANDBOOK_CHAPTERS } from '@/lib/handbook/content';
 import HandbookSidebar from './HandbookSidebar';
+import HandbookDownloadButton from './HandbookDownloadButton';
 
 export const metadata = {
   title: 'Myncel Handbook — The Complete User Manual',
@@ -80,6 +81,11 @@ export default function HandbookHomePage() {
                   </div>
                 </Link>
               ))}
+            </div>
+
+            {/* Download the handbook */}
+            <div className="mt-8">
+              <HandbookDownloadButton variant="card" />
             </div>
 
             {/* Search hint */}
