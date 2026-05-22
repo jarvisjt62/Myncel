@@ -2,7 +2,7 @@
   "expo": {
     "name": "Myncel",
     "slug": "myncel-mobile",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "myncel",
@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jarvisitconsults.myncel",
-      "buildNumber": "12",
+      "buildNumber": "13",
       "infoPlist": {
         "NSCameraUsageDescription": "Myncel uses the camera to scan equipment QR codes and capture photos for work orders.",
         "NSPhotoLibraryUsageDescription": "Myncel uses your photo library to attach images to work orders and equipment records.",
@@ -35,7 +35,7 @@
     },
     "android": {
       "package": "com.jarvisitconsults.myncel",
-      "versionCode": 12,
+      "versionCode": 13,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#635bff"
