@@ -2,6 +2,8 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import AppStoreBadges from './AppStoreBadges';
+import { anyMobileAppLive } from '@/lib/mobile-app-config';
 
 type MegaMenuProps = {
   isOpen: boolean;
@@ -84,7 +86,12 @@ const ProductsMenu = ({ isOpen, onClose }: MegaMenuProps) => (
           </svg>
         </div>
         <h4 className="font-bold text-[#0a2540] mb-1">Mobile App</h4>
-        <p className="text-xs text-[#425466] mb-3 leading-relaxed">Technicians complete work orders from any smartphone. No app install needed.</p>
+        <p className="text-xs text-[#425466] mb-3 leading-relaxed">Native iOS and Android apps for technicians on the move — plus mobile-friendly web for everyone else.</p>
+        {anyMobileAppLive() && (
+          <div className="mb-3">
+            <AppStoreBadges size="sm" placement="navbar-products-menu" />
+          </div>
+        )}
         <Link href="/products/mobile" onClick={onClose} className="text-xs font-semibold text-[#635bff] hover:underline">
           Learn more →
         </Link>
@@ -410,6 +417,7 @@ export default function Navbar() {
               { label: 'Work Orders', href: '/products/work-orders' },
               { label: 'Parts Inventory', href: '/products/inventory' },
               { label: 'Analytics', href: '/products/analytics' },
+              { label: 'Mobile App', href: '/products/mobile' },
             ]} onClose={() => setMobileOpen(false)} />
             
             {/* Solutions Section */}
@@ -441,7 +449,18 @@ export default function Navbar() {
               { label: 'Guides', href: '/guides' },
               { label: 'Partners', href: '/partners' },
             ]} onClose={() => setMobileOpen(false)} />
-            
+
+            {/* Mobile app badges — only renders when feature flags enabled.
+                Especially relevant here since the user is literally on a phone. */}
+            {anyMobileAppLive() && (
+              <div className="border-t border-[#e6ebf1] pt-4 mt-3 px-3">
+                <div className="text-xs font-bold text-[#635bff] uppercase tracking-wider mb-3">
+                  Get the Myncel app
+                </div>
+                <AppStoreBadges size="md" placement="navbar-mobile-drawer" />
+              </div>
+            )}
+
             {/* Quick Links */}
             <div className="border-t border-[#e6ebf1] pt-3 mt-3 space-y-1">
               <Link href="/pricing" onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc]">Pricing</Link>
