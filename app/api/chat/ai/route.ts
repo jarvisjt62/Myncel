@@ -14,7 +14,39 @@ interface Message {
   content: string;
 }
 
-const MODEL = process.env.MYNCEL_AI_MODEL || 'gpt-4o-mini';
+/**
+ * Provider selection — Groq is the default (fast + free tier, OpenAI-compatible API).
+ * If GROQ_API_KEY is set we use Groq.
+ * Else if OPENAI_API_KEY is set we use OpenAI.
+ * Else we fall back to the curated knowledge base.
+ *
+ * Override the model via MYNCEL_AI_MODEL env var.
+ */
+function pickProvider(): { client: OpenAI; model: string; name: string } | null {
+  const groqKey = process.env.GROQ_API_KEY;
+  if (groqKey) {
+    return {
+      client: new OpenAI({
+        apiKey: groqKey,
+        baseURL: 'https://api.groq.com/openai/v1',
+      }),
+      model: process.env.MYNCEL_AI_MODEL || 'llama-3.3-70b-versatile',
+      name: 'groq',
+    };
+  }
+
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (openaiKey) {
+    return {
+      client: new OpenAI({ apiKey: openaiKey }),
+      model: process.env.MYNCEL_AI_MODEL || 'gpt-4o-mini',
+      name: 'openai',
+    };
+  }
+
+  return null;
+}
+
 const MAX_HISTORY = 12;
 
 /**
@@ -25,6 +57,7 @@ async function logChat(opts: {
   question: string;
   answerLength: number;
   source: 'llm' | 'fallback_kb' | 'fallback_generic' | 'error';
+  provider?: string;
   model?: string;
   error?: string;
 }) {
@@ -38,6 +71,7 @@ async function logChat(opts: {
           q: opts.question.slice(0, 500),
           aLen: opts.answerLength,
           source: opts.source,
+          provider: opts.provider,
           model: opts.model,
           error: opts.error,
           at: new Date().toISOString(),
@@ -74,8 +108,7 @@ export async function POST(req: NextRequest) {
   let userId: string | null = null;
 
   try {
-    // Auth is OPTIONAL — we want public visitors on the marketing site
-    // to be able to ask questions too. We just record who they are if known.
+    // Auth is OPTIONAL — public visitors on the marketing site can chat too.
     const session = await getServerSession(authOptions).catch(() => null);
     userId = session?.user?.id || null;
 
@@ -96,15 +129,13 @@ export async function POST(req: NextRequest) {
       .slice(-MAX_HISTORY)
       .map((m: any) => ({ role: m.role, content: m.content.toString().slice(0, 4000) }));
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const provider = pickProvider();
 
-    // ---- Path A: real LLM ----
-    if (apiKey) {
+    // ---- Path A: real LLM (Groq or OpenAI) ----
+    if (provider) {
       try {
-        const openai = new OpenAI({ apiKey });
-
-        const completion = await openai.chat.completions.create({
-          model: MODEL,
+        const completion = await provider.client.chat.completions.create({
+          model: provider.model,
           temperature: 0.4,
           max_tokens: 600,
           messages: [
@@ -124,13 +155,14 @@ export async function POST(req: NextRequest) {
           question,
           answerLength: answer.length,
           source: 'llm',
-          model: MODEL,
+          provider: provider.name,
+          model: provider.model,
         });
 
-        return NextResponse.json({ response: answer, source: 'llm' });
+        return NextResponse.json({ response: answer, source: 'llm', provider: provider.name });
       } catch (llmErr: any) {
         // LLM failed (rate limit, network, bad key, etc.) — gracefully degrade
-        console.error('[chat/ai] LLM error:', llmErr?.message || llmErr);
+        console.error(`[chat/ai] ${provider.name} error:`, llmErr?.message || llmErr);
 
         const kb = findFallbackAnswer(question);
         const answer = kb || genericHelpfulFallback(question);
@@ -140,6 +172,8 @@ export async function POST(req: NextRequest) {
           question,
           answerLength: answer.length,
           source: kb ? 'fallback_kb' : 'fallback_generic',
+          provider: provider.name,
+          model: provider.model,
           error: String(llmErr?.message || llmErr).slice(0, 300),
         });
 
