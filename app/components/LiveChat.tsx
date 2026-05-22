@@ -233,6 +233,41 @@ export default function LiveChat() {
     }
   };
 
+  // Track 👍/👎 votes per AI message (so user can't vote twice and we can swap UI)
+  const [aiFeedback, setAiFeedback] = useState<Record<string, 'up' | 'down'>>({});
+
+  const submitAiFeedback = async (msg: Message, rating: 'up' | 'down') => {
+    if (aiFeedback[msg.id]) return; // already voted
+    // Optimistic update
+    setAiFeedback(prev => ({ ...prev, [msg.id]: rating }));
+
+    // Find the immediately preceding user question (for context)
+    const idx = messages.findIndex(m => m.id === msg.id);
+    let question = '';
+    for (let i = idx - 1; i >= 0; i--) {
+      if (messages[i].senderType === 'USER') {
+        question = messages[i].content;
+        break;
+      }
+    }
+
+    try {
+      await fetch('/api/chat/ai/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating,
+          question,
+          answer: msg.content,
+          messageId: msg.id,
+        }),
+      });
+    } catch (err) {
+      // Silent — feedback is best-effort
+      console.error('Feedback submit failed:', err);
+    }
+  };
+
   // Handle sending message
   const handleSend = async () => {
     const content = message.trim();
@@ -624,6 +659,35 @@ export default function LiveChat() {
                     <p className={`text-xs mt-1 ${msg.senderType === 'USER' ? 'text-purple-200' : 'text-[#8898aa]'}`}>
                       {formatTime(msg.createdAt)}
                     </p>
+                    {msg.senderType === 'AI' && !msg.id.startsWith('greeting') && (
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-purple-100">
+                        {aiFeedback[msg.id] ? (
+                          <span className="text-xs text-[#635bff] font-medium">
+                            {aiFeedback[msg.id] === 'up' ? '👍 Thanks for the feedback!' : '👎 Thanks — we\'ll improve this.'}
+                          </span>
+                        ) : (
+                          <>
+                            <span className="text-xs text-[#8898aa]">Was this helpful?</span>
+                            <button
+                              onClick={() => submitAiFeedback(msg, 'up')}
+                              className="text-base hover:scale-125 transition-transform"
+                              aria-label="Helpful"
+                              title="Helpful"
+                            >
+                              👍
+                            </button>
+                            <button
+                              onClick={() => submitAiFeedback(msg, 'down')}
+                              className="text-base hover:scale-125 transition-transform"
+                              aria-label="Not helpful"
+                              title="Not helpful"
+                            >
+                              👎
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
