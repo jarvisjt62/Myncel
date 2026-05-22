@@ -94,16 +94,15 @@
       {
         "heading": "How to add a single machine (the 60-second flow)",
         "body": [
-          "Adding a machine to Myncel takes well under a minute. The only required fields are name and location — everything else can be filled in later as you have time. You can also bulk-import (see further down this chapter)."
+          "Adding a machine to Myncel takes well under a minute. The only required field is the machine name — everything else can be filled in later as you have time. To reach the Equipment screen, sign in and click the Equipment tab in the left sidebar of your dashboard."
         ],
         "steps": [
-          "In the left sidebar click Equipment.",
-          "Click the \"+ Add Equipment\" button at the top right.",
-          "Pick an equipment template (or \"Custom\").",
-          "Enter the machine name (e.g. \"CNC Mill #3\" or \"Genset-Bldg-A\").",
-          "Choose the location in your facility (Site → Building → Cell/Line/Room).",
-          "Optionally add: model number, serial number, manufacturer, installation date, criticality (1–5), and a photo.",
-          "Click Save. The machine now appears in your equipment list with an empty history, ready to receive work orders, schedules, and sensor data."
+          "In the left sidebar of /dashboard click Equipment.",
+          "Click the \"+ Add Machine\" button. The \"Add New Machine\" modal opens.",
+          "Enter the Machine Name (required) — e.g. \"CNC Mill #3\" or \"Genset-Bldg-A\".",
+          "Optionally fill in: Serial Number, Year Installed, Manufacturer, Model, Category (CNC, Compressor, Generator, Pump, …), Status (Operational / Maintenance / Breakdown / Retired), Criticality (Low / Medium / High / Critical), Location (free text — we recommend the format \"Site — Building — Line\", e.g. \"Plant 1 — Bay A — Line 3\"), and Notes.",
+          "Click \"+ Create Machine\". The new machine appears in your equipment list immediately, ready to receive work orders, schedules, and sensor data.",
+          "After creation, click into the machine to upload a photo (Machine Image area), create gateway tokens for sensor data, attach work orders, and review history."
         ],
         "callout": {
           "type": "tip",
@@ -113,33 +112,38 @@
       {
         "heading": "Bulk-importing your existing equipment list",
         "body": [
-          "If you already have an asset list in Excel, an old CMMS export, or a SAP / Maximo extract, you do not have to retype it. Myncel has a CSV importer that handles thousands of rows in a single shot."
+          "If you already have an asset list in a spreadsheet, an old CMMS export, or a SAP / Maximo extract, you do not have to retype every row by hand. Myncel exposes a public REST API that accepts JSON over HTTPS — point a small script at it and your fleet is in within minutes."
         ],
         "steps": [
-          "Go to Equipment → \"⋯\" menu → \"Import from CSV\".",
-          "Click \"Download template\" — you will get a CSV with the right column names and a sample row.",
-          "Open the template in Excel / Google Sheets and paste your existing data. Map your columns to ours (name, location, manufacturer, model, serial, install_date, criticality).",
-          "Save as CSV (UTF-8 if you have non-Latin characters) and upload it.",
-          "Myncel shows you a preview with validation warnings (missing fields, duplicate names, unknown locations). Fix and re-upload, or click \"Import anyway\" to bring in the clean rows and skip the rest.",
-          "Imported machines land in a temporary group called \"Imported YYYY-MM-DD\" so you can spot-check before scattering them into your real hierarchy."
+          "Open /api/docs to view the OpenAPI spec for the Machine endpoints (POST /api/machines).",
+          "Generate a personal API key in /settings/api-keys.",
+          "Convert your spreadsheet to JSON (one machine per object) using your tool of choice — Excel \"Save as JSON\", a 10-line Python script, or any AI assistant.",
+          "POST each row to /api/machines with header Authorization: Bearer <api-key>. Required field is name; everything else (serialNumber, manufacturer, model, category, criticality, location, yearInstalled, notes) is optional.",
+          "Verify in /dashboard → Equipment that all machines arrived. Edit individual records inline or in bulk by re-issuing PUT requests."
         ],
         "bullets": [
-          "Maximum file size: 25 MB or 50,000 rows per upload (whichever comes first).",
-          "Pre-built named importers exist for SAP PM, IBM Maximo, Limble, UpKeep, eMaint, Fiix, MaintainX, and Hippo — use those if you are migrating from one of those systems and the column mapping is automatic.",
-          "You can also import via the public REST API (POST /api/equipment/bulk) — see the Integrations chapter."
-        ]
+          "The public API is rate-limited (60 requests/minute per key). For a 500-machine import that means roughly 9 minutes of polite throughput — fine for a one-time migration.",
+          "Common starter script: 25 lines of Python with `requests`. We can share a template — ask in /support and a human will reply with one tailored to your CSV columns.",
+          "Migrating from SAP PM / IBM Maximo / Limble / UpKeep / eMaint / Fiix / MaintainX / Hippo with automatic column mapping is on the roadmap (see the Roadmap chapter)."
+        ],
+        "callout": {
+          "type": "info",
+          "text": "A spreadsheet-style CSV importer with column-mapping UI is the next item on our equipment-onboarding roadmap. It will live at /equipment → \"Import\" once shipped. Until then, the public API is the supported path."
+        }
       },
       {
         "heading": "QR codes and asset tagging",
         "body": [
-          "Every machine in Myncel automatically gets a unique QR code. Print the QR sticker, slap it on the machine, and any technician with the mobile app can scan it to instantly land on that machine's page — its history, open work orders, attached manuals, and a one-tap \"Create Work Order\" button.",
-          "QR codes are durable and cheap. We recommend printing on weatherproof polyester labels (3M 7811 or similar) at 50 mm × 50 mm. For outdoor or wash-down equipment, laminate them or use stainless-steel etched tags with the same code."
+          "Every machine in Myncel automatically gets a unique QR code. Print the QR sticker, apply it to the machine, and any technician with the mobile app can scan it to instantly land on that machine's page — its history, open work orders, attached info, and a one-tap \"Create Work Order\" button.",
+          "QR codes are durable and cheap. We recommend printing on weatherproof polyester labels (3M 7811 or similar). For outdoor or wash-down equipment, laminate them or use stainless-steel etched tags with the same code."
         ],
         "steps": [
-          "Open the machine's page → click \"Print QR\".",
-          "Choose label size (50 mm × 50 mm is the default; sheet of 24 also available).",
-          "Print on label stock and apply to a flat, clean, eye-level surface on the machine — typically next to the controls.",
-          "Test by scanning with the mobile app from arm's length."
+          "Open /equipment/qr-labels (or click \"Print QR\" from a machine's detail panel).",
+          "Choose label size: Small (50×50 mm), Medium (80×60 mm), or Large (100×80 mm).",
+          "Pick which machines to print (single, selected subset, or all).",
+          "Click Print and use your browser's print dialog to send to a label printer or a sheet of self-adhesive label stock.",
+          "Apply the labels to a flat, clean, eye-level surface on each machine — typically next to the controls.",
+          "Test by scanning with the Myncel mobile app from arm's length."
         ],
         "callout": {
           "type": "info",
@@ -174,44 +178,49 @@
       {
         "heading": "Option 2 — IoT sensor retrofit (recommended for most customers)",
         "body": [
-          "For machines that lack a built-in network connection, Myncel supports a range of low-cost wireless IoT sensors that retrofit onto existing equipment. The sensors stream vibration, temperature, current, and runtime data to a small Myncel Edge Gateway in your facility, which then forwards it securely to the cloud.",
-          "The Edge Gateway is a small fanless industrial PC (about the size of a paperback book) that sits in your network closet or on a DIN rail in the control panel. It speaks LoRaWAN, BLE, or Zigbee to the sensors and HTTPS / MQTT-over-TLS upstream to Myncel. One gateway covers roughly 30,000 m² of indoor space (line of sight matters; concrete walls and steel cabinets reduce range)."
+          "For machines that lack a built-in network connection, Myncel supports a range of low-cost wireless IoT sensors that retrofit onto existing equipment. The sensors stream vibration, temperature, current, and runtime data through a small piece of software called the Myncel Edge Gateway, which forwards everything securely to the cloud.",
+          "The Edge Gateway is open-source software you run on hardware you already own — a Raspberry Pi 4, a small industrial PC, an ESP32 microcontroller, or even a Linux container on an existing server. It buffers locally if your internet drops, then catches up when the link comes back. Download it from /docs/edge-gateway or /dashboard/gateway-setup. Builds are available as a Python package, a Raspberry Pi image, an ESP32 Arduino sketch, and a Node-RED flow."
         ],
         "steps": [
-          "Order an Edge Gateway (one per facility, or per cluster of buildings) and the sensors that match your equipment from your account dashboard or a Myncel partner.",
-          "Plug the gateway into your local network (wired Ethernet recommended; PoE is supported) and power it on. It auto-registers with your Myncel account in 30–60 seconds.",
-          "Mount each sensor on the target machine following the install guide that ships with the kit (typical install: 5–15 minutes per machine, no downtime needed in most cases).",
-          "In Myncel, go to Equipment → click the machine → \"Connect Sensor\" → pick the sensor from the list of nearby unassigned sensors.",
-          "Wait 7–14 days for the AI baseline to learn the machine's normal behavior. After the baseline, predictive alerts start firing automatically when the signature drifts."
+          "Choose your gateway hardware. A $40 Raspberry Pi 4 covers most small shops; an industrial Linux PC is recommended for plant-scale deployments. For a single piece of equipment with no network, an ESP32 microcontroller is the cheapest option.",
+          "Add the machine in Myncel (Equipment → \"+ Add Machine\"). Then click into the machine to open its detail panel.",
+          "In the detail panel, find the \"Edge Gateway Tokens\" area and click \"Create Gateway Token\". Copy the token immediately — Myncel only shows it once. The notice on screen tells you to paste it into your YAML config under \"device_token:\".",
+          "Download the gateway package from /docs/edge-gateway → \"Download package\" (or pick the matching artifact for your hardware: Raspberry Pi image, ESP32 sketch, Node-RED flow).",
+          "Open the example YAML config that ships with the package. Set device_token: <paste your token>, then add a connector block for each protocol or sensor — see /docs/edge-gateway/<protocol> for ready-to-paste examples (Modbus TCP, OPC UA, MQTT, MTConnect, BACnet/IP, Siemens S7, Rockwell EtherNet/IP, or Beckhoff ADS).",
+          "Run the agent (`python3 myncel-edge-gateway.py` for the Python package, flash the sketch for ESP32, or import the Node-RED flow). Within 30–60 seconds, live values appear on the machine's detail panel in Myncel.",
+          "Mount any physical sensors on the target machine following the install guide that ships with the kit (typical install: 5–15 minutes per machine, no downtime needed in most cases).",
+          "Create a PM schedule in /admin/schedules (or the Schedules sidebar tab). For predictive maintenance, set Task Type = PREDICTIVE — Myncel will baseline from incoming data automatically over the first 7–14 days and start firing predictive alerts after that."
         ],
         "bullets": [
           "Vibration sensors — three-axis MEMS or piezo accelerometers. Detect bearing wear, imbalance, misalignment, looseness, gear-mesh issues, and cavitation in pumps. Typical range 0–16 g, frequency response to 5 kHz, ISO 10816 compliant.",
           "Temperature sensors — surface-mount or PT100 RTD. Detect overheating motors, friction, fluid degradation, and cooling-system failures. ±0.5 °C typical accuracy.",
           "Current sensors — non-invasive split-core CT clamps (no downtime to install). Detect overload, undercurrent, motor degradation, and unbalanced phases.",
-          "Runtime / cycle counters — magnetic, inductive, or optical. Drive PM schedules from actual usage instead of calendar days.",
+          "Runtime / cycle counters — magnetic, inductive, or optical. Drive PM schedules from actual usage instead of calendar days using the BY_HOURS schedule frequency.",
           "Pressure / flow / level — for hydraulic, pneumatic, and process systems. 4–20 mA or 0–10 V analog inputs to the gateway."
         ],
         "callout": {
           "type": "info",
-          "text": "You do not have to buy hardware from Myncel. Any sensor that speaks MQTT, Modbus TCP, OPC-UA, or sends webhook JSON can be ingested. We support Banner Engineering, Senseye, Augury, KCF, Petasense, Treon, and many others out of the box."
+          "text": "You do not have to buy hardware from Myncel. Any sensor that speaks MQTT, Modbus TCP, OPC UA, or sends webhook JSON can be ingested through the gateway. We work with sensors from Banner Engineering, Senseye, Augury, KCF, Petasense, Treon, and many others — the gateway YAML simply maps each one to a machine."
         }
       },
       {
         "heading": "Option 3 — Direct PLC / SCADA integration",
         "body": [
           "Modern PLCs and SCADA systems already produce a wealth of data. Myncel can read directly from them through standard industrial protocols, removing the need for additional sensors. This is usually the lowest-cost option per data point if the machines already have a controller and a network drop.",
-          "Configuration is done in Settings → Integrations → Industrial Protocols. You define the connection once (IP, port, credentials, protocol), then map specific tags or registers to Myncel fields (runtime, cycle count, alarm bits, temperature, etc.) using a point-and-click UI.",
-          "Direct PLC integration is included in the Professional and Enterprise plans. For Starter and Growth plans you can use the Edge Gateway in MQTT-bridge mode, which lets a third-party SCADA push data through the gateway."
+          "Configuration uses the same Edge Gateway from Option 2 — you simply add a connector block to the YAML config for the protocol you need. Each protocol has its own page under /docs/edge-gateway with copy-pasteable examples for the most common controllers.",
+          "For Starter and Growth plans you can use the Edge Gateway in MQTT-bridge mode, which lets a third-party SCADA system push data through the gateway. Direct OPC UA and proprietary protocols (Siemens S7, Rockwell EtherNet/IP, Beckhoff ADS) are included on Professional and Enterprise plans."
         ],
         "bullets": [
-          "OPC-UA — secure, modern, the industry standard for new installs. Works with Siemens, Beckhoff, B&R, Kepware, Ignition, and most modern PLCs.",
-          "Modbus TCP — universal. If a controller is older than 5 years and on Ethernet, it almost certainly speaks Modbus TCP. Read holding registers, input registers, coils, and discrete inputs.",
-          "MQTT (incl. Sparkplug B) — lightweight, broker-based. Excellent for high-fanout fleets and IIoT use cases.",
-          "Ethernet/IP (CIP) — Allen-Bradley / Rockwell PLCs (CompactLogix, ControlLogix, MicroLogix).",
-          "Siemens S7 — direct read from S7-300, S7-400, S7-1200, S7-1500 over ISO-on-TCP.",
-          "BACnet/IP — building automation systems, HVAC, lighting, energy meters.",
-          "SNMP v2c / v3 — IT and network gear (UPS, switches, PDUs).",
-          "REST / Webhook — anything that can POST JSON over HTTPS."
+          "OPC UA — secure, modern, the industry standard for new installs. Works with Siemens, Beckhoff, B&R, Kepware, Ignition, and most modern PLCs. See /docs/edge-gateway/opcua.",
+          "Modbus TCP / RTU — universal. If a controller is older than 5 years and on Ethernet, it almost certainly speaks Modbus TCP. Read holding registers, input registers, coils, and discrete inputs. See /docs/edge-gateway/modbus.",
+          "MQTT (incl. Sparkplug B) — lightweight, broker-based. Excellent for high-fanout fleets and IIoT use cases. See /docs/edge-gateway/mqtt.",
+          "Rockwell EtherNet/IP (CIP) — Allen-Bradley / Rockwell PLCs (CompactLogix, ControlLogix, MicroLogix). See /docs/edge-gateway/rockwell-ethernet-ip.",
+          "Siemens S7 — direct read from S7-300, S7-400, S7-1200, S7-1500 over ISO-on-TCP. See /docs/edge-gateway/siemens-s7.",
+          "BACnet/IP — building automation systems, HVAC, lighting, energy meters. See /docs/edge-gateway/bacnet.",
+          "MTConnect — pull CNC machine status, execution state, spindle load, alarms, and production data from MTConnect agents. See /docs/edge-gateway/mtconnect.",
+          "Beckhoff ADS — TwinCAT symbols by AMS Net ID and symbol name. See /docs/edge-gateway/beckhoff-ads.",
+          "REST / Webhook — anything that can POST JSON over HTTPS lands via /api/iot/ingest with your API key.",
+          "SNMP v2c / v3 (IT and network gear — UPS, switches, PDUs) is on the roadmap. See the Roadmap chapter for status."
         ],
         "callout": {
           "type": "warning",
@@ -225,12 +234,15 @@
           "Recommended hybrid setup: one wireless triaxial vibration sensor on the spindle housing for predictive diagnostics, plus a Modbus TCP read from the VF-2's NGC control for spindle-load percentage and runtime."
         ],
         "steps": [
-          "Mount the vibration sensor on the spindle housing with the supplied magnetic base, with the X-axis aligned to the machine's X. Wake it with the Myncel mobile app (BLE pairing, ~30 seconds).",
-          "Wire the VF-2 to the shop network (the Haas comes with an RJ45 port on the back of the cabinet). Note the IP address from Setting #900.",
-          "In Myncel: Equipment → Haas VF-2 → Connections → \"+ Add Modbus TCP\". IP = the VF-2 address, port 502, unit ID 1.",
-          "Map registers: holding register 30001 → spindle load %, 30002 → spindle RPM, 30010 → cycle time, coil 00001 → in-cycle (on/off) which drives runtime accumulation.",
-          "In Equipment → AI Settings, set the baseline window to 14 days. Vibration alarm threshold defaults to ISO 10816-3 zone B/C boundary (4.5 mm/s RMS for spindles up to 15 kW); danger threshold is the C/D boundary at 7.1 mm/s.",
-          "Create a runtime-based PM schedule: \"Spindle grease, every 500 spindle-on hours\". Myncel will use the live runtime feed (not a calendar) to fire it."
+          "Add the Haas VF-2 in Myncel: Equipment → \"+ Add Machine\" → Name = \"Haas VF-2 — Bay A\", Manufacturer = \"Haas\", Model = \"VF-2\", Category = \"CNC Mill\", Criticality = \"High\". Save.",
+          "Click the new machine to open the detail panel. Find the \"Edge Gateway Tokens\" area and click \"Create Gateway Token\". Copy the token (it is shown once).",
+          "Wire the VF-2 to the shop network (the Haas comes with an RJ45 port on the back of the cabinet). Note the IP address from Setting #900 on the Haas control.",
+          "On any Linux machine on the same network — a Raspberry Pi 4 is plenty — download the Edge Gateway package from /docs/edge-gateway. Open the YAML config; paste the token under device_token: and add a Modbus TCP connector block following the example at /docs/edge-gateway/modbus.",
+          "Configure the Modbus block: host = the VF-2 IP, port = 502, unit_id = 1. Add register definitions: holding register 30001 → spindle_load_pct, 30002 → spindle_rpm, 30010 → cycle_time, coil 00001 → in_cycle (drives runtime accumulation).",
+          "Mount the vibration sensor on the spindle housing with its magnetic base, X-axis aligned to the machine's X. Wire it to the same gateway over USB or BLE (gateway plug-ins are documented under /docs/edge-gateway).",
+          "Run the gateway agent: `python3 myncel-edge-gateway.py`. Within 30–60 seconds the live spindle-load %, RPM, and vibration RMS appear on the machine's detail panel in Myncel.",
+          "Create a runtime-based PM in /admin/schedules: Title = \"Spindle grease — 500 hr\", Task Type = PREVENTIVE, Frequency = BY_HOURS, interval = 500. Because runtime is now live from Modbus coil 00001, the PM fires when actual spindle-on hours hit 500 — never on a fixed calendar day.",
+          "Create a predictive PM as well: Title = \"Spindle bearing health watch\", Task Type = PREDICTIVE, Frequency = WEEKLY. The AI baselines from the incoming vibration data over the first 7–14 days; predictive alerts then fire automatically when the signature drifts past ISO 10816-3 zone B/C (4.5 mm/s RMS) or zone C/D (7.1 mm/s RMS)."
         ],
         "callout": {
           "type": "tip",
@@ -245,10 +257,14 @@
         ],
         "steps": [
           "Confirm the PowerCommand network module is installed and configured (Settings → Network → Modbus on the controller front panel; default port 502).",
-          "Add the genset to Myncel (template: \"Generator — diesel\"). Enter the IP address and Modbus unit ID.",
-          "Map the standard PowerCommand registers: 30001 → engine RPM, 30015 → coolant temperature °F, 30022 → oil pressure PSI, 30040 → fuel level %, 30050 → battery voltage, plus the fault-bitmask in 30100.",
-          "Create three rule-based alerts: (1) fuel < 30% → email facility manager; (2) coolant > 220 °F or oil pressure < 25 PSI while running → critical SMS to on-call electrician; (3) any active fault bit → page on-call.",
-          "Create a calendar PM schedule: \"Weekly self-test verification, every Tuesday 08:00\" — auto-creates a work order whose checklist asks the technician to confirm the genset ran for ≥ 30 minutes the previous Sunday (Myncel auto-fills runtime from the live data)."
+          "Add the genset in Myncel: Equipment → \"+ Add Machine\" → Name = \"Genset 250kW — Bldg A\", Manufacturer = \"Cummins\", Model = \"QSL9-G5 / PowerCommand 2100\", Category = \"Generator\", Criticality = \"Critical\".",
+          "Click into the new machine and create a Gateway Token (copy it once).",
+          "On the BMS server, a Raspberry Pi in the building, or any always-on Linux box on the same network, install the Edge Gateway package (download from /docs/edge-gateway).",
+          "Edit the YAML config: paste the token under device_token: and add a Modbus TCP connector following /docs/edge-gateway/modbus. host = the PowerCommand IP, port = 502, unit_id = 1.",
+          "Map the standard PowerCommand registers: 30001 → engine_rpm, 30015 → coolant_temp_f, 30022 → oil_pressure_psi, 30040 → fuel_level_pct, 30050 → battery_voltage, 30100 → fault_bitmask.",
+          "Run the gateway agent — values appear in the Myncel machine page within 60 seconds.",
+          "Create three rule-based alerts in /settings/notifications: (1) fuel_level_pct < 30 → email facility manager; (2) coolant_temp_f > 220 OR oil_pressure_psi < 25 while engine_rpm > 0 → SMS to on-call electrician; (3) fault_bitmask != 0 → SMS + Slack #on-call channel.",
+          "Create a calendar PM in /admin/schedules: Title = \"Weekly self-test verification\", Task Type = PREVENTIVE, Frequency = WEEKLY. The auto-generated work order each Tuesday includes a checklist asking the technician to confirm the genset ran ≥ 30 minutes the previous Sunday — Myncel auto-fills runtime from the live data so the technician only has to confirm."
         ],
         "bullets": [
           "Total wiring needed: zero — the controller already has Ethernet.",
@@ -263,16 +279,18 @@
           "Recommended setup: three split-core CT clamps on the motor leads (no downtime to install), one vibration sensor on the air-end, and Modbus TCP to the Elektronikon for pressure, temperature, and load percentage. This combination catches all three failure paths — electrical, mechanical, and process — with zero false negatives in our customer data."
         ],
         "steps": [
-          "Install the CT clamps on the three phases inside the motor disconnect (qualified electrician; can be done energized with proper PPE in 20 minutes).",
-          "Bond a vibration sensor to the air-end housing on the discharge side, axis aligned with the rotor.",
-          "Connect the Elektronikon Mk5 over Modbus TCP (the EKOMI protocol module is included on Mk5 controllers from 2017 onward). Map: register 30030 → discharge pressure, 30040 → element outlet temperature, 30100 → motor running hours, coil 00010 → loaded/unloaded state.",
-          "In Equipment → AI Settings turn on \"Compressor pack\" — a tuned predictive model that combines current draw, vibration, and load percentage to detect bearing wear, valve leaks, and impending element failures 2–6 weeks ahead.",
-          "Create three PMs driven by actual loaded hours (not calendar): air-end oil change at every 4,000 loaded hours, separator element at 4,000 loaded hours, motor grease at 8,000 hours.",
-          "Create a daily energy report: kWh per Nm³ of delivered air. The report flags any day that runs >10% above the 30-day rolling baseline — usually that means a leak or a stuck unloader."
+          "Add the compressor in Myncel: Equipment → \"+ Add Machine\" → Name = \"GA-160 #1\", Manufacturer = \"Atlas Copco\", Model = \"GA-160\", Category = \"Compressor\", Criticality = \"Critical\".",
+          "Click into it and create a Gateway Token (copy once).",
+          "Install the CT clamps on the three motor phases inside the motor disconnect (qualified electrician; can be done energized with proper PPE in 20 minutes). Wire them to a Raspberry Pi or industrial PC running the Edge Gateway, using the analog or pulse input pattern documented at /docs/edge-gateway.",
+          "Bond a vibration sensor to the air-end housing on the discharge side, axis aligned with the rotor. Wire it to the same gateway.",
+          "In the YAML config: paste the token under device_token: and add a Modbus TCP connector following /docs/edge-gateway/modbus, pointing at the Elektronikon Mk5 (the EKOMI protocol module is included on Mk5 controllers from 2017 onward). Map: register 30030 → discharge_pressure, 30040 → element_outlet_temp, 30100 → motor_running_hours, coil 00010 → loaded (drives loaded-hours accumulation).",
+          "Run the gateway agent. Live current draw, vibration RMS, pressure, temperature, and loaded/unloaded state appear in Myncel.",
+          "Create predictive and runtime-based PMs in /admin/schedules: (1) \"Air-end oil change\" — Task Type = PREVENTIVE, Frequency = BY_HOURS, interval = 4000 loaded hours; (2) \"Separator element\" — same; (3) \"Motor grease\" — interval = 8000 hours; (4) \"Compressor health watch\" — Task Type = PREDICTIVE, Frequency = WEEKLY (the AI baselines from the three sensor streams and surfaces bearing wear, valve leaks, and impending element failure 2–6 weeks early).",
+          "Create a daily energy report from /admin/reports: kWh per Nm³ of delivered air. The report flags any day that runs >10% above the 30-day rolling baseline — usually that means a leak or a stuck unloader."
         ],
         "callout": {
           "type": "info",
-          "text": "For Kaeser, Ingersoll Rand, Sullair, Quincy, and Gardner Denver compressors the same pattern applies — the controller protocol differs (Sigma Control, Xe-145, etc.) but Myncel ships pre-built profiles for all five vendors. Pick the right template when you add the asset and the register map is already configured."
+          "text": "The same pattern works for Kaeser, Ingersoll Rand, Sullair, Quincy, and Gardner Denver compressors — only the Modbus register addresses change. Each manufacturer's manual lists them; the Edge Gateway YAML simply maps the addresses to friendly names."
         }
       },
       {
@@ -282,9 +300,9 @@
           "This example shows how Myncel handles a heterogeneous facility where you do not have one big PLC but many small controllers, each speaking a different dialect."
         ],
         "bullets": [
-          "UPS systems — read over SNMP v3 from the network management card (APC AP9641 or Eaton Network-M2). Map runtime-on-battery, output load %, battery age, and self-test result. Alert on any \"On Battery\" event longer than 30 seconds, on battery age > 4 years, and on any failed self-test.",
-          "Autoclaves — most modern Tuttnauer and Steris units expose a serial or Ethernet port that streams cycle data (start time, peak temperature, hold time, cycle pass/fail) in CSV or proprietary XML. Myncel ingests via REST webhook from the autoclave's built-in printer-replacement module. Each completed cycle becomes a permanent record attached to the autoclave's machine page — exactly what JCI surveyors ask for.",
-          "Walk-in refrigeration — usually monitored by a building-management system (Johnson Controls Metasys, Honeywell EBI, Schneider EcoStruxure). Myncel reads via BACnet/IP straight from the BMS or via REST API where the BMS supports it. Critical-temperature alerts (> -15 °C in a freezer for > 10 minutes) escalate via SMS and PagerDuty."
+          "UPS systems — most APC and Eaton network management cards (APC AP9641, Eaton Network-M2) expose values over both SNMP v3 and a small REST API. The Edge Gateway can poll the REST endpoint and post the values to /api/iot/ingest with your API key — the same pattern shown in /docs/edge-gateway. Map runtime-on-battery, output load %, battery age, and self-test result. Alert on any \"On Battery\" event longer than 30 seconds, on battery age > 4 years, and on any failed self-test. (Native SNMP support is on the roadmap.)",
+          "Autoclaves — most modern Tuttnauer and Steris units expose a serial or Ethernet port that streams cycle data (start time, peak temperature, hold time, cycle pass/fail). Myncel ingests via REST webhook: point the autoclave's printer-replacement module at /api/iot/ingest with your API key. Each completed cycle becomes a permanent record attached to the autoclave's machine page — exactly what JCI surveyors ask for.",
+          "Walk-in refrigeration — usually monitored by a building-management system (Johnson Controls Metasys, Honeywell EBI, Schneider EcoStruxure). Myncel reads via BACnet/IP through the Edge Gateway (see /docs/edge-gateway/bacnet) or directly via the BMS's REST API where supported. Critical-temperature alerts (> -15 °C in a freezer for > 10 minutes) escalate via SMS and to your on-call channel via the Webhooks integration."
         ],
         "callout": {
           "type": "tip",
@@ -294,47 +312,47 @@
       {
         "heading": "Worked example E — Forklift and yard-truck fleet (QR + telematics)",
         "body": [
-          "A 1.4 million sq ft distribution center runs a fleet of 38 Toyota and Crown sit-down forklifts plus 6 Ottawa yard trucks. There is no single PLC and no Wi-Fi outdoors. The team wants daily pre-shift inspections, runtime-based PM, and impact-event reporting.",
-          "Recommended setup: one Myncel QR sticker per truck plus the telematics feed from Toyota I_Site (or Crown InfoLink). Operators do the pre-shift inspection on their phone in under two minutes; the telematics feed handles runtime and impacts automatically."
+          "A 1.4 million sq ft distribution center runs a fleet of 38 Toyota and Crown sit-down forklifts plus 6 Ottawa yard trucks. There is no single PLC and no Wi-Fi outdoors. The team wants daily pre-shift inspections, runtime-based PM, and a complete event log for OSHA inspections.",
+          "Recommended setup: one Myncel QR sticker per truck. Operators do the pre-shift inspection on their phone in under two minutes via the Myncel mobile app; runtime hours are logged through the same checklist (or pulled from telematics via the public REST API for shops that already run Toyota I_Site, Crown InfoLink, Geotab, or Samsara)."
         ],
         "steps": [
-          "Print and apply a Myncel QR sticker to each truck (next to the OEM data plate or on the dashboard).",
-          "In Equipment → Import → \"From Toyota I_Site\" (or \"From Crown InfoLink\"), enter the API credentials. The 38 trucks import automatically with their VINs, models, and runtime.",
-          "Author one shared \"Pre-shift inspection\" digital form (parking brake, horn, forks, mast, leaks, tires, OSHA 1910.178 checklist). Set it to fire on every truck every shift start, on the operator's phone.",
-          "Set runtime-based PMs: 250-hour service, 500-hour service, 1,000-hour service per OEM schedule. Hours come from the telematics feed in real time, so PMs always fire at the right moment instead of being weeks early or late.",
-          "Subscribe the supervisor to \"Impact > 0.7 g\" alerts — the telematics feed surfaces any heavy bump and Myncel auto-creates a Safety work order with the truck, the operator, and the timestamp."
+          "Add each truck in Myncel: Equipment → \"+ Add Machine\". Use a consistent name pattern such as \"FORK-001 Toyota 8FGCU25\" so search and reports stay clean. (For 38+ trucks, use the public REST API — POST /api/machines — with a small script to import the list in one go; see \"Bulk-importing your existing equipment list\" earlier in this chapter.)",
+          "In /equipment/qr-labels, choose label size Small (50×50 mm), select all forklifts, and print. Apply each sticker next to the OEM data plate or on the dashboard.",
+          "Author one shared \"Pre-shift inspection\" PM in /admin/schedules: Title = \"Pre-shift inspection\", Task Type = INSPECTION, Frequency = DAILY. The auto-generated work order each shift includes a checklist (parking brake, horn, forks, mast, leaks, tires, OSHA 1910.178 items). Operators tap through it on their phone.",
+          "Set runtime-based PMs per OEM schedule: 250-hour service, 500-hour service, 1,000-hour service. Use Frequency = BY_HOURS with the appropriate interval. Hours are logged either by the operator at shift end (through the inspection checklist) or pushed via the public REST API from your existing telematics provider (Toyota I_Site, Crown InfoLink, Geotab, or Samsara — POST runtime to /api/iot/ingest with a JSON body once a day from a tiny scheduled job on your side).",
+          "For impact monitoring: if your telematics provider already detects impacts, POST those events to /api/iot/ingest with type = \"impact\" and severity = the g-force. Myncel auto-creates a Safety work order on the matching truck with the operator and timestamp. (A native I_Site / InfoLink / Geotab / Samsara integration with one-click setup is on the roadmap.)"
         ],
         "bullets": [
           "No PLCs touched, no extra hardware on the trucks, no electrician involved.",
-          "OSHA recordkeeping for daily inspections (29 CFR 1910.178(q)(7)) is satisfied automatically — every checklist is timestamped with operator ID and exportable.",
-          "Same pattern works for scissor lifts (Genie, JLG), telehandlers, sweepers, and fleet vehicles with Geotab / Samsara."
+          "OSHA recordkeeping for daily inspections (29 CFR 1910.178(q)(7)) is satisfied automatically — every checklist is timestamped with operator ID and exportable as PDF or CSV.",
+          "Same pattern works for scissor lifts (Genie, JLG), telehandlers, sweepers, and fleet vehicles."
         ]
       },
       {
-        "heading": "Organizing equipment with locations and groups",
+        "heading": "Organizing equipment with locations",
         "body": [
-          "Once you have more than a handful of machines you will want to organize them. Myncel supports a four-level hierarchy: Organization → Site → Building → Cell/Line/Floor/Room. You can also create cross-cutting groups (e.g. \"Rotating equipment\", \"High-priority assets\", \"FDA-validated\", \"Vendor: Atlas Copco\") that span the hierarchy.",
-          "Every screen — Equipment, Work Orders, Schedules, Alerts, Reports, even the AI assistant — can be filtered by location or group. This becomes essential once your fleet grows past 50 machines and indispensable past 500."
+          "Each machine has a Location field — today this is a single free-text value. The convention we recommend is \"Site — Building — Line/Cell\" (e.g. \"Plant 1 — Bay A — Line 3\" or \"Hospital — Wing C — OR-2\"). Stick to one format across your fleet so search and filtering work consistently.",
+          "Every screen — Equipment, Work Orders, Schedules, Alerts, Reports, even the AI assistant — can be filtered by typing into the search box, which matches against the location text along with name, manufacturer, model, category, status, and criticality. This works fine up to roughly 500 machines."
         ],
         "bullets": [
-          "A user can be scoped to a specific site, building, or group at invitation time. They will only see and act on equipment within their scope.",
-          "Groups support nested membership and can be auto-populated by rule (e.g. \"any machine with criticality 5\" or \"any machine on the FDA-21-CFR-Part-11 register\").",
-          "Bulk operations (bulk schedule create, bulk role grant, bulk export) all respect the current location/group filter."
+          "Use a consistent separator (em-dash \" — \" or \" / \") so the parts split cleanly on screen.",
+          "Use the Category field (CNC / Compressor / Generator / Pump / …) and the Criticality field (Low / Medium / High / Critical) for cross-cutting groups. They appear as filters in /admin/machines and Equipment.",
+          "A formal four-level location hierarchy (Organization → Site → Building → Cell/Line) and dedicated cross-cutting groups with rule-based auto-population are on the roadmap. See the Roadmap chapter for status."
         ]
       },
       {
-        "heading": "The equipment record — health, history, and documents",
+        "heading": "The equipment record — health, history, and details",
         "body": [
-          "Click any machine to open its dedicated page. This is the single best place to land when you are diagnosing a recurring issue or preparing for an audit. Tabs include:"
+          "Click any machine in the Equipment list to open its detail panel. This is the single best place to land when you are diagnosing a recurring issue or preparing for an audit. Today the panel includes:"
         ],
         "bullets": [
-          "Overview — current health (live if sensors are connected), uptime today/week/month, MTBF, MTTR, criticality, and a photo.",
-          "Work Orders — every work order ever raised on this machine, filterable by type, status, technician, and date.",
-          "Schedules — all PMs attached to the machine and when they next fire.",
-          "Connections — sensors, PLCs, and protocols connected to the machine, with last-seen timestamps and live values.",
-          "Documents — manuals, drawings, MSDS, electrical schematics, P&IDs, calibration certificates. Drag-and-drop upload; PDF and DWG preview in-browser.",
-          "Parts — the recommended spare-parts list and current stock.",
-          "Timeline — a chronological feed of every event recorded against the asset, including data points, alerts, work orders, comments, and document uploads."
+          "Machine identity — name, serial, manufacturer, model, year installed, category, status, criticality, location, notes. Click \"Edit Machine\" to change any field.",
+          "Machine image — drag-and-drop upload of one photo, useful for fast visual recognition on the mobile app.",
+          "Edge Gateway Tokens — create, list, and revoke per-machine tokens that authenticate edge agents pushing live data into Myncel.",
+          "Recent work orders — the latest work orders raised against this machine. Full history is available under Work Orders in the sidebar (filtered to this machine).",
+          "Recent schedules — the PM schedules attached to this machine. Full list is in /admin/schedules.",
+          "Equipment History Timeline — a chronological feed of completed work orders, status changes, and key events for the asset.",
+          "A dedicated tabbed machine page with separate Documents, Parts, and full Timeline tabs (and in-browser DWG / P&ID preview) is on the roadmap. See the Roadmap chapter."
         ]
       }
     ]
@@ -412,25 +430,24 @@
       {
         "heading": "Approval workflows",
         "body": [
-          "On the Growth plan and above you can require manager approval at one or two points in the work-order lifecycle: before it is created (for tasks above a cost or labor threshold) and/or before it is closed (for safety-critical work). Approval rules live in Settings → Workflows and are scoped per equipment group, work-order type, or cost threshold."
-        ],
-        "bullets": [
-          "Pre-create approval — useful when budget control is tight (e.g. work orders over $1,000 in parts).",
-          "Pre-close approval — useful for safety-critical or regulated work (e.g. lockout/tagout sign-off, FDA-validated equipment).",
-          "Vendor approval — for any work assigned to an outside vendor, the manager must approve the quote before the vendor is engaged."
+          "Multi-step approval workflows for work orders (pre-create budget approval, pre-close safety sign-off, vendor quote approval) are on the roadmap. See the Roadmap chapter at the end of this handbook for status. Today, work orders move directly from OPEN through IN_PROGRESS to COMPLETED without a separate approval gate, though Owners and Admins can require that work orders above a chosen criticality always be assigned to a specific manager."
         ]
       },
       {
         "heading": "Parts, labor, and cost capture",
         "body": [
-          "Each work order tracks parts consumed and labor time spent. Parts can be selected from your stocked-parts catalog (which auto-decrements stock) or entered as ad-hoc one-offs. Labor is timed live (\"Start Timer\" / \"Stop Timer\") or entered manually after the fact.",
-          "Total cost rolls up automatically from parts + labor + any vendor invoice attached, and shows on the work-order page, on the equipment cost-history view, and in the Cost Roll-up report."
+          "Each work order tracks estimated and actual minutes, labor cost, parts cost, and total cost in your chosen currency. Parts can be selected from your stocked-parts catalog (which auto-decrements stock) or entered as ad-hoc one-offs. Labor is recorded by entering actual minutes when you complete the work order — start/stop timers are on the roadmap.",
+          "Total cost rolls up automatically from parts cost + labor cost and shows on the work-order page and in the Reports section. Currency is per-work-order so multi-region organizations can keep clean accounting."
         ]
       },
       {
-        "heading": "Recurring and templated work orders",
+        "heading": "Recurring work orders — using Schedules",
         "body": [
-          "For tasks you do over and over (the same wording, the same checklist, the same parts) you can create a Work Order Template. Templates speed up creation and ensure consistency. To create one: complete a real work order, then click \"Save as Template\" on the completion screen."
+          "Recurring work in Myncel is handled by Schedules (the Schedules tab in your sidebar, or /admin/schedules). Create a Maintenance Schedule with a Title, Task Type (PREVENTIVE / PREDICTIVE / CORRECTIVE / INSPECTION), Priority, Frequency (DAILY / WEEKLY / BIWEEKLY / MONTHLY / QUARTERLY / BIANNUAL / ANNUAL / CUSTOM / BY_HOURS), and target machine. Whenever the schedule falls due, Myncel auto-generates a work order against the machine and assigns it to the responsible technician.",
+          "Use BY_HOURS for runtime-driven PMs (e.g. \"every 500 spindle-on hours\") when you have a runtime feed from the Edge Gateway. Use CUSTOM with an interval-in-days field for non-standard cadences. The schedule's next due date and last completed date are visible on the schedule list and update automatically as work orders are completed."
+        ],
+        "bullets": [
+          "Reusable, standalone Work Order Templates (separate from a recurring schedule) are on the roadmap."
         ]
       }
     ]
@@ -547,13 +564,14 @@
       {
         "heading": "Single sign-on (SSO) and SCIM provisioning",
         "body": [
-          "On Professional and Enterprise plans Myncel supports SAML 2.0 and OpenID Connect for sign-in (Okta, Azure AD / Entra ID, Google Workspace, OneLogin, Ping, JumpCloud, plus any standards-compliant IdP). SCIM 2.0 is also supported for automated user provisioning and de-provisioning — when HR removes someone from your IdP, their Myncel access is revoked the same day."
+          "SAML 2.0 single sign-on with Okta, Azure AD / Entra ID, Google Workspace, OneLogin, Ping, JumpCloud, and any standards-compliant IdP, together with SCIM 2.0 automated user provisioning and de-provisioning, are on the roadmap. See the Roadmap chapter for status.",
+          "Today, Myncel supports email + password sign-in (with optional two-factor authentication), Google OAuth (\"Continue with Google\"), and magic-link email recovery. Owners and Admins manage users from /settings/team — add, remove, change role, and reset password."
         ]
       },
       {
         "heading": "Audit log",
         "body": [
-          "Every meaningful action — sign-in, work-order edit, role change, billing change, integration credential update — is recorded in the audit log with timestamp, actor, and (where relevant) before/after values. Admins can browse and export the log from Settings → Security → Audit Log. Logs are retained for 2 years on Professional, 7 years on Enterprise."
+          "Every meaningful action — sign-in, work-order edit, role change, billing change, integration credential update — is recorded in the audit log with timestamp, actor, IP address, and (where relevant) before/after values. Admins can browse the log from /admin/audit-logs and export to CSV. Logs are retained for 2 years."
         ]
       }
     ]
@@ -562,7 +580,7 @@
     "slug": "alerts-notifications",
     "emoji": "🔔",
     "title": "Alerts & Notifications",
-    "summary": "Configure how Myncel reaches you when something needs attention — in-app, email, SMS, mobile push, Slack, Microsoft Teams, or PagerDuty/Opsgenie.",
+    "summary": "Configure how Myncel reaches you when something needs attention — in-app, email, SMS, mobile push, Slack, or any external system via Webhooks (Microsoft Teams, PagerDuty, Opsgenie, and others).",
     "sections": [
       {
         "heading": "Notification channels",
@@ -572,12 +590,11 @@
         "bullets": [
           "In-app — always on; appears in the bell icon at the top right and is shown in real time on web and mobile.",
           "Email — default for most events; granular per event type. Branded with your organization's logo on Professional and above.",
-          "SMS — for urgent alerts. Available on the Growth plan and above. Worldwide coverage with E.164-formatted numbers and country-aware delivery.",
+          "SMS — for urgent alerts. Available on the Growth plan and above. Worldwide coverage via Twilio with E.164-formatted numbers.",
           "Mobile push — to the iOS or Android app via APNs and FCM. Banner on lock screen, badge on icon, optional sound, and tap-to-deep-link straight to the work order or alert.",
-          "Slack — post to a channel of your choice; comments are bidirectional (reply in Slack and the comment appears on the work order).",
-          "Microsoft Teams — same capability as Slack, native cards.",
-          "PagerDuty / Opsgenie — escalate critical alerts to on-call rotations with full ack/escalate/resolve lifecycle. Professional plan and above.",
-          "Webhooks — POST a JSON payload to any URL you control. Useful for piping into custom dashboards, paging tools, or BI systems."
+          "Slack — post to a channel of your choice. Configure in /settings/integrations → Slack.",
+          "Webhooks — POST a JSON payload to any URL you control. Useful for piping into custom dashboards, paging tools, or BI systems. This is also the path for Microsoft Teams (Teams Incoming Webhook URL), PagerDuty (Events API v2 endpoint), and Opsgenie (REST webhook) until native integrations ship.",
+          "Native Microsoft Teams, PagerDuty, and Opsgenie integrations are on the roadmap. See the Roadmap chapter."
         ]
       },
       {
@@ -682,46 +699,42 @@
     "slug": "integrations",
     "emoji": "🔌",
     "title": "Integrations",
-    "summary": "Myncel plays nicely with the rest of your stack — Slack, Microsoft Teams, PagerDuty, Opsgenie, ERP / accounting systems, single sign-on, and the full set of industrial protocols for IoT and SCADA data.",
+    "summary": "Myncel plays nicely with the rest of your stack — Slack, ERP / accounting systems, the public REST API and Webhooks for everything else, and the full set of industrial protocols for IoT and SCADA data.",
     "sections": [
       {
-        "heading": "Communication tools (Slack & Microsoft Teams)",
+        "heading": "Communication tools — Slack (and Teams via Webhook)",
         "body": [
-          "Connect Slack or Microsoft Teams to push alerts and work-order updates into the channels your team already lives in. The integration is two-way — you can comment on a work order from inside Slack/Teams and the comment shows up on the work-order page in Myncel, with the original poster's name and timestamp preserved."
+          "Connect Slack to push alerts and work-order updates into the channels your team already lives in. Microsoft Teams is on the roadmap as a native integration; until then, use a Teams Incoming Webhook through our Webhooks integration — Teams will render the alert as a message card."
         ],
         "steps": [
-          "Go to Settings → Integrations → Slack (or Teams).",
-          "Click Connect and authorize the workspace (OAuth flow).",
-          "Pick which channels receive which event types (new critical alert, new work order, status change, comment).",
-          "Choose whether to allow inline replies (recommended).",
+          "Open /settings/integrations.",
+          "Click Connect under Slack and authorize the workspace (OAuth flow).",
+          "Pick which Slack channel receives notifications (new critical alert, new work order, status change).",
+          "For Microsoft Teams, create an Incoming Webhook in your Teams channel, then in /settings/webhooks add the Teams webhook URL with the events you want to forward.",
           "Save."
         ]
       },
       {
-        "heading": "On-call paging (PagerDuty / Opsgenie)",
+        "heading": "On-call paging (PagerDuty / Opsgenie via Webhooks)",
         "body": [
-          "On the Professional plan, PagerDuty and Opsgenie integrations let you escalate critical alerts to on-call rotations with full lifecycle (acknowledge, escalate, resolve). The integration uses each tool's standard Events API v2 with a service-specific routing key. Configure the key in Settings → Integrations → PagerDuty."
+          "Native PagerDuty and Opsgenie integrations are on the roadmap. Today you can route critical alerts to either tool through our generic Webhooks integration: PagerDuty's Events API v2 endpoint (https://events.pagerduty.com/v2/enqueue) and Opsgenie's REST webhooks both accept a JSON POST. Add the URL in /settings/webhooks, choose which alert types forward, and Myncel will fire incidents that follow your existing on-call rotations and escalation policies."
         ]
       },
       {
         "heading": "ERP and accounting",
         "body": [
-          "Myncel can sync parts inventory, purchase orders, and cost centers bidirectionally with most major ERP systems. Sync runs hourly by default and can be triggered manually. Setup typically requires 30–60 minutes with help from our integration team and is included on the Professional and Enterprise plans."
+          "Today, Myncel offers a native QuickBooks Online integration (in /settings/integrations → QuickBooks) for invoice and parts-cost sync. Other ERP systems can be connected via the public REST API and Webhooks. Native connectors for SAP, NetSuite, Microsoft Dynamics 365, Oracle Fusion, Sage, and Xero are on the roadmap."
         ],
         "bullets": [
-          "SAP — via SAP PM module integration with PI/PO middleware or direct OData.",
-          "NetSuite — via SuiteTalk REST.",
-          "Microsoft Dynamics 365 — via Dataverse Web API.",
-          "Oracle Fusion — via REST.",
-          "QuickBooks Online — via Intuit OAuth + REST.",
-          "Sage 100 / 300 — via the Sage Web API.",
-          "Xero — via the Xero Accounting API."
+          "QuickBooks Online — native, OAuth-based, in /settings/integrations.",
+          "Google Sheets — native, OAuth-based, for one-way data export to a sheet.",
+          "Other ERPs — use the public REST API (/api/docs) plus Webhooks. We can share customer-built recipes for SAP and NetSuite — ask in /support."
         ]
       },
       {
         "heading": "Industrial protocols (IoT / SCADA / building automation)",
         "body": [
-          "For machine data we support every standard industrial protocol. Configure each connection once in Settings → Integrations → Industrial, then map specific tags or registers to Myncel fields with a point-and-click UI. Multiple connections can target the same machine."
+          "For machine data we support every common industrial protocol through the Edge Gateway. Each protocol has its own setup page under /docs/edge-gateway with copy-pasteable YAML examples. Multiple protocols can target the same machine through one gateway instance."
         ],
         "bullets": [
           "MQTT and MQTT-Sparkplug B — both broker and client mode; TLS supported.",
@@ -755,7 +768,7 @@
     "slug": "mobile-app",
     "emoji": "📱",
     "title": "Mobile App",
-    "summary": "The Myncel mobile app for iOS and Android lets technicians work from the floor — view assigned work orders, complete checklists, scan QR codes, attach photos, and receive push alerts. Works offline. Available in the App Store and Google Play.",
+    "summary": "The Myncel mobile app for iOS and Android lets technicians work from the floor — view assigned work orders, complete checklists, scan QR codes, attach photos, and read the full handbook. Available in the App Store and Google Play. (Today the app needs a network connection for live data; full offline editing with background sync is on the roadmap — see the Roadmap chapter.)",
     "sections": [
       {
         "heading": "Installing the app",
@@ -767,9 +780,13 @@
       {
         "heading": "Signing in",
         "body": [
-          "Use the same email and password you use on the web. SSO users can sign in with their identity provider directly from the app (Okta, Azure AD, Google Workspace, etc.). Once signed in, the app syncs your assigned work orders, your facility's equipment list, your notification preferences, and the handbook.",
+          "Use the same email and password you use on the web. If your workspace has Google sign-in enabled you can use that as well. Once signed in, the app loads your assigned work orders, your facility's equipment list, your notification preferences, and the handbook.",
           "The mobile app is sign-in-only. Workspaces are created on the web by an authorized administrator; new technicians or operators are invited by their manager and receive an email with a one-time link. There is no public sign-up flow on mobile because Myncel is a B2B product — accounts are provisioned by the customer organization."
-        ]
+        ],
+        "callout": {
+          "type": "info",
+          "text": "SAML/SSO and SCIM auto-provisioning are on the roadmap (see the Roadmap chapter). Today the app supports email + password (with optional 2FA on the web) and Google OAuth."
+        }
       },
       {
         "heading": "What you can do on mobile",
@@ -778,44 +795,52 @@
         ],
         "bullets": [
           "View your assigned and self-claimable work orders, sorted by priority and due date.",
-          "Open a work order, mark it In Progress (which starts the labor timer), complete the checklist, attach photos, and mark Completed — all without signing back in.",
+          "Open a work order, mark it In Progress, complete the checklist, attach photos from the camera or gallery, and mark Completed.",
           "Scan an equipment QR code to instantly open that machine's page.",
-          "Browse the equipment list and search by name, location, manufacturer, or QR ID.",
-          "See real-time sensor data and AI alerts on connected machines.",
-          "Read the full handbook offline (this very document).",
+          "Browse the equipment list and search by name, location, manufacturer, or serial number.",
+          "See sensor readings and AI alerts on connected machines (live values pulled from the server).",
+          "Read the full handbook offline (this very document) — see \"Reading the handbook on mobile\" below.",
           "Receive push notifications for new assignments, predictive alerts, and emergency broadcasts."
         ]
       },
       {
         "heading": "Working offline",
         "body": [
-          "The app works fully offline. You can open work orders, complete checklists, attach photos, scan QR codes, and add comments without a network connection. Everything you do is queued locally and syncs automatically as soon as the device is back online (Wi-Fi or cellular). The sync indicator at the top of the screen shows the current state — green for synced, amber for pending, red for sync error with a tap-to-retry.",
-          "Offline mode covers your assigned work orders, the equipment scoped to you, and the most-recent month of history. If you need to expand the offline cache (e.g. a remote installer covering 5,000 km of pipeline), turn on \"Extended offline cache\" in Settings → Storage and pick a size up to 4 GB."
-        ]
+          "Today the Myncel mobile app needs a network connection (Wi-Fi or cellular) to load work orders, equipment data, and live sensor readings. If your phone drops signal mid-task, you can still finish typing a comment or filling a checklist field, but the work order will only save once the device is back online.",
+          "The one thing that does work fully offline is the handbook itself. Once the app has been opened with a connection at least once, the entire handbook (every chapter, every step, every diagram) is bundled inside the app and available with no signal — open Profile → 📖 Handbook to read it. This is intentional: technicians deep inside a plant or basement should always be able to look up a procedure."
+        ],
+        "callout": {
+          "type": "info",
+          "text": "Full offline editing with a local sync queue (open work orders, complete checklists, attach photos, then auto-sync when the device reconnects) is on the roadmap. See the Roadmap chapter for the planned scope (extended offline cache, sync indicator, conflict resolution)."
+        }
       },
       {
         "heading": "QR codes and barcodes",
         "body": [
-          "Print QR-code stickers for your equipment from Myncel (Equipment → [machine] → \"Print QR\"). Technicians scan the sticker with the mobile app to instantly open that machine's page — its history, open work orders, attached manuals, and a one-tap \"Create Work Order\" button. The same flow works for parts and locations.",
-          "Standard 1D and 2D barcodes (Code 128, Code 39, EAN, UPC, Data Matrix) are also supported — useful if your existing parts catalog is barcoded but not yet QR-tagged."
+          "Print QR-code stickers for your equipment from the web app at Equipment → QR Labels. Pick the size that fits your environment (Small 50×50 mm, Medium 80×60 mm, Large 100×80 mm) and the page prints with the machine name, serial number, and a scannable QR code. Stick them on the asset.",
+          "In the mobile app, tap the QR scanner icon (top of the Equipment tab or work order screen) and scan the sticker — the machine's page opens instantly with its history, open work orders, and a one-tap \"Create Work Order\" button."
         ]
       },
       {
         "heading": "Push notifications",
         "body": [
-          "Push notifications are enabled by default after sign-in. See the Alerts & Notifications chapter for full details on channels, quiet hours, and event-type configuration. The app also supports rich-content notifications — a critical alert can include a thumbnail of the relevant chart so the technician can triage from the lock screen."
+          "Push notifications are enabled by default after sign-in (the app asks for permission on first launch). See the Alerts & Notifications chapter for full details on channels, quiet hours, and event-type configuration. Tap a notification to jump straight to the work order or alert it refers to."
         ]
       },
       {
         "heading": "Tablet and iPad layout",
         "body": [
-          "On tablets the app uses a two-pane layout — list on the left, detail on the right — similar to Apple Mail or Files. This is especially useful in maintenance offices where technicians dock an iPad on a wall mount or in a cart. The app supports landscape and portrait orientation, split-screen multitasking on iPadOS, and external keyboard shortcuts (cmd-N to create a work order, cmd-K for global search)."
-        ]
+          "On tablets the app uses a two-pane layout — list on the left, detail on the right — similar to Apple Mail or Files. This is especially useful in maintenance offices where technicians dock an iPad on a wall mount or in a cart. The app supports landscape and portrait orientation."
+        ],
+        "callout": {
+          "type": "info",
+          "text": "External keyboard shortcuts (cmd-N for new work order, cmd-K for global search) and iPadOS split-screen multitasking are on the roadmap."
+        }
       },
       {
         "heading": "Reading the handbook on mobile",
         "body": [
-          "The complete Myncel Handbook is available inside the app — open the menu, tap \"Handbook\", and you can read every chapter offline. The mobile handbook is the same content as this web document but rendered with native typography, larger tap targets for the chapter list, and a search-as-you-type filter at the top. Useful when you are deep inside a building with no signal and want to look up a procedure."
+          "The complete Myncel Handbook is available inside the app — tap the Profile tab, then \"📖 Handbook\", and you can read every chapter offline. The mobile handbook is the same content as this web document but rendered with native typography, larger tap targets for the chapter list, and a search field at the top. Useful when you are deep inside a building with no signal and want to look up a procedure."
         ]
       }
     ]
@@ -944,6 +969,111 @@
         "body": [
           "You can always reach a human at support@myncel.com or through the Live Support tab in the chat widget. Professional and Enterprise plans include phone support; the number is shown in your Settings → Billing page.",
           "For security-sensitive issues (suspected breach, leaked credential) please use security@myncel.com — that mailbox is monitored 24/7 and is PGP-capable on request."
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "roadmap",
+    "emoji": "🛣️",
+    "title": "Roadmap",
+    "summary": "This chapter is a single source of truth for features that are planned but not yet shipped in the version of Myncel you are reading this handbook from. Anything mentioned in earlier chapters as \"on the roadmap\" is listed here, grouped by area, so you know exactly what is real today versus what is coming. We update this list as features ship — when an item ships it gets removed from here and the relevant chapter is updated to describe how it actually works.",
+    "sections": [
+      {
+        "heading": "How to read this chapter",
+        "body": [
+          "Everywhere else in this handbook we describe Myncel as it works today. If a feature is not mentioned in another chapter, it is not in the product yet. This Roadmap chapter is the only place where forward-looking items are documented, and we deliberately keep them short and unambiguous so there is no confusion between \"shipped\" and \"planned\".",
+          "If you need a planned feature urgently for a deployment, talk to us — most of these items have rough timelines and a few have customer-funded fast-tracks available."
+        ],
+        "callout": {
+          "type": "info",
+          "text": "No promises on dates. Items here are committed in scope but not in calendar — priorities shift based on customer demand and reviewer feedback."
+        }
+      },
+      {
+        "heading": "Equipment & onboarding",
+        "body": [
+          "Today you add machines one at a time from the Equipment page using the \"+ Add Machine\" button, or in bulk via the public REST API (POST /api/machines, see chapter \"Equipment & Onboarding\"). The roadmap below extends that with import wizards and richer location structures."
+        ],
+        "bullets": [
+          "CSV / Excel bulk importer in the UI — drag-drop a spreadsheet, map columns to fields, preview, import. Today only the API does bulk.",
+          "Named importers for common CMMS migrations — SAP PM, IBM Maximo, Limble, UpKeep, eMaint, Fiix, MaintainX, Hippo. Today: do the export from the source system to CSV, then call the public REST API.",
+          "Telematics importers for fleet — Toyota I_Site (forklifts), Crown InfoLink, John Deere Operations Center, Caterpillar VisionLink. Today: pull data via their public APIs into a script, then post to /api/machines and the gateway ingest endpoint.",
+          "4-level location hierarchy (Site → Building → Floor → Room) with hierarchical filters in the Equipment list. Today: a single free-text Location field with the convention \"Site — Building — Line\".",
+          "Equipment groups / parent-child relationships (e.g. a \"Compressor pack\" parent containing 4 individual compressors). Today: model each compressor as its own machine and put the pack name in the Notes or Location field."
+        ]
+      },
+      {
+        "heading": "Equipment record",
+        "body": [
+          "The current machine detail panel shows identity, an image, Edge Gateway tokens, recent work orders and schedules, and the Equipment History timeline. The roadmap turns it into a full tabbed page with deeper drill-downs."
+        ],
+        "bullets": [
+          "Full tabbed equipment page with Overview / Work Orders / Schedules / Connections / Documents / Parts / Timeline tabs.",
+          "Embedded DWG / PDF drawing viewer for piping diagrams, electrical schematics, and equipment drawings.",
+          "Per-machine document attachments (manuals, datasheets, certificates) with version history.",
+          "Per-machine bill-of-materials linking installed parts to the inventory catalog."
+        ]
+      },
+      {
+        "heading": "Work orders",
+        "body": [
+          "Work orders today support assignment, priority, status, checklists, photo attachments, comments, schedules (with all 9 frequency types including BY_HOURS), and labor / cost capture. The roadmap adds approval workflows and reusable templates."
+        ],
+        "bullets": [
+          "Multi-step approval workflows (e.g. supervisor approval before a high-cost WO can be marked complete; safety officer sign-off on lockout/tagout work).",
+          "Reusable Work Order templates — define a \"30-day Haas VF-2 PM\" once, spawn it from any machine.",
+          "Parts reservation and auto-deduction from inventory when a WO is completed.",
+          "Labor timer that runs in the mobile app (today labor is entered as a number when completing the WO)."
+        ]
+      },
+      {
+        "heading": "Predictive & connectivity",
+        "body": [
+          "Today Myncel ships with 8 production-ready Edge Gateway connectors: Modbus TCP/RTU, OPC-UA, MQTT, MTConnect, BACnet/IP, Siemens S7, Rockwell EtherNet/IP, and Beckhoff ADS — each documented at /docs/edge-gateway/<protocol> with copy-pasteable YAML. The roadmap adds more protocols and richer ML."
+        ],
+        "bullets": [
+          "SNMP connector for network and IT-OT bridge devices (printers, UPS, switches, environmental sensors).",
+          "Native cloud connectors for AWS IoT Core, Azure IoT Hub, and GCP IoT (today: bridge them via MQTT).",
+          "AI Settings panel per machine — configurable thresholds, model selection, alert sensitivity. Today: alerts use a single tenant-wide policy.",
+          "On-device anomaly detection (run the model inside the Edge Gateway, not just in the cloud) for low-bandwidth sites."
+        ]
+      },
+      {
+        "heading": "Integrations",
+        "body": [
+          "Today the native integrations are: Slack (channels and DMs), QuickBooks Online (parts purchases → bills), Google Sheets (export schedules and WOs), and Twilio (SMS alerts). Anything else can be wired through Webhooks (Settings → Webhooks). The roadmap turns the most-requested webhook recipes into native one-click integrations."
+        ],
+        "bullets": [
+          "Microsoft Teams native integration (channels, adaptive cards, @mentions). Today: Webhook → Teams Incoming Webhook URL.",
+          "PagerDuty native integration with on-call schedules and escalation policies. Today: Webhook → PagerDuty Events API v2.",
+          "Opsgenie native integration. Today: Webhook → Opsgenie REST API.",
+          "SAP S/4HANA, NetSuite, Microsoft Dynamics 365, Oracle Fusion, Sage Intacct, Xero — native ERP/accounting integrations. Today: QuickBooks Online is native; everything else via Webhooks or the public REST API.",
+          "SAML 2.0 SSO and SCIM 2.0 auto-provisioning for Okta, Azure AD, Google Workspace, OneLogin. Today: email + password (with optional 2FA) and Google OAuth."
+        ]
+      },
+      {
+        "heading": "Mobile",
+        "body": [
+          "The mobile app today covers the full technician floor workflow when the device has a network connection: view assigned WOs, complete checklists, attach photos, scan QR codes, read the handbook offline. The roadmap closes the offline gap and adds a few power-user touches."
+        ],
+        "bullets": [
+          "Full offline editing — open work orders, complete checklists, attach photos, add comments without network. All edits queued locally and auto-synced when the device reconnects.",
+          "Sync indicator in the app header (green = synced, amber = pending, red = sync error with tap-to-retry).",
+          "Extended offline cache with size selector up to 4 GB (for remote installers covering large sites).",
+          "iPadOS split-screen multitasking and external-keyboard shortcuts (cmd-N for new WO, cmd-K for global search).",
+          "Rich-content push notifications with embedded chart thumbnails for critical alerts."
+        ]
+      },
+      {
+        "heading": "Other",
+        "body": [
+          "Smaller items that do not fit the categories above but are tracked."
+        ],
+        "bullets": [
+          "In-app printable QR-label sheets with multiple labels per page (today: one label per page at the chosen size).",
+          "Saved reports and scheduled email exports (today: ad-hoc CSV download from each list view).",
+          "Multi-language UI (today: English only; the handbook is English only)."
         ]
       }
     ]
