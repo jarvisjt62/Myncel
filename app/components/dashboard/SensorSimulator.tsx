@@ -425,7 +425,7 @@ export default function SensorSimulator() {
         <div className="lg:col-span-2 flex flex-col">
 
           {/* Stats row */}
-          <div className="grid grid-cols-4" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="grid grid-cols-2 sm:grid-cols-4" style={{ borderBottom: '1px solid var(--border)' }}>
             {[
               { label: 'Sent',   value: stats.sent,   color: 'var(--text-primary)' },
               { label: 'OK',     value: stats.ok,     color: '#10b981' },

@@ -269,7 +269,8 @@ export default function PurchaseOrdersPage() {
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-[#e6ebf1] overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[600px]">
               <thead>
                 <tr className="bg-[#f6f9fc] border-b border-[#e6ebf1]">
                   <th className="text-left px-5 py-3 text-xs font-semibold text-[#8898aa] uppercase tracking-wide">PO #</th>
@@ -336,6 +337,7 @@ export default function PurchaseOrdersPage() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>
@@ -363,7 +365,8 @@ export default function PurchaseOrdersPage() {
               <div className="mb-5">
                 <h3 className="text-xs font-semibold text-[#8898aa] uppercase tracking-wide mb-2">Items</h3>
                 <div className="border border-[#e6ebf1] rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
+                  <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[480px]">
                     <thead className="bg-[#f6f9fc]">
                       <tr>
                         <th className="text-left px-4 py-2 text-xs text-[#8898aa]">Part</th>
@@ -391,6 +394,7 @@ export default function PurchaseOrdersPage() {
                       <tr className="bg-[#f6f9fc]"><td colSpan={3} className="px-4 py-2 text-right font-semibold">Total</td><td className="px-4 py-2 text-right font-bold text-[#635bff]">{fmt(selectedPO.total)}</td></tr>
                     </tfoot>
                   </table>
+                  </div>
                 </div>
               </div>
 

@@ -508,7 +508,7 @@ export default function AdminPartsClient({ organizations: initialOrgs }: { organ
               </div>
               <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--border)' }}>
                 <p className="text-xs font-bold text-[#635bff] uppercase tracking-widest">Stock & Cost</p>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="text-xs font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>Quantity</label>
                     <input type="number" value={addForm.quantity} onChange={e => setAddForm(f => ({ ...f, quantity: e.target.value }))} min="0" className={inputCls} style={inputStyle} />
@@ -634,7 +634,7 @@ export default function AdminPartsClient({ organizations: initialOrgs }: { organ
                   </div>
                   <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--border)' }}>
                     <p className="text-xs font-bold text-[#635bff] uppercase tracking-widest">Stock & Cost</p>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="text-xs font-semibold block mb-1" style={{ color: 'var(--text-secondary)' }}>Quantity</label>
                         <input type="number" value={partEditForm.quantity ?? '0'} onChange={e => setPartEditForm(f => ({ ...f, quantity: e.target.value }))} min="0" className={inputCls} style={inputStyle} />

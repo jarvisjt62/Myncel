@@ -248,7 +248,7 @@ export default function AdminOrgBillingClient({ org, auditLogs, stripeConfigured
               <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 16px' }}>
                 📈 Usage
               </h2>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {[
                   { label: 'Users', value: org.userCount, icon: '👥' },
                   { label: 'Machines', value: org.machineCount, icon: '⚙️' },
@@ -374,7 +374,8 @@ export default function AdminOrgBillingClient({ org, auditLogs, stripeConfigured
               Members ({org.userCount})
             </h2>
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
             <thead>
               <tr style={{ background: 'var(--bg-surface-2)' }}>
                 {['Name', 'Email', 'Role', 'Joined'].map(h => (
@@ -409,6 +410,7 @@ export default function AdminOrgBillingClient({ org, auditLogs, stripeConfigured
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

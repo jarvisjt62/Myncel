@@ -321,7 +321,7 @@ export default function AdminReportsClient({ organizations: initialOrgs }: { org
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
           <h2 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Equipment Health</h2>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {[
               { label: 'Operational', count: allMachines.filter(m => m.status === 'OPERATIONAL').length, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
               { label: 'Maintenance', count: allMachines.filter(m => m.status === 'MAINTENANCE').length, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
@@ -597,7 +597,7 @@ export default function AdminReportsClient({ organizations: initialOrgs }: { org
               <SelectInput label="Priority" value={editForm.priority || ''} onChange={v => setEditForm(f => ({ ...f, priority: v }))}
                 options={['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']} />
               <Input label="Type" value={editForm.type || ''} onChange={v => setEditForm(f => ({ ...f, type: v }))} />
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Input label="Labor $" type="number" value={String(editForm.laborCost ?? '')} onChange={v => setEditForm(f => ({ ...f, laborCost: Number(v) || 0 }))} />
                 <Input label="Parts $" type="number" value={String(editForm.partsCost ?? '')} onChange={v => setEditForm(f => ({ ...f, partsCost: Number(v) || 0 }))} />
                 <Input label="Total $" type="number" value={String(editForm.totalCost ?? '')} onChange={v => setEditForm(f => ({ ...f, totalCost: Number(v) || 0 }))} />
