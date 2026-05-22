@@ -1,21 +1,25 @@
 import Link from 'next/link';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import AppStoreBadges from '../../components/AppStoreBadges';
+import { anyMobileAppLive } from '@/lib/mobile-app-config';
 
 export const metadata = {
-  title: 'Mobile Maintenance App — Work From Anywhere on the Shop Floor',
-  description: 'Technicians access work orders, log completions, and attach photos from any smartphone. No app install needed—works in your browser.',
+  title: 'Mobile Maintenance App — Native iOS & Android + Mobile Web',
+  description: 'Get the Myncel mobile app on iOS and Android, or use it directly in any mobile browser. Work orders, photos, QR scanning, and offline support — your shop floor in your pocket.',
   alternates: { canonical: 'https://www.myncel.com/products/mobile' },
 };
 
 export default function Mobile() {
+  const appsLive = anyMobileAppLive();
+
   const features = [
-    { icon: '📱', title: 'No App Required', desc: 'Works in any mobile browser. No app store downloads, no updates to manage, no IT involvement.' },
-    { icon: '📸', title: 'Photo Capture', desc: 'Attach photos to work orders directly from your phone camera. Document problems and solutions visually.' },
-    { icon: '📍', title: 'QR Code Scanning', desc: 'Scan machine QR codes to instantly pull up equipment details, history, and pending tasks.' },
-    { icon: '✅', title: 'Quick Completion', desc: 'Complete work orders in seconds. Tap, add notes, snap a photo, done.' },
-    { icon: '🔔', title: 'Push Notifications', desc: 'Get alerts on your phone when new tasks are assigned or priorities change.' },
-    { icon: '📴', title: 'Offline Mode', desc: 'Work without internet connection. Data syncs automatically when connection returns.' },
+    { icon: '📱', title: 'Native iOS & Android apps', desc: 'Download Myncel from the App Store or Google Play for the smoothest experience, push notifications, and offline support.' },
+    { icon: '🌐', title: 'Or use the mobile web', desc: 'No install required — open myncel.com in any phone browser and you have everything you need.' },
+    { icon: '📸', title: 'Photo capture', desc: 'Attach photos to work orders directly from your phone camera. Document problems and solutions visually.' },
+    { icon: '📍', title: 'QR code scanning', desc: 'Scan machine QR codes to instantly pull up equipment details, history, and pending tasks.' },
+    { icon: '✅', title: 'Quick completion', desc: 'Complete work orders in seconds. Tap, add notes, snap a photo, done.' },
+    { icon: '🔔', title: 'Push notifications', desc: 'Get alerts on your phone when new tasks are assigned or priorities change.' },
   ];
 
   const stats = [
@@ -42,8 +46,23 @@ export default function Mobile() {
               <span className="block text-rose-600">Your shop floor, in your pocket.</span>
             </h1>
             <p className="text-xl text-[#425466] leading-relaxed mb-8">
-              Technicians access work orders, log completions, and attach photos from any smartphone. No app install needed—works in your mobile browser.
+              Native iOS and Android apps for technicians on the move — plus a mobile-friendly web app for anyone who'd rather skip the install. Work orders, photo capture, QR scanning, and offline support, all in one.
             </p>
+
+            {appsLive ? (
+              <div className="mb-8">
+                <div className="text-sm font-semibold uppercase tracking-[0.16em] text-rose-600 mb-3">
+                  Get the app
+                </div>
+                <AppStoreBadges size="lg" placement="products-mobile-hero" />
+              </div>
+            ) : (
+              <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 shadow-sm">
+                <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+                iOS & Android apps coming soon — mobile web available today
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-4">
               <Link href="/signup" className="btn-stripe-primary px-6 py-3">Start free trial →</Link>
               <Link href="/contact" className="btn-stripe-secondary px-6 py-3">Request demo</Link>
@@ -119,6 +138,23 @@ export default function Mobile() {
           </div>
         </div>
       </section>
+
+      {appsLive && (
+        <section className="py-20 bg-white">
+          <div className="max-w-4xl mx-auto px-6 text-center">
+            <span className="section-label">Download</span>
+            <h2 className="text-3xl lg:text-4xl font-bold text-[#0a2540] mb-4">
+              Get Myncel on your phone
+            </h2>
+            <p className="text-[#425466] mb-8 text-lg max-w-2xl mx-auto">
+              The native apps give you push notifications, offline support, and a polished UI built specifically for the shop floor. Both apps are free — sign in with your existing Myncel workspace.
+            </p>
+            <div className="flex justify-center">
+              <AppStoreBadges size="lg" placement="products-mobile-cta" />
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="py-20 bg-rose-600">
         <div className="max-w-3xl mx-auto px-6 text-center">
