@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -45,7 +46,13 @@ export default function LoginScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.container}>
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.container}>
           <View style={styles.header}>
             <View style={styles.logoCircle}>
               <Text style={styles.logoText}>M</Text>
@@ -152,7 +159,8 @@ export default function LoginScreen() {
               Myncel accounts are provisioned by your organization administrator. New workspaces are created on the web at myncel.com.
             </Text>
           </View>
-        </View>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -161,12 +169,16 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
+  scrollContent: {
+    flexGrow: 1,
+  },
   container: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: spacing.xl,
     justifyContent: 'space-between',
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xl,
+    gap: spacing.xxl,
   },
   header: {
     alignItems: 'center',
