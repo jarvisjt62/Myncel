@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 
 type MegaMenuProps = {
   isOpen: boolean;
@@ -278,6 +279,11 @@ export default function Navbar() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
+  // Session-aware CTAs — when a user is signed in we replace the marketing trio
+  // (Sign in / Contact sales / Start free trial) with a single "Go to dashboard"
+  // button so they don't have to re-authenticate just to get back into the app.
+  const { status } = useSession();
+  const isAuthenticated = status === 'authenticated';
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -358,17 +364,25 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Right CTA */}
+        {/* Right CTA — session-aware */}
         <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-          <Link href="/signin" className="text-sm font-medium text-[#425466] hover:text-[#0a2540] transition-colors px-3 py-2 rounded-lg hover:bg-[#f6f9fc] whitespace-nowrap">
-            Sign in
-          </Link>
-          <Link href="/contact" className="text-sm font-medium text-[#425466] border border-[#e6ebf1] px-4 py-2 rounded-lg hover:bg-[#f6f9fc] hover:border-[#c9d7e3] transition-all whitespace-nowrap">
-            Contact sales
-          </Link>
-          <Link href="/free-trial" className="btn-stripe-primary text-sm whitespace-nowrap">
-            Start free trial →
-          </Link>
+          {isAuthenticated ? (
+            <Link href="/dashboard" className="btn-stripe-primary text-sm whitespace-nowrap">
+              Go to dashboard →
+            </Link>
+          ) : (
+            <>
+              <Link href="/signin" className="text-sm font-medium text-[#425466] hover:text-[#0a2540] transition-colors px-3 py-2 rounded-lg hover:bg-[#f6f9fc] whitespace-nowrap">
+                Sign in
+              </Link>
+              <Link href="/contact" className="text-sm font-medium text-[#425466] border border-[#e6ebf1] px-4 py-2 rounded-lg hover:bg-[#f6f9fc] hover:border-[#c9d7e3] transition-all whitespace-nowrap">
+                Contact sales
+              </Link>
+              <Link href="/free-trial" className="btn-stripe-primary text-sm whitespace-nowrap">
+                Start free trial →
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -437,10 +451,16 @@ export default function Navbar() {
               <Link href="/partners" onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc]">Partners</Link>
             </div>
             
-            {/* CTA Buttons */}
+            {/* CTA Buttons — session-aware */}
             <div className="border-t border-[#e6ebf1] pt-4 mt-3 flex flex-col gap-2">
-              <Link href="/signin" onClick={() => setMobileOpen(false)} className="w-full text-center py-3 border border-[#e6ebf1] rounded-lg text-sm font-medium text-[#425466] hover:bg-[#f6f9fc] transition-colors">Sign in</Link>
-              <Link href="/free-trial" onClick={() => setMobileOpen(false)} className="w-full text-center py-3 bg-[#635bff] rounded-lg text-sm font-semibold text-white hover:bg-[#4f46e5] transition-colors">Start free trial →</Link>
+              {isAuthenticated ? (
+                <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="w-full text-center py-3 bg-[#635bff] rounded-lg text-sm font-semibold text-white hover:bg-[#4f46e5] transition-colors">Go to dashboard →</Link>
+              ) : (
+                <>
+                  <Link href="/signin" onClick={() => setMobileOpen(false)} className="w-full text-center py-3 border border-[#e6ebf1] rounded-lg text-sm font-medium text-[#425466] hover:bg-[#f6f9fc] transition-colors">Sign in</Link>
+                  <Link href="/free-trial" onClick={() => setMobileOpen(false)} className="w-full text-center py-3 bg-[#635bff] rounded-lg text-sm font-semibold text-white hover:bg-[#4f46e5] transition-colors">Start free trial →</Link>
+                </>
+              )}
             </div>
           </div>
         </div>

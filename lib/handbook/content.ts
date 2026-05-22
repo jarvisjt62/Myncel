@@ -52,6 +52,59 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
         ],
       },
       {
+        heading: 'Creating your account (the free trial flow)',
+        body: [
+          'If your organization is brand new to Myncel, the person who signs up first becomes the workspace owner / Admin. Visit www.myncel.com and click the "Start free trial" button in the top right (it appears on every marketing page). You will be taken to a short sign-up form that asks for: your work email, a password, your full name, and your organization name. That is everything we need to spin up your workspace.',
+          'After you submit the form you are signed in immediately and dropped onto the dashboard. There is nothing to install, no credit card required, and no sales call to schedule. Your workspace starts on a 30-day free trial of the Professional plan, which means every feature is unlocked from minute one — IoT, integrations, API keys, webhooks, work orders, schedules, reports, and the mobile app — so you can evaluate the product end-to-end without artificial limits.',
+          'You will also receive a welcome email with a link you can bookmark. If you ever need to come back later, sign in at www.myncel.com/signin with the same email and password you just used.',
+        ],
+        callout: {
+          type: 'tip',
+          text: 'Use a real work email when you sign up. Myncel is a B2B product; trial accounts created with personal emails (gmail, hotmail, yahoo) still work but they cannot be migrated onto a paid corporate plan later without re-inviting your team.',
+        },
+      },
+      {
+        heading: 'Signing in (existing users)',
+        body: [
+          'Open www.myncel.com/signin (or click "Sign in" in the top-right of any Myncel page). Enter the email and password you used when the account was created. After a successful sign-in you land on the dashboard.',
+          'If your workspace administrator has enabled Google sign-in for your organization, you can also click "Continue with Google" and use your Google Workspace account. This is the same as signing in with email — you end up in the same workspace either way; pick whichever is easier.',
+          'If you forgot your password, click the "Forgot password?" link below the password field. We email you a one-time reset link that is valid for 30 minutes. Open it on the same device, choose a new password, and you are back in.',
+        ],
+        callout: {
+          type: 'info',
+          text: 'SAML 2.0 SSO and SCIM auto-provisioning (Okta, Azure AD, OneLogin) are on the roadmap — see the Roadmap chapter. Today the supported sign-in methods are email + password (with optional 2FA) and Google OAuth.',
+        },
+      },
+      {
+        heading: 'Joining as a teammate (you got an invite email)',
+        body: [
+          'If your manager already has a Myncel workspace and they invited you, the flow is even simpler. You will receive an email titled "You have been invited to join [Organization] on Myncel" with a single button: "Accept invitation". Click it.',
+          'The invitation link drops you on a short form that is pre-filled with your email and your assigned role (Admin / Manager / Technician / Operator / Viewer). Pick a password, confirm your name, click "Accept invitation", and you are signed in — no separate sign-up step.',
+          'Your manager does not need to share a password with you, and you do not need to remember an org code. The invitation link itself contains everything Myncel needs to put you in the right workspace with the right permissions. Bookmark www.myncel.com/signin so you can come back any time with the email + password you just chose.',
+        ],
+        callout: {
+          type: 'warning',
+          text: 'Invitation links expire after 7 days for security. If yours has expired, ask your manager to re-send it from Settings → Team → "Resend invitation" on your row.',
+        },
+      },
+      {
+        heading: 'Securing your account (2FA and password best practices)',
+        body: [
+          'Once you are signed in, take 60 seconds to harden your account. Open Settings → Security and you will see two-factor authentication (2FA) toggles. Myncel supports any standard TOTP authenticator app — Google Authenticator, 1Password, Authy, Microsoft Authenticator, Bitwarden — so you can use whichever you already have on your phone.',
+          'Click "Enable 2FA". Myncel shows a QR code; scan it with your authenticator app, then type back the 6-digit code the app produces to confirm. After that, every sign-in will ask for your password plus the current 6-digit code. This is the single most effective thing you can do to keep your maintenance data safe — it is what blocks 99% of credential-theft attacks.',
+          'Myncel also remembers up to 10 recovery codes the moment you enable 2FA. Print them or save them in your password manager — if you ever lose your phone, those codes are how you get back in. We cannot reset 2FA for you (that would defeat the point); recovery codes are the supported path.',
+          'On the password side: Myncel enforces a minimum of 8 characters but we strongly recommend a passphrase generated by your password manager. Passwords can be changed any time at Settings → Security → "Change password".',
+        ],
+      },
+      {
+        heading: 'How the 30-day free trial works',
+        body: [
+          'When you create a brand-new workspace, the trial clock starts. For 30 days you have full Professional-plan access — every feature unlocked, no quotas, every protocol connector, the mobile app, AI alerts, and unlimited work orders.',
+          'You can see exactly how many trial days remain at any time at Settings → Billing — there is a clearly-labeled banner at the top of that page. We also email you reminders at 7 days, 3 days, and 1 day before the trial ends so it never sneaks up on you.',
+          'On day 31 the trial ends. Your data does not disappear and is never deleted — it just goes into read-only mode (the "Trial Expired" state). You can still sign in, view every work order, every machine, every report. You simply cannot create new ones until you pick a paid plan. Picking a plan from Settings → Billing instantly unlocks editing again, with all your historical data intact.',
+        ],
+      },
+      {
         heading: 'The 30-second mental model',
         body: [
           'Three concepts cover ninety percent of daily Myncel usage. Spend a minute on each and the rest of the product will feel intuitive.',
@@ -68,9 +121,9 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
           'If you are evaluating Myncel for your team, the fastest path to "I get it" is the following sequence. Do not worry about getting things perfect; you can always edit or delete later.',
         ],
         steps: [
-          'Sign in and confirm your organization name, time zone, and primary facility address are correct (Settings → Organization).',
-          'Add three to five real machines — even quickly, with just a name and location. Use Equipment → "+ Add Equipment".',
-          'Pick one of those machines and create a sample preventive-maintenance schedule (e.g. "Lubrication, every 14 days"). Use Schedules → "+ New Schedule".',
+          'Sign in and confirm your organization name, time zone, and primary facility address are correct (Settings → Profile / Settings → Team).',
+          'Add three to five real machines — even quickly, with just a name and location. Use Equipment → "+ Add Machine".',
+          'Pick one of those machines and create a sample preventive-maintenance schedule (e.g. "Lubrication, every 14 days"). Use /admin/schedules → "+ New Schedule".',
           'Create a sample work order on that same machine ("Replace air filter") and assign it to yourself.',
           'Mark it In Progress, add 15 minutes of labor and a part, then mark it Completed.',
           'Open Reports → MTTR and you will see your first data point. Repeat with another machine to see the dashboard come alive.',
@@ -1138,6 +1191,26 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
           'SAP S/4HANA, NetSuite, Microsoft Dynamics 365, Oracle Fusion, Sage Intacct, Xero — native ERP/accounting integrations. Today: QuickBooks Online is native; everything else via Webhooks or the public REST API.',
           'SAML 2.0 SSO and SCIM 2.0 auto-provisioning for Okta, Azure AD, Google Workspace, OneLogin. Today: email + password (with optional 2FA) and Google OAuth.',
         ],
+      },
+      {
+        heading: 'Multi-domain expansion (vehicles, vessels, drones)',
+        body: [
+          'Myncel\'s data model and Edge Gateway architecture are domain-agnostic — a "Machine" is just something with a serial number and a maintenance schedule. The engine that powers preventive and predictive maintenance for a CNC mill works equally well for a delivery van, a bulldozer, or a workboat. What we have not shipped yet are the vehicle-side protocol connectors and the polished vertical workflows. Below is how we plan to extend Myncel beyond industrial / facility maintenance.',
+          'This is on the roadmap because we are increasingly asked about it by car dealerships running 50-vehicle service fleets, trucking and logistics companies running 200+ heavy trucks, marine charter operators with mixed fleets of boats, and construction firms with rolling stock. The same Myncel work-order, schedule, parts, and reports engine they already love for facility equipment becomes their fleet maintenance system too.',
+        ],
+        bullets: [
+          'Cars / light trucks / motorcycles via OBD-II — the universal port under the dash on every vehicle since 1996. Plug in a $25 ELM327 dongle or an $80 cellular OBD-II tracker and Myncel reads odometer, engine hours, RPM, coolant temp, fuel level, battery voltage, and fault codes (DTCs / "check engine" codes). Estimated effort: 5–8 dev days.',
+          'Heavy trucks / buses / agricultural / construction via SAE J1939 — the heavy-duty CAN-bus protocol used by Caterpillar, John Deere, Volvo, Mack, Freightliner, Kenworth, and most ag/construction OEMs. Reads engine load, fuel rate, DEF level, transmission temp, brake wear, TPMS, idle time. Hardware: $200–500 J1939 gateway. Estimated effort: 10–15 dev days.',
+          'Telematics importers — most fleets already pay for Geotab, Samsara, Verizon Connect, Motive (KeepTruckin), or Fleetio. We will add native importers so Myncel becomes the CMMS layer on top of telematics they already trust, without asking them to plug in a second device. Estimated effort: 3–5 dev days per provider.',
+          'Vessels / yachts / workboats via NMEA 2000 (engines + nav) and Modbus (engine room). Reads GPS, heading, speed, depth, engine RPM/temp/oil pressure, fuel rate, tank levels, AIS, wind, rudder angle. Hardware: $150–400 NMEA 2000 gateway. Estimated effort: 10–14 dev days.',
+          'Drones / UAVs via MAVLink — the open protocol every PX4 / ArduPilot drone speaks. Estimated effort: 5 dev days. (Manned aircraft / ARINC 429 is intentionally out of scope: that is FAA Part 43 / EASA Part-145 regulated software territory and a separate product, not a Myncel feature.)',
+          'EV-specific manufacturer APIs — Tesla Fleet API, Ford Pro, GM OnStar Business, Rivian Fleet — for fleets that have already gone electric and need OEM-grade telemetry that OBD-II cannot provide.',
+          'Vertical-specific work-order templates — DVIR (Daily Vehicle Inspection Report) checklists, USCG / SOLAS / classification-society inspection templates for vessels, FMCSA pre-trip inspection templates for commercial trucks. Today the work-order engine is generic; these become one-click starters.',
+        ],
+        callout: {
+          type: 'info',
+          text: 'If you are running a car dealership, trucking company, marine charter operator, or any vehicle-heavy fleet and you would like to be a design partner for this domain, contact sales — early customers in this category get accelerated implementation and influence over the protocol/feature priority.',
+        },
       },
       {
         heading: 'Mobile',

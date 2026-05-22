@@ -295,7 +295,9 @@ export default function BillingClient({
     if (subscriptionStatus === 'active') return { text: 'Active', color: '#10b981', bg: 'rgba(16,185,129,0.1)' };
     if (subscriptionStatus === 'past_due') return { text: 'Payment Past Due', color: '#ef4444', bg: 'rgba(239,68,68,0.1)' };
     if (subscriptionStatus === 'canceled') return { text: 'Canceled', color: '#6b7280', bg: 'rgba(107,114,128,0.1)' };
-    if (subscriptionStatus === 'trialing') return { text: 'Trialing', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' };
+    // Stripe 'trialing' status on a paid plan — show as Active to avoid confusing users who
+    // already picked a plan (e.g. Enterprise) into thinking they're still on the free trial.
+    if (subscriptionStatus === 'trialing') return { text: 'Active', color: '#10b981', bg: 'rgba(16,185,129,0.1)' };
     return { text: 'Free', color: '#6b7280', bg: 'rgba(107,114,128,0.1)' };
   };
 
