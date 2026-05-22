@@ -262,6 +262,33 @@ What's new in 1.0.1
 - 📞 **Twilio toll-free resubmission** still pending (separate task).
 - 🍎 **Find iPhone tester** for ad-hoc TestFlight before fragile feature launches (still recommended even though we're shipping without one).
 
+### 7.3 Flip download badges live on approval day
+
+Code is already shipped (`commit bbd6c50` on main). Badges are rendered by `app/components/AppStoreBadges.tsx`, controlled by `lib/mobile-app-config.ts`, and currently render nothing because both flags default to `false`. They appear in the **Footer** (sitewide) and the **`/products/mobile`** page (hero + dedicated download CTA section).
+
+To flip them live:
+
+1. **iOS** — once Apple emails "Ready for Sale" on 1.0 (12):
+   - Open App Store Connect → My Apps → Myncel → **App Information**
+   - Copy the numeric **Apple ID** (e.g. `6471234567`)
+   - In Vercel → Project (myncel) → Settings → Environment Variables:
+     - Add `NEXT_PUBLIC_IOS_APP_ID` = `<that numeric ID>` (Production)
+     - Add `NEXT_PUBLIC_IOS_APP_LIVE` = `true` (Production)
+   - Redeploy → iOS badge appears
+
+2. **Android** — once you promote the Play build to Production track and rollout starts:
+   - In Vercel:
+     - Add `NEXT_PUBLIC_ANDROID_APP_LIVE` = `true` (Production)
+   - The Android URL is already hardcoded to `play.google.com/store/apps/details?id=com.jarvisitconsults.myncel`
+   - Redeploy → Android badge appears
+
+3. **Verify both** by visiting:
+   - https://www.myncel.com/products/mobile (hero + download section)
+   - Any page footer (look for "Get the mobile app" block)
+   - Click each badge — should open the live store listing.
+
+Pre-launch (current state) the page shows a "iOS & Android apps coming soon — mobile web available today" pulse pill instead of badges, so the page never looks empty.
+
 ---
 
 ## 8. One-line summary for future-me
