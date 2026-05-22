@@ -70,6 +70,7 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {[
                 { label: 'Documentation', href: '/docs' },
+                { label: 'Handbook', href: '/handbook' },
                 { label: 'Blog', href: '/blog' },
                 { label: 'Customer Stories', href: '/customers' },
                 { label: 'Maintenance Guides', href: '/guides' },

@@ -72,6 +72,9 @@ export default function AiChatLogPage() {
   const [sourceFilter, setSourceFilter] = useState('');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
+  const [flash, setFlash] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -99,6 +102,92 @@ export default function AiChatLogPage() {
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefresh, sourceFilter, search]);
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllVisible = () => {
+    if (!data) return;
+    const visibleIds = new Set(data.chat.map((r) => r.id));
+    const allSelected = data.chat.every((r) => selected.has(r.id));
+    setSelected(allSelected ? new Set() : visibleIds);
+  };
+
+  const flashMsg = (msg: string) => {
+    setFlash(msg);
+    setTimeout(() => setFlash(null), 4000);
+  };
+
+  const deleteByIds = async (ids: string[], scope: 'chat' | 'feedback' | 'all' = 'chat') => {
+    if (ids.length === 0) return;
+    setBusy(true);
+    try {
+      const res = await fetch(
+        `/api/admin/ai-chat-log?ids=${ids.join(',')}&scope=${scope}`,
+        { method: 'DELETE' }
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      flashMsg(`✅ Deleted ${json.deleted} row(s)`);
+      setSelected(new Set());
+      fetchData();
+    } catch (e: any) {
+      flashMsg(`❌ Delete failed: ${e.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteOlderThan = async (days: number, scope: 'chat' | 'feedback' | 'all' = 'all') => {
+    if (!confirm(`Delete ALL ${scope === 'all' ? 'chat & feedback' : scope} rows older than ${days} days? This can't be undone.`)) return;
+    setBusy(true);
+    try {
+      const res = await fetch(
+        `/api/admin/ai-chat-log?olderThanDays=${days}&scope=${scope}`,
+        { method: 'DELETE', headers: { 'X-Confirm-Delete': 'yes' } }
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      flashMsg(`✅ Deleted ${json.deleted} row(s) older than ${days} days`);
+      fetchData();
+    } catch (e: any) {
+      flashMsg(`❌ Delete failed: ${e.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteAll = async (scope: 'chat' | 'feedback' | 'all' = 'all') => {
+    const label = scope === 'all' ? 'EVERY chat AND feedback row' : `EVERY ${scope} row`;
+    if (!confirm(`⚠️ DANGER: Delete ${label}? This wipes the entire AI chat history. Type confirm in the next dialog to proceed.`)) return;
+    const typed = prompt('Type DELETE ALL to confirm:');
+    if (typed !== 'DELETE ALL') {
+      flashMsg('Cancelled (confirmation phrase did not match)');
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/ai-chat-log?all=true&scope=${scope}`, {
+        method: 'DELETE',
+        headers: { 'X-Confirm-Delete': 'yes' },
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      flashMsg(`✅ Deleted ${json.deleted} row(s) — entire history wiped`);
+      setSelected(new Set());
+      fetchData();
+    } catch (e: any) {
+      flashMsg(`❌ Delete failed: ${e.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   if (loading && !data) {
     return (
@@ -135,6 +224,12 @@ export default function AiChatLogPage() {
       <p className="text-[#425466] text-sm mb-6">
         Every question users ask the Myncel AI assistant. See what's working, what's missing, and which answers got 👍 / 👎.
       </p>
+
+      {flash && (
+        <div className="mb-4 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-sm">
+          {flash}
+        </div>
+      )}
 
       {/* Stat tiles */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
@@ -214,14 +309,26 @@ export default function AiChatLogPage() {
           <h2 className="text-lg font-semibold text-[#0a2540] mb-3">💬 Recent feedback ({data.feedback.length})</h2>
           <div className="space-y-2 max-h-80 overflow-auto">
             {data.feedback.slice(0, 50).map((f) => (
-              <div key={f.id} className="border-l-4 pl-3 py-1" style={{ borderColor: f.rating === 'up' ? '#10b981' : '#ef4444' }}>
-                <div className="text-xs text-[#8898aa] flex gap-3">
-                  <span>{fmtTime(f.createdAt)}</span>
-                  <span>{f.rating === 'up' ? '👍 Helpful' : '👎 Not helpful'}</span>
-                  {f.userEmail && <span>{f.userEmail}</span>}
+              <div key={f.id} className="border-l-4 pl-3 py-1 flex items-start justify-between gap-2" style={{ borderColor: f.rating === 'up' ? '#10b981' : '#ef4444' }}>
+                <div className="flex-1">
+                  <div className="text-xs text-[#8898aa] flex gap-3">
+                    <span>{fmtTime(f.createdAt)}</span>
+                    <span>{f.rating === 'up' ? '👍 Helpful' : '👎 Not helpful'}</span>
+                    {f.userEmail && <span>{f.userEmail}</span>}
+                  </div>
+                  <div className="text-sm text-[#0a2540] mt-1"><b>Q:</b> {f.question}</div>
+                  {f.comment && <div className="text-sm text-[#425466] mt-1"><b>Comment:</b> {f.comment}</div>}
                 </div>
-                <div className="text-sm text-[#0a2540] mt-1"><b>Q:</b> {f.question}</div>
-                {f.comment && <div className="text-sm text-[#425466] mt-1"><b>Comment:</b> {f.comment}</div>}
+                <button
+                  disabled={busy}
+                  onClick={() => {
+                    if (confirm('Delete this feedback row?')) deleteByIds([f.id], 'feedback');
+                  }}
+                  className="text-red-500 hover:text-red-700 text-xs disabled:opacity-50"
+                  title="Delete feedback row"
+                >
+                  🗑
+                </button>
               </div>
             ))}
           </div>
@@ -230,9 +337,30 @@ export default function AiChatLogPage() {
 
       {/* Chat log table */}
       <div className="bg-white border border-[#e6ebf1] rounded-xl overflow-hidden">
-        <div className="px-5 py-3 border-b border-[#e6ebf1] flex items-center justify-between">
+        <div className="px-5 py-3 border-b border-[#e6ebf1] flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-lg font-semibold text-[#0a2540]">📜 Recent Q&A ({data.chat.length})</h2>
-          {error && <span className="text-xs text-amber-700">stale: {error}</span>}
+          <div className="flex items-center gap-2 flex-wrap">
+            {selected.size > 0 && (
+              <>
+                <span className="text-sm text-[#425466]">{selected.size} selected</span>
+                <button
+                  disabled={busy}
+                  onClick={() => deleteByIds(Array.from(selected), 'chat')}
+                  className="px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50"
+                >
+                  🗑 Delete selected
+                </button>
+                <button
+                  disabled={busy}
+                  onClick={() => setSelected(new Set())}
+                  className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300"
+                >
+                  Clear
+                </button>
+              </>
+            )}
+            {error && <span className="text-xs text-amber-700">stale: {error}</span>}
+          </div>
         </div>
         {data.chat.length === 0 ? (
           <p className="p-5 text-[#8898aa] text-sm">No matching chat turns yet.</p>
@@ -241,12 +369,21 @@ export default function AiChatLogPage() {
             <table className="w-full text-sm">
               <thead className="bg-[#f6f9fc] text-[#425466] text-xs uppercase">
                 <tr>
+                  <th className="p-3 w-8">
+                    <input
+                      type="checkbox"
+                      checked={data.chat.length > 0 && data.chat.every((r) => selected.has(r.id))}
+                      onChange={selectAllVisible}
+                      title="Select all visible"
+                    />
+                  </th>
                   <th className="text-left p-3">Time</th>
                   <th className="text-left p-3">User</th>
                   <th className="text-left p-3">Question</th>
                   <th className="text-left p-3">Source</th>
                   <th className="text-left p-3">Model</th>
                   <th className="text-right p-3">Ans len</th>
+                  <th className="text-right p-3 w-16">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -257,7 +394,13 @@ export default function AiChatLogPage() {
                       key={row.id}
                       row={row}
                       expanded={expanded}
+                      checked={selected.has(row.id)}
+                      onToggleSelect={() => toggleSelect(row.id)}
                       onToggle={() => setExpandedId(expanded ? null : row.id)}
+                      onDelete={() => {
+                        if (confirm('Delete this Q&A row?')) deleteByIds([row.id], 'chat');
+                      }}
+                      busy={busy}
                     />
                   );
                 })}
@@ -265,6 +408,51 @@ export default function AiChatLogPage() {
             </table>
           </div>
         )}
+      </div>
+
+      {/* Danger zone */}
+      <div className="bg-white border-2 border-red-200 rounded-xl p-5 mt-6">
+        <h2 className="text-lg font-semibold text-red-700 mb-1">⚠️ Danger Zone</h2>
+        <p className="text-[#425466] text-sm mb-4">
+          Bulk delete chat history. These actions cannot be undone — the rows are removed from <code className="bg-gray-100 px-1 rounded">AuditLog</code> permanently.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            disabled={busy}
+            onClick={() => deleteOlderThan(30, 'all')}
+            className="px-3 py-2 bg-amber-100 text-amber-800 text-sm rounded hover:bg-amber-200 disabled:opacity-50"
+          >
+            🗑 Delete chat & feedback older than 30 days
+          </button>
+          <button
+            disabled={busy}
+            onClick={() => deleteOlderThan(90, 'all')}
+            className="px-3 py-2 bg-amber-100 text-amber-800 text-sm rounded hover:bg-amber-200 disabled:opacity-50"
+          >
+            🗑 Delete older than 90 days
+          </button>
+          <button
+            disabled={busy}
+            onClick={() => deleteAll('chat')}
+            className="px-3 py-2 bg-red-100 text-red-800 text-sm rounded hover:bg-red-200 disabled:opacity-50"
+          >
+            🔥 Delete ALL chat rows
+          </button>
+          <button
+            disabled={busy}
+            onClick={() => deleteAll('feedback')}
+            className="px-3 py-2 bg-red-100 text-red-800 text-sm rounded hover:bg-red-200 disabled:opacity-50"
+          >
+            🔥 Delete ALL feedback
+          </button>
+          <button
+            disabled={busy}
+            onClick={() => deleteAll('all')}
+            className="px-3 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50"
+          >
+            💥 Wipe everything (chat + feedback)
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -295,28 +483,52 @@ function ConfigPill({ ok, label }: { ok: boolean; label: string }) {
 function FragmentRow({
   row,
   expanded,
+  checked,
+  onToggleSelect,
   onToggle,
+  onDelete,
+  busy,
 }: {
   row: ChatRow;
   expanded: boolean;
+  checked: boolean;
+  onToggleSelect: () => void;
   onToggle: () => void;
+  onDelete: () => void;
+  busy: boolean;
 }) {
   return (
     <>
-      <tr className="border-t border-[#e6ebf1] hover:bg-[#f6f9fc] cursor-pointer" onClick={onToggle}>
-        <td className="p-3 text-[#425466] whitespace-nowrap">{fmtTime(row.createdAt)}</td>
-        <td className="p-3 text-[#425466]">{row.userEmail || <span className="text-[#8898aa]">anonymous</span>}</td>
-        <td className="p-3 text-[#0a2540] max-w-md truncate">{row.question}</td>
-        <td className="p-3">{sourceBadge(row.source)}</td>
-        <td className="p-3 text-[#425466] text-xs">
+      <tr className="border-t border-[#e6ebf1] hover:bg-[#f6f9fc]">
+        <td className="p-3" onClick={(e) => e.stopPropagation()}>
+          <input type="checkbox" checked={checked} onChange={onToggleSelect} />
+        </td>
+        <td className="p-3 text-[#425466] whitespace-nowrap cursor-pointer" onClick={onToggle}>{fmtTime(row.createdAt)}</td>
+        <td className="p-3 text-[#425466] cursor-pointer" onClick={onToggle}>{row.userEmail || <span className="text-[#8898aa]">anonymous</span>}</td>
+        <td className="p-3 text-[#0a2540] max-w-md truncate cursor-pointer" onClick={onToggle}>{row.question}</td>
+        <td className="p-3 cursor-pointer" onClick={onToggle}>{sourceBadge(row.source)}</td>
+        <td className="p-3 text-[#425466] text-xs cursor-pointer" onClick={onToggle}>
           {row.provider || '—'}
           {row.model && <div className="text-[#8898aa]">{row.model}</div>}
         </td>
-        <td className="p-3 text-right text-[#425466]">{row.answerLength ?? '—'}</td>
+        <td className="p-3 text-right text-[#425466] cursor-pointer" onClick={onToggle}>{row.answerLength ?? '—'}</td>
+        <td className="p-3 text-right">
+          <button
+            disabled={busy}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="text-red-500 hover:text-red-700 disabled:opacity-50"
+            title="Delete row"
+          >
+            🗑
+          </button>
+        </td>
       </tr>
       {expanded && (
         <tr className="bg-[#f6f9fc]">
-          <td colSpan={6} className="p-4 text-sm">
+          <td colSpan={8} className="p-4 text-sm">
             <div className="text-[#0a2540] whitespace-pre-wrap">
               <b>Question:</b> {row.question}
             </div>

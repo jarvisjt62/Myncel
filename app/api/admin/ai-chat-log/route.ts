@@ -172,3 +172,113 @@ export async function GET(req: NextRequest) {
     filters: { limit, source: sourceFilter || null, q: qNeedle || null },
   });
 }
+
+/**
+ * DELETE /api/admin/ai-chat-log
+ *
+ * Modes (super-admin only, admin@myncel.com):
+ *   1. ?ids=id1,id2,id3   → delete those specific AuditLog rows
+ *   2. ?scope=feedback    → only operate on AI_CHAT_FEEDBACK rows (combine with above or below)
+ *      ?scope=chat        → only operate on AI_CHAT rows (default)
+ *      ?scope=all         → both AI_CHAT and AI_CHAT_FEEDBACK
+ *   3. ?olderThanDays=N   → delete rows older than N days (in scope)
+ *   4. ?all=true          → delete every row in scope (DANGEROUS)
+ *
+ * Always requires confirmation header X-Confirm-Delete: yes for `all=true`
+ * or `olderThanDays` modes, to make accidental nuking harder.
+ */
+export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (session.user.email !== 'admin@myncel.com') {
+    return NextResponse.json({ error: 'Forbidden — super-admin only' }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const idsParam = searchParams.get('ids') || '';
+  const scope = (searchParams.get('scope') || 'chat').toLowerCase();
+  const olderThanDays = parseInt(searchParams.get('olderThanDays') || '0', 10);
+  const all = searchParams.get('all') === 'true';
+  const confirm = req.headers.get('x-confirm-delete') === 'yes';
+
+  // Build the action filter
+  const actions: string[] =
+    scope === 'feedback'
+      ? ['AI_CHAT_FEEDBACK']
+      : scope === 'all'
+      ? ['AI_CHAT', 'AI_CHAT_FEEDBACK']
+      : ['AI_CHAT'];
+
+  // ---- Mode 1: by IDs ----
+  if (idsParam) {
+    const ids = idsParam.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 500);
+    if (ids.length === 0) {
+      return NextResponse.json({ error: 'no valid ids' }, { status: 400 });
+    }
+    try {
+      const result = await db.auditLog.deleteMany({
+        where: {
+          id: { in: ids },
+          action: { in: actions },
+        },
+      });
+      return NextResponse.json({ ok: true, deleted: result.count, mode: 'ids' });
+    } catch (err: any) {
+      return NextResponse.json({ error: err?.message || 'delete failed' }, { status: 500 });
+    }
+  }
+
+  // ---- Mode 2: olderThanDays ----
+  if (olderThanDays > 0) {
+    if (!confirm) {
+      return NextResponse.json(
+        { error: 'confirmation required (X-Confirm-Delete: yes)' },
+        { status: 428 }
+      );
+    }
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - olderThanDays);
+    try {
+      const result = await db.auditLog.deleteMany({
+        where: {
+          action: { in: actions },
+          createdAt: { lt: cutoff },
+        },
+      });
+      return NextResponse.json({
+        ok: true,
+        deleted: result.count,
+        mode: 'olderThanDays',
+        olderThanDays,
+        cutoff: cutoff.toISOString(),
+      });
+    } catch (err: any) {
+      return NextResponse.json({ error: err?.message || 'delete failed' }, { status: 500 });
+    }
+  }
+
+  // ---- Mode 3: all ----
+  if (all) {
+    if (!confirm) {
+      return NextResponse.json(
+        { error: 'confirmation required (X-Confirm-Delete: yes)' },
+        { status: 428 }
+      );
+    }
+    try {
+      const result = await db.auditLog.deleteMany({
+        where: { action: { in: actions } },
+      });
+      return NextResponse.json({ ok: true, deleted: result.count, mode: 'all', scope });
+    } catch (err: any) {
+      return NextResponse.json({ error: err?.message || 'delete failed' }, { status: 500 });
+    }
+  }
+
+  return NextResponse.json(
+    { error: 'no delete mode specified — use ?ids=, ?olderThanDays=, or ?all=true' },
+    { status: 400 }
+  );
+}

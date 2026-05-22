@@ -347,6 +347,9 @@ export default function Navbar() {
           <Link href="/pricing" className="px-3 py-2 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc] transition-colors">
             Pricing
           </Link>
+          <Link href="/handbook" className="px-3 py-2 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc] transition-colors">
+            Handbook
+          </Link>
           <Link href="/customers" className="px-3 py-2 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc] transition-colors">
             Customers
           </Link>
@@ -428,6 +431,7 @@ export default function Navbar() {
             {/* Quick Links */}
             <div className="border-t border-[#e6ebf1] pt-3 mt-3 space-y-1">
               <Link href="/pricing" onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc]">Pricing</Link>
+              <Link href="/handbook" onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc]">Handbook</Link>
               <Link href="/about" onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc]">About</Link>
               <Link href="/contact" onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc]">Contact</Link>
               <Link href="/partners" onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc]">Partners</Link>
