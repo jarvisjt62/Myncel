@@ -12,7 +12,8 @@
  *
  * Bodies use plain paragraphs and bullet lists (rendered with markdown-lite
  * renderer in app/handbook/[slug]/page.tsx). Keep facts grounded — this is
- * also the source the AI assistant pulls from.
+ * also the source the AI assistant pulls from, the exported PDF/DOCX, and
+ * the native handbook screen in the iOS / Android app.
  */
 
 export interface HandbookSection {
@@ -40,169 +41,346 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '🚀',
     title: 'Getting Started',
     summary:
-      'Welcome to Myncel — a CMMS (Computerized Maintenance Management System) built for small and mid-size manufacturers. This chapter walks you through your first 15 minutes: creating your account, setting up your facility, and adding your first piece of equipment.',
+      'A guided tour for first-time users — from creating your workspace to running your first work order. Designed to be read in under fifteen minutes.',
     sections: [
       {
-        heading: 'What is Myncel?',
+        heading: 'What Myncel is (and is not)',
         body: [
-          'Myncel is a maintenance management platform that helps you keep your manufacturing equipment running smoothly. It combines preventive maintenance scheduling, work order management, predictive maintenance powered by AI, and real-time alerts in one place.',
-          'You can use Myncel from any web browser or from the dedicated iOS and Android mobile apps. Technicians on the floor can update work orders from their phones; managers can view dashboards from the office; and the AI engine watches your equipment 24/7 to warn you before things break.',
+          'Myncel is a modern Computerized Maintenance Management System (CMMS) built for facilities, plants, and field operations that need to keep physical equipment running. It tracks every asset, every work order, every spare part, every inspection, and every alert in one place — accessible from a browser, a phone, or a tablet, online or offline.',
+          'Myncel is not a hardware vendor. We are an open platform. You can use any sensor, any PLC, any SCADA system that speaks one of the standard industrial protocols (MQTT, Modbus TCP, OPC-UA, Ethernet/IP, REST/Webhook). If you do not have sensors yet, manual logging works perfectly well and is included on every plan.',
+          'Myncel is sold business-to-business: every account belongs to a company, hospital, hotel, fleet operator, property manager, or similar organization. Workspaces are created on the web by an authorized administrator; individual technicians, operators, and managers are then invited into that workspace by their employer.',
         ],
       },
       {
-        heading: 'Creating your account',
+        heading: 'The 30-second mental model',
         body: [
-          'Visit www.myncel.com and click "Start free trial". You will be asked for your name, email, company name, and a password. The trial lasts 30 days and includes every feature with no credit card required.',
+          'Three concepts cover ninety percent of daily Myncel usage. Spend a minute on each and the rest of the product will feel intuitive.',
         ],
-        steps: [
-          'Click "Start free trial" on the homepage.',
-          'Fill in your details and choose a strong password.',
-          'Verify your email address — a link will be sent to your inbox.',
-          'Sign in and complete the brief onboarding wizard (industry, facility size, primary equipment types).',
+        bullets: [
+          'Equipment — the physical things you maintain (CNC machines, generators, HVAC units, forklifts, pumps, UPS systems, autoclaves, etc.). Each piece of equipment has a permanent record with its history, documents, and connected sensors.',
+          'Work Orders — every unit of work performed on equipment. A work order has a status (Open → In Progress → Completed), a priority, a type (Corrective / Preventive / Inspection / Safety / Project), an assignee, parts, labor time, and an audit trail.',
+          'Schedules & Alerts — the engines that automatically create work orders. A Schedule is time-or-usage based ("every 30 days", "every 500 hours"). An Alert is condition-based and is fired by sensors, the AI engine, or a manual report.',
         ],
       },
       {
-        heading: 'Your first 15 minutes',
+        heading: 'Your first 10 minutes — recommended path',
         body: [
-          'After signing in you will land on your dashboard. The first thing to do is add your facility, then add at least one piece of equipment, then create your first work order. Doing all three takes about 15 minutes.',
+          'If you are evaluating Myncel for your team, the fastest path to "I get it" is the following sequence. Do not worry about getting things perfect; you can always edit or delete later.',
         ],
         steps: [
-          'Go to Settings → Organization and confirm or update your facility name and address.',
-          'Go to Equipment → "+ Add Equipment" and add one machine you want to track.',
-          'Go to Work Orders → "+ Create Work Order" and create a sample task for that machine.',
-          'Optionally invite a teammate from Settings → Team.',
+          'Sign in and confirm your organization name, time zone, and primary facility address are correct (Settings → Organization).',
+          'Add three to five real machines — even quickly, with just a name and location. Use Equipment → "+ Add Equipment".',
+          'Pick one of those machines and create a sample preventive-maintenance schedule (e.g. "Lubrication, every 14 days"). Use Schedules → "+ New Schedule".',
+          'Create a sample work order on that same machine ("Replace air filter") and assign it to yourself.',
+          'Mark it In Progress, add 15 minutes of labor and a part, then mark it Completed.',
+          'Open Reports → MTTR and you will see your first data point. Repeat with another machine to see the dashboard come alive.',
         ],
         callout: {
           type: 'tip',
-          text: 'You do not need to add all your equipment on day one. Many customers start with their 5–10 most critical machines and grow from there.',
+          text: 'You will get the most realistic picture of Myncel by using your real equipment list, even just five rows of it. Demo data is okay for a 5-minute click-through, but the moment you put your own machine names in, the product clicks.',
         },
       },
       {
-        heading: 'Understanding the dashboard',
+        heading: 'Roles you will meet',
         body: [
-          'Your dashboard is the home base for your maintenance program. From the left sidebar you can reach Equipment, Work Orders, Schedules, Alerts, Reports, Parts, and Settings. The top of the dashboard shows real-time KPIs: machines online, open work orders, overdue tasks, and recent alerts. The right side highlights the AI assistant and recent activity.',
+          'Myncel ships with five built-in roles. The role you pick when you invite someone determines what they can see and do. Detailed permissions live in the Team & Roles chapter, but here is the short version.',
+        ],
+        bullets: [
+          'Admin — full access including billing, user management, integrations, and emergency broadcasts. Usually the maintenance manager or facility director.',
+          'Manager — full operational access; can configure schedules, approve work orders, and view all reports, but cannot change the bill or remove other admins.',
+          'Technician — sees and works on assigned work orders, logs time and parts, and completes checklists. The day-to-day power user.',
+          'Operator — sees the machines they run and reports issues. Read-only on most other things.',
+          'Viewer — read-only across the workspace. Useful for executives, auditors, and external stakeholders.',
+        ],
+      },
+      {
+        heading: 'Where to go next',
+        body: [
+          'If you are a maintenance manager or facility owner, read the Equipment chapter next — that is where 90% of your setup time will be spent. If you are a technician who has just been invited, jump straight to the Mobile App chapter so you can install Myncel on your phone before your next shift.',
         ],
       },
     ],
   },
-
   // ------------------------------------------------------------------
-  // 2. EQUIPMENT & MACHINES
+  // 2. EQUIPMENT & MACHINES (the deep-dive chapter)
   // ------------------------------------------------------------------
   {
     slug: 'equipment',
     emoji: '⚙️',
     title: 'Equipment & Machines',
     summary:
-      'Everything about adding, organizing, and connecting your equipment to Myncel — from a simple manual entry to full IoT integration with real-time sensor data.',
+      'Everything about adding, organizing, and connecting your equipment to Myncel — from a one-line manual entry through full IoT retrofits to direct PLC and SCADA integration. Includes five fully worked examples.',
     sections: [
       {
-        heading: 'Equipment types Myncel supports',
+        heading: 'Equipment categories Myncel supports',
         body: [
-          'Myncel is industry-agnostic, but we have first-class templates for the most common manufacturing equipment categories. When you add a new machine you can pick from any of the templates below — they pre-fill recommended preventive maintenance schedules, sensor types, and common failure modes.',
+          'Myncel is industry-agnostic. The following categories are the ones we have first-class templates for, but you can always pick "Custom" and define your own. A template pre-fills recommended preventive-maintenance intervals, common sensor types, expected failure modes, and a starter checklist.',
         ],
         bullets: [
-          'CNC machines (mills, lathes, routers, plasma cutters)',
-          'Hydraulic and pneumatic presses',
-          'Air compressors and vacuum pumps',
-          'Conveyors and material-handling systems',
-          'Injection-molding machines',
-          'Welding stations and robotic welders',
-          'Pumps, motors, and gearboxes',
-          'HVAC, chillers, and cooling towers',
-          'Forklifts and powered industrial trucks',
-          'Generators and electrical switchgear',
-          'Custom — define your own template',
+          'CNC machine tools — mills, lathes, machining centers, swiss-style lathes, plasma / waterjet / laser cutters, EDM machines.',
+          'Presses & forming — hydraulic and pneumatic presses, stamping presses, injection-molding machines, blow-molders, extruders.',
+          'Air & fluid handling — air compressors (rotary screw, reciprocating, scroll), vacuum pumps, hydraulic power units, dryers, chillers.',
+          'Material handling — conveyors (belt, roller, chain), AGVs, AS/RS, hoists, cranes, palletizers.',
+          'Welding & fabrication — robotic welding cells, MIG / TIG stations, press brakes, shears.',
+          'Rotating equipment — pumps, motors, gearboxes, fans, blowers, agitators, mixers.',
+          'HVAC & building services — chillers, cooling towers, AHUs, boilers, heat pumps, exhaust fans.',
+          'Electrical — generators, ATS, switchgear, transformers, UPS systems, PDUs.',
+          'Mobile assets — forklifts, scissor lifts, telehandlers, sweepers, yard trucks, fleet vehicles.',
+          'Healthcare equipment — autoclaves, sterilizers, refrigerators / freezers, imaging systems (non-clinical maintenance side), dialysis chairs.',
+          'Hospitality & property — kitchen equipment, ice makers, dishwashers, laundry, elevators, escalators, pool systems.',
+          'Process & utility — boilers, heat exchangers, water-treatment skids, RO systems, dust collectors, scrubbers.',
+          'Telecom & data center — racks, CRAC / CRAH units, generators, UPS, fire-suppression panels.',
+          'Custom — anything not listed above. Pick "Custom" and define the asset class yourself.',
         ],
       },
       {
-        heading: 'How to add a machine',
+        heading: 'How to add a single machine (the 60-second flow)',
         body: [
-          'Adding a machine to Myncel takes under a minute. The only required fields are name and location — everything else can be filled in later.',
+          'Adding a machine to Myncel takes well under a minute. The only required fields are name and location — everything else can be filled in later as you have time. You can also bulk-import (see further down this chapter).',
         ],
         steps: [
           'In the left sidebar click Equipment.',
           'Click the "+ Add Equipment" button at the top right.',
           'Pick an equipment template (or "Custom").',
-          'Enter the machine name (e.g. "CNC Mill #3").',
-          'Choose the location in your facility (Building, Floor, Cell).',
-          'Optionally add: model number, serial number, manufacturer, installation date, and a photo.',
-          'Click Save.',
+          'Enter the machine name (e.g. "CNC Mill #3" or "Genset-Bldg-A").',
+          'Choose the location in your facility (Site → Building → Cell/Line/Room).',
+          'Optionally add: model number, serial number, manufacturer, installation date, criticality (1–5), and a photo.',
+          'Click Save. The machine now appears in your equipment list with an empty history, ready to receive work orders, schedules, and sensor data.',
         ],
         callout: {
           type: 'tip',
-          text: 'Use a consistent naming pattern such as "[Type] #[number]" or "[Cell]-[Type]-[number]". Consistent names make work orders, reports, and alerts much easier to scan later.',
+          text: 'Use a consistent naming pattern such as "[Type]-[Cell]-[#]" (e.g. "MILL-A-03") or "[Building]-[Type]-[#]" (e.g. "WHA-CONV-12"). Consistent names make work orders, reports, alerts, and search dramatically easier once your fleet grows past 20 machines.',
         },
       },
       {
-        heading: 'Connecting equipment — three options',
+        heading: 'Bulk-importing your existing equipment list',
         body: [
-          'You can connect a machine to Myncel in three different ways depending on your budget and your existing infrastructure. You can also mix and match — many customers manually log usage on older machines while streaming live data from newer ones.',
+          'If you already have an asset list in Excel, an old CMMS export, or a SAP / Maximo extract, you do not have to retype it. Myncel has a CSV importer that handles thousands of rows in a single shot.',
+        ],
+        steps: [
+          'Go to Equipment → "⋯" menu → "Import from CSV".',
+          'Click "Download template" — you will get a CSV with the right column names and a sample row.',
+          'Open the template in Excel / Google Sheets and paste your existing data. Map your columns to ours (name, location, manufacturer, model, serial, install_date, criticality).',
+          'Save as CSV (UTF-8 if you have non-Latin characters) and upload it.',
+          'Myncel shows you a preview with validation warnings (missing fields, duplicate names, unknown locations). Fix and re-upload, or click "Import anyway" to bring in the clean rows and skip the rest.',
+          'Imported machines land in a temporary group called "Imported YYYY-MM-DD" so you can spot-check before scattering them into your real hierarchy.',
+        ],
+        bullets: [
+          'Maximum file size: 25 MB or 50,000 rows per upload (whichever comes first).',
+          'Pre-built named importers exist for SAP PM, IBM Maximo, Limble, UpKeep, eMaint, Fiix, MaintainX, and Hippo — use those if you are migrating from one of those systems and the column mapping is automatic.',
+          'You can also import via the public REST API (POST /api/equipment/bulk) — see the Integrations chapter.',
+        ],
+      },
+      {
+        heading: 'QR codes and asset tagging',
+        body: [
+          'Every machine in Myncel automatically gets a unique QR code. Print the QR sticker, slap it on the machine, and any technician with the mobile app can scan it to instantly land on that machine\'s page — its history, open work orders, attached manuals, and a one-tap "Create Work Order" button.',
+          'QR codes are durable and cheap. We recommend printing on weatherproof polyester labels (3M 7811 or similar) at 50 mm × 50 mm. For outdoor or wash-down equipment, laminate them or use stainless-steel etched tags with the same code.',
+        ],
+        steps: [
+          'Open the machine\'s page → click "Print QR".',
+          'Choose label size (50 mm × 50 mm is the default; sheet of 24 also available).',
+          'Print on label stock and apply to a flat, clean, eye-level surface on the machine — typically next to the controls.',
+          'Test by scanning with the mobile app from arm\'s length.',
+        ],
+        callout: {
+          type: 'info',
+          text: 'QR codes are also used for parts and locations. A storeroom shelf, a cabinet, or a chemical drum can all carry a Myncel QR — scanning takes you to that record in one tap.',
+        },
+      },
+      {
+        heading: 'Connecting equipment to Myncel — the three options',
+        body: [
+          'You can connect a machine to Myncel in three different ways depending on your budget, the age of the equipment, and your existing network. You can mix and match across your fleet — most customers manually log usage on older machines while streaming live data from the newer or more critical ones.',
+        ],
+        bullets: [
+          'Option 1 — Manual logging. No hardware. Operators or technicians punch runtime, cycle counts, and observed issues into Myncel from a phone or tablet.',
+          'Option 2 — IoT sensor retrofit. Wireless vibration, temperature, current, or runtime sensors that mount onto existing equipment and stream to a small Myncel Edge Gateway.',
+          'Option 3 — Direct PLC / SCADA integration. Read straight from the machine\'s controller using OPC-UA, Modbus TCP, MQTT, Ethernet/IP, or BACnet/IP.',
         ],
       },
       {
         heading: 'Option 1 — Manual logging (no hardware)',
         body: [
           'The simplest option requires no hardware at all. Operators or technicians log runtime, cycle counts, and observed issues directly into Myncel using a phone or tablet on the shop floor.',
-          'This works great for legacy equipment that has no PLC or network port. Schedules trigger based on calendar days or manually-entered runtime hours, and alerts fire whenever someone reports an anomaly.',
+          'This works great for legacy equipment that has no PLC or network port, for low-criticality assets where sensors are not cost-justified, or simply for getting started while the IT/OT team scopes a sensor rollout.',
+          'Schedules trigger based on calendar days or manually-entered runtime hours, and alerts fire whenever someone reports an anomaly. You still get the full power of work orders, PMs, parts, reports, and AI-assisted root-cause analysis.',
         ],
         bullets: [
-          'Cost: $0 — included in every plan.',
-          'Data quality: depends on operator discipline.',
-          'Best for: machines that lack network connectivity, or for getting started quickly.',
+          'Cost: $0 — included on every plan.',
+          'Setup time: zero. Just add the machine and start using it.',
+          'Data quality: depends entirely on operator discipline.',
+          'Best for: machines that lack network connectivity, low-criticality assets, fleets just starting out.',
         ],
       },
       {
-        heading: 'Option 2 — IoT sensors (recommended)',
+        heading: 'Option 2 — IoT sensor retrofit (recommended for most customers)',
         body: [
-          'For machines that lack a built-in network connection, Myncel supports a range of low-cost wireless IoT sensors that retrofit onto existing equipment. The sensors stream vibration, temperature, current draw, and runtime data to a small Myncel Edge Gateway in your facility, which then forwards it to the cloud.',
+          'For machines that lack a built-in network connection, Myncel supports a range of low-cost wireless IoT sensors that retrofit onto existing equipment. The sensors stream vibration, temperature, current, and runtime data to a small Myncel Edge Gateway in your facility, which then forwards it securely to the cloud.',
+          'The Edge Gateway is a small fanless industrial PC (about the size of a paperback book) that sits in your network closet or on a DIN rail in the control panel. It speaks LoRaWAN, BLE, or Zigbee to the sensors and HTTPS / MQTT-over-TLS upstream to Myncel. One gateway covers roughly 30,000 m² of indoor space (line of sight matters; concrete walls and steel cabinets reduce range).',
         ],
         steps: [
-          'Order a Myncel Edge Gateway (one per facility) and the sensors that match your equipment from your account dashboard or a Myncel partner.',
-          'Plug the gateway into your local network (wired Ethernet recommended) and power it on. It auto-registers itself with your Myncel account.',
-          'Mount each sensor on the target machine following the install guide that ships with the kit (typical install: 5–15 minutes per machine).',
+          'Order an Edge Gateway (one per facility, or per cluster of buildings) and the sensors that match your equipment from your account dashboard or a Myncel partner.',
+          'Plug the gateway into your local network (wired Ethernet recommended; PoE is supported) and power it on. It auto-registers with your Myncel account in 30–60 seconds.',
+          'Mount each sensor on the target machine following the install guide that ships with the kit (typical install: 5–15 minutes per machine, no downtime needed in most cases).',
           'In Myncel, go to Equipment → click the machine → "Connect Sensor" → pick the sensor from the list of nearby unassigned sensors.',
-          'Wait 7–14 days for the AI baseline to learn the machine\'s normal behavior. After that, predictive alerts will start firing automatically.',
+          'Wait 7–14 days for the AI baseline to learn the machine\'s normal behavior. After the baseline, predictive alerts start firing automatically when the signature drifts.',
         ],
         bullets: [
-          'Vibration sensors — detect bearing wear, imbalance, misalignment, looseness.',
-          'Temperature sensors — detect overheating motors, fluid issues, friction.',
-          'Current sensors — detect overload, undercurrent, motor degradation.',
-          'Runtime / cycle counters — track usage to drive PM schedules.',
+          'Vibration sensors — three-axis MEMS or piezo accelerometers. Detect bearing wear, imbalance, misalignment, looseness, gear-mesh issues, and cavitation in pumps. Typical range 0–16 g, frequency response to 5 kHz, ISO 10816 compliant.',
+          'Temperature sensors — surface-mount or PT100 RTD. Detect overheating motors, friction, fluid degradation, and cooling-system failures. ±0.5 °C typical accuracy.',
+          'Current sensors — non-invasive split-core CT clamps (no downtime to install). Detect overload, undercurrent, motor degradation, and unbalanced phases.',
+          'Runtime / cycle counters — magnetic, inductive, or optical. Drive PM schedules from actual usage instead of calendar days.',
+          'Pressure / flow / level — for hydraulic, pneumatic, and process systems. 4–20 mA or 0–10 V analog inputs to the gateway.',
         ],
         callout: {
           type: 'info',
-          text: 'You do not have to buy hardware from Myncel. Any sensor that speaks MQTT, Modbus TCP, OPC-UA, or sends webhook JSON can be ingested. See the Integrations chapter.',
+          text: 'You do not have to buy hardware from Myncel. Any sensor that speaks MQTT, Modbus TCP, OPC-UA, or sends webhook JSON can be ingested. We support Banner Engineering, Senseye, Augury, KCF, Petasense, Treon, and many others out of the box.',
         },
       },
       {
         heading: 'Option 3 — Direct PLC / SCADA integration',
         body: [
-          'Modern PLCs and SCADA systems already produce a wealth of data. Myncel can read directly from them through standard industrial protocols, removing the need for additional sensors.',
-          'Supported protocols include OPC-UA, Modbus TCP, MQTT, Ethernet/IP, and REST/Webhook. Configuration is done in Settings → Integrations → Industrial Protocols.',
-          'Direct PLC integration is included in the Professional and Enterprise plans. For Starter and Growth plans you can use the Edge Gateway as an MQTT bridge.',
+          'Modern PLCs and SCADA systems already produce a wealth of data. Myncel can read directly from them through standard industrial protocols, removing the need for additional sensors. This is usually the lowest-cost option per data point if the machines already have a controller and a network drop.',
+          'Configuration is done in Settings → Integrations → Industrial Protocols. You define the connection once (IP, port, credentials, protocol), then map specific tags or registers to Myncel fields (runtime, cycle count, alarm bits, temperature, etc.) using a point-and-click UI.',
+          'Direct PLC integration is included in the Professional and Enterprise plans. For Starter and Growth plans you can use the Edge Gateway in MQTT-bridge mode, which lets a third-party SCADA push data through the gateway.',
+        ],
+        bullets: [
+          'OPC-UA — secure, modern, the industry standard for new installs. Works with Siemens, Beckhoff, B&R, Kepware, Ignition, and most modern PLCs.',
+          'Modbus TCP — universal. If a controller is older than 5 years and on Ethernet, it almost certainly speaks Modbus TCP. Read holding registers, input registers, coils, and discrete inputs.',
+          'MQTT (incl. Sparkplug B) — lightweight, broker-based. Excellent for high-fanout fleets and IIoT use cases.',
+          'Ethernet/IP (CIP) — Allen-Bradley / Rockwell PLCs (CompactLogix, ControlLogix, MicroLogix).',
+          'Siemens S7 — direct read from S7-300, S7-400, S7-1200, S7-1500 over ISO-on-TCP.',
+          'BACnet/IP — building automation systems, HVAC, lighting, energy meters.',
+          'SNMP v2c / v3 — IT and network gear (UPS, switches, PDUs).',
+          'REST / Webhook — anything that can POST JSON over HTTPS.',
         ],
         callout: {
           type: 'warning',
-          text: 'Always coordinate with your controls engineer or system integrator before connecting Myncel to a production PLC. Use a read-only account on the PLC whenever possible.',
+          text: 'Always coordinate with your controls engineer or system integrator before connecting Myncel to a production PLC. Use a read-only account on the PLC whenever possible. Never write to a register from a CMMS in production unless the change-management process is fully understood.',
         },
+      },
+      {
+        heading: 'Worked example A — Haas VF-2 CNC mill (sensor + Modbus TCP)',
+        body: [
+          'A small machine shop has a Haas VF-2 vertical machining center (3-axis, 7.5 kW spindle, 8,100 RPM). The shop wants to (a) detect spindle-bearing degradation early and (b) bill customers from real spindle-on hours instead of estimates. The VF-2 has a built-in Ethernet port (the Haas Networking option) and the shop already has Wi-Fi on the floor.',
+          'Recommended hybrid setup: one wireless triaxial vibration sensor on the spindle housing for predictive diagnostics, plus a Modbus TCP read from the VF-2\'s NGC control for spindle-load percentage and runtime.',
+        ],
+        steps: [
+          'Mount the vibration sensor on the spindle housing with the supplied magnetic base, with the X-axis aligned to the machine\'s X. Wake it with the Myncel mobile app (BLE pairing, ~30 seconds).',
+          'Wire the VF-2 to the shop network (the Haas comes with an RJ45 port on the back of the cabinet). Note the IP address from Setting #900.',
+          'In Myncel: Equipment → Haas VF-2 → Connections → "+ Add Modbus TCP". IP = the VF-2 address, port 502, unit ID 1.',
+          'Map registers: holding register 30001 → spindle load %, 30002 → spindle RPM, 30010 → cycle time, coil 00001 → in-cycle (on/off) which drives runtime accumulation.',
+          'In Equipment → AI Settings, set the baseline window to 14 days. Vibration alarm threshold defaults to ISO 10816-3 zone B/C boundary (4.5 mm/s RMS for spindles up to 15 kW); danger threshold is the C/D boundary at 7.1 mm/s.',
+          'Create a runtime-based PM schedule: "Spindle grease, every 500 spindle-on hours". Myncel will use the live runtime feed (not a calendar) to fire it.',
+        ],
+        callout: {
+          type: 'tip',
+          text: 'After 14 days you can also enable the AI "tool wear" model on this machine — it correlates spindle-load drift with cycle count to predict when end-mills are dull. Customers with similar setups typically see 20–30% reduction in scrapped parts.',
+        },
+      },
+      {
+        heading: 'Worked example B — Cummins 250 kW standby generator (Modbus TCP)',
+        body: [
+          'A hospital has a Cummins QSL9-G5 250 kW standby generator with a PowerCommand 2100 controller. The facilities team needs (a) automatic logging of the weekly self-test run, (b) alerts on low-fuel and low-coolant, and (c) compliance evidence for The Joint Commission inspections.',
+          'The PowerCommand 2100 has built-in Modbus TCP. Once the controller is on the building network, Myncel can read every parameter the local screen shows — no extra hardware needed.',
+        ],
+        steps: [
+          'Confirm the PowerCommand network module is installed and configured (Settings → Network → Modbus on the controller front panel; default port 502).',
+          'Add the genset to Myncel (template: "Generator — diesel"). Enter the IP address and Modbus unit ID.',
+          'Map the standard PowerCommand registers: 30001 → engine RPM, 30015 → coolant temperature °F, 30022 → oil pressure PSI, 30040 → fuel level %, 30050 → battery voltage, plus the fault-bitmask in 30100.',
+          'Create three rule-based alerts: (1) fuel < 30% → email facility manager; (2) coolant > 220 °F or oil pressure < 25 PSI while running → critical SMS to on-call electrician; (3) any active fault bit → page on-call.',
+          'Create a calendar PM schedule: "Weekly self-test verification, every Tuesday 08:00" — auto-creates a work order whose checklist asks the technician to confirm the genset ran for ≥ 30 minutes the previous Sunday (Myncel auto-fills runtime from the live data).',
+        ],
+        bullets: [
+          'Total wiring needed: zero — the controller already has Ethernet.',
+          'Configuration time: typically 45 minutes including PM checklist authoring.',
+          'Compliance bonus: every weekly run is now permanently logged with timestamps, runtime, peak load, and any fault codes — exactly what NFPA 110 inspectors ask for.',
+        ],
+      },
+      {
+        heading: 'Worked example C — 200 hp Atlas Copco GA-160 air compressor (sensor + protocol)',
+        body: [
+          'A plant has a 200 hp Atlas Copco GA-160 oil-injected rotary-screw compressor with an Elektronikon Mk5 controller. Compressed air is plant-critical and a failure costs roughly $3,500/hour in downtime. The plant wants early warning on motor and air-end health, plus automatic energy reporting.',
+          'Recommended setup: three split-core CT clamps on the motor leads (no downtime to install), one vibration sensor on the air-end, and Modbus TCP to the Elektronikon for pressure, temperature, and load percentage. This combination catches all three failure paths — electrical, mechanical, and process — with zero false negatives in our customer data.',
+        ],
+        steps: [
+          'Install the CT clamps on the three phases inside the motor disconnect (qualified electrician; can be done energized with proper PPE in 20 minutes).',
+          'Bond a vibration sensor to the air-end housing on the discharge side, axis aligned with the rotor.',
+          'Connect the Elektronikon Mk5 over Modbus TCP (the EKOMI protocol module is included on Mk5 controllers from 2017 onward). Map: register 30030 → discharge pressure, 30040 → element outlet temperature, 30100 → motor running hours, coil 00010 → loaded/unloaded state.',
+          'In Equipment → AI Settings turn on "Compressor pack" — a tuned predictive model that combines current draw, vibration, and load percentage to detect bearing wear, valve leaks, and impending element failures 2–6 weeks ahead.',
+          'Create three PMs driven by actual loaded hours (not calendar): air-end oil change at every 4,000 loaded hours, separator element at 4,000 loaded hours, motor grease at 8,000 hours.',
+          'Create a daily energy report: kWh per Nm³ of delivered air. The report flags any day that runs >10% above the 30-day rolling baseline — usually that means a leak or a stuck unloader.',
+        ],
+        callout: {
+          type: 'info',
+          text: 'For Kaeser, Ingersoll Rand, Sullair, Quincy, and Gardner Denver compressors the same pattern applies — the controller protocol differs (Sigma Control, Xe-145, etc.) but Myncel ships pre-built profiles for all five vendors. Pick the right template when you add the asset and the register map is already configured.',
+        },
+      },
+      {
+        heading: 'Worked example D — Hospital UPS, autoclave, and refrigeration (BACnet + SNMP)',
+        body: [
+          'A 120-bed hospital uses Myncel to manage three categories of biomedical-adjacent equipment: APC / Eaton UPS systems in IT and the OR; Tuttnauer and Steris autoclaves in CSSD; and walk-in refrigerators / freezers for the pharmacy and lab. All three connect over the existing hospital BMS network.',
+          'This example shows how Myncel handles a heterogeneous facility where you do not have one big PLC but many small controllers, each speaking a different dialect.',
+        ],
+        bullets: [
+          'UPS systems — read over SNMP v3 from the network management card (APC AP9641 or Eaton Network-M2). Map runtime-on-battery, output load %, battery age, and self-test result. Alert on any "On Battery" event longer than 30 seconds, on battery age > 4 years, and on any failed self-test.',
+          'Autoclaves — most modern Tuttnauer and Steris units expose a serial or Ethernet port that streams cycle data (start time, peak temperature, hold time, cycle pass/fail) in CSV or proprietary XML. Myncel ingests via REST webhook from the autoclave\'s built-in printer-replacement module. Each completed cycle becomes a permanent record attached to the autoclave\'s machine page — exactly what JCI surveyors ask for.',
+          'Walk-in refrigeration — usually monitored by a building-management system (Johnson Controls Metasys, Honeywell EBI, Schneider EcoStruxure). Myncel reads via BACnet/IP straight from the BMS or via REST API where the BMS supports it. Critical-temperature alerts (> -15 °C in a freezer for > 10 minutes) escalate via SMS and PagerDuty.',
+        ],
+        callout: {
+          type: 'tip',
+          text: 'For Joint Commission, CMS, and CAP inspections the value is enormous — every cycle, every battery test, every temperature excursion is timestamped and exportable as a PDF in two clicks.',
+        },
+      },
+      {
+        heading: 'Worked example E — Forklift and yard-truck fleet (QR + telematics)',
+        body: [
+          'A 1.4 million sq ft distribution center runs a fleet of 38 Toyota and Crown sit-down forklifts plus 6 Ottawa yard trucks. There is no single PLC and no Wi-Fi outdoors. The team wants daily pre-shift inspections, runtime-based PM, and impact-event reporting.',
+          'Recommended setup: one Myncel QR sticker per truck plus the telematics feed from Toyota I_Site (or Crown InfoLink). Operators do the pre-shift inspection on their phone in under two minutes; the telematics feed handles runtime and impacts automatically.',
+        ],
+        steps: [
+          'Print and apply a Myncel QR sticker to each truck (next to the OEM data plate or on the dashboard).',
+          'In Equipment → Import → "From Toyota I_Site" (or "From Crown InfoLink"), enter the API credentials. The 38 trucks import automatically with their VINs, models, and runtime.',
+          'Author one shared "Pre-shift inspection" digital form (parking brake, horn, forks, mast, leaks, tires, OSHA 1910.178 checklist). Set it to fire on every truck every shift start, on the operator\'s phone.',
+          'Set runtime-based PMs: 250-hour service, 500-hour service, 1,000-hour service per OEM schedule. Hours come from the telematics feed in real time, so PMs always fire at the right moment instead of being weeks early or late.',
+          'Subscribe the supervisor to "Impact > 0.7 g" alerts — the telematics feed surfaces any heavy bump and Myncel auto-creates a Safety work order with the truck, the operator, and the timestamp.',
+        ],
+        bullets: [
+          'No PLCs touched, no extra hardware on the trucks, no electrician involved.',
+          'OSHA recordkeeping for daily inspections (29 CFR 1910.178(q)(7)) is satisfied automatically — every checklist is timestamped with operator ID and exportable.',
+          'Same pattern works for scissor lifts (Genie, JLG), telehandlers, sweepers, and fleet vehicles with Geotab / Samsara.',
+        ],
       },
       {
         heading: 'Organizing equipment with locations and groups',
         body: [
-          'Once you have more than a handful of machines you will want to organize them. Myncel supports a three-level hierarchy: Site → Building → Cell/Line. You can also create custom groups (e.g. "Rotating equipment" or "High-priority assets") that span the hierarchy.',
-          'You can filter every screen — Equipment, Work Orders, Schedules, Alerts, Reports — by location or group, which is enormously helpful once your fleet grows past 50 machines.',
+          'Once you have more than a handful of machines you will want to organize them. Myncel supports a four-level hierarchy: Organization → Site → Building → Cell/Line/Floor/Room. You can also create cross-cutting groups (e.g. "Rotating equipment", "High-priority assets", "FDA-validated", "Vendor: Atlas Copco") that span the hierarchy.',
+          'Every screen — Equipment, Work Orders, Schedules, Alerts, Reports, even the AI assistant — can be filtered by location or group. This becomes essential once your fleet grows past 50 machines and indispensable past 500.',
+        ],
+        bullets: [
+          'A user can be scoped to a specific site, building, or group at invitation time. They will only see and act on equipment within their scope.',
+          'Groups support nested membership and can be auto-populated by rule (e.g. "any machine with criticality 5" or "any machine on the FDA-21-CFR-Part-11 register").',
+          'Bulk operations (bulk schedule create, bulk role grant, bulk export) all respect the current location/group filter.',
         ],
       },
       {
-        heading: 'Equipment health and history',
+        heading: 'The equipment record — health, history, and documents',
         body: [
-          'Click any machine to open its dedicated page. You will see real-time health (if sensors are connected), the full work-order history, all upcoming scheduled maintenance, attached documents (manuals, drawings, MSDS sheets), and a timeline of every event recorded for that asset. This is the single best place to land when you are diagnosing a recurring issue.',
+          'Click any machine to open its dedicated page. This is the single best place to land when you are diagnosing a recurring issue or preparing for an audit. Tabs include:',
+        ],
+        bullets: [
+          'Overview — current health (live if sensors are connected), uptime today/week/month, MTBF, MTTR, criticality, and a photo.',
+          'Work Orders — every work order ever raised on this machine, filterable by type, status, technician, and date.',
+          'Schedules — all PMs attached to the machine and when they next fire.',
+          'Connections — sensors, PLCs, and protocols connected to the machine, with last-seen timestamps and live values.',
+          'Documents — manuals, drawings, MSDS, electrical schematics, P&IDs, calibration certificates. Drag-and-drop upload; PDF and DWG preview in-browser.',
+          'Parts — the recommended spare-parts list and current stock.',
+          'Timeline — a chronological feed of every event recorded against the asset, including data points, alerts, work orders, comments, and document uploads.',
         ],
       },
     ],
   },
-
   // ------------------------------------------------------------------
   // 3. WORK ORDERS
   // ------------------------------------------------------------------
@@ -211,53 +389,94 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '📋',
     title: 'Work Orders',
     summary:
-      'Work orders are the unit of work in Myncel — every repair, inspection, and PM task is tracked as a work order. This chapter covers creating, assigning, completing, and reporting on work orders.',
+      'Work orders are the unit of work in Myncel. Every repair, inspection, PM task, and safety job is tracked as a work order. This chapter covers creating, assigning, completing, reporting on, and approving them.',
     sections: [
       {
-        heading: 'Creating a work order',
+        heading: 'How work orders are created',
         body: [
-          'Work orders can be created manually by anyone with permission, automatically by a maintenance schedule, or automatically by an AI alert.',
+          'Work orders enter Myncel three ways. Knowing which path fired a work order helps you interpret reports later (e.g. "what percentage of our work is reactive vs planned?").',
         ],
-        steps: [
-          'Click Work Orders in the sidebar.',
-          'Click "+ Create Work Order".',
-          'Pick the machine the work is for.',
-          'Choose a type: Corrective, Preventive, Inspection, Safety, or Project.',
-          'Set a priority: Low, Medium, High, or Critical.',
-          'Write a clear title and description.',
-          'Assign it to a technician (or leave unassigned for the team to claim).',
-          'Set a due date.',
-          'Optionally attach photos, parts, or documents.',
-          'Click Create.',
+        bullets: [
+          'Manually — by anyone with permission, from the Work Orders tab, the equipment page, or the mobile app. Most reactive / corrective work starts here.',
+          'From a schedule — a preventive-maintenance schedule fires automatically on its trigger (calendar, runtime, cycles, or condition) and creates a work order ready for assignment.',
+          'From an alert — a sensor threshold breach, AI predictive event, or operator-reported anomaly auto-creates a work order. You can configure each alert to either auto-create or just notify.',
         ],
       },
       {
-        heading: 'Work order statuses',
+        heading: 'Creating a work order step by step',
         body: [
-          'Every work order moves through a lifecycle. The status determines what is shown on dashboards and what alerts fire.',
+          'The only required fields are equipment and title. Everything else is optional and can be filled in later, including by a different user.',
+        ],
+        steps: [
+          'Click Work Orders in the sidebar (or "+ Work Order" on any equipment page).',
+          'Click "+ Create Work Order".',
+          'Pick the machine the work is for.',
+          'Choose a type — Corrective, Preventive, Inspection, Safety, or Project. The type affects which reports the work order rolls up into and what compliance evidence is captured.',
+          'Set a priority — Low, Medium, High, or Critical. Critical bypasses quiet hours and pages on-call where configured.',
+          'Write a clear title (e.g. "Replace mist collector filter, MILL-A-03") and a description with relevant context.',
+          'Assign to a specific technician, leave unassigned for the team to claim, or assign to a vendor with email auto-notification.',
+          'Set a due date and (optionally) an estimated labor time and parts list.',
+          'Attach photos, manuals, or any other documents.',
+          'Click Create. The assignee is notified via their preferred channel (push, email, SMS, Slack).',
+        ],
+      },
+      {
+        heading: 'Work order statuses and lifecycle',
+        body: [
+          'Every work order moves through a defined lifecycle. The status drives dashboards, alerts, and what fields the user can edit. Statuses are intentionally few — Myncel does not believe in twenty-step workflows.',
         ],
         bullets: [
-          'Open — created but no one has started yet.',
-          'In Progress — a technician has accepted and is working.',
-          'On Hold — paused waiting for parts, vendor, or approval.',
-          'Completed — work is done and signed off.',
-          'Cancelled — closed without being done (e.g. duplicate or no longer needed).',
+          'Open — created but no one has started yet. Counts toward backlog.',
+          'In Progress — a technician has accepted and is actively working. The clock is running for MTTR.',
+          'On Hold — paused, with a required reason (Waiting for Parts, Waiting for Vendor, Waiting for Approval, Production Conflict, Other). MTTR clock pauses.',
+          'Completed — work is done and the completion form has been filled in. Locked from further edits except by managers.',
+          'Cancelled — closed without being executed. Requires a reason; counts in reports separately from completed work.',
         ],
       },
       {
         heading: 'Completing a work order',
         body: [
-          'When a technician finishes a job they should mark the work order Completed and fill in the completion form. The form captures actual labor time, parts consumed, what was done, and any follow-up needed.',
+          'When a technician finishes a job they should mark the work order Completed and fill in the completion form. The form captures actual labor time, parts consumed, what was done, root cause (for corrective work), and any follow-up work needed.',
+          'On the mobile app the completion form is the same form, optimized for thumbs — large tap targets, voice-to-text on text fields, camera button for photos, and signature pad if a sign-off is required.',
         ],
         callout: {
           type: 'tip',
-          text: 'Encourage technicians to attach a photo of the completed repair. Photos make audits, warranty claims, and root-cause analysis dramatically easier later.',
+          text: 'Encourage technicians to attach at least one photo of the completed repair. Photos make audits, warranty claims, and root-cause analysis dramatically easier later, and they take five seconds to capture.',
         },
+      },
+      {
+        heading: 'Assignment, queuing, and dispatch',
+        body: [
+          'Three assignment patterns are supported, and you can mix them across teams.',
+        ],
+        bullets: [
+          'Direct assignment — the supervisor picks the technician. Best for small teams or when a specific skill is required.',
+          'Self-claim queue — work orders are created unassigned. Technicians see them in a shared queue and tap "Claim" to take ownership. Best for cross-trained teams that want to balance load themselves.',
+          'Auto-assignment — Myncel matches the work order to a technician using configurable rules (skill tags, location, current load, certification). Available on the Professional plan.',
+        ],
       },
       {
         heading: 'Approval workflows',
         body: [
-          'On the Growth plan and above you can require manager approval before a work order is created (for tasks above a cost or hours threshold) or before it is closed (for safety-critical work). Approval rules are configured in Settings → Workflows.',
+          'On the Growth plan and above you can require manager approval at one or two points in the work-order lifecycle: before it is created (for tasks above a cost or labor threshold) and/or before it is closed (for safety-critical work). Approval rules live in Settings → Workflows and are scoped per equipment group, work-order type, or cost threshold.',
+        ],
+        bullets: [
+          'Pre-create approval — useful when budget control is tight (e.g. work orders over $1,000 in parts).',
+          'Pre-close approval — useful for safety-critical or regulated work (e.g. lockout/tagout sign-off, FDA-validated equipment).',
+          'Vendor approval — for any work assigned to an outside vendor, the manager must approve the quote before the vendor is engaged.',
+        ],
+      },
+      {
+        heading: 'Parts, labor, and cost capture',
+        body: [
+          'Each work order tracks parts consumed and labor time spent. Parts can be selected from your stocked-parts catalog (which auto-decrements stock) or entered as ad-hoc one-offs. Labor is timed live ("Start Timer" / "Stop Timer") or entered manually after the fact.',
+          'Total cost rolls up automatically from parts + labor + any vendor invoice attached, and shows on the work-order page, on the equipment cost-history view, and in the Cost Roll-up report.',
+        ],
+      },
+      {
+        heading: 'Recurring and templated work orders',
+        body: [
+          'For tasks you do over and over (the same wording, the same checklist, the same parts) you can create a Work Order Template. Templates speed up creation and ensure consistency. To create one: complete a real work order, then click "Save as Template" on the completion screen.',
         ],
       },
     ],
@@ -271,49 +490,66 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '🔧',
     title: 'Preventive & Predictive Maintenance',
     summary:
-      'The whole point of a CMMS is to fix things before they break. Myncel offers two complementary approaches: time- or usage-based preventive maintenance, and AI-powered predictive maintenance.',
+      'The whole point of a CMMS is to catch problems before they become outages. Myncel offers two complementary approaches — time-or-usage-based preventive maintenance, and AI-powered predictive maintenance driven by sensor data.',
     sections: [
       {
         heading: 'Preventive maintenance schedules',
         body: [
-          'A preventive maintenance (PM) schedule automatically generates a work order at a defined interval. Intervals can be calendar-based (every 30 days), runtime-based (every 500 hours), cycle-based (every 10,000 cycles), or condition-based.',
+          'A preventive-maintenance (PM) schedule automatically generates a work order at a defined interval. Intervals can be calendar-based (every 30 days), runtime-based (every 500 hours), cycle-based (every 10,000 cycles), distance-based (for vehicles), or condition-based (when a sensor crosses a threshold).',
+          'Most facilities run on a mix: calendar-based for time-driven jobs (annual inspections, quarterly safety audits) and runtime-based for usage-driven jobs (oil changes, filter swaps, bearing greasing). The key benefit of runtime-based is that you stop doing PMs on machines that have not actually been running, and you start doing them on machines that have run far more than expected.',
         ],
         steps: [
           'Go to Schedules in the sidebar.',
           'Click "+ New Schedule".',
-          'Pick the machine (or a group of machines).',
-          'Choose the trigger: Calendar, Runtime, Cycles, or Condition.',
-          'Define the interval (e.g. every 30 days, or every 500 hours).',
-          'Write the task checklist (what should the technician do?).',
-          'Optionally attach a parts list and required tools.',
-          'Save.',
+          'Pick the machine (or a group of machines — a single schedule can cover an entire fleet).',
+          'Choose the trigger: Calendar, Runtime, Cycles, Distance, or Condition.',
+          'Define the interval (e.g. "every 30 days at 06:00", or "every 500 spindle-on hours").',
+          'Set lead-time (how many days before the trigger should the work order be created? Default 7 days).',
+          'Author the task checklist — what should the technician actually do? Each step can require a photo, a measurement, a pass/fail, or a signature.',
+          'Optionally attach a parts list and required tools (the parts will pre-allocate from stock when the WO fires).',
+          'Save. The next-due date appears immediately.',
         ],
         callout: {
           type: 'tip',
-          text: 'Start with manufacturer-recommended intervals from the equipment manual, then adjust based on actual data after 3–6 months. The Reports → PM Effectiveness view tells you which schedules are catching real issues vs over-maintaining.',
+          text: 'Start with manufacturer-recommended intervals from the equipment manual, then tighten or relax them based on real data after 3–6 months. The Reports → PM Effectiveness view tells you which schedules are catching real issues vs over-maintaining (the goal is roughly a 10–20% "found something to fix" rate on most PMs).',
         },
       },
       {
         heading: 'Predictive maintenance with AI',
         body: [
-          'When sensors are connected to a machine, Myncel\'s AI engine learns the machine\'s normal behavior over a 7–14 day baseline period. After that it watches in real time for deviations: a vibration signature creeping up, a motor running hotter than usual, current draw drifting outside the normal envelope.',
-          'When the AI sees a meaningful change it raises a predictive alert and (optionally) auto-creates a work order. Predictive alerts include the machine, the sensor, what changed, the confidence level, and an estimated time-to-failure window when one can be calculated.',
+          'When sensors are connected to a machine, Myncel\'s AI engine learns the machine\'s normal behavior over a 7–14 day baseline period. After that it watches in real time for deviations: a vibration signature creeping up, a motor running hotter than usual, current draw drifting outside the normal envelope, a pump\'s discharge pressure drifting downward.',
+          'When the AI sees a meaningful change it raises a predictive alert and (optionally) auto-creates a work order. Predictive alerts include the machine, the sensor, what changed, the confidence level, and an estimated time-to-failure window when one can be calculated. The alert links to a chart so the technician can see exactly which signature triggered it.',
+          'The AI is not a black box. Every prediction is explainable — clicking "Why this alert?" shows the contributing signals, the historical baseline, and the deviation magnitude. Technicians and reliability engineers learn the machine alongside the model.',
         ],
         bullets: [
-          'No machine learning expertise required — baselines are automatic.',
-          'You can adjust sensitivity per machine in Equipment → [machine] → AI Settings.',
-          'Available on the Growth plan and above (Starter plan supports rules-based alerts only).',
+          'No data-science expertise required — baselines are automatic; sensitivity is a single slider per machine.',
+          'Sensitivity is per-machine and per-axis (Equipment → AI Settings).',
+          'Available on the Growth plan and above. Starter plan supports rules-based alerts (fixed thresholds).',
+          'Models supported include vibration ISO 10816 zoning, electrical-signature analysis, thermal drift, pump cavitation, compressor surge, bearing fault frequencies, and gearbox mesh-frequency analysis.',
         ],
       },
       {
         heading: 'PM checklists and digital forms',
         body: [
-          'Each schedule can include a structured checklist. Technicians complete it on mobile or web — text fields, dropdowns, photos, signatures, and pass/fail items are all supported. Completed forms are saved permanently against the work order and can be exported for audits.',
+          'Each schedule can include a structured checklist. Technicians complete it on mobile or web — text fields, dropdowns, photos, signatures, measurements with units, and pass/fail items are all supported. Completed forms are saved permanently against the work order and can be exported as PDF for audits.',
+          'Conditional logic is supported: "If Q3 is Fail, then show Q3a-Q3c". This keeps the form short for the common case but captures detail when it is needed (e.g. the failure path on a 100-step electrical inspection).',
+        ],
+      },
+      {
+        heading: 'Reliability metrics — MTBF, MTTR, OEE, PM compliance',
+        body: [
+          'As soon as you have a few weeks of work-order history, the standard reliability metrics start showing real numbers. They are computed automatically per machine, per group, per facility, and across the whole organization, and update in near real-time.',
+        ],
+        bullets: [
+          'MTBF — Mean Time Between Failures, computed from corrective work orders only.',
+          'MTTR — Mean Time To Repair, computed from In-Progress timer minus On-Hold pauses.',
+          'PM Compliance — completed-on-time PMs / total PMs in the period.',
+          'OEE — Overall Equipment Effectiveness (Availability × Performance × Quality), where Availability comes from runtime data, Performance from cycle-time vs design, and Quality from rejected-part counts (manual entry or MES integration).',
+          'Backlog age — open work orders older than X days, useful as a leading indicator of pain.',
         ],
       },
     ],
   },
-
   // ------------------------------------------------------------------
   // 5. TEAM & ROLES
   // ------------------------------------------------------------------
@@ -322,43 +558,57 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '👥',
     title: 'Team & Roles',
     summary:
-      'How to invite teammates, assign roles, and manage permissions so the right people see the right things.',
+      'Inviting teammates, assigning roles, scoping access by location, and managing permissions so the right people see the right things.',
     sections: [
       {
         heading: 'Inviting a teammate',
         body: [
-          'Anyone with the Manager or Admin role can invite teammates. Each plan has a maximum number of users — see the Account & Plans chapter for the limits.',
+          'Anyone with the Manager or Admin role can invite teammates. Each plan has a maximum number of users — see the Account & Plans chapter for the limits. Inviting a user does not consume a seat until they accept the invitation.',
         ],
         steps: [
           'Go to Settings → Team.',
           'Click "+ Invite User".',
-          'Enter the email address.',
+          'Enter the email address (or paste a comma-separated list to invite many at once).',
           'Choose a role (see below).',
-          'Optionally restrict the user to a specific facility, location, or equipment group.',
+          'Optionally restrict the user to a specific facility, location, or equipment group — the user will only see assets within that scope.',
+          'Optionally add skill tags (e.g. "Electrical", "PLC", "HVAC") — used by the auto-assignment engine.',
           'Click Send Invite.',
         ],
         callout: {
           type: 'info',
-          text: 'Invitees receive an email with a one-time signup link. The link is valid for 7 days. You can resend or revoke it from the same screen.',
+          text: 'Invitees receive an email with a one-time signup link. The link is valid for 7 days. You can resend or revoke it from the same screen. Re-sending updates the expiry to a fresh 7 days.',
         },
       },
       {
-        heading: 'Built-in roles',
+        heading: 'Built-in roles in detail',
         body: [
-          'Myncel ships with five built-in roles. They cover the needs of most maintenance organizations. On the Professional and Enterprise plans you can also create custom roles with fine-grained permissions.',
+          'Myncel ships with five built-in roles. They cover the needs of most maintenance organizations. On the Professional and Enterprise plans you can also create custom roles with fine-grained permissions per feature area and action.',
         ],
         bullets: [
-          'Admin — full access including billing and team management.',
-          'Manager — full operational access; can configure schedules, approve work orders, view all reports. Cannot change billing.',
-          'Technician — view and update assigned work orders, log time and parts, complete checklists. Cannot delete records.',
-          'Operator — view machines they run and report issues. Read-only on most things.',
-          'Viewer — read-only access for executives, auditors, or interested stakeholders.',
+          'Admin — full access including billing, team management, integrations, and audit logs. Typically the maintenance director or the IT/OT lead.',
+          'Manager — full operational access; can configure schedules, approve work orders, view all reports, manage parts catalogs, and add/remove technicians. Cannot change billing or remove other admins.',
+          'Technician — can view all equipment they are scoped to, view and update assigned (and self-claimed) work orders, log time and parts, complete checklists, scan QR codes, and create new work orders. Cannot delete records or change schedules.',
+          'Operator — can view machines they run, report issues that turn into work orders, and complete simple inspection forms. Read-only on most other things. Designed for production staff who use Myncel maybe once a day.',
+          'Viewer — read-only access across the workspace. Useful for executives, auditors, insurance reps, and external stakeholders. Cannot create, edit, or delete anything.',
         ],
       },
       {
         heading: 'Custom roles and permissions',
         body: [
-          'On the Professional plan you can mix and match permissions to create custom roles such as "Reliability Engineer" or "Stockroom Manager". Permissions are organized by feature area (Equipment, Work Orders, Schedules, Reports, Parts, Settings) and action (View, Create, Edit, Delete, Approve).',
+          'On the Professional plan you can compose custom roles by toggling permissions across feature area × action. Permissions are organized by feature area (Equipment, Work Orders, Schedules, Reports, Parts, Locations, Settings, Integrations, Billing) and action (View, Create, Edit, Delete, Approve, Export, Configure).',
+          'Common custom roles we see customers create: Reliability Engineer (read all + edit schedules + edit AI settings), Stockroom Manager (full Parts area + receive POs, no work-order edit), Vendor (view & update only the work orders assigned to them, no other equipment visibility), Compliance Auditor (read-only + export-only).',
+        ],
+      },
+      {
+        heading: 'Single sign-on (SSO) and SCIM provisioning',
+        body: [
+          'On Professional and Enterprise plans Myncel supports SAML 2.0 and OpenID Connect for sign-in (Okta, Azure AD / Entra ID, Google Workspace, OneLogin, Ping, JumpCloud, plus any standards-compliant IdP). SCIM 2.0 is also supported for automated user provisioning and de-provisioning — when HR removes someone from your IdP, their Myncel access is revoked the same day.',
+        ],
+      },
+      {
+        heading: 'Audit log',
+        body: [
+          'Every meaningful action — sign-in, work-order edit, role change, billing change, integration credential update — is recorded in the audit log with timestamp, actor, and (where relevant) before/after values. Admins can browse and export the log from Settings → Security → Audit Log. Logs are retained for 2 years on Professional, 7 years on Enterprise.',
         ],
       },
     ],
@@ -372,48 +622,68 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '🔔',
     title: 'Alerts & Notifications',
     summary:
-      'Configure how Myncel reaches you when something needs attention — in-app, email, SMS, push notifications, Slack, or PagerDuty.',
+      'Configure how Myncel reaches you when something needs attention — in-app, email, SMS, mobile push, Slack, Microsoft Teams, or PagerDuty/Opsgenie.',
     sections: [
       {
         heading: 'Notification channels',
         body: [
-          'Each user can configure their own notification preferences from the user menu → Notifications. You can choose a different channel for each event type.',
+          'Each user configures their own preferences from the user menu → Notifications. You can choose a different channel — or several channels — for each event type. Admins can set defaults for the organization and choose which defaults can be overridden by individual users.',
         ],
         bullets: [
-          'In-app — always on; appears in the bell icon at the top right.',
-          'Email — default for most events; granular per event type.',
-          'SMS — for urgent alerts (Growth plan and above).',
-          'Mobile push — to the iOS or Android app (Starter plan and above).',
-          'Slack — post to a channel of your choice (any plan with the Slack integration).',
-          'PagerDuty — escalate critical alerts to on-call rotations (Professional plan and above).',
+          'In-app — always on; appears in the bell icon at the top right and is shown in real time on web and mobile.',
+          'Email — default for most events; granular per event type. Branded with your organization\'s logo on Professional and above.',
+          'SMS — for urgent alerts. Available on the Growth plan and above. Worldwide coverage with E.164-formatted numbers and country-aware delivery.',
+          'Mobile push — to the iOS or Android app via APNs and FCM. Banner on lock screen, badge on icon, optional sound, and tap-to-deep-link straight to the work order or alert.',
+          'Slack — post to a channel of your choice; comments are bidirectional (reply in Slack and the comment appears on the work order).',
+          'Microsoft Teams — same capability as Slack, native cards.',
+          'PagerDuty / Opsgenie — escalate critical alerts to on-call rotations with full ack/escalate/resolve lifecycle. Professional plan and above.',
+          'Webhooks — POST a JSON payload to any URL you control. Useful for piping into custom dashboards, paging tools, or BI systems.',
         ],
       },
       {
         heading: 'Mobile push notifications',
         body: [
-          'After installing the Myncel mobile app and signing in, push notifications are enabled by default. The app uses Apple Push Notification service (APNs) on iOS and Firebase Cloud Messaging (FCM) on Android.',
-          'You will receive a notification banner on the lock screen, an icon badge, and (if enabled in your phone\'s settings) a sound for events like new work-order assignments, predictive alerts, and emergency broadcasts. Tapping the notification jumps you straight to the relevant work order or alert in the app.',
+          'After installing the Myncel mobile app and signing in, push notifications are enabled by default. The app uses Apple Push Notification service (APNs) on iOS and Firebase Cloud Messaging (FCM) on Android. Both are end-to-end encrypted in transit.',
+          'You will receive a notification banner on the lock screen, an icon badge with unread count, and (if enabled in your phone\'s settings) a sound for events like new work-order assignments, predictive alerts, and emergency broadcasts. Tapping the notification jumps you straight to the relevant screen in the app — even when the app was previously closed.',
         ],
         callout: {
           type: 'tip',
-          text: 'If a teammate is not receiving push notifications, ask them to: (1) make sure the app is installed and signed in; (2) check iOS Settings → Notifications → Myncel is set to Allow; and (3) toggle the channel in user-menu → Notifications.',
+          text: 'If a teammate is not receiving push notifications, ask them to: (1) make sure the app is installed and signed in; (2) check iOS Settings → Notifications → Myncel is set to Allow Notifications; on Android, Settings → Apps → Myncel → Notifications must be on; and (3) confirm the channel is toggled on under user-menu → Notifications inside the app.',
         },
       },
       {
         heading: 'Quiet hours',
         body: [
-          'Nobody wants a "low-priority work order created" SMS at 2 AM. Quiet hours let each user silence non-critical notifications between configurable times. Critical alerts (Priority = Critical, or emergency broadcasts) always break through quiet hours by default — you can change this per user.',
+          'Nobody wants a "low-priority work order created" SMS at 2 AM. Quiet hours let each user silence non-critical notifications between configurable times, optionally per day of week. Critical alerts (Priority = Critical, or emergency broadcasts) always break through quiet hours by default — you can change this per user, but we strongly recommend leaving it on.',
+        ],
+      },
+      {
+        heading: 'Alert rules and thresholds',
+        body: [
+          'Rules-based alerts are the simpler cousin of AI predictive alerts. They fire when a sensor value crosses a fixed threshold you define — for example "alert me if any chiller goes above 12 °C return temperature for more than 5 minutes". Use them when the threshold is well-known and stable; use AI predictive alerts when you want the system to find anomalies you have not thought of.',
+        ],
+        steps: [
+          'Go to Equipment → [machine] → Alerts → "+ New Rule".',
+          'Pick the sensor / data point.',
+          'Choose the comparison (>, <, =, ≠, between, outside).',
+          'Set the threshold and the dwell time (how long must the condition hold before firing? Prevents flapping).',
+          'Choose severity (Info / Warning / Critical) — drives which channels and which user list receives it.',
+          'Optionally enable auto-create-work-order on fire.',
+          'Save.',
         ],
       },
       {
         heading: 'Emergency broadcasts',
         body: [
-          'Admins can send an emergency broadcast to every user in the organization with one click — useful for facility-wide events like power outages, evacuations, or production halts. Broadcasts go to every channel a user has configured (in-app, email, SMS, push) regardless of quiet hours, and are logged in the audit trail.',
+          'Admins can send an emergency broadcast to every user in the organization with one click — useful for facility-wide events like power outages, evacuations, severe weather, or production halts. Broadcasts go to every channel a user has configured (in-app, email, SMS, push) regardless of quiet hours, and are logged in the audit trail with the sender, the recipients, and the delivery status per channel.',
         ],
+        callout: {
+          type: 'warning',
+          text: 'Use broadcasts sparingly. They are intentionally noisy. We recommend reserving them for events that genuinely require simultaneous attention from the entire team.',
+        },
       },
     ],
   },
-
   // ------------------------------------------------------------------
   // 7. REPORTS & ANALYTICS
   // ------------------------------------------------------------------
@@ -422,42 +692,52 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '📈',
     title: 'Reports & Analytics',
     summary:
-      'Out-of-the-box reports for the metrics that matter — MTBF, MTTR, PM compliance, downtime, parts usage, and labor — plus a custom report builder.',
+      'Out-of-the-box reports for the metrics that matter — MTBF, MTTR, PM compliance, downtime, parts usage, labor utilization, cost — plus a custom report builder, scheduled email delivery, and export to CSV / Excel / PDF.',
     sections: [
       {
         heading: 'Built-in reports',
         body: [
-          'Open the Reports tab in the sidebar to see the full list of pre-built reports. Each one supports filtering by date range, facility, equipment group, and team.',
+          'Open the Reports tab in the sidebar to see the full list of pre-built reports. Each one supports filtering by date range, facility, equipment group, and team, and every report can be exported (CSV / Excel / PDF) or scheduled to email a recipient list automatically.',
         ],
         bullets: [
-          'MTBF (Mean Time Between Failures) — by machine and by group.',
-          'MTTR (Mean Time To Repair) — labor time from work-order open to close.',
-          'PM Compliance — percentage of preventive tasks completed on time.',
-          'Downtime — total downtime by machine and reason code.',
-          'Work Order Backlog — open work orders by age and priority.',
-          'Parts Consumption — most-used parts and stockout risks.',
-          'Labor Utilization — hours by technician, by equipment, by work-order type.',
-          'Cost Roll-up — labor + parts cost per machine and per facility.',
-          'Predictive Alert Effectiveness — caught vs missed events (Growth plan and above).',
+          'MTBF (Mean Time Between Failures) — by machine and by group; trends over time.',
+          'MTTR (Mean Time To Repair) — labor time from work-order open to close, broken down by reason code.',
+          'PM Compliance — percentage of preventive tasks completed on time; flags repeat-late machines.',
+          'Downtime — total downtime by machine, by reason code (Mechanical, Electrical, Material, Operator, Process), by shift.',
+          'Work Order Backlog — open work orders by age, priority, and assignee.',
+          'Parts Consumption — most-used parts, stockout risk, supplier-spend rollup.',
+          'Labor Utilization — hours by technician, by equipment, by work-order type, by skill tag.',
+          'Cost Roll-up — labor + parts + vendor cost per machine, per facility, per cost center.',
+          'Predictive Alert Effectiveness — caught vs missed events; average lead time before failure.',
+          'Audit & Compliance — for FDA, NFPA, OSHA, JCI, ISO 55000, SOC 2 evidence.',
+          'Energy & sustainability — kWh per unit produced, anomalous-consumption flags.',
         ],
       },
       {
         heading: 'Exporting and scheduling reports',
         body: [
-          'Every report can be exported to CSV, Excel, or PDF. You can also schedule a report to be emailed automatically — for example a "weekly PM compliance" PDF every Monday morning to your operations director.',
+          'Every report can be exported to CSV, Excel (.xlsx with formatting preserved), or PDF (paginated, with your organization\'s logo). You can also schedule a report to be emailed automatically — for example a "weekly PM compliance" PDF every Monday morning at 06:00 to your operations director and plant manager.',
         ],
         steps: [
           'Open any report.',
-          'Apply the filters you want.',
+          'Apply the filters you want (date range, facility, group, team).',
           'Click "Schedule" in the top-right.',
-          'Choose recipients, frequency (daily, weekly, monthly), and format (CSV, Excel, PDF).',
-          'Save.',
+          'Choose recipients (any email address, including non-Myncel users), frequency (daily / weekly / monthly / quarterly), and format (CSV / Excel / PDF).',
+          'Optionally add a one-line note that appears in the email body.',
+          'Save. The first delivery happens at the next scheduled time.',
         ],
       },
       {
         heading: 'Custom report builder',
         body: [
-          'Need something not in the built-in list? On the Professional plan, the custom report builder lets you pick fields, group, filter, and visualize data from across Myncel — work orders, equipment, schedules, parts, labor, and AI alerts. Saved custom reports show up in the same Reports tab and can also be scheduled.',
+          'Need something not in the built-in list? On the Professional plan, the custom report builder lets you pick fields, group, filter, and visualize data from across Myncel — work orders, equipment, schedules, parts, labor, alerts, AI predictions, audit log. Saved custom reports show up in the same Reports tab, can be scheduled, and can be shared with specific users or roles.',
+          'Visualization options include tables (with conditional formatting), bar / line / area / pie charts, gauges, heatmaps, and pivot tables. You can also pin any custom report to your dashboard.',
+        ],
+      },
+      {
+        heading: 'Dashboards',
+        body: [
+          'Every user gets a personal dashboard. Admins can configure organization-wide dashboards (e.g. one for the morning stand-up, one for the executive review) and assign them to roles. Widgets include KPI tiles, charts from any report, work-order queues, alert feeds, and the live equipment-health map.',
         ],
       },
     ],
@@ -471,54 +751,75 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '🔌',
     title: 'Integrations',
     summary:
-      'Myncel plays nicely with the rest of your stack — Slack, Microsoft Teams, PagerDuty, ERP systems, single sign-on, and industrial protocols for IoT and SCADA data.',
+      'Myncel plays nicely with the rest of your stack — Slack, Microsoft Teams, PagerDuty, Opsgenie, ERP / accounting systems, single sign-on, and the full set of industrial protocols for IoT and SCADA data.',
     sections: [
       {
-        heading: 'Communication tools',
+        heading: 'Communication tools (Slack & Microsoft Teams)',
         body: [
-          'Connect Slack or Microsoft Teams to push alerts and work-order updates into the channels your team already lives in. The integration is two-way — you can comment on a work order from Slack and the comment shows up in Myncel.',
+          'Connect Slack or Microsoft Teams to push alerts and work-order updates into the channels your team already lives in. The integration is two-way — you can comment on a work order from inside Slack/Teams and the comment shows up on the work-order page in Myncel, with the original poster\'s name and timestamp preserved.',
         ],
         steps: [
           'Go to Settings → Integrations → Slack (or Teams).',
-          'Click Connect and authorize the workspace.',
-          'Pick which channels receive which event types.',
+          'Click Connect and authorize the workspace (OAuth flow).',
+          'Pick which channels receive which event types (new critical alert, new work order, status change, comment).',
+          'Choose whether to allow inline replies (recommended).',
           'Save.',
         ],
       },
       {
-        heading: 'On-call paging',
+        heading: 'On-call paging (PagerDuty / Opsgenie)',
         body: [
-          'On the Professional plan, PagerDuty and Opsgenie integrations let you escalate critical alerts to on-call rotations with full lifecycle (acknowledge, escalate, resolve). Configure the API key in Settings → Integrations → PagerDuty.',
+          'On the Professional plan, PagerDuty and Opsgenie integrations let you escalate critical alerts to on-call rotations with full lifecycle (acknowledge, escalate, resolve). The integration uses each tool\'s standard Events API v2 with a service-specific routing key. Configure the key in Settings → Integrations → PagerDuty.',
         ],
       },
       {
-        heading: 'ERP / accounting',
+        heading: 'ERP and accounting',
         body: [
-          'Myncel can sync parts inventory and purchase orders bidirectionally with most major ERP systems including SAP, NetSuite, QuickBooks, and Sage. Sync runs hourly by default and can be triggered manually. Setup typically requires 30–60 minutes with help from our integration team and is included on the Professional and Enterprise plans.',
-        ],
-      },
-      {
-        heading: 'Industrial protocols (IoT / SCADA)',
-        body: [
-          'For machine data we support the standard industrial protocols. Configure each connection in Settings → Integrations → Industrial.',
+          'Myncel can sync parts inventory, purchase orders, and cost centers bidirectionally with most major ERP systems. Sync runs hourly by default and can be triggered manually. Setup typically requires 30–60 minutes with help from our integration team and is included on the Professional and Enterprise plans.',
         ],
         bullets: [
-          'MQTT — both broker and client mode.',
-          'Modbus TCP — read holding registers, input registers, coils.',
-          'OPC-UA — secure subscription-based reads.',
-          'Ethernet/IP — for Allen-Bradley / Rockwell PLCs.',
-          'REST / Webhook — for custom systems that can POST JSON.',
+          'SAP — via SAP PM module integration with PI/PO middleware or direct OData.',
+          'NetSuite — via SuiteTalk REST.',
+          'Microsoft Dynamics 365 — via Dataverse Web API.',
+          'Oracle Fusion — via REST.',
+          'QuickBooks Online — via Intuit OAuth + REST.',
+          'Sage 100 / 300 — via the Sage Web API.',
+          'Xero — via the Xero Accounting API.',
+        ],
+      },
+      {
+        heading: 'Industrial protocols (IoT / SCADA / building automation)',
+        body: [
+          'For machine data we support every standard industrial protocol. Configure each connection once in Settings → Integrations → Industrial, then map specific tags or registers to Myncel fields with a point-and-click UI. Multiple connections can target the same machine.',
+        ],
+        bullets: [
+          'MQTT and MQTT-Sparkplug B — both broker and client mode; TLS supported.',
+          'Modbus TCP — read holding registers, input registers, coils, discrete inputs.',
+          'Modbus RTU (over TCP gateway or serial through the Edge Gateway).',
+          'OPC-UA — secure subscription-based reads with certificate auth.',
+          'Ethernet/IP (CIP) — Allen-Bradley / Rockwell PLCs.',
+          'Siemens S7 — direct read from S7-300, S7-400, S7-1200, S7-1500.',
+          'BACnet/IP — building automation, HVAC, lighting, energy meters.',
+          'SNMP v2c / v3 — IT and network gear (UPS, switches, PDUs).',
+          'REST / Webhook — for any system that can POST or be polled over HTTPS.',
+          'OPC-DA (legacy) — supported via the Edge Gateway only.',
         ],
       },
       {
         heading: 'Single sign-on (SSO)',
         body: [
-          'On the Professional and Enterprise plans, SSO via SAML 2.0 and OpenID Connect is supported. Compatible with Okta, Azure AD, Google Workspace, OneLogin, and any SAML-compliant identity provider.',
+          'On the Professional and Enterprise plans, SSO via SAML 2.0 and OpenID Connect is supported. Compatible with Okta, Azure AD / Entra ID, Google Workspace, OneLogin, Ping Identity, JumpCloud, and any standards-compliant identity provider. SCIM 2.0 user provisioning is also available on Enterprise.',
+        ],
+      },
+      {
+        heading: 'Public REST API and webhooks',
+        body: [
+          'Everything you can do in the Myncel UI you can also do via the public REST API. Use it to push your own equipment list in, automate work-order creation from your MES, or build custom dashboards. Auth is OAuth 2.0 client-credentials or scoped API keys. Full reference at /api/docs in your workspace.',
+          'Webhooks let Myncel POST to your endpoints when events happen (work-order created, alert fired, schedule due, comment added). Configure in Settings → Integrations → Webhooks. Payloads are signed with HMAC-SHA256 so you can verify authenticity.',
         ],
       },
     ],
   },
-
   // ------------------------------------------------------------------
   // 9. MOBILE APP
   // ------------------------------------------------------------------
@@ -527,36 +828,67 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '📱',
     title: 'Mobile App',
     summary:
-      'The Myncel mobile app for iOS and Android lets technicians work from the floor — view assigned work orders, complete checklists, scan QR codes, attach photos, and receive push alerts.',
+      'The Myncel mobile app for iOS and Android lets technicians work from the floor — view assigned work orders, complete checklists, scan QR codes, attach photos, and receive push alerts. Works offline. Available in the App Store and Google Play.',
     sections: [
       {
         heading: 'Installing the app',
         body: [
-          'The Myncel mobile app is available on the iOS App Store and the Google Play Store. Search for "Myncel" or follow the install link from your dashboard.',
+          'The Myncel mobile app is a native app, not a wrapped website. It is available on the iOS App Store (iPhone and iPad) and on the Google Play Store (Android phones and tablets). Search "Myncel" or follow the install link from your dashboard.',
+          'Minimum supported versions: iOS 15+, iPadOS 15+, Android 8 (Oreo)+. Optimized for both phone and tablet form factors with responsive layouts.',
         ],
       },
       {
         heading: 'Signing in',
         body: [
-          'Use the same email and password you use on the web. SSO users can sign in with their identity provider directly from the app. Once signed in, the app syncs your assigned work orders, your facility\'s equipment list, and your notification preferences.',
+          'Use the same email and password you use on the web. SSO users can sign in with their identity provider directly from the app (Okta, Azure AD, Google Workspace, etc.). Once signed in, the app syncs your assigned work orders, your facility\'s equipment list, your notification preferences, and the handbook.',
+          'The mobile app is sign-in-only. Workspaces are created on the web by an authorized administrator; new technicians or operators are invited by their manager and receive an email with a one-time link. There is no public sign-up flow on mobile because Myncel is a B2B product — accounts are provisioned by the customer organization.',
+        ],
+      },
+      {
+        heading: 'What you can do on mobile',
+        body: [
+          'The mobile app is designed for the floor — for technicians and operators who do not sit at a desk. Every common workflow is one or two taps away.',
+        ],
+        bullets: [
+          'View your assigned and self-claimable work orders, sorted by priority and due date.',
+          'Open a work order, mark it In Progress (which starts the labor timer), complete the checklist, attach photos, and mark Completed — all without signing back in.',
+          'Scan an equipment QR code to instantly open that machine\'s page.',
+          'Browse the equipment list and search by name, location, manufacturer, or QR ID.',
+          'See real-time sensor data and AI alerts on connected machines.',
+          'Read the full handbook offline (this very document).',
+          'Receive push notifications for new assignments, predictive alerts, and emergency broadcasts.',
         ],
       },
       {
         heading: 'Working offline',
         body: [
-          'The app works fully offline. You can open work orders, complete checklists, attach photos, and add comments without a network connection. As soon as the device is back online (Wi-Fi or cellular) everything syncs automatically. The sync indicator at the top of the screen shows the current state.',
+          'The app works fully offline. You can open work orders, complete checklists, attach photos, scan QR codes, and add comments without a network connection. Everything you do is queued locally and syncs automatically as soon as the device is back online (Wi-Fi or cellular). The sync indicator at the top of the screen shows the current state — green for synced, amber for pending, red for sync error with a tap-to-retry.',
+          'Offline mode covers your assigned work orders, the equipment scoped to you, and the most-recent month of history. If you need to expand the offline cache (e.g. a remote installer covering 5,000 km of pipeline), turn on "Extended offline cache" in Settings → Storage and pick a size up to 4 GB.',
         ],
       },
       {
         heading: 'QR codes and barcodes',
         body: [
-          'Print QR-code stickers for your equipment from Myncel (Equipment → [machine] → "Print QR"). Technicians can scan the sticker with the mobile app to instantly open that machine\'s page — its history, open work orders, and "Create Work Order" button. Same flow works for parts and locations.',
+          'Print QR-code stickers for your equipment from Myncel (Equipment → [machine] → "Print QR"). Technicians scan the sticker with the mobile app to instantly open that machine\'s page — its history, open work orders, attached manuals, and a one-tap "Create Work Order" button. The same flow works for parts and locations.',
+          'Standard 1D and 2D barcodes (Code 128, Code 39, EAN, UPC, Data Matrix) are also supported — useful if your existing parts catalog is barcoded but not yet QR-tagged.',
         ],
       },
       {
         heading: 'Push notifications',
         body: [
-          'Push notifications are enabled by default after sign-in. See the Alerts & Notifications chapter for full details, including how to set quiet hours and choose which event types you receive.',
+          'Push notifications are enabled by default after sign-in. See the Alerts & Notifications chapter for full details on channels, quiet hours, and event-type configuration. The app also supports rich-content notifications — a critical alert can include a thumbnail of the relevant chart so the technician can triage from the lock screen.',
+        ],
+      },
+      {
+        heading: 'Tablet and iPad layout',
+        body: [
+          'On tablets the app uses a two-pane layout — list on the left, detail on the right — similar to Apple Mail or Files. This is especially useful in maintenance offices where technicians dock an iPad on a wall mount or in a cart. The app supports landscape and portrait orientation, split-screen multitasking on iPadOS, and external keyboard shortcuts (cmd-N to create a work order, cmd-K for global search).',
+        ],
+      },
+      {
+        heading: 'Reading the handbook on mobile',
+        body: [
+          'The complete Myncel Handbook is available inside the app — open the menu, tap "Handbook", and you can read every chapter offline. The mobile handbook is the same content as this web document but rendered with native typography, larger tap targets for the chapter list, and a search-as-you-type filter at the top. Useful when you are deep inside a building with no signal and want to look up a procedure.',
         ],
       },
     ],
@@ -570,30 +902,30 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '💳',
     title: 'Account, Billing & Plans',
     summary:
-      'Pricing tiers, what each plan includes, how to upgrade or downgrade, and how to manage billing details.',
+      'Pricing tiers, what each plan includes, how to upgrade or downgrade, how to manage billing details, and how to export all your data at any time.',
     sections: [
       {
         heading: 'Plans and pricing',
         body: [
-          'Myncel has four plans. Annual billing saves roughly 20% compared to monthly. All paid plans include a 30-day free trial and you can cancel any time.',
+          'Myncel has four plans. Annual billing saves roughly 20% compared to monthly. All paid plans include a 30-day free trial of the Growth-tier feature set, and you can cancel at any time. Workspaces and billing are managed exclusively from the web — the mobile app does not include any sign-up or upgrade flow.',
         ],
         bullets: [
-          'Starter — $49/month (or $39/month annual). Up to 25 machines, 10 users, 500 work orders/month. Includes core CMMS features and rules-based alerts.',
-          'Growth — $99/month (or $79/month annual). Up to 100 machines, 25 users, 2,000 work orders/month. Adds AI-powered predictive maintenance and SMS alerts.',
-          'Professional — $249/month (or $199/month annual). Up to 500 machines, 100 users, 10,000 work orders/month. Adds SCADA integration, PagerDuty, phone support, white-label, SSO/SAML, and the custom report builder.',
-          'Enterprise — Custom pricing. Unlimited machines, users, and work orders. Dedicated success manager, on-premise option, custom SLA, and bespoke integrations.',
+          'Starter — $49/month (or $39/month annual). Up to 25 machines, 10 users, 500 work orders/month. Includes core CMMS features (equipment, work orders, schedules, parts), rules-based alerts, mobile app, manual logging, and email support.',
+          'Growth — $99/month (or $79/month annual). Up to 100 machines, 25 users, 2,000 work orders/month. Adds AI-powered predictive maintenance, SMS alerts, Slack/Teams integration, and approval workflows.',
+          'Professional — $249/month (or $199/month annual). Up to 500 machines, 100 users, 10,000 work orders/month. Adds direct PLC/SCADA integration, PagerDuty/Opsgenie, phone support, white-label, SSO/SAML, custom report builder, custom roles, and API access.',
+          'Enterprise — Custom pricing. Unlimited machines, users, and work orders. Dedicated success manager, on-premise option, custom SLA, SCIM provisioning, audit log retention to 7 years, and bespoke integrations.',
         ],
       },
       {
         heading: 'Free trial',
         body: [
-          'Every new account gets a 30-day free trial of the Growth plan with no credit card required. At day 28 you will see in-app prompts to choose a plan; if you do nothing, the account drops to a free read-only mode at day 31 — your data is preserved indefinitely so you can come back any time.',
+          'Every new account gets a 30-day free trial of the Growth plan with no credit card required. At day 28 you will see in-app prompts to choose a plan; if you do nothing, the account drops to a free read-only mode at day 31 — your data is preserved indefinitely so you can come back any time. Reactivating restores full access within seconds.',
         ],
       },
       {
         heading: 'Upgrading or downgrading',
         body: [
-          'Plan changes happen in Settings → Billing → Change Plan. Upgrades take effect immediately and are pro-rated. Downgrades take effect at the end of the current billing period.',
+          'Plan changes happen in Settings → Billing → Change Plan (web only). Upgrades take effect immediately and are pro-rated against your current period. Downgrades take effect at the end of the current billing period so you keep what you paid for.',
         ],
         callout: {
           type: 'warning',
@@ -603,18 +935,23 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
       {
         heading: 'Cancelling',
         body: [
-          'You can cancel any time from Settings → Billing → Cancel Subscription. Your account stays active until the end of the period you have already paid for, then drops to free read-only. Reactivation restores everything within seconds.',
+          'You can cancel any time from Settings → Billing → Cancel Subscription. Your account stays active until the end of the period you have already paid for, then drops to free read-only. Reactivation restores everything within seconds. If you need a full account deletion (right-to-be-forgotten / GDPR), contact privacy@myncel.com.',
         ],
       },
       {
         heading: 'Exporting your data',
         body: [
-          'Your data is yours. Settings → Data → Export gives you a one-click full export as ZIP containing every work order, equipment record, parts entry, schedule, and document attachment. Available on every plan.',
+          'Your data is yours. Settings → Data → Export gives you a one-click full export as a ZIP containing every work order, equipment record, parts entry, schedule, attached document, and audit log entry — in CSV plus original-format files. Available on every plan, including the free read-only mode.',
+        ],
+      },
+      {
+        heading: 'Why we do not sell on the mobile app',
+        body: [
+          'Myncel is a B2B product. Workspaces represent organizations, plans are sold to organizations, and individual technicians or operators do not pay personally. Because of this, all account-creation, plan-purchase, and billing flows live exclusively on the web at https://www.myncel.com. The iOS and Android apps are pure access tools for users whose employer has already provisioned them an account. No in-app purchases, no plan upgrades, no payment screens — just the work.',
         ],
       },
     ],
   },
-
   // ------------------------------------------------------------------
   // 11. TROUBLESHOOTING
   // ------------------------------------------------------------------
@@ -623,49 +960,72 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '🛠',
     title: 'Troubleshooting & FAQ',
     summary:
-      'Common questions and quick fixes — from login issues to "why is my machine showing offline".',
+      'Common questions and quick fixes — from sign-in issues, to "why is my machine showing offline", to "the AI gave a wrong answer". Updated as we see real customer questions.',
     sections: [
       {
         heading: 'I forgot my password',
         body: [
-          'Go to the sign-in page and click "Forgot password". Enter your email and follow the link sent to your inbox. The link is valid for 1 hour. If you do not receive it within a few minutes, check your spam folder and confirm the email matches the one on your account.',
+          'Go to the sign-in page (https://www.myncel.com/signin) and click "Forgot password". Enter your email and follow the link sent to your inbox. The link is valid for 1 hour. If you do not receive it within a few minutes, check your spam folder and confirm the email matches the one on your account.',
+          'On mobile the same flow is available — tap "Forgot password" on the sign-in screen and the email is sent to whatever address is registered for your user.',
+          'If you sign in with SSO, password reset is handled by your identity provider, not Myncel.',
         ],
       },
       {
         heading: 'My machine shows "offline" but it is running',
         body: [
-          'This means Myncel has not received a heartbeat from the machine\'s sensor or PLC connection in the expected window.',
+          'This means Myncel has not received a heartbeat from the machine\'s sensor or PLC connection within the expected window. Heartbeat windows are 60 seconds for direct PLC connections and 5 minutes for low-power IoT sensors by default; both are configurable per machine.',
         ],
         steps: [
-          'Open the machine\'s page → "Connection" tab → look at the last-seen timestamp.',
-          'If it has been more than a few minutes, check the Edge Gateway is online (Settings → Integrations → Edge Gateway).',
-          'For IoT sensors, check the sensor battery and signal strength.',
-          'For PLC connections, verify the PLC is reachable from the gateway (ping test inside the gateway diagnostics page).',
-          'Re-sync from the machine page if needed. If the issue persists, contact support.',
+          'Open the machine\'s page → "Connections" tab → look at the last-seen timestamp and the protocol.',
+          'If it has been more than the heartbeat window, check the Edge Gateway is online (Settings → Integrations → Edge Gateway).',
+          'For IoT sensors, check the sensor battery and signal strength on the gateway diagnostics page. Replace the battery if low (typical sensor lifetime: 3–5 years).',
+          'For PLC connections, verify the PLC is reachable from the gateway (built-in ping/telnet test in the gateway diagnostics).',
+          'Re-sync from the machine page if needed. If the issue persists, contact support — please include the machine name and the last-seen timestamp.',
         ],
       },
       {
         heading: 'Push notifications are not arriving',
         body: [
-          'Three things to check, in order:',
+          'Three things to check, in order. The vast majority of "missing push" issues are #2.',
         ],
         steps: [
-          'Confirm the mobile app is installed, signed in, and up to date.',
-          'On iOS: Settings → Notifications → Myncel → Allow Notifications must be on. On Android: Settings → Apps → Myncel → Notifications must be on.',
-          'In the Myncel mobile app: user-menu → Notifications → confirm the channels you want are toggled on, and that quiet hours are not currently silencing the type of alert.',
-          'If still nothing arrives, send a test from /admin/push-debug (super-admins) or contact support — we can confirm the device token is registered and the message reached the platform.',
+          'Confirm the mobile app is installed, signed in, and up to date (App Store / Play Store, check for updates).',
+          'On iOS: Settings → Notifications → Myncel → Allow Notifications must be on. On Android: Settings → Apps → Myncel → Notifications must be on. On both, check that battery optimization / focus modes are not silencing the app.',
+          'Inside the Myncel app: user-menu → Notifications → confirm the channels you want are toggled on, and that quiet hours are not currently silencing the type of alert.',
+          'If still nothing arrives, send a test from /admin/push-debug (super-admins only) or contact support — we can confirm the device token is registered with APNs/FCM and that the platform accepted the message.',
+        ],
+      },
+      {
+        heading: 'My sensor is not showing in the unassigned list',
+        body: [
+          'When you go to Equipment → [machine] → Connect Sensor, the sensor list is populated by the Edge Gateway from sensors it has heard recently (default: last 30 minutes). If a new sensor is missing, walk through the following checklist.',
+        ],
+        steps: [
+          'Confirm the gateway is online (Settings → Integrations → Edge Gateway → green dot).',
+          'Power-cycle the sensor (pull the battery for 5 seconds and re-insert).',
+          'Confirm the sensor is within range of the gateway (typical LoRaWAN range 200 m indoors, BLE 30 m).',
+          'If the sensor was previously paired to a different gateway, factory-reset it per the install card.',
+          'Wait 2–3 minutes and refresh the unassigned-sensors list.',
         ],
       },
       {
         heading: 'The AI assistant gave a wrong answer',
         body: [
-          'Click the 👎 below the answer in the chat widget. That logs the feedback for the team. You can also switch the chat to "Live Support" at any time and a human will pick up. The AI is grounded in this very Handbook — if a topic is missing or unclear here, that is the place to fix it.',
+          'Click the 👎 below the answer in the chat widget. That logs the feedback for the team and pulls the conversation into a review queue. You can also switch the chat to "Live Support" at any time and a human will pick up.',
+          'The AI is grounded in this very Handbook — if a topic is missing or unclear here, that is the place to fix it. Customers on the Professional plan can also bring their own knowledge base in (Settings → AI → Custom Sources) to ground the assistant on internal SOPs and equipment manuals.',
+        ],
+      },
+      {
+        heading: 'The Continue button is greyed out on signup',
+        body: [
+          'This was an iPadOS-Safari autofill behavior we observed in May 2026 and fixed shortly after. If you ever encounter it again (e.g. on a future iOS version), the workaround is to manually re-type the last character of the confirm-password field — that always wakes the form. We have also added always-on submit with click-time validation as a defense-in-depth fix.',
         ],
       },
       {
         heading: 'Contacting human support',
         body: [
           'You can always reach a human at support@myncel.com or through the Live Support tab in the chat widget. Professional and Enterprise plans include phone support; the number is shown in your Settings → Billing page.',
+          'For security-sensitive issues (suspected breach, leaked credential) please use security@myncel.com — that mailbox is monitored 24/7 and is PGP-capable on request.',
         ],
       },
     ],
@@ -679,28 +1039,67 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '📚',
     title: 'Glossary',
     summary:
-      'A quick reference for the maintenance and reliability terms used across Myncel and this Handbook.',
+      'A quick reference for the maintenance, reliability, and IoT terms used across Myncel and this Handbook. Grouped by topic for easier scanning.',
     sections: [
       {
-        heading: 'Glossary of terms',
+        heading: 'Core CMMS and maintenance terms',
         body: [],
         bullets: [
           'CMMS — Computerized Maintenance Management System; the category Myncel belongs to.',
+          'EAM — Enterprise Asset Management; a superset of CMMS that adds financial-asset lifecycle and depreciation.',
+          'Asset — any physical thing you maintain. Synonymous with "equipment" or "machine" in Myncel.',
           'PM — Preventive Maintenance; planned work done at a regular interval to prevent failures.',
-          'PdM — Predictive Maintenance; data-driven maintenance triggered by sensor anomalies.',
+          'PdM — Predictive Maintenance; data-driven maintenance triggered by sensor anomalies or AI.',
           'CM — Corrective Maintenance; reactive work done after something has broken.',
+          'RCM — Reliability-Centered Maintenance; the methodology for choosing the right mix of PM, PdM, and run-to-failure per asset.',
+          'CBM — Condition-Based Maintenance; a flavor of PdM where work is triggered by a measured condition crossing a threshold.',
+          'TPM — Total Productive Maintenance; a culture/program that involves operators in basic maintenance.',
+          'FMEA — Failure Mode and Effects Analysis; a structured way to identify what can go wrong on an asset.',
+          'RCA — Root Cause Analysis; the post-mortem process for understanding why a failure happened.',
+          'SOP — Standard Operating Procedure; a written, repeatable way of doing a task.',
+          'LOTO — Lockout / Tagout; the safety procedure for de-energizing equipment before work.',
+          'Work Order — the unit of work in Myncel; covers PM, PdM, CM, inspections, safety, and projects.',
+          'Backlog — open work orders not yet completed; backlog age is a useful health metric.',
+        ],
+      },
+      {
+        heading: 'Reliability metrics',
+        body: [],
+        bullets: [
           'MTBF — Mean Time Between Failures; the average time between consecutive failures of an asset.',
-          'MTTR — Mean Time To Repair; the average labor time to fix a failure.',
-          'OEE — Overall Equipment Effectiveness; a composite metric of availability × performance × quality.',
+          'MTTR — Mean Time To Repair; the average labor time to fix a failure (open → close, minus on-hold time).',
+          'MTTF — Mean Time To Failure; for non-repairable items, the average lifetime before failure.',
+          'OEE — Overall Equipment Effectiveness; a composite of Availability × Performance × Quality, expressed as a percentage.',
+          'Availability — the fraction of scheduled time that an asset is up and running.',
+          'PM Compliance — completed-on-time PMs / total PMs in the period.',
+          'Wrench Time — the fraction of a technician\'s shift spent actually working on equipment (vs. travel, paperwork, waiting).',
+          'Schedule Compliance — completed scheduled work / planned scheduled work in the period.',
+        ],
+      },
+      {
+        heading: 'IoT, control, and protocol terms',
+        body: [],
+        bullets: [
           'PLC — Programmable Logic Controller; the industrial computer that runs a machine.',
+          'HMI — Human-Machine Interface; the operator-facing screen that talks to the PLC.',
           'SCADA — Supervisory Control and Data Acquisition; the system that monitors and controls multiple PLCs.',
+          'DCS — Distributed Control System; a SCADA-like system tightly integrated with process equipment.',
+          'OT — Operational Technology; the network of PLCs, HMIs, sensors. Distinct from IT.',
+          'IT/OT convergence — the trend of OT data flowing into IT systems (and CMMS) over standard protocols.',
           'OPC-UA — Open Platform Communications Unified Architecture; a modern, secure industrial protocol.',
-          'MQTT — Message Queuing Telemetry Transport; a lightweight messaging protocol popular with IoT.',
-          'Modbus — A widely-used industrial serial/TCP protocol for reading PLC registers.',
+          'OPC-DA — the older OLE-for-Process-Control standard; legacy but still widely deployed.',
+          'MQTT — Message Queuing Telemetry Transport; a lightweight publish/subscribe messaging protocol popular with IoT.',
+          'Sparkplug B — an MQTT topic-and-payload spec from Cirrus Link / Eclipse, popular for IIoT.',
+          'Modbus — a widely-used industrial serial/TCP protocol for reading PLC registers.',
+          'Ethernet/IP — the CIP-over-Ethernet protocol used by Allen-Bradley / Rockwell.',
+          'BACnet — Building Automation and Control Network; the standard for HVAC and building systems.',
+          'SNMP — Simple Network Management Protocol; standard for IT and network gear.',
           'APNs — Apple Push Notification service; how iOS push notifications are delivered.',
           'FCM — Firebase Cloud Messaging; how Android push notifications are delivered.',
           'SSO — Single Sign-On; logging into multiple apps with one identity provider.',
           'SAML — Security Assertion Markup Language; the standard SSO protocol used by enterprises.',
+          'OIDC — OpenID Connect; a modern OAuth-based SSO protocol.',
+          'SCIM — System for Cross-domain Identity Management; standard for automated user provisioning.',
         ],
       },
     ],

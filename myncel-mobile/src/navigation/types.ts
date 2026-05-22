@@ -23,6 +23,18 @@ export type AlertsStackParamList = {
   AlertDetail: { id: string };
 };
 
+export type HandbookStackParamList = {
+  HandbookList: undefined;
+  HandbookChapter: { slug: string; title: string };
+};
+
+export type ProfileStackParamList = {
+  ProfileHome: undefined;
+  Handbook: undefined;
+  HandbookList: undefined;
+  HandbookChapter: { slug: string; title: string };
+};
+
 export type AppTabsParamList = {
   Dashboard: undefined;
   Equipment: undefined;

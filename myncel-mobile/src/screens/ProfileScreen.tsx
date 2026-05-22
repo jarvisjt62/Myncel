@@ -1,14 +1,20 @@
 import React from 'react';
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { useAuth } from '@/auth/AuthContext';
 import { colors, radius, spacing, typography } from '@/theme';
 import Constants from 'expo-constants';
+import type { ProfileStackParamList } from '@/navigation/types';
+
+type Nav = NativeStackNavigationProp<ProfileStackParamList, 'ProfileHome'>;
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
+  const navigation = useNavigation<Nav>();
 
   const onSignOut = () => {
     Alert.alert(
@@ -40,6 +46,10 @@ export default function ProfileScreen() {
       </Card>
 
       <Card style={styles.section} padding="none">
+        <SettingsRow
+          label="📖 Handbook (offline)"
+          onPress={() => navigation.navigate('HandbookList')}
+        />
         <SettingsRow
           label="Open web dashboard"
           onPress={() => Linking.openURL('https://www.myncel.com/dashboard')}

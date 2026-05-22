@@ -23,6 +23,8 @@ import SchedulesScreen from '@/screens/SchedulesScreen';
 import AlertsListScreen from '@/screens/AlertsListScreen';
 import AlertDetailScreen from '@/screens/AlertDetailScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
+import HandbookListScreen from '@/screens/HandbookListScreen';
+import HandbookChapterScreen from '@/screens/HandbookChapterScreen';
 
 import {
   DashboardIcon,
@@ -38,12 +40,14 @@ import type {
   EquipmentStackParamList,
   WorkOrdersStackParamList,
   AlertsStackParamList,
+  ProfileStackParamList,
 } from './types';
 
 const Tabs = createBottomTabNavigator<AppTabsParamList>();
 const EquipmentStack = createNativeStackNavigator<EquipmentStackParamList>();
 const WorkOrdersStack = createNativeStackNavigator<WorkOrdersStackParamList>();
 const AlertsStack = createNativeStackNavigator<AlertsStackParamList>();
+const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 
 const stackHeader = {
   headerStyle: { backgroundColor: colors.bg },
@@ -107,6 +111,28 @@ function AlertsNavigator() {
   );
 }
 
+function ProfileNavigator() {
+  return (
+    <ProfileStack.Navigator screenOptions={stackHeader}>
+      <ProfileStack.Screen
+        name="ProfileHome"
+        component={ProfileScreen}
+        options={{ headerShown: false }}
+      />
+      <ProfileStack.Screen
+        name="HandbookList"
+        component={HandbookListScreen}
+        options={{ title: 'Handbook' }}
+      />
+      <ProfileStack.Screen
+        name="HandbookChapter"
+        component={HandbookChapterScreen}
+        options={({ route }) => ({ title: route.params.title })}
+      />
+    </ProfileStack.Navigator>
+  );
+}
+
 function AppTabs() {
   return (
     <Tabs.Navigator
@@ -166,7 +192,7 @@ function AppTabs() {
       />
       <Tabs.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={ProfileNavigator}
         options={{
           tabBarIcon: ({ color, size }) => <ProfileIcon color={color} size={size} />,
         }}
