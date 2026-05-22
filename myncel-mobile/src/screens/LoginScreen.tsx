@@ -52,7 +52,7 @@ export default function LoginScreen() {
             </View>
             <Text style={styles.title}>Welcome to Myncel</Text>
             <Text style={styles.subtitle}>
-              Sign in to manage equipment, work orders, and maintenance schedules.
+              Sign in with the credentials provided by your workspace administrator to manage equipment, work orders, and maintenance schedules.
             </Text>
           </View>
 
@@ -121,7 +121,7 @@ export default function LoginScreen() {
               onPress={() =>
                 RNAlert.alert(
                   'Forgot password?',
-                  'Please reset your password from the Myncel website at myncel.com.'
+                  'To reset your password, please visit myncel.com on your computer and use the "Forgot password" link on the sign-in page. Your workspace administrator can also reset it for you.'
                 )
               }
               style={styles.forgotLink}
@@ -129,11 +129,27 @@ export default function LoginScreen() {
             >
               <Text style={styles.forgotText}>Forgot password?</Text>
             </Pressable>
+
+            <Pressable
+              onPress={() =>
+                RNAlert.alert(
+                  'How do I get a Myncel account?',
+                  'Myncel is a workplace tool. Your account is created and managed by your organization\u2019s administrator.\n\n\u2022 If your team already uses Myncel, ask your administrator to invite you. You will receive an email with a sign-in link.\n\n\u2022 If your organization does not yet use Myncel, your administrator can set up the workspace at myncel.com.\n\nThis app is for signing in to an existing account only \u2014 you cannot create a new workspace from inside the app.'
+                )
+              }
+              style={styles.forgotLink}
+              hitSlop={8}
+            >
+              <Text style={styles.helperText}>How do I get an account?</Text>
+            </Pressable>
           </View>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>
               By signing in you agree to Myncel&apos;s Terms of Service and Privacy Policy.
+            </Text>
+            <Text style={styles.footerSubtext}>
+              Myncel accounts are provisioned by your organization administrator. New workspaces are created on the web at myncel.com.
             </Text>
           </View>
         </View>
@@ -245,6 +261,12 @@ const styles = StyleSheet.create({
     fontSize: typography.sm,
     fontWeight: typography.semibold,
   },
+  helperText: {
+    color: colors.textSecondary,
+    fontSize: typography.sm,
+    fontWeight: typography.medium,
+    textDecorationLine: 'underline',
+  },
   footer: {
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
@@ -254,5 +276,13 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     lineHeight: typography.xs * typography.lineHeight.relaxed,
+  },
+  footerSubtext: {
+    fontSize: typography.xs,
+    color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: typography.xs * typography.lineHeight.relaxed,
+    marginTop: spacing.sm,
+    fontStyle: 'italic',
   },
 });

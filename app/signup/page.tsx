@@ -71,15 +71,59 @@ export default function SignUp() {
   const handleStep1 = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return; }
-    if (!passwordMeetsRequirements) { setError('Password must include at least 8 characters, one uppercase letter, one number, and one special character.'); return; }
+
+    // Defensive: re-read live values from the form so we catch
+    // browser autofill (especially iCloud Keychain on iPad) which can
+    // populate inputs without firing React's onChange.
+    const formEl = e.currentTarget as HTMLFormElement;
+    const liveName = (formEl.elements.namedItem('name') as HTMLInputElement | null)?.value ?? form.name;
+    const liveEmail = (formEl.elements.namedItem('email') as HTMLInputElement | null)?.value ?? form.email;
+    const livePassword = (formEl.elements.namedItem('password') as HTMLInputElement | null)?.value ?? form.password;
+    const liveConfirm = (formEl.elements.namedItem('confirmPassword') as HTMLInputElement | null)?.value ?? form.confirmPassword;
+
+    // Sync state back so the UI matches what the user actually typed/autofilled
+    if (liveName !== form.name || liveEmail !== form.email || livePassword !== form.password || liveConfirm !== form.confirmPassword) {
+      setForm((f) => ({
+        ...f,
+        name: liveName,
+        email: liveEmail,
+        password: livePassword,
+        confirmPassword: liveConfirm,
+      }));
+    }
+
+    if (!liveName.trim()) { setError('Please enter your full name.'); return; }
+    if (!liveEmail.trim()) { setError('Please enter your work email.'); return; }
+    if (!livePassword) { setError('Please enter a password.'); return; }
+    if (livePassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (!/[A-Z]/.test(livePassword)) { setError('Password must include at least one uppercase letter.'); return; }
+    if (!/[0-9]/.test(livePassword)) { setError('Password must include at least one number.'); return; }
+    if (!/[^A-Za-z0-9]/.test(livePassword)) { setError('Password must include at least one special character (e.g. ! ? # $).'); return; }
+    if (livePassword !== liveConfirm) { setError('Passwords do not match. Please re-enter your password in both fields.'); return; }
+
     setStep(2);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+
+    // Mirror handleStep1: read live form values to defeat any autofill /
+    // state-sync issues (especially on iPad with iCloud Keychain).
+    const formEl = e.currentTarget as HTMLFormElement;
+    const liveCompany = (formEl.elements.namedItem('companyName') as HTMLInputElement | null)?.value ?? form.companyName;
+    const liveIndustry = (formEl.elements.namedItem('industry') as HTMLSelectElement | null)?.value ?? form.industry;
+    const liveSize = (formEl.elements.namedItem('companySize') as HTMLSelectElement | null)?.value ?? form.companySize;
+
+    if (liveCompany !== form.companyName || liveIndustry !== form.industry || liveSize !== form.companySize) {
+      setForm((f) => ({ ...f, companyName: liveCompany, industry: liveIndustry, companySize: liveSize }));
+    }
+
+    if (!liveCompany.trim()) { setError('Please enter your company name.'); return; }
+    if (!liveIndustry) { setError('Please select your industry.'); return; }
+    if (!liveSize) { setError('Please select the number of machines.'); return; }
+
+    setLoading(true);
 
     try {
       // Get reCAPTCHA token
@@ -92,7 +136,7 @@ export default function SignUp() {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, captchaToken }),
+        body: JSON.stringify({ ...form, name: form.name, email: form.email, password: form.password, companyName: liveCompany, industry: liveIndustry, companySize: liveSize, captchaToken }),
       });
 
       const data = await res.json();
@@ -171,16 +215,16 @@ export default function SignUp() {
               <form onSubmit={handleStep1} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#0a2540] uppercase tracking-wide mb-1.5">Full name</label>
-                  <input type="text" required value={form.name} onChange={e => update('name', e.target.value)} placeholder="John Smith" className="w-full min-h-11 border border-[#e6ebf1] rounded-lg px-4 py-2.5 text-base sm:text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20 transition-all" />
+                  <input type="text" name="name" required value={form.name} onChange={e => update('name', e.target.value)} onInput={e => update('name', (e.target as HTMLInputElement).value)} autoComplete="name" placeholder="John Smith" className="w-full min-h-11 border border-[#e6ebf1] rounded-lg px-4 py-2.5 text-base sm:text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20 transition-all" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#0a2540] uppercase tracking-wide mb-1.5">Work email</label>
-                  <input type="email" required value={form.email} onChange={e => update('email', e.target.value)} placeholder="john@yourshop.com" className="w-full min-h-11 border border-[#e6ebf1] rounded-lg px-4 py-2.5 text-base sm:text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20 transition-all" />
+                  <input type="email" name="email" required value={form.email} onChange={e => update('email', e.target.value)} onInput={e => update('email', (e.target as HTMLInputElement).value)} autoComplete="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} placeholder="john@yourshop.com" className="w-full min-h-11 border border-[#e6ebf1] rounded-lg px-4 py-2.5 text-base sm:text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20 transition-all" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#0a2540] uppercase tracking-wide mb-1.5">Password</label>
                   <div className="relative">
-                    <input type={showPassword ? "text" : "password"} required minLength={8} value={form.password} onChange={e => update('password', e.target.value)} placeholder="Create a strong password" autoComplete="new-password" className="w-full min-h-11 border border-[#e6ebf1] rounded-lg px-4 py-2.5 pr-14 text-base sm:text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20 transition-all" />
+                    <input type={showPassword ? "text" : "password"} name="password" required minLength={8} value={form.password} onChange={e => update('password', e.target.value)} onInput={e => update('password', (e.target as HTMLInputElement).value)} placeholder="Create a strong password" autoComplete="new-password" autoCapitalize="off" autoCorrect="off" spellCheck={false} className="w-full min-h-11 border border-[#e6ebf1] rounded-lg px-4 py-2.5 pr-14 text-base sm:text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20 transition-all" />
                     <button type="button" onClick={() => setShowPassword(prev => !prev)} className="absolute inset-y-0 right-1 flex min-h-11 w-11 items-center justify-center text-[#8898aa] hover:text-[#635bff] transition-colors" aria-label={showPassword ? "Hide password" : "Show password"}>
                       {showPassword ? (
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -211,7 +255,7 @@ export default function SignUp() {
                 <div>
                   <label className="block text-xs font-semibold text-[#0a2540] uppercase tracking-wide mb-1.5">Confirm password</label>
                   <div className="relative">
-                    <input type={showConfirmPassword ? "text" : "password"} required value={form.confirmPassword} onChange={e => update('confirmPassword', e.target.value)} placeholder="Repeat your password" autoComplete="new-password" className="w-full min-h-11 border border-[#e6ebf1] rounded-lg px-4 py-2.5 pr-14 text-base sm:text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20 transition-all" />
+                    <input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" required value={form.confirmPassword} onChange={e => update('confirmPassword', e.target.value)} onInput={e => update('confirmPassword', (e.target as HTMLInputElement).value)} placeholder="Repeat your password" autoComplete="new-password" autoCapitalize="off" autoCorrect="off" spellCheck={false} className="w-full min-h-11 border border-[#e6ebf1] rounded-lg px-4 py-2.5 pr-14 text-base sm:text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20 transition-all" />
                     <button type="button" onClick={() => setShowConfirmPassword(prev => !prev)} className="absolute inset-y-0 right-1 flex min-h-11 w-11 items-center justify-center text-[#8898aa] hover:text-[#635bff] transition-colors" aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}>
                       {showConfirmPassword ? (
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -234,7 +278,7 @@ export default function SignUp() {
                     <p className="text-xs text-green-600 mt-1">✓ Passwords match</p>
                   )}
                 </div>
-                <button type="submit" disabled={!passwordMeetsRequirements || form.password !== form.confirmPassword} className="w-full min-h-11 bg-[#635bff] text-white font-semibold py-3 rounded-lg hover:bg-[#4f46e5] transition-colors mt-2 disabled:opacity-60 disabled:cursor-not-allowed">Continue →</button>
+                <button type="submit" className="w-full min-h-11 bg-[#635bff] text-white font-semibold py-3 rounded-lg hover:bg-[#4f46e5] transition-colors mt-2">Continue →</button>
               </form>
             )}
 
@@ -242,11 +286,11 @@ export default function SignUp() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#0a2540] uppercase tracking-wide mb-1.5">Company name</label>
-                  <input type="text" required value={form.companyName} onChange={e => update('companyName', e.target.value)} placeholder="Precision Parts Co." className="w-full min-h-11 border border-[#e6ebf1] rounded-lg px-4 py-2.5 text-base sm:text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20 transition-all" />
+                  <input type="text" name="companyName" required value={form.companyName} onChange={e => update('companyName', e.target.value)} onInput={e => update('companyName', (e.target as HTMLInputElement).value)} autoComplete="organization" placeholder="Precision Parts Co." className="w-full min-h-11 border border-[#e6ebf1] rounded-lg px-4 py-2.5 text-base sm:text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20 transition-all" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#0a2540] uppercase tracking-wide mb-1.5">Industry</label>
-                  <select value={form.industry} onChange={e => update('industry', e.target.value)} className="w-full min-h-11 border border-[#e6ebf1] rounded-lg px-4 py-2.5 text-base sm:text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20 transition-all bg-white">
+                  <select name="industry" required value={form.industry} onChange={e => update('industry', e.target.value)} className="w-full min-h-11 border border-[#e6ebf1] rounded-lg px-4 py-2.5 text-base sm:text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20 transition-all bg-white">
                     <option value="">Select your industry</option>
                     <option value="METAL_FABRICATION">Metal Fabrication</option>
                     <option value="PLASTICS">Plastics & Injection Molding</option>
@@ -259,7 +303,7 @@ export default function SignUp() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#0a2540] uppercase tracking-wide mb-1.5">Number of machines</label>
-                  <select value={form.companySize} onChange={e => update('companySize', e.target.value)} className="w-full min-h-11 border border-[#e6ebf1] rounded-lg px-4 py-2.5 text-base sm:text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20 transition-all bg-white">
+                  <select name="companySize" required value={form.companySize} onChange={e => update('companySize', e.target.value)} className="w-full min-h-11 border border-[#e6ebf1] rounded-lg px-4 py-2.5 text-base sm:text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20 transition-all bg-white">
                     <option value="">Select range</option>
                     <option value="SMALL">1–3 machines</option>
                     <option value="GROWING">4–20 machines</option>
