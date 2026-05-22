@@ -231,8 +231,34 @@ What's new in 1.0.1
 
 ## 7. Don't-forget reminders
 
-- 🔐 **Revoke GitHub PAT** `ghp_FnDPshwm…3x2ExLMM` after this is all done.
-- 🔐 **Rotate `APP_REVIEW_SEED_SECRET`** in Vercel after Apple approves (12).
+### 7.1 Post-approval secret rotation (do AFTER Apple "Ready for Sale" on 1.0 (12))
+
+**Why wait:** if Apple's reviewer needs to re-test the demo accounts, rotating the seed secret now would force us to reach back into `app/api/admin/seed-review-accounts/route.ts` and reset things mid-review. Once 1.0 (12) is approved we know the reviewer is done with that workspace, so rotation is safe.
+
+**Order matters — do them in this order:**
+
+1. **GitHub PAT** `ghp_FnDPshwm…3x2ExLMM` — **HIGH urgency** (was printed in plain text in terminal output during the launch window)
+   - Go to https://github.com/settings/tokens
+   - Find the token (created during build-13 prestage, likely named "myncel-deploy" or similar)
+   - Click **Delete** → confirm
+   - If you still need a PAT for git pushes, create a new one with `repo` scope only, set 90-day expiry, store in a password manager (1Password / Bitwarden), never paste into chat
+
+2. **Vercel `APP_REVIEW_SEED_SECRET`** — LOW urgency, safety hygiene
+   - Generate a new random value: `openssl rand -hex 32` (run in any terminal)
+   - Vercel dashboard → Project (myncel) → Settings → Environment Variables
+   - Find `APP_REVIEW_SEED_SECRET` → **Edit** → paste new value → save for **Production** + **Preview** + **Development**
+   - Trigger a redeploy (Deployments tab → Redeploy latest production) so the new value picks up
+   - Update `docs/apple-review-notes-field.md` and `docs/google-play-review-notes.md` if they reference the old value (they shouldn't — they reference the email/password, not the seed secret)
+
+3. **Sanity check after rotation** — confirm seed endpoint still works:
+   ```bash
+   curl -X POST https://www.myncel.com/api/admin/seed-review-accounts \
+     -H "X-Seed-Secret: <NEW_VALUE>" -H "Content-Type: application/json" -d '{}'
+   ```
+   Expect `200 OK` with `log: [...]` showing the upserts.
+
+### 7.2 Other open items
+
 - 📞 **Twilio toll-free resubmission** still pending (separate task).
 - 🍎 **Find iPhone tester** for ad-hoc TestFlight before fragile feature launches (still recommended even though we're shipping without one).
 
