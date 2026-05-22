@@ -279,12 +279,14 @@ To flip them live:
 2. **Android** — once you promote the Play build to Production track and rollout starts:
    - In Vercel:
      - Add `NEXT_PUBLIC_ANDROID_APP_LIVE` = `true` (Production)
-   - The Android URL is already hardcoded to `play.google.com/store/apps/details?id=com.jarvisitconsults.myncel`
+   - **That's the only env var needed for Android.** Unlike Apple, Google Play uses your package name (not a numeric ID) in URLs, and the package name is already hardcoded in `lib/mobile-app-config.ts` as `com.jarvisitconsults.myncel` (it's also fixed in `myncel-mobile/app.json`). So the Play Store URL `https://play.google.com/store/apps/details?id=com.jarvisitconsults.myncel` is fully known ahead of time.
    - Redeploy → Android badge appears
 
 3. **Verify both** by visiting:
    - https://www.myncel.com/products/mobile (hero + download section)
    - Any page footer (look for "Get the mobile app" block)
+   - Hover the **Products** menu in the top navbar (look in the right-side "New Feature → Mobile App" card)
+   - On a phone: open the hamburger menu → scroll to "Get the Myncel app" section
    - Click each badge — should open the live store listing.
 
 Pre-launch (current state) the page shows a "iOS & Android apps coming soon — mobile web available today" pulse pill instead of badges, so the page never looks empty.
