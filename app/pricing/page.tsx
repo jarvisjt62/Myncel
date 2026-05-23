@@ -9,10 +9,18 @@ import { useIsCapacitorWebview } from '../../lib/use-capacitor-webview';
 
 export default function Pricing() {
   const [annual, setAnnual] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
   // Compliance: hide all pricing inside the Capacitor mobile app to avoid
   // Google Play "currency differences with prominent display price"
   // rejection. Users are directed to manage subscriptions on the web.
   // See: docs/google-play-pricing-compliance.md
+  //
+  // IMPORTANT: this early return MUST come AFTER every useState call in
+  // this component. React's Rules of Hooks require hooks to be called
+  // in the same order on every render; if we return before a useState
+  // declaration, the next render (when isMobileApp flips) will call a
+  // different number of hooks and crash with
+  // "Rendered fewer hooks than expected" / "Application error".
   const isMobileApp = useIsCapacitorWebview();
   if (isMobileApp) {
     return <MobilePricingFallback />;
@@ -97,8 +105,6 @@ export default function Pricing() {
     { q: 'Do you offer custom Enterprise plans?', a: 'Yes. For operations that need unlimited machines, unlimited users, unlimited work orders, multiple facilities, or specific compliance requirements, we offer custom Enterprise plans with dedicated support. Contact us to discuss.' },
     { q: 'What payment methods do you accept?', a: 'All major credit and debit cards (Visa, Mastercard, Amex, Discover). Annual plans can also pay by ACH bank transfer or check. Contact us for invoiced billing.' },
   ];
-
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
     <div className="min-h-screen bg-white">
