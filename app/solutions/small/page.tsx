@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import PriceGateMobile from '../../components/PriceGateMobile';
 
 export const metadata = {
   title: 'Small Shop Maintenance Software — For 1-10 Machines',
@@ -27,6 +28,7 @@ export default function SmallShops() {
   };
 
   return (
+    <PriceGateMobile>
     <div className="min-h-screen bg-white">
       <Navbar />
 
@@ -115,5 +117,6 @@ export default function SmallShops() {
 
       <Footer />
     </div>
+    </PriceGateMobile>
   );
 }

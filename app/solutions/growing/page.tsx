@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import PriceGateMobile from '../../components/PriceGateMobile';
 
 export const metadata = {
   title: 'Growing Operations Maintenance Software — For 10-30 Machines',
@@ -34,6 +35,7 @@ export default function GrowingOperations() {
   ];
 
   return (
+    <PriceGateMobile>
     <div className="min-h-screen bg-white">
       <Navbar />
 
@@ -136,5 +138,6 @@ export default function GrowingOperations() {
 
       <Footer />
     </div>
+    </PriceGateMobile>
   );
 }

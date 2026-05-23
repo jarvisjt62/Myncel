@@ -6,16 +6,33 @@ On 2024-11-23 (approx.), Google Play **rejected** Myncel build #2
 (`com.myncel.app`, version code 2) under the policy:
 
 > **Subscriptions: Currency differences with prominent display price**
+> Ensure that currency displayed is consistent through multiple
+> screens such as offers page and payment cart within the purchase
+> flow and is appropriately localized for each country that your app
+> is targeting.
 
-The Capacitor mobile shell loads the live Myncel website inside a native
-WebView. Reviewers in non-US regions saw hardcoded USD prices —
-`$49 / $99 / $249` monthly and `$39 / $79 / $199` annual — across the
-homepage, the `/pricing` page, the `/solutions/*` pages, and the
-marketing screenshots in the Play Store listing. Google's policy
-requires either:
+**The actual cause** (confirmed from Google's two evidence screenshots
+attached to the rejection — `IN_APP_EXPERIENCE-9717.png` and
+`IN_APP_EXPERIENCE-6214.png`):
 
-1. Localized prices for every country the app is published in, **or**
-2. No prominent display of price within the app at all.
+- The **offers page** (`/pricing`) showed plans in **USD** (`$49`,
+  `$99`, `$249`, `$39`, `$79`, `$199`).
+- The **payment cart** (Stripe checkout) auto-localized the totals to
+  the reviewer's region, so the same flow showed amounts in **PHP**
+  (`₱7,148.20`, `₱17,880.xx`, `₱30,335.13`, `₱62,776.72`,
+  `₱32,165.06`).
+
+Same purchase flow, two different currencies. That is the violation.
+Google did NOT object to the prices themselves or to the Play Store
+listing screenshots — only to the currency mismatch within the in-app
+purchase flow.
+
+The fix has to be either:
+
+1. Localize prices on `/pricing` to match what Stripe will display at
+   checkout for each country, **or**
+2. Remove all prominent price display from inside the Android app so
+   the policy cannot be triggered.
 
 We chose **option 2** for build #3 because it ships in hours rather
 than weeks. Localized regional pricing (Stripe regional product setup,
@@ -58,20 +75,38 @@ full pricing.
 | Homepage hero metric "Starter plan: $49/mo" | Swapped for "Mobile ready: iOS + Android" |
 | Homepage CTA tagline "Plans start at $49/month" | Swapped for "30-day free trial" |
 | Homepage `<section id="pricing">` (full pricing grid + Enterprise card) | Replaced with a price-free panel directing the user to the website |
+| `/solutions` (industry overview, "Starting at $49/mo" cards) | Wrapped in `<PriceGateMobile>` — shows the price-free fallback in-app |
+| `/solutions/small` (Starter plan price `$49`) | Wrapped in `<PriceGateMobile>` |
+| `/solutions/growing` (Growth plan price `$99`) | Wrapped in `<PriceGateMobile>` |
+| `/solutions/midsize` (Professional plan price `$249`) | Wrapped in `<PriceGateMobile>` |
+| `/locations/united-states` ("Starting price `$79/mo`") | Wrapped in `<PriceGateMobile>` |
+| `/locations/canada` ("Starting price USD `$79/mo`") | Wrapped in `<PriceGateMobile>` |
 
 What **stays** as-is everywhere (web + app):
 
 - Dashboard, work orders, machines, schedules, alerts — none have prices
 - All non-pricing marketing content (features, mobile, products, contact)
 - Admin billing pages — gated behind login, reviewers can't reach them
+- Editorial cost references like "saves $25K/year" or "$200-500/hour
+  downtime cost" — these are not subscription pricing and Google's
+  Subscriptions policy does not apply
 
-What's **not yet hidden** but lower-risk for re-review:
+What's **still potentially visible** but very low-risk:
 
-- `/solutions/page.tsx` and `/solutions/{small,growing,midsize}/page.tsx` — show "Starting at $49/mo"
-- `/blog/*`, `/changelog`, `/locations/*`, `/guides/roi-calculator` — deeper marketing pages
+- `/blog/*` posts that mention `$49–$249/month` in editorial copy
+- `/changelog` historical entry mentioning launch prices
+- `/guides/roi-calculator` — input field, not a displayed plan price
 
 If Google flags any of these in a future review, we extend the same
-pattern (one `useIsCapacitorWebview()` check + alternate copy).
+`<PriceGateMobile>` pattern.
+
+## Components
+
+- `lib/use-capacitor-webview.ts` — `useIsCapacitorWebview()` hook
+- `app/components/MobilePricingFallback.tsx` — price-free card UI
+- `app/components/PriceGateMobile.tsx` — re-usable wrapper that swaps
+  the page content for `<MobilePricingFallback />` when in-app. Use this
+  on any new page that introduces a USD price.
 
 ## Bypass for the website's own users
 

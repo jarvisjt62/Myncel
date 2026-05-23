@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import PriceGateMobile from '../../components/PriceGateMobile';
 
 export const metadata = {
   title: 'Myncel — Equipment Monitoring & Maintenance Management Software in the United States',
@@ -31,6 +32,7 @@ const stats = [
 
 export default function UnitedStatesLocation() {
   return (
+    <PriceGateMobile>
     <div className="min-h-screen bg-white text-[#0a2540]">
       <Navbar />
 
@@ -155,5 +157,6 @@ export default function UnitedStatesLocation() {
 
       <Footer />
     </div>
+    </PriceGateMobile>
   );
 }

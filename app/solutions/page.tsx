@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import PriceGateMobile from '../components/PriceGateMobile';
 
 export const metadata = {
   title: 'CMMS Software Solutions by Industry & Shop Size',
@@ -139,6 +140,7 @@ export default function Solutions() {
   ];
 
   return (
+    <PriceGateMobile>
     <div className="min-h-screen bg-white">
       <Navbar />
 
@@ -285,5 +287,6 @@ export default function Solutions() {
 
       <Footer />
     </div>
+    </PriceGateMobile>
   );
 }
