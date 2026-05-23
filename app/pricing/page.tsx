@@ -4,9 +4,19 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import MobilePricingFallback from '../components/MobilePricingFallback';
+import { useIsCapacitorWebview } from '../../lib/use-capacitor-webview';
 
 export default function Pricing() {
   const [annual, setAnnual] = useState(false);
+  // Compliance: hide all pricing inside the Capacitor mobile app to avoid
+  // Google Play "currency differences with prominent display price"
+  // rejection. Users are directed to manage subscriptions on the web.
+  // See: docs/google-play-pricing-compliance.md
+  const isMobileApp = useIsCapacitorWebview();
+  if (isMobileApp) {
+    return <MobilePricingFallback />;
+  }
 
   const plans = [
     {

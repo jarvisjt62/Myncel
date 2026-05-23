@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import { useIsCapacitorWebview } from '../lib/use-capacitor-webview';
 
 const platformMetrics = [
   { label: 'Trial access', value: '30 days', detail: 'Full product access before you choose a plan' },
@@ -360,6 +361,22 @@ export default function HomePageClient() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [email, setEmail] = useState('');
   const [annualBilling, setAnnualBilling] = useState(false);
+  // Compliance: when rendered inside the Capacitor mobile app shell
+  // (com.myncel.app), hide every USD price and the entire pricing
+  // section to comply with Google Play's "Subscriptions: currency
+  // differences with prominent display price" policy.
+  // See: docs/google-play-pricing-compliance.md
+  const isMobileApp = useIsCapacitorWebview();
+  // Swap the "Starter plan: $49/mo" hero metric for a price-free
+  // alternative when in the mobile app.
+  const heroMetrics = isMobileApp
+    ? [
+        { label: 'Trial access', value: '30 days', detail: 'Full product access before you choose a plan' },
+        { label: 'Setup time', value: '15 min', detail: 'Add assets, schedules, and team members fast' },
+        { label: 'Work visibility', value: 'Real time', detail: 'Live work orders, alerts, and maintenance status' },
+        { label: 'Mobile ready', value: 'iOS + Android', detail: 'Native apps and a mobile-friendly web experience' },
+      ]
+    : platformMetrics;
 
   return (
     <div className="min-h-screen overflow-hidden bg-white text-[#0a2540]">
@@ -398,11 +415,13 @@ export default function HomePageClient() {
             </div>
 
             <p className="mt-5 text-sm text-[#8898aa]">
-              No credit card required · Setup in minutes · Plans start at $49/month
+              {isMobileApp
+                ? 'No credit card required · Setup in minutes · 30-day free trial'
+                : 'No credit card required · Setup in minutes · Plans start at $49/month'}
             </p>
 
             <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {platformMetrics.map((metric, index) => (
+              {heroMetrics.map((metric, index) => (
                 <div key={metric.label} className="myncel-float rounded-2xl border border-[#e6ebf1] bg-white/80 p-4 shadow-sm backdrop-blur" style={{ animationDelay: `${index * 0.35}s` }}>
                   <div className="text-2xl font-bold text-[#0a2540]">{metric.value}</div>
                   <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#635bff]">{metric.label}</div>
@@ -704,6 +723,58 @@ export default function HomePageClient() {
         </div>
       </section>
 
+      {isMobileApp ? (
+        // Compliance: replace the full pricing section with a price-free
+        // panel when viewed inside the Capacitor mobile app.
+        <section id="pricing" className="relative overflow-hidden bg-[#f6f9fc] py-20 sm:py-28">
+          <div className="absolute -right-40 top-20 h-96 w-96 rounded-full bg-[#635bff]/10 blur-3xl" />
+          <div className="absolute -left-40 bottom-20 h-96 w-96 rounded-full bg-[#00d4ff]/10 blur-3xl" />
+          <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+            <div className="section-label">Plans &amp; pricing</div>
+            <h2 className="mt-4 text-4xl font-bold tracking-tight text-[#0a2540] sm:text-5xl">
+              Subscriptions are managed on the web.
+            </h2>
+            <p className="mt-5 text-lg leading-8 text-[#425466]">
+              For your security and to keep billing simple across regions,
+              Myncel plans and subscriptions are managed at{' '}
+              <span className="font-semibold text-[#0a2540]">myncel.com</span>.
+              Open the website in your browser to view plans, start a free
+              trial, or change your subscription. Your existing subscription
+              continues to work in this app.
+            </p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <a
+                href="https://www.myncel.com/pricing?from=app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#635bff] px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[#5246e5]"
+              >
+                Open myncel.com in browser
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4"
+                  aria-hidden="true"
+                >
+                  <path d="M7 7h10v10" />
+                  <path d="M7 17 17 7" />
+                </svg>
+              </a>
+              <Link
+                href="/contact"
+                className="inline-flex items-center justify-center rounded-full border border-[#0a2540] px-6 py-3 text-base font-semibold text-[#0a2540] transition hover:bg-[#0a2540] hover:text-white"
+              >
+                Contact sales
+              </Link>
+            </div>
+          </div>
+        </section>
+      ) : (
       <section id="pricing" className="relative overflow-hidden bg-[#f6f9fc] py-20 sm:py-28">
         <div className="absolute -right-40 top-20 h-96 w-96 rounded-full bg-[#635bff]/10 blur-3xl" />
         <div className="absolute -left-40 bottom-20 h-96 w-96 rounded-full bg-[#00d4ff]/10 blur-3xl" />
@@ -785,6 +856,7 @@ export default function HomePageClient() {
           </div>
         </div>
       </section>
+      )}
 
       <section id="faq" className="bg-white py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
