@@ -25,8 +25,16 @@ const ANDROID_APP_LIVE = process.env.NEXT_PUBLIC_ANDROID_APP_LIVE === 'true';
 // here.
 const IOS_APP_ID = process.env.NEXT_PUBLIC_IOS_APP_ID || '0000000000';
 
-// Android package is fixed in myncel-mobile/app.json.
-const ANDROID_PACKAGE = 'com.jarvisitconsults.myncel';
+// Android package — fixed in myncel-webview/capacitor.config (the
+// production Capacitor shell that's actually published to Google Play).
+//
+// History: the original Expo project at Myncel/myncel-mobile/ used
+// `com.jarvisitconsults.myncel`, but that project was never submitted
+// to a store. The live published app on Google Play is the Capacitor
+// shell at C:\Users\kelly\Myncel_Project\myncel-webview with appId
+// `com.myncel.app`. Always use the published id here so the Google
+// Play badge deep-links to the correct listing.
+const ANDROID_PACKAGE = 'com.myncel.app';
 
 export const MOBILE_APP_LINKS = {
   ios: {
