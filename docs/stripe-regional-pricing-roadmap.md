@@ -8,6 +8,21 @@ USD ($49 / $99 / $249) while Stripe checkout auto-localized totals to
 the reviewer's region (PHP ₱7,148 / ₱17,880 / ₱30,335). Same flow,
 two currencies → policy violation.
 
+**Confirmed root cause** (verified in Stripe Dashboard 2026-05-23):
+**Stripe Adaptive Pricing is ON** for this account. That feature
+auto-converts USD list prices to the customer's local currency at
+checkout. The offers page is still rendering hardcoded USD, so the
+two surfaces disagree by design.
+
+This means:
+
+1. We do NOT need to create per-region Stripe Products/Prices to be
+   compliant. Stripe is already handling the charge-side conversion.
+2. We DO need our `/pricing` display to match what Adaptive Pricing
+   will show at checkout for the same region.
+3. Phase 2 (real per-market Prices) becomes optional — a
+   conversion-rate optimization rather than a compliance requirement.
+
 **Today's mitigation** (`fix/play-pricing-compliance`, commits
 `ff28bae` + `ab9a54e` + `f8fb9dc` + `751c1c6`): hide all prominent
 prices inside the Capacitor mobile app. Compliant, ships in hours,
@@ -16,8 +31,8 @@ to leave the app to subscribe.
 
 **Goal of this initiative:** make `/pricing` and the homepage hero
 **show the user's local currency** so the offers page matches the
-checkout cart, then **re-enable in-app pricing** for the mobile app
-once Google has approved at least one build.
+Adaptive Pricing checkout cart, then **re-enable in-app pricing** for
+the mobile app once Google has approved at least one build.
 
 ## What "regional pricing" means here
 
@@ -117,24 +132,35 @@ country-specific promotions.
 
 ## Risks / open questions
 
-1. **Stripe Adaptive Pricing may already be on.** If so, the cart
-   currency is being chosen by Stripe automatically — we don't even
-   control it. Confirm in Stripe Dashboard → Settings → Tax and
-   Pricing → Adaptive Pricing. If on, we either turn it off (and pick
-   a single currency per region) or accept that "$49 USD on the offers
-   page" will always become "₱2,750 PHP" at checkout regardless of
-   what we display, and the only fix is to display the converted PHP
-   on the offers page.
-2. **Card BIN vs IP geo mismatch.** A US expat in Manila has a US
+1. **~~Stripe Adaptive Pricing may already be on.~~** **CONFIRMED ON**
+   (verified in Stripe Dashboard, 2026-05-23). This is the direct
+   cause of the rejection. Phase 1 is therefore mandatory if we want
+   to re-enable in-app pricing after Google approves the current
+   build. Phase 2 (real per-market Prices) becomes purely a
+   conversion-rate / margin optimization, not a compliance issue.
+2. **FX-rate drift between our display and Stripe's checkout.** Our
+   FX source (e.g. exchangerate.host) and Stripe's internal rate will
+   never match exactly. Expect ±1% drift. Three options:
+   - **(a)** Accept the drift and add a "approximate, final amount in
+     local currency" disclaimer near the price grid. Google has not
+     historically flagged ±1% as a policy violation; the rejection
+     was triggered by displaying *different currencies entirely*, not
+     by minor numeric drift.
+   - **(b)** Use Stripe's `/v1/exchange_rates` API (Connect-only;
+     check if it's enabled on this account before relying on it).
+   - **(c)** Display dual prices: "$49 USD · billed as ₱2,750 in PH".
+     Sidesteps FX drift because the USD anchor is always identical
+     to the system of record. Recommended path.
+3. **Card BIN vs IP geo mismatch.** A US expat in Manila has a US
    credit card and a PH IP. They'll see PHP prices but their card
    charges in USD. Stripe handles this gracefully (charges in PHP,
    bank does FX), but it can confuse users. The "Prices shown in PHP
    based on your location" note + the manual currency switcher
    addresses this.
-3. **VAT compliance is not optional in EU/UK.** Phase 2 should be
+4. **VAT compliance is not optional in EU/UK.** Phase 2 should be
    gated on having Stripe Tax + VAT registration sorted, otherwise
    we're collecting VAT illegally in markets we're not registered in.
-4. **Mobile re-enablement timing.** Don't push a build to Google Play
+5. **Mobile re-enablement timing.** Don't push a build to Google Play
    that re-enables in-app pricing until Phase 1 is verified across
    ≥3 regions. Re-rejection costs another 3–7 day review.
 
