@@ -1,78 +1,73 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useIsCapacitorWebview } from '@/lib/use-capacitor-webview';
 
 /**
  * MobileSplashOverlay
  *
- * Renders a full-screen branded splash inside the Capacitor WebView for
- * a guaranteed 2 seconds on every cold load. This is much more reliable
- * than the native @capacitor/splash-screen plugin, which behaves
- * inconsistently across vendor skins (e.g. Samsung One UI strips the
- * launch theme and replaces it with its own icon-zoom; Sony preserves
- * it, etc.).
+ * A guaranteed-visible 2-second branded splash rendered inside the
+ * Capacitor WebView. Used INSTEAD OF the native @capacitor/splash-screen
+ * plugin because the native plugin's behaviour is inconsistent across
+ * vendor skins (Samsung One UI overrides the launch theme; Sony does
+ * not; etc.).
  *
- * We render this only when the page is loaded inside the Capacitor
- * shell (detected via window.Capacitor.isNativePlatform() OR the
- * "MyncelApp/" UA token). On the public website it's a no-op.
- *
- * Once the splash duration elapses AND the document is interactive,
- * we fade out and unmount.
+ * Implementation notes:
+ *   - Detection runs on the CLIENT only (no SSR mismatch). The overlay
+ *     is initially hidden and only shown after we confirm we're in the
+ *     Capacitor WebView. This way the splash never accidentally
+ *     appears on the public website.
+ *   - Dismissal is on a HARD TIMER (1.8s) — no readystatechange logic,
+ *     no event listeners that could fail to fire. If the WebView is
+ *     alive enough to render this component, it's alive enough to
+ *     dismiss it 1.8s later.
+ *   - We use a CSS class fade-out so the dismiss is smooth.
+ *   - The splash is rendered ABOVE the page (z-index: 2147483647) so
+ *     it's never possible for the page underneath to "leak" through.
  */
 
-const MIN_VISIBLE_MS = 2000;
+const SHOW_MS = 1800;
+const FADE_MS = 350;
+
+function detectCapacitor(): boolean {
+  if (typeof window === 'undefined') return false;
+  const cap = (window as any).Capacitor;
+  if (cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()) {
+    return true;
+  }
+  if (typeof navigator !== 'undefined' && /MyncelApp\//i.test(navigator.userAgent || '')) {
+    return true;
+  }
+  return false;
+}
+
+type Phase = 'hidden' | 'visible' | 'fading';
 
 export default function MobileSplashOverlay() {
-  const isMobileApp = useIsCapacitorWebview();
-  const [visible, setVisible] = useState(true);
-  const [fading, setFading] = useState(false);
+  const [phase, setPhase] = useState<Phase>('hidden');
 
   useEffect(() => {
-    if (!isMobileApp) {
-      setVisible(false);
+    // Only run client-side. Detect once after mount.
+    if (!detectCapacitor()) {
+      setPhase('hidden');
       return;
     }
-    const startedAt = Date.now();
-    let cancelled = false;
+    setPhase('visible');
 
-    const dismiss = () => {
-      if (cancelled) return;
-      const elapsed = Date.now() - startedAt;
-      const remaining = Math.max(0, MIN_VISIBLE_MS - elapsed);
-      window.setTimeout(() => {
-        if (cancelled) return;
-        setFading(true);
-        window.setTimeout(() => {
-          if (!cancelled) setVisible(false);
-        }, 350); // matches the CSS transition
-      }, remaining);
-    };
+    const fadeTimer = window.setTimeout(() => {
+      setPhase('fading');
+    }, SHOW_MS);
 
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      dismiss();
-    } else {
-      const onReady = () => dismiss();
-      document.addEventListener('readystatechange', onReady, { once: true });
-      window.addEventListener('load', onReady, { once: true });
-    }
-
-    // Hard upper bound so a stuck page never traps the user behind the splash
-    const safety = window.setTimeout(() => {
-      if (cancelled) return;
-      setFading(true);
-      window.setTimeout(() => {
-        if (!cancelled) setVisible(false);
-      }, 350);
-    }, 6000);
+    const hideTimer = window.setTimeout(() => {
+      setPhase('hidden');
+    }, SHOW_MS + FADE_MS);
 
     return () => {
-      cancelled = true;
-      window.clearTimeout(safety);
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(hideTimer);
     };
-  }, [isMobileApp]);
+  }, []);
 
-  if (!isMobileApp || !visible) return null;
+  if (phase === 'hidden') return null;
 
   return (
     <div
@@ -80,18 +75,17 @@ export default function MobileSplashOverlay() {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 2147483647, // sit above absolutely everything
+        zIndex: 2147483647,
         background: '#ffffff',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        opacity: fading ? 0 : 1,
-        transition: 'opacity 350ms ease-out',
-        pointerEvents: fading ? 'none' : 'auto',
+        opacity: phase === 'fading' ? 0 : 1,
+        transition: `opacity ${FADE_MS}ms ease-out`,
+        pointerEvents: phase === 'fading' ? 'none' : 'auto',
       }}
     >
-      {/* Shield logo */}
       <div
         style={{
           width: 96,
@@ -120,8 +114,6 @@ export default function MobileSplashOverlay() {
           <path d="M9 12l2 2 4-4" />
         </svg>
       </div>
-
-      {/* Wordmark */}
       <div
         style={{
           fontSize: 28,
@@ -134,8 +126,6 @@ export default function MobileSplashOverlay() {
       >
         Myncel
       </div>
-
-      {/* Tagline */}
       <div
         style={{
           marginTop: 8,
