@@ -319,9 +319,20 @@ export default function BillingClient({
   // on the web. NOTE: this must come AFTER all useState/useEffect
   // calls above to keep React Hooks rules happy.
   if (isMobileApp) {
+    // Treat any non-trial / non-free tier as "paid" so the fallback's
+    // status line says "Subscription active" even when Stripe metadata
+    // hasn't synced subscriptionStatus yet (e.g. admin-provisioned).
+    const upper = (plan || '').toString().toUpperCase();
+    const isPaidPlan =
+      upper !== 'TRIAL' &&
+      upper !== 'TRIAL_RESTRICTED' &&
+      upper !== 'FREE' &&
+      upper !== '';
     return (
       <MobileBillingFallback
         planName={planData.name}
+        plan={plan}
+        isPaidPlan={isPaidPlan}
         trialDaysLeft={trialDaysLeft}
         isActiveTrial={isActiveTrial}
         isTrialExpired={isTrialExpired}

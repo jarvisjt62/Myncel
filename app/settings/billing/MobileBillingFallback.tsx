@@ -7,37 +7,19 @@
  * is signed into the Myncel Capacitor mobile app (com.myncel.app or
  * iOS).
  *
- * Why: Google Play rejected build #2 again on 2026-05-24 with:
- *   "Currency differences with prominent display price. Ensure that
- *   currency displayed is consistent through multiple screens such as
- *   offers page and payment cart within the purchase flow and is
- *   appropriately localized for each country that your app is
- *   targeting."
- *
- * The /settings/billing page renders hard-coded USD prices on both
- * the plan comparison cards AND in the checkout modal header. Until
- * we ship Stripe regional pricing that localizes BOTH surfaces
- * consistently, the safest fix is to not show ANY price inside the
- * mobile app at all and direct the user to manage their plan on the
- * website.
- *
- * This component intentionally shows:
- *   - The user's current plan name (text only, e.g. "Professional")
- *   - The trial status if applicable (text only, "X days remaining")
- *   - NO numeric price, NO currency symbol, NO "/mo" suffix
- *   - NO upgrade/checkout buttons
- *   - A CTA that opens myncel.com/settings/billing in the device
- *     browser where pricing is shown consistently in USD on the live
- *     web app (no in-app currency mismatch).
- *
- * This keeps the app compliant with both:
- *   - Google Play "Subscriptions: currency differences" policy
- *   - Apple App Store "external purchase links" rules (the user has
- *     to intentionally leave the app and visit the web to subscribe)
+ * Shows a price-free view (no $, no /mo, no checkout buttons) so
+ * Google Play / Apple App Store reviewers never see hardcoded USD
+ * prices inside the binary. CTA opens myncel.com in the OS browser.
  */
+
+import { useState } from 'react';
 
 interface Props {
   planName: string;
+  /** Raw plan tier (TRIAL, TRIAL_RESTRICTED, BASIC, PROFESSIONAL, ENTERPRISE, FREE…). */
+  plan?: string | null;
+  /** True when on PROFESSIONAL/BASIC/ENTERPRISE/etc. paid tiers (i.e. NOT trial/free). */
+  isPaidPlan?: boolean;
   trialDaysLeft: number;
   isActiveTrial: boolean;
   isTrialExpired: boolean;
@@ -46,29 +28,41 @@ interface Props {
 
 export default function MobileBillingFallback({
   planName,
+  plan,
+  isPaidPlan,
   trialDaysLeft,
   isActiveTrial,
   isTrialExpired,
   subscriptionStatus,
 }: Props) {
+  const [opening, setOpening] = useState(false);
   // Build a friendly, price-free status string.
+  // ORDER MATTERS — most specific cases first.
   let statusLine: string;
   let statusTone: 'ok' | 'warn' | 'info' = 'info';
+
   if (isActiveTrial) {
     statusLine = `Free trial · ${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} remaining`;
     statusTone = 'warn';
-  } else if (isTrialExpired) {
+  } else if (isTrialExpired || plan === 'TRIAL_RESTRICTED') {
     statusLine = 'Your trial has ended. Choose a plan to keep using Myncel.';
     statusTone = 'warn';
-  } else if (subscriptionStatus === 'active') {
-    statusLine = 'Subscription active';
-    statusTone = 'ok';
   } else if (subscriptionStatus === 'past_due') {
     statusLine = 'Payment past due — please update from a web browser';
     statusTone = 'warn';
   } else if (subscriptionStatus === 'canceled') {
     statusLine = 'Subscription canceled';
     statusTone = 'warn';
+  } else if (
+    subscriptionStatus === 'active' ||
+    subscriptionStatus === 'trialing' ||
+    isPaidPlan
+  ) {
+    // Treat any paid-tier plan name as active even when Stripe metadata
+    // hasn't synced subscriptionStatus yet (common right after checkout
+    // or for accounts provisioned manually by an admin).
+    statusLine = 'Subscription active';
+    statusTone = 'ok';
   } else {
     statusLine = 'No active subscription';
     statusTone = 'info';
@@ -80,6 +74,68 @@ export default function MobileBillingFallback({
       : statusTone === 'warn'
       ? '#f59e0b'
       : '#6366f1';
+
+  const billingUrl = 'https://www.myncel.com/settings/billing?from=app';
+
+  /**
+   * Open the billing URL in the OS browser (Custom Tab on Android,
+   * SFSafariViewController on iOS), NOT inside the Capacitor webview.
+   *
+   * Strategy order:
+   *   1. window.Capacitor.Plugins.Browser.open() — injected by the
+   *      native bridge when @capacitor/browser is in the shell.
+   *      Opens an in-app Custom Tab so the user stays "in" Myncel
+   *      visually but the Custom Tab handles navigation, NOT our
+   *      webview.
+   *   2. window.open(url, '_system') — Capacitor convention that
+   *      forces external browser handling. Works for cross-origin
+   *      links; can be unreliable for same-origin (myncel.com →
+   *      myncel.com) so we keep this as a fallback only.
+   *   3. window.location.href fallback — last resort.
+   *
+   * We do NOT use `<a target="_blank">` because Capacitor swallows
+   * `_blank` and just reloads the URL inside the same webview —
+   * which is exactly the bug the user reported ("button does
+   * nothing").
+   */
+  async function openBillingExternal(e: React.MouseEvent) {
+    e.preventDefault();
+    if (opening) return;
+    setOpening(true);
+    try {
+      // Strategy 1: Capacitor Browser plugin via the global bridge.
+      // No dynamic import — that would fail because @capacitor/browser
+      // isn't in the website's bundle, only in the native shell.
+      const cap = (window as any)?.Capacitor;
+      const browserPlugin = cap?.Plugins?.Browser;
+      if (browserPlugin && typeof browserPlugin.open === 'function') {
+        try {
+          await browserPlugin.open({
+            url: billingUrl,
+            presentationStyle: 'popover',
+          });
+          return;
+        } catch (err) {
+          console.warn('[myncel-billing] Capacitor Browser.open failed', err);
+          // fall through
+        }
+      }
+
+      // Strategy 2: Capacitor's _system target convention
+      try {
+        const opened = window.open(billingUrl, '_system');
+        if (opened) return;
+      } catch {
+        /* fall through */
+      }
+
+      // Strategy 3: plain navigation (last resort — leaves the app)
+      window.location.href = billingUrl;
+    } finally {
+      // Re-enable in case the user comes back without a full reload
+      setTimeout(() => setOpening(false), 1500);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -161,13 +217,15 @@ export default function MobileBillingFallback({
         </p>
 
         <a
-          href="https://www.myncel.com/settings/billing?from=app"
+          href={billingUrl}
+          onClick={openBillingExternal}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[15px] font-semibold text-white shadow-sm transition"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[15px] font-semibold text-white shadow-sm transition disabled:opacity-60"
           style={{ background: '#635bff' }}
+          aria-busy={opening}
         >
-          Open billing on myncel.com
+          {opening ? 'Opening browser…' : 'Open billing on myncel.com'}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
