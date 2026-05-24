@@ -1,6 +1,7 @@
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import Link from 'next/link'
+import PriceGateMobile from '../../components/PriceGateMobile'
 
 export const metadata = {
   title: 'The Hidden Cost of Reactive Maintenance: What Your Spreadsheet Isn\'t Telling You',
@@ -16,6 +17,7 @@ export const metadata = {
 
 export default function BlogPost() {
   return (
+    <PriceGateMobile>
     <div className="min-h-screen bg-white">
       <Navbar />
 
@@ -272,5 +274,6 @@ export default function BlogPost() {
 
       <Footer />
     </div>
+    </PriceGateMobile>
   )
 }

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AchForm from './AchForm';
+import MobileBillingFallback from './MobileBillingFallback';
+import { useIsCapacitorWebview } from '@/lib/use-capacitor-webview';
 
 interface PlanDef {
   id: string;
@@ -129,6 +131,13 @@ export default function BillingClient({
   // During an active TRIAL, we never show any plan as "current" — user hasn't chosen a paid plan yet
   const isActiveTrial = plan === 'TRIAL' && !isTrialExpired;
   const router = useRouter();
+  // Detect Capacitor mobile app (Android/iOS) to gate the price-bearing
+  // surfaces. Google Play rejected build #2 again on 2026-05-24 for
+  // "currency differences with prominent display price" — both the
+  // /settings/billing plan listing and the checkout modal were
+  // rendering hardcoded USD prices. Until Stripe regional pricing
+  // ships, we render a price-free fallback inside the mobile app.
+  const isMobileApp = useIsCapacitorWebview();
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -303,6 +312,23 @@ export default function BillingClient({
 
   const badge = statusBadge();
   const checkoutPlan = plans.find(p => p.id === checkoutPlanId);
+
+  // Mobile-app gate: render a price-free fallback so Google Play /
+  // Apple App Store reviewers never see hardcoded USD prices inside
+  // the binary. The user can still tap through to manage their plan
+  // on the web. NOTE: this must come AFTER all useState/useEffect
+  // calls above to keep React Hooks rules happy.
+  if (isMobileApp) {
+    return (
+      <MobileBillingFallback
+        planName={planData.name}
+        trialDaysLeft={trialDaysLeft}
+        isActiveTrial={isActiveTrial}
+        isTrialExpired={isTrialExpired}
+        subscriptionStatus={subscriptionStatus}
+      />
+    );
+  }
 
   return (
     <div className="space-y-8">

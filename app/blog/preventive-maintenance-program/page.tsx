@@ -1,6 +1,7 @@
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import Link from 'next/link'
+import PriceGateMobile from '../../components/PriceGateMobile'
 
 export const metadata = {
   title: 'How to Build a Preventive Maintenance Program for a Small Manufacturing Shop',
@@ -16,6 +17,7 @@ export const metadata = {
 
 export default function PreventiveMaintenanceProgram() {
   return (
+    <PriceGateMobile>
     <div className="min-h-screen bg-white">
       <Navbar />
 
@@ -289,5 +291,6 @@ export default function PreventiveMaintenanceProgram() {
 
       <Footer />
     </div>
+    </PriceGateMobile>
   )
 }

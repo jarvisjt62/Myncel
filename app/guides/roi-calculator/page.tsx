@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import Link from 'next/link'
+import PriceGateMobile from '../../components/PriceGateMobile'
 
 export default function ROICalculator() {
   const [formData, setFormData] = useState({
@@ -57,6 +58,7 @@ export default function ROICalculator() {
   const paybackMonths = myncelAnnualCost / (totalAnnualSavings / 12)
 
   return (
+    <PriceGateMobile>
     <div className="min-h-screen bg-white">
       <Navbar />
 
@@ -347,5 +349,6 @@ export default function ROICalculator() {
 
       <Footer />
     </div>
+    </PriceGateMobile>
   )
 }
