@@ -2015,7 +2015,7 @@ function DashboardClientInner({ user, data }: Props) {
         )}
 
         <button
-          onClick={() => signOut({ callbackUrl: '/' })}
+          onClick={() => signOutSmart()}
           className="w-full text-xs text-[var(--text-muted)] hover:text-red-500 flex items-center gap-1.5 transition-colors"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

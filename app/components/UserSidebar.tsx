@@ -586,7 +586,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
             {/* Sign out */}
             <div style={{ borderTop: '1px solid var(--border)' }}>
               <button
-                onClick={() => { setAccountOpen(false); signOut({ callbackUrl: '/' }); }}
+                onClick={() => { setAccountOpen(false); signOutSmart(); }}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
                 style={{ color: 'var(--text-secondary)' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(239,68,68,0.08)'; (e.currentTarget as HTMLElement).style.color = '#ef4444'; }}
