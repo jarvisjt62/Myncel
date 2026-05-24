@@ -23,6 +23,8 @@ import { useEffect, useState } from 'react';
  *   - We use a CSS class fade-out so the dismiss is smooth.
  *   - The splash is rendered ABOVE the page (z-index: 2147483647) so
  *     it's never possible for the page underneath to "leak" through.
+ *   - Uses the real Myncel logo from /logo.png so the splash matches
+ *     the rest of the brand instead of a generic shield icon.
  */
 
 const SHOW_MS = 1800;
@@ -86,34 +88,19 @@ export default function MobileSplashOverlay() {
         pointerEvents: phase === 'fading' ? 'none' : 'auto',
       }}
     >
-      <div
+      {/* Real Myncel logo */}
+      <img
+        src="/logo.png"
+        alt="Myncel"
         style={{
           width: 96,
           height: 96,
-          borderRadius: 24,
-          background: 'linear-gradient(135deg, #635bff 0%, #4c44d6 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 12px 32px rgba(99,91,255,0.25)',
+          objectFit: 'contain',
           marginBottom: 20,
+          // subtle drop shadow for visual weight on white background
+          filter: 'drop-shadow(0 8px 24px rgba(99,91,255,0.15))',
         }}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          width="52"
-          height="52"
-          fill="none"
-          stroke="#ffffff"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          <path d="M9 12l2 2 4-4" />
-        </svg>
-      </div>
+      />
       <div
         style={{
           fontSize: 28,

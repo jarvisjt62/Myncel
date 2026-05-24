@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AuthRouteClass from '../components/AuthRouteClass';
+import { useIsCapacitorWebview } from '@/lib/use-capacitor-webview';
 
 declare global {
   interface Window {
@@ -22,6 +23,9 @@ export default function SignUp() {
   const [platformStatus, setPlatformStatus] = useState<{ allowed: boolean; reason?: string; trialDays?: number; checking: boolean }>({ allowed: true, checking: true });
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
+  // In the Capacitor mobile app there is no public landing page, so the
+  // brand mark renders as plain text instead of a link.
+  const isMobileApp = useIsCapacitorWebview();
 
   useEffect(() => {
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
@@ -157,10 +161,17 @@ export default function SignUp() {
       {/* Nav */}
       <nav className="auth-mobile-nav bg-white border-b border-[#e6ebf1] px-4 pb-3 sm:px-6 sm:pb-4">
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg text-[#0a2540]">
-            <img src="/logo.png" alt="Myncel" className="w-8 h-8" />
-            Myncel
-          </Link>
+          {isMobileApp ? (
+            <div className="flex items-center gap-2 font-bold text-lg text-[#0a2540]">
+              <img src="/logo.png" alt="Myncel" className="w-8 h-8" />
+              Myncel
+            </div>
+          ) : (
+            <Link href="/" className="flex items-center gap-2 font-bold text-lg text-[#0a2540]">
+              <img src="/logo.png" alt="Myncel" className="w-8 h-8" />
+              Myncel
+            </Link>
+          )}
           <p className="text-xs sm:text-sm text-[#425466]">
             Already have an account?{' '}
             <Link href="/signin" className="text-[#635bff] font-medium hover:underline">Sign in →</Link>

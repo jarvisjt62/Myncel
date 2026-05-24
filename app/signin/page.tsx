@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import AuthRouteClass from '../components/AuthRouteClass';
+import { useIsCapacitorWebview } from '@/lib/use-capacitor-webview';
 
 declare global {
   interface Window {
@@ -25,6 +26,11 @@ function SignInForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   const message = searchParams.get('message');
+  // In the Capacitor mobile app there is nowhere meaningful to link
+  // to from the auth header — the public landing page is hidden in
+  // the mobile UX. So we render the brand mark as a plain (unlinked)
+  // element on mobile, and as a link on the public website.
+  const isMobileApp = useIsCapacitorWebview();
 
   useEffect(() => {
     const rememberedEmail = localStorage.getItem('myncel_remembered_email');
@@ -132,10 +138,19 @@ function SignInForm() {
       {/* Nav */}
       <nav className="auth-mobile-nav bg-white border-b border-[#e6ebf1] px-4 pb-3 sm:px-6 sm:pb-4">
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg text-[#0a2540]">
-            <img src="/logo.png" alt="Myncel" className="w-8 h-8" />
-            Myncel
-          </Link>
+          {isMobileApp ? (
+            // In the mobile app there's no public landing page, so the
+            // brand mark is a non-interactive element rather than a link.
+            <div className="flex items-center gap-2 font-bold text-lg text-[#0a2540]">
+              <img src="/logo.png" alt="Myncel" className="w-8 h-8" />
+              Myncel
+            </div>
+          ) : (
+            <Link href="/" className="flex items-center gap-2 font-bold text-lg text-[#0a2540]">
+              <img src="/logo.png" alt="Myncel" className="w-8 h-8" />
+              Myncel
+            </Link>
+          )}
           <p className="text-xs sm:text-sm text-[#425466]">
             Don't have an account?{' '}
             <Link href="/signup" className="text-[#635bff] font-medium hover:underline">Sign up free →</Link>
