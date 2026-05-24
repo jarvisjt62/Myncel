@@ -4,6 +4,9 @@ Submission ID: 1e279a14-b13a-432f-abbc-4166de9bb8a0
 Reviewed: May 24, 2026 on iPad Air 11-inch (M3)
 Version reviewed: 1.0 (12)
 
+Status: **FIXES SHIPPED** — both commits merged to `main` and pushed.
+Awaiting: production DB migration + screen recording + reviewer reply.
+
 ## Issue 1 — Guideline 2.3.10 (Accurate Metadata)
 
 > "Revise the app's binary to remove Android references."
@@ -11,48 +14,103 @@ Version reviewed: 1.0 (12)
 The Capacitor iOS shell loads the live website. Reviewer saw Android
 references on user-facing pages reachable from inside the app.
 
-- [ ] Extend `useIsCapacitorWebview()` hook to also report platform
+- [x] Extend `useIsCapacitorWebview()` hook to also report platform
       (`ios` / `android` / `web`) via `Capacitor.getPlatform()`
-- [ ] Build `<HideOnIOSApp>` wrapper component (mirror of `<PriceGateMobile>`)
-- [ ] Patch `app/products/mobile/page.tsx` — title, meta, copy mention
-      "Native iOS & Android" + "Get it from Google Play"
-- [ ] Patch `app/components/Navbar.tsx` — mobile mega-menu copy mentions
-      "Native iOS and Android apps"
-- [ ] Patch `app/HomePageClient.tsx` — `heroMetrics` "iOS + Android" stat
-- [ ] Verify TypeScript clean
+      → `lib/use-capacitor-webview.ts`
+- [x] Build `<HideOnIOSApp>` / `<HideOnAndroidApp>` /
+      `<ShowOnlyOnPlatform>` wrappers
+      → `app/components/PlatformGate.tsx`
+- [x] Patch `app/products/mobile/page.tsx` — split into server shell +
+      `MobilePageBody` client component that swaps title/copy/badges
+      based on platform (iOS shows App Store only, Android shows
+      Google Play only, web shows both)
+- [x] Patch `app/components/Navbar.tsx` — mobile mega-menu card copy
+      now switches between "Native iOS app", "Native Android app", and
+      "Native iOS and Android apps"; "Get the Myncel app" download
+      block in the drawer is hidden on both iOS and Android shells
+- [x] Patch `app/HomePageClient.tsx` — `heroMetrics` "Mobile ready"
+      stat now reads "iOS native" / "Android native" / "iOS + Android"
+- [x] Verify TypeScript clean (`npx tsc --noEmit` returns 0 errors)
+
+Commit: `8cf83c2 fix(apple-2.3.10): hide Android references inside iOS
+Capacitor app`
 
 ## Issue 2 — Guideline 5.1.1(v) (Account Deletion)
 
 > "App supports account creation but does not include an option to
 > initiate account deletion."
 
-Required behavior (per user):
-- 14-day grace period (Option A2)
+Behavior shipped:
+- 14-day grace period (Option A2) — user can recover via support
 - Password re-authentication required to initiate
-- Block OWNERs of multi-user orgs (must transfer ownership first)
-- In-app, completable without leaving the app
+- Blocks OWNERs of multi-user orgs (must transfer ownership first)
+- Sign-in is blocked while deletion is pending (clear error message
+  with days remaining)
+- Hard delete via Vercel cron after 14 days
 
-- [ ] Prisma schema: add `deletionRequestedAt` field on User model
-- [ ] API route: `POST /api/user/delete-account` (re-auth + initiate)
-- [ ] API route: `POST /api/user/delete-account/cancel` (within grace)
-- [ ] Block sign-in for users with `deletionRequestedAt` set
-      (NextAuth callback)
-- [ ] Cron-style endpoint: `POST /api/cron/purge-deleted-accounts`
-      (executes hard delete after 14 days)
-- [ ] Settings UI: new "Delete Account" section in
-      `app/settings/security/page.tsx` (or new `/settings/account/`)
-- [ ] Confirmation modal with password field
-- [ ] Post-deletion redirect + sign-out
-- [ ] Verify TypeScript clean
+- [x] Prisma schema: add `deletionRequestedAt DateTime?` on User model
+      → `prisma/schema.prisma` + `prisma/migrations_manual.sql`
+- [x] API route: `POST /api/user/delete-account` (re-auth + initiate)
+      → `app/api/user/delete-account/route.ts`
+- [x] API route: `POST /api/user/delete-account/cancel`
+      → `app/api/user/delete-account/cancel/route.ts`
+- [x] Block sign-in for users with `deletionRequestedAt` set
+      → patched in `lib/auth.ts` Credentials authorize callback
+- [x] Cron endpoint: `GET /api/cron/purge-deleted-accounts`
+      (vercel-cron / Bearer / ?token= auth — same pattern as
+      `/api/cron/notifications`); hard-deletes after 14 days
+      → `app/api/cron/purge-deleted-accounts/route.ts`
+- [x] Cron schedule registered in `vercel.json` — daily 03:00 UTC
+- [x] Settings UI: red-bordered "Delete Account" section
+      → `app/settings/security/DeleteAccountSection.tsx` + mounted in
+      `app/settings/security/page.tsx`
+- [x] Confirmation modal with type-DELETE field + password field
+- [x] Post-deletion redirect to `/account-deleted` + sign-out
+      → `app/account-deleted/page.tsx`
+- [x] Verify TypeScript clean
 
-## Verification
+Commit: `2ada53b fix(apple-5.1.1v): add in-app account deletion with
+14-day grace period`
 
-- [ ] All TypeScript passes (`npx tsc --noEmit`)
-- [ ] Manual test the delete flow on local
-- [ ] Commit on feature branch `fix/apple-resubmission`
-- [ ] Merge to main, push, wait for Vercel
-- [ ] Provide user with screen-recording instructions for Apple
-- [ ] Provide user with Apple appeal/resubmission text
+## Production deployment checklist
+
+- [x] Merge `fix/apple-resubmission` → `main` (fast-forward)
+- [x] Push `main` to GitHub (Vercel auto-deploys)
+- [ ] **Run DB migration on production Postgres** before reviewer
+      retests, otherwise the API will fail with "column
+      `deletionRequestedAt` does not exist":
+
+      ```sql
+      ALTER TABLE "users"
+        ADD COLUMN IF NOT EXISTS "deletionRequestedAt" TIMESTAMP(3);
+
+      CREATE INDEX IF NOT EXISTS "users_deletionRequestedAt_idx"
+        ON "users" ("deletionRequestedAt")
+        WHERE "deletionRequestedAt" IS NOT NULL;
+      ```
+
+      (This is already in `prisma/migrations_manual.sql` — run it the
+      same way you ran prior manual migrations.)
+- [ ] Confirm `CRON_SECRET` env var exists on Vercel (already used by
+      `/api/cron/notifications`, so should already be set)
+- [ ] Smoke test on production:
+      1. Sign in as a non-OWNER (or solo-owner) account
+      2. Settings → Security → scroll to Delete Account
+      3. Click "Delete account" → type DELETE + password → submit
+      4. Confirm redirect to `/account-deleted`
+      5. Try to sign back in → should get the
+         "scheduled for deletion in 14 days" error
+- [ ] No iOS rebuild required — Capacitor shell loads the live site,
+      so the Vercel deploy is the binary change
+
+## Reviewer-facing deliverables (next step for user)
+
+- [ ] Record screen recording on physical iOS device showing:
+      sign-in → Settings → Security → Delete Account → modal →
+      `/account-deleted` page (Apple explicitly required this)
+- [ ] Reply to App Review in App Store Connect, attach the recording,
+      and paste the reply text from
+      `docs/apple-resubmission-reply.md`
 
 ## Out of scope (per user: "just do what Apple requires")
 
