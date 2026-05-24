@@ -26,7 +26,6 @@
 
 import { useEffect, useState } from 'react';
 import { signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 
 interface DeletionStatus {
   pending: boolean;
@@ -38,7 +37,6 @@ interface DeletionStatus {
 }
 
 export default function DeleteAccountSection() {
-  const router = useRouter();
   const [status, setStatus] = useState<DeletionStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
   const [statusError, setStatusError] = useState<string | null>(null);
@@ -48,6 +46,14 @@ export default function DeleteAccountSection() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Once the API call succeeds and the user is signed out we flip to a
+  // success view inside the dialog. This guarantees the App Review
+  // reviewer sees a clear, persistent visual confirmation that
+  // deletion has been completed before we hard-navigate away to
+  // /account-deleted. Without this in-modal step the page can flash
+  // through too quickly to be captured cleanly in a screen recording.
+  const [deleted, setDeleted] = useState(false);
 
   // Fetch deletion status on mount.
   useEffect(() => {
@@ -99,9 +105,25 @@ export default function DeleteAccountSection() {
         return;
       }
 
-      // Sign the user out and redirect to a confirmation page.
-      await signOut({ redirect: false });
-      router.push('/account-deleted');
+      // Sign the user out, then flip the dialog to its success
+      // state. We keep the dialog mounted with a clear "Account
+      // deleted" confirmation so the reviewer (and the user) can
+      // visibly see that the action completed. After ~2.5s we hard-
+      // navigate to /account-deleted via window.location.replace so
+      // that no client-side router transition or auth-aware layout
+      // effect can intercept the navigation.
+      try {
+        await signOut({ redirect: false });
+      } catch {
+        // Even if signOut throws (e.g. transient network) the server
+        // has already invalidated the session in the DB, so we still
+        // want to show the confirmation and hard-redirect.
+      }
+      setDeleted(true);
+      setSubmitting(false);
+      setTimeout(() => {
+        window.location.replace('/account-deleted');
+      }, 2500);
     } catch (err: any) {
       setSubmitError(err?.message || 'Network error.');
       setSubmitting(false);
@@ -205,6 +227,48 @@ export default function DeleteAccountSection() {
           aria-labelledby="delete-account-dialog-title"
         >
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+            {deleted ? (
+              // Success state — kept visible long enough for the user
+              // (and Apple's screen recording) to see clearly.
+              <div className="py-2 text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-8 w-8 text-green-600"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">
+                  Account deleted
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-gray-700">
+                  Your Myncel account has been scheduled for permanent
+                  deletion in 14 days and you have been signed out from
+                  all devices.
+                </p>
+                <p className="mt-3 text-xs text-gray-500">
+                  Redirecting…
+                </p>
+                <div className="mt-5">
+                  <button
+                    type="button"
+                    onClick={() => window.location.replace('/account-deleted')}
+                    className="px-4 py-2 text-sm font-semibold text-white bg-[#635bff] hover:bg-[#5246e5] rounded-lg"
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
             <h2
               id="delete-account-dialog-title"
               className="text-lg font-bold text-red-700"
@@ -286,6 +350,8 @@ export default function DeleteAccountSection() {
                 {submitting ? 'Deleting…' : 'Permanently delete'}
               </button>
             </div>
+              </>
+            )}
           </div>
         </div>
       )}

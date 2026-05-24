@@ -20,7 +20,7 @@ export default async function AdminOrgControlPage({ params }: { params: { orgId:
     include: {
       _count: { select: { users: true, machines: true, workOrders: true, alerts: true, parts: true } },
       users: {
-        select: { id: true, name: true, email: true, role: true, createdAt: true, lastLoginAt: true, twoFactorEnabled: true, failedLoginAttempts: true },
+        select: { id: true, name: true, email: true, role: true, createdAt: true, lastLoginAt: true, twoFactorEnabled: true, failedLoginAttempts: true, deletionRequestedAt: true },
         orderBy: { createdAt: 'asc' },
       },
       machines: {
@@ -87,6 +87,7 @@ export default async function AdminOrgControlPage({ params }: { params: { orgId:
           lastLoginAt: u.lastLoginAt?.toISOString() ?? null,
           twoFactorEnabled: u.twoFactorEnabled,
           failedLoginAttempts: u.failedLoginAttempts,
+          deletionRequestedAt: (u as any).deletionRequestedAt?.toISOString() ?? null,
         })),
         machines: org.machines.map(m => ({
           id: m.id,

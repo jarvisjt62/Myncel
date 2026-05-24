@@ -14,7 +14,7 @@ interface OrgData {
   adminNotes: string | null; suspendedReason: string | null; suspendedAt: string | null;
   createdAt: string;
   counts: { users: number; machines: number; workOrders: number; alerts: number; parts: number };
-  users: Array<{ id: string; name: string; email: string; role: string; createdAt: string; lastLoginAt: string | null; twoFactorEnabled: boolean; failedLoginAttempts: number }>;
+  users: Array<{ id: string; name: string; email: string; role: string; createdAt: string; lastLoginAt: string | null; twoFactorEnabled: boolean; failedLoginAttempts: number; deletionRequestedAt?: string | null }>;
   machines: Array<{ id: string; name: string; status: string; category: string; location: string | null; createdAt: string }>;
   workOrders: Array<{ id: string; woNumber: string; title: string; status: string; priority: string; createdAt: string; completedAt: string | null }>;
   alerts: Array<{ id: string; type: string; title: string; severity: string; isResolved: boolean; createdAt: string }>;
@@ -353,13 +353,20 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
               </thead>
               <tbody>
                 {org.users.map((u,i)=>(
-                  <tr key={u.id} style={{ borderBottom:i<org.users.length-1?'1px solid var(--border)':'none' }}>
+                  <tr key={u.id} style={{ borderBottom:i<org.users.length-1?'1px solid var(--border)':'none', background: u.deletionRequestedAt ? 'rgba(245,158,11,0.04)' : undefined }}>
                     <td style={{ padding:'11px 14px' }}>
                       <div style={{ display:'flex',alignItems:'center',gap:8 }}>
                         <div style={{ width:30,height:30,borderRadius:'50%',background:ROLE_COLORS[u.role]+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:ROLE_COLORS[u.role],flexShrink:0 }}>
                           {u.name.charAt(0)}
                         </div>
-                        <span style={{ fontSize:13,fontWeight:600,color:'var(--text-primary)' }}>{u.name}</span>
+                        <div style={{ display:'flex',flexDirection:'column',gap:2 }}>
+                          <span style={{ fontSize:13,fontWeight:600,color: u.deletionRequestedAt ? 'var(--text-secondary)' : 'var(--text-primary)', textDecoration: u.deletionRequestedAt ? 'line-through' : 'none' }}>{u.name}</span>
+                          {u.deletionRequestedAt && (
+                            <span style={{ fontSize:10,fontWeight:700,color:'#f59e0b',textTransform:'uppercase',letterSpacing:'0.05em' }}>
+                              ⚠ Pending deletion
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td style={{ padding:'11px 14px',fontSize:12,color:'var(--text-secondary)' }}>{u.email}</td>
