@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import { useIsCapacitorWebview } from '../lib/use-capacitor-webview';
+import { useIsCapacitorWebview, useCapacitorPlatform } from '../lib/use-capacitor-webview';
 
 const platformMetrics = [
   { label: 'Trial access', value: '30 days', detail: 'Full product access before you choose a plan' },
@@ -367,6 +367,23 @@ export default function HomePageClient() {
   // differences with prominent display price" policy.
   // See: docs/google-play-pricing-compliance.md
   const isMobileApp = useIsCapacitorWebview();
+  // Distinguish iOS vs Android so we can show the right "Mobile ready"
+  // copy. Apple App Review (Guideline 2.3.10) requires that the iOS
+  // binary not mention Android; the inverse is courteous for Google
+  // Play but not strictly required.
+  const platform = useCapacitorPlatform();
+  const mobileReadyValue =
+    platform === 'ios'
+      ? 'iOS native'
+      : platform === 'android'
+        ? 'Android native'
+        : 'iOS + Android';
+  const mobileReadyDetail =
+    platform === 'ios'
+      ? 'Native iOS app and a mobile-friendly web experience'
+      : platform === 'android'
+        ? 'Native Android app and a mobile-friendly web experience'
+        : 'Native apps and a mobile-friendly web experience';
   // Swap the "Starter plan: $49/mo" hero metric for a price-free
   // alternative when in the mobile app.
   const heroMetrics = isMobileApp
@@ -374,7 +391,7 @@ export default function HomePageClient() {
         { label: 'Trial access', value: '30 days', detail: 'Full product access before you choose a plan' },
         { label: 'Setup time', value: '15 min', detail: 'Add assets, schedules, and team members fast' },
         { label: 'Work visibility', value: 'Real time', detail: 'Live work orders, alerts, and maintenance status' },
-        { label: 'Mobile ready', value: 'iOS + Android', detail: 'Native apps and a mobile-friendly web experience' },
+        { label: 'Mobile ready', value: mobileReadyValue, detail: mobileReadyDetail },
       ]
     : platformMetrics;
 

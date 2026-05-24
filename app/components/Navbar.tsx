@@ -4,11 +4,52 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import AppStoreBadges from './AppStoreBadges';
 import { anyMobileAppLive } from '@/lib/mobile-app-config';
+import { useCapacitorPlatform } from '@/lib/use-capacitor-webview';
+import { ShowOnlyOnPlatform } from './PlatformGate';
 
 type MegaMenuProps = {
   isOpen: boolean;
   onClose: () => void;
 };
+
+// Mobile App featured card in the Products mega-menu.
+// Platform-aware to comply with Apple App Review Guideline 2.3.10
+// (Accurate Metadata) — cannot mention Android inside the iOS binary.
+function ProductsMenuMobileCard({ onClose }: { onClose: () => void }) {
+  const platform = useCapacitorPlatform();
+  const isIOS = platform === 'ios';
+  const isAndroid = platform === 'android';
+  const isWeb = platform === 'web';
+
+  const desc = isIOS
+    ? 'Native iOS app for technicians on the move — plus mobile-friendly web for everyone else.'
+    : isAndroid
+      ? 'Native Android app for technicians on the move — plus mobile-friendly web for everyone else.'
+      : 'Native iOS and Android apps for technicians on the move — plus mobile-friendly web for everyone else.';
+
+  return (
+    <div className="bg-gradient-to-br from-[#f0f4ff] to-[#f8f0ff] rounded-xl p-4">
+      <div className="text-xs font-bold text-[#635bff] uppercase tracking-wider mb-3">New Feature</div>
+      <div className="w-10 h-10 bg-[#635bff] rounded-xl flex items-center justify-center mb-3">
+        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+        </svg>
+      </div>
+      <h4 className="font-bold text-[#0a2540] mb-1">Mobile App</h4>
+      <p className="text-xs text-[#425466] mb-3 leading-relaxed">{desc}</p>
+      {/* Download badges only on the public website, never inside a
+          native shell. */}
+      {isWeb && anyMobileAppLive() && (
+        <div className="mb-3">
+          <AppStoreBadges size="sm" placement="navbar-products-menu" />
+        </div>
+      )}
+      <Link href="/products/mobile" onClick={onClose} className="text-xs font-semibold text-[#635bff] hover:underline">
+        Learn more →
+      </Link>
+    </div>
+  );
+}
 
 const ProductsMenu = ({ isOpen, onClose }: MegaMenuProps) => (
   <div className={`fixed bg-white border border-[#e6ebf1] rounded-2xl shadow-2xl transition-all duration-200 z-50 w-[1024px] max-w-[calc(100vw-2rem)] ${isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
@@ -78,24 +119,7 @@ const ProductsMenu = ({ isOpen, onClose }: MegaMenuProps) => (
       </div>
 
       {/* Column 4 - Featured */}
-      <div className="bg-gradient-to-br from-[#f0f4ff] to-[#f8f0ff] rounded-xl p-4">
-        <div className="text-xs font-bold text-[#635bff] uppercase tracking-wider mb-3">New Feature</div>
-        <div className="w-10 h-10 bg-[#635bff] rounded-xl flex items-center justify-center mb-3">
-          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
-          </svg>
-        </div>
-        <h4 className="font-bold text-[#0a2540] mb-1">Mobile App</h4>
-        <p className="text-xs text-[#425466] mb-3 leading-relaxed">Native iOS and Android apps for technicians on the move — plus mobile-friendly web for everyone else.</p>
-        {anyMobileAppLive() && (
-          <div className="mb-3">
-            <AppStoreBadges size="sm" placement="navbar-products-menu" />
-          </div>
-        )}
-        <Link href="/products/mobile" onClick={onClose} className="text-xs font-semibold text-[#635bff] hover:underline">
-          Learn more →
-        </Link>
-      </div>
+      <ProductsMenuMobileCard onClose={onClose} />
     </div>
   </div>
 );
@@ -451,14 +475,21 @@ export default function Navbar() {
             ]} onClose={() => setMobileOpen(false)} />
 
             {/* Mobile app badges — only renders when feature flags enabled.
-                Especially relevant here since the user is literally on a phone. */}
+                Wrapped in ShowOnlyOnPlatform="web" because inside the
+                native iOS shell the Google Play badge would be an
+                Android reference (App Review 2.3.10) and inside the
+                Android shell the App Store badge is irrelevant. The
+                user is already in the app — they don't need to
+                download it. */}
             {anyMobileAppLive() && (
-              <div className="border-t border-[#e6ebf1] pt-4 mt-3 px-3">
-                <div className="text-xs font-bold text-[#635bff] uppercase tracking-wider mb-3">
-                  Get the Myncel app
+              <ShowOnlyOnPlatform platform="web">
+                <div className="border-t border-[#e6ebf1] pt-4 mt-3 px-3">
+                  <div className="text-xs font-bold text-[#635bff] uppercase tracking-wider mb-3">
+                    Get the Myncel app
+                  </div>
+                  <AppStoreBadges size="md" placement="navbar-mobile-drawer" />
                 </div>
-                <AppStoreBadges size="md" placement="navbar-mobile-drawer" />
-              </div>
+              </ShowOnlyOnPlatform>
             )}
 
             {/* Quick Links */}

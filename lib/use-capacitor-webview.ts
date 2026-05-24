@@ -88,3 +88,99 @@ export function useIsCapacitorWebview(): boolean {
 export function isCapacitorWebviewSync(): boolean {
   return detectCapacitorWebview();
 }
+
+/* ------------------------------------------------------------------ */
+/* Platform detection                                                  */
+/*                                                                     */
+/* Apple App Review rejected build 1.0(12) under Guideline 2.3.10      */
+/* (Accurate Metadata) for showing Android references inside the iOS  */
+/* app. We need to know which native platform the Capacitor shell is  */
+/* running on so we can hide cross-platform copy on the iOS-only       */
+/* surfaces.                                                           */
+/* ------------------------------------------------------------------ */
+
+export type CapacitorPlatform = 'ios' | 'android' | 'web';
+
+/**
+ * Detects which native platform the Capacitor shell is running on.
+ *
+ *  - 'ios'     => iPhone / iPad Capacitor app
+ *  - 'android' => Android Capacitor app
+ *  - 'web'     => regular browser (also returned during SSR)
+ *
+ * Detection order:
+ *   1. window.Capacitor.getPlatform() — official API, returns
+ *      'ios' / 'android' / 'web' directly.
+ *   2. User-agent fallback — Capacitor appends `MyncelApp/<v>` plus
+ *      the underlying OS strings ("iPhone", "iPad", "Android"). Used
+ *      for the brief moment before the bridge initializes.
+ *   3. Defaults to 'web' on SSR or when neither signal is present.
+ */
+function detectCapacitorPlatform(): CapacitorPlatform {
+  if (typeof window === 'undefined') return 'web';
+
+  const cap = (window as unknown as { Capacitor?: CapacitorBridge }).Capacitor;
+  if (cap && typeof cap.getPlatform === 'function') {
+    const p = cap.getPlatform();
+    if (p === 'ios' || p === 'android') return p;
+  }
+
+  if (typeof navigator !== 'undefined' && navigator.userAgent) {
+    const ua = navigator.userAgent;
+    // Only trust UA if the MyncelApp marker is present — otherwise we'd
+    // false-positive every iPhone Safari user as "iOS app".
+    if (/MyncelApp/i.test(ua)) {
+      if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
+      if (/Android/i.test(ua)) return 'android';
+    }
+
+    // Query-string testing flag: ?myncel-app=ios or =android
+    if (typeof window !== 'undefined' && window.location?.search) {
+      if (/[?&]myncel-app=ios\b/.test(window.location.search)) return 'ios';
+      if (/[?&]myncel-app=android\b/.test(window.location.search)) return 'android';
+    }
+  }
+
+  return 'web';
+}
+
+/**
+ * React hook returning the current Capacitor platform.
+ *
+ * Like `useIsCapacitorWebview`, this is SSR-safe (returns 'web' during
+ * SSR, then re-runs on the client and re-renders with the detected
+ * platform).
+ *
+ * Use `useIsIOSApp()` / `useIsAndroidApp()` for the most common cases.
+ */
+export function useCapacitorPlatform(): CapacitorPlatform {
+  const [platform, setPlatform] = useState<CapacitorPlatform>('web');
+
+  useEffect(() => {
+    setPlatform(detectCapacitorPlatform());
+    const timer = setTimeout(() => {
+      setPlatform(detectCapacitorPlatform());
+    }, 250);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return platform;
+}
+
+/**
+ * Convenience hook: true only when running inside the iOS Capacitor
+ * shell (com.myncel.app on iPhone/iPad). Use this to hide Android
+ * references on user-facing pages — Apple requires this under
+ * Guideline 2.3.10.
+ */
+export function useIsIOSApp(): boolean {
+  return useCapacitorPlatform() === 'ios';
+}
+
+/**
+ * Convenience hook: true only when running inside the Android
+ * Capacitor shell.
+ */
+export function useIsAndroidApp(): boolean {
+  return useCapacitorPlatform() === 'android';
+}
