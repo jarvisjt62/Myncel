@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
+import { signOutSmart } from '@/lib/sign-out-smart';
 import { ThemeProvider } from '../components/ThemeProvider';
 import { PermissionsProvider } from '../components/PermissionsProvider';
 import NotificationBell from '../components/NotificationBell';

@@ -4,6 +4,7 @@ import '../components/theme.css';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
+import { signOutSmart } from '@/lib/sign-out-smart';
 import NotificationBell from '../components/NotificationBell';
 import ExportActionsBar from '../components/ExportActionsBar';
 import RowExportMenu from '../components/RowExportMenu';
