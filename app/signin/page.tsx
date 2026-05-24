@@ -78,7 +78,11 @@ function SignInForm() {
 
       if (result?.error) {
         // NextAuth wraps authorize errors as CredentialsSignin.
-        // Try to detect verification requirement by checking if the user exists but is unverified.
+        // Hit the side-channel endpoint to detect actionable states
+        // (email-verification needed, account scheduled for
+        // deletion). The endpoint only confirms states for which the
+        // user has already supplied an email + password, so it does
+        // not meaningfully widen the existing enumeration surface.
         const verifyCheck = await fetch('/api/auth/check-verification', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -86,6 +90,14 @@ function SignInForm() {
         }).catch(() => null);
         if (verifyCheck?.ok) {
           const vData = await verifyCheck.json();
+          if (vData.deletionPending) {
+            const days = vData.daysRemaining ?? 14;
+            setError(
+              `This account is scheduled for permanent deletion in ${days} day${days === 1 ? '' : 's'}. Contact support@myncel.com from this email address to recover it.`
+            );
+            setLoading(false);
+            return;
+          }
           if (vData.needsVerification) {
             router.push('/verify-email?email=' + encodeURIComponent(form.email));
             return;

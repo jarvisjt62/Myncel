@@ -85,6 +85,25 @@ export async function DELETE(
     return NextResponse.json({ error: 'Cannot delete the super admin account' }, { status: 403 });
   }
 
+  // Best-effort cleanup of FK references whose constraints might not
+  // yet have been migrated to ON DELETE SET NULL. Without this, a
+  // user who authored a WorkOrder or created a RemoteSupportSession
+  // cannot be hard-deleted (the FK throws), which leaves a soft-
+  // deleted record in place and makes their email unrecoverable for
+  // signup. We null the FKs first, then delete the user row.
+  await db.workOrder.updateMany({
+    where: { assignedToId: userId },
+    data: { assignedToId: null },
+  }).catch(() => {});
+  await db.workOrder.updateMany({
+    where: { createdById: userId },
+    data: { createdById: null },
+  }).catch(() => {});
+  await db.remoteSupportSession.updateMany({
+    where: { createdById: userId },
+    data: { createdById: null },
+  }).catch(() => {});
+
   await db.user.delete({ where: { id: userId } });
 
   await db.auditLog.create({

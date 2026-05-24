@@ -63,6 +63,24 @@ export async function GET(req: NextRequest) {
 
   for (const u of expired) {
     try {
+      // Best-effort: null FKs that may not yet have been migrated to
+      // ON DELETE SET NULL. Without this the prisma.user.delete()
+      // call below throws on users who authored a WorkOrder or
+      // created a RemoteSupportSession, leaving them stuck in the
+      // pending-deletion state past their grace window.
+      await prisma.workOrder.updateMany({
+        where: { assignedToId: u.id },
+        data: { assignedToId: null },
+      }).catch(() => {});
+      await prisma.workOrder.updateMany({
+        where: { createdById: u.id },
+        data: { createdById: null },
+      }).catch(() => {});
+      await prisma.remoteSupportSession.updateMany({
+        where: { createdById: u.id },
+        data: { createdById: null },
+      }).catch(() => {});
+
       await prisma.user.delete({ where: { id: u.id } });
       purged.push({ id: u.id, email: u.email });
     } catch (err: any) {

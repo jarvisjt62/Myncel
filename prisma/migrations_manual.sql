@@ -217,3 +217,41 @@ ALTER TABLE "users"
 CREATE INDEX IF NOT EXISTS "users_deletionRequestedAt_idx"
   ON "users" ("deletionRequestedAt")
   WHERE "deletionRequestedAt" IS NOT NULL;
+
+-- ===========================================================
+-- Foreign-key onDelete fixes for account deletion
+-- 2026-05-24 — fix/apple-resubmission branch (follow-up)
+-- ===========================================================
+-- Without these the cron purge (and the super admin "Remove user"
+-- button) silently fail when the user has authored work orders,
+-- created remote-support sessions, or been assigned to a work order.
+-- That left soft-deleted users stuck in the DB and made their email
+-- impossible to re-register. We switch the constraints to ON DELETE
+-- SET NULL so the historical records are preserved (with the user
+-- attribution cleared) but the user row itself can always be removed.
+
+-- WorkOrder.assignedTo
+ALTER TABLE "work_orders"
+  DROP CONSTRAINT IF EXISTS "work_orders_assignedToId_fkey";
+ALTER TABLE "work_orders"
+  ADD CONSTRAINT "work_orders_assignedToId_fkey"
+  FOREIGN KEY ("assignedToId") REFERENCES "users"("id")
+  ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- WorkOrder.createdBy
+ALTER TABLE "work_orders"
+  DROP CONSTRAINT IF EXISTS "work_orders_createdById_fkey";
+ALTER TABLE "work_orders"
+  ADD CONSTRAINT "work_orders_createdById_fkey"
+  FOREIGN KEY ("createdById") REFERENCES "users"("id")
+  ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- RemoteSupportSession.createdBy — also flip the column to nullable
+ALTER TABLE "remote_support_sessions"
+  ALTER COLUMN "createdById" DROP NOT NULL;
+ALTER TABLE "remote_support_sessions"
+  DROP CONSTRAINT IF EXISTS "remote_support_sessions_createdById_fkey";
+ALTER TABLE "remote_support_sessions"
+  ADD CONSTRAINT "remote_support_sessions_createdById_fkey"
+  FOREIGN KEY ("createdById") REFERENCES "users"("id")
+  ON DELETE SET NULL ON UPDATE CASCADE;

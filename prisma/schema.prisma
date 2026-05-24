@@ -316,9 +316,9 @@ model WorkOrder {
   organizationId        String
   organization          Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   assignedToId          String?
-  assignedTo            User?                  @relation("AssignedTo", fields: [assignedToId], references: [id])
+  assignedTo            User?                  @relation("AssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
   createdById           String?
-  createdBy             User?                  @relation("CreatedBy", fields: [createdById], references: [id])
+  createdBy             User?                  @relation("CreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   maintenanceTaskId     String?
   maintenanceTask       MaintenanceTask?       @relation(fields: [maintenanceTaskId], references: [id])
   parts                 WorkOrderPart[]
@@ -673,8 +673,8 @@ model RemoteSupportSession {
   machine        Machine?     @relation(fields: [machineId], references: [id], onDelete: SetNull)
   workOrderId    String?
   workOrder      WorkOrder?   @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
-  createdById    String
-  createdBy      User         @relation("RemoteSupportCreatedBy", fields: [createdById], references: [id])
+  createdById    String?
+  createdBy      User?        @relation("RemoteSupportCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
 
   participants RemoteSupportParticipant[]
   auditLogs    SupportAuditLog[]
