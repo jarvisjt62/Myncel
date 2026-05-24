@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import DeleteAccountSection from './DeleteAccountSection';
 
 interface SessionInfo {
   id: string;
@@ -265,6 +266,9 @@ export default function SecuritySettingsPage() {
           ))}
         </div>
       </div>
+
+      {/* Account Deletion (Apple App Review Guideline 5.1.1(v)) */}
+      <DeleteAccountSection />
     </div>
   );
 }

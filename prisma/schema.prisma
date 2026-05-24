@@ -34,6 +34,15 @@ model User {
   lastLoginAt         DateTime?
   lastLoginIp         String?
 
+  // Account Deletion (Apple App Review Guideline 5.1.1(v))
+  // When a user initiates deletion, deletionRequestedAt is set to now()
+  // and the user is signed out. They are blocked from signing in while
+  // this is set. After GRACE_PERIOD_DAYS (14) the cron job in
+  // /api/cron/purge-deleted-accounts hard-deletes the row. The user
+  // can sign back in within the grace period to clear the field and
+  // recover their account.
+  deletionRequestedAt DateTime?
+
   // Relations
   organizationId              String?
   organization                Organization?              @relation(fields: [organizationId], references: [id])

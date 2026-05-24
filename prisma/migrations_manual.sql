@@ -202,3 +202,18 @@ ALTER TABLE "notification_settings"
   ADD COLUMN IF NOT EXISTS "quietHoursStart"    TEXT,
   ADD COLUMN IF NOT EXISTS "quietHoursEnd"      TEXT,
   ADD COLUMN IF NOT EXISTS "quietHoursTimezone" TEXT NOT NULL DEFAULT 'America/New_York';
+
+-- ===========================================================
+-- Account Deletion (Apple App Review Guideline 5.1.1(v))
+-- 2026-05-24 — added in fix/apple-resubmission branch
+-- ===========================================================
+-- Adds a single nullable timestamp column on users. When set, the
+-- account is in the 14-day grace period and login is blocked. The
+-- /api/cron/purge-deleted-accounts endpoint hard-deletes rows where
+-- this is older than 14 days.
+ALTER TABLE "users"
+  ADD COLUMN IF NOT EXISTS "deletionRequestedAt" TIMESTAMP(3);
+
+CREATE INDEX IF NOT EXISTS "users_deletionRequestedAt_idx"
+  ON "users" ("deletionRequestedAt")
+  WHERE "deletionRequestedAt" IS NOT NULL;

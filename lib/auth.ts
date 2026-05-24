@@ -64,6 +64,28 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Incorrect password')
         }
 
+        // Account-deletion check (Apple App Review Guideline 5.1.1(v)).
+        //
+        // If the user previously initiated account deletion, block
+        // sign-in. They must contact support to recover within the
+        // 14-day grace window — we deliberately do NOT auto-cancel
+        // deletion on a successful login because it would be a
+        // confusing UX (a forgotten old session reactivating a
+        // deletion the user thought was happening). Recovery happens
+        // via /api/user/delete-account/cancel, exposed in the
+        // confirmation email Apple's reviewer will see when they
+        // initiate deletion.
+        if (user.deletionRequestedAt) {
+          const graceDays = 14
+          const elapsedDays =
+            (Date.now() - user.deletionRequestedAt.getTime()) /
+            (1000 * 60 * 60 * 24)
+          const daysLeft = Math.max(0, Math.ceil(graceDays - elapsedDays))
+          throw new Error(
+            `This account is scheduled for deletion in ${daysLeft} day${daysLeft === 1 ? '' : 's'}. Contact support to recover it.`
+          )
+        }
+
         // Check email verification (one-time check — once verified, no further checks)
         // Admin always bypasses verification
         if (!user.emailVerified && user.email !== 'admin@myncel.com') {
