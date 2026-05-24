@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { safeQuery } from '@/lib/admin-helpers';
 import Link from 'next/link';
 import PrepareForReviewButton from './PrepareForReviewButton';
+import RemoveUserButton from './RemoveUserButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -220,6 +221,14 @@ export default async function AdminUsers({
                         </Link>
                       )}
                       <PrepareForReviewButton userId={user.id} userEmail={user.email} />
+                      {user.email !== 'admin@myncel.com' && (
+                        <RemoveUserButton
+                          userId={user.id}
+                          userEmail={user.email}
+                          userName={user.name || user.email}
+                          isPending={isPending}
+                        />
+                      )}
                     </div>
                   </td>
                 </tr>
