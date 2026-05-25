@@ -50,6 +50,7 @@ model User {
   sessions                    Session[]
   workOrders                  WorkOrder[]                @relation("AssignedTo")
   createdWorkOrders           WorkOrder[]                @relation("CreatedBy")
+  createdWorkOrderTemplates   WorkOrderTemplate[]        @relation("TemplateCreatedBy")
   passwordResets              PasswordReset[]
   notifications               Notification[]
   auditLogs                   AuditLog[]
@@ -203,6 +204,7 @@ model Organization {
   users                 User[]
   machines              Machine[]
   workOrders            WorkOrder[]
+  workOrderTemplates    WorkOrderTemplate[]
   maintenanceTasks      MaintenanceTask[]
   alerts                Alert[]
   parts                 Part[]
@@ -325,6 +327,41 @@ model WorkOrder {
   remoteSupportSessions RemoteSupportSession[]
 
   @@map("work_orders")
+}
+
+// ===== WORK ORDER TEMPLATES =====
+//
+// Reusable templates that pre-fill the "Create Work Order" form. Org-
+// scoped; do NOT belong to a specific machine. When a user spawns a
+// WO from a template they pick the machine + due date at spawn time
+// and the rest of the fields autofill.
+//
+// Roadmap chapter "Work orders" → Reusable Work Order templates.
+
+model WorkOrderTemplate {
+  id               String        @id @default(cuid())
+  name             String        // Human-readable e.g. "30-day Haas VF-2 PM"
+  title            String        // Template's default WO title (can include {machine} placeholder later)
+  description      String?       @db.Text
+  type             WorkOrderType @default(PREVENTIVE)
+  priority         Priority      @default(MEDIUM)
+  estimatedMinutes Int?
+  laborCost        Float?
+  partsCost        Float?
+  currency         String?       @default("USD")
+  notes            String?       @db.Text
+  // Soft-archive flag — keeps history but hides from selectors.
+  isArchived       Boolean       @default(false)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String?
+  createdBy      User?        @relation("TemplateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, isArchived])
+  @@map("work_order_templates")
 }
 
 // ===== PARTS INVENTORY =====

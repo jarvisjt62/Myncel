@@ -496,6 +496,7 @@ function DashboardClientInner({ user, data }: Props) {
       if (!modal) return false;
       if (modal === 'work-order') {
         setShowWorkOrderModal(true);
+        loadWoTemplates();
         return true;
       }
       if (modal === 'machine') {
@@ -925,6 +926,49 @@ function DashboardClientInner({ user, data }: Props) {
   const [woForm, setWoForm] = useState({
     title: '', description: '', machineId: '', type: 'PREVENTIVE', priority: 'MEDIUM', dueAt: '', estimatedMinutes: '', assignedToId: '', laborCost: '', partsCost: ''
   });
+  // Reusable Work Order Templates (loaded on demand when WO modal opens)
+  type WoTemplate = {
+    id: string; name: string; title: string; description: string | null;
+    type: string; priority: string;
+    estimatedMinutes: number | null; laborCost: number | null; partsCost: number | null;
+    notes: string | null;
+  };
+  const [woTemplates, setWoTemplates] = useState<WoTemplate[]>([]);
+  const [woTemplatesLoaded, setWoTemplatesLoaded] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+
+  const loadWoTemplates = async () => {
+    if (woTemplatesLoaded) return;
+    try {
+      const res = await fetch('/api/work-order-templates');
+      if (res.ok) {
+        const data = await res.json();
+        setWoTemplates(Array.isArray(data.templates) ? data.templates : []);
+      }
+    } catch { /* silent — non-critical */ }
+    finally { setWoTemplatesLoaded(true); }
+  };
+
+  const applyTemplateToForm = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    if (!templateId) return;
+    const t = woTemplates.find(x => x.id === templateId);
+    if (!t) return;
+    setWoForm(prev => ({
+      ...prev,
+      title: t.title || '',
+      description: t.description || '',
+      type: t.type || 'PREVENTIVE',
+      priority: t.priority || 'MEDIUM',
+      estimatedMinutes: t.estimatedMinutes != null ? String(t.estimatedMinutes) : '',
+      laborCost: t.laborCost != null ? String(t.laborCost) : '',
+      partsCost: t.partsCost != null ? String(t.partsCost) : '',
+      // Intentionally leave machineId, dueAt, assignedToId untouched —
+      // those are situational and must be set per-instance.
+    }));
+  };
 
   // Form states for maintenance task
   const [taskForm, setTaskForm] = useState({
@@ -1001,8 +1045,31 @@ function DashboardClientInner({ user, data }: Props) {
         body: JSON.stringify(woForm),
       });
       if (res.ok) {
+        // Optionally save the form as a reusable template for next time.
+        if (saveAsTemplate && newTemplateName.trim()) {
+          try {
+            await fetch('/api/work-order-templates', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: newTemplateName.trim(),
+                title: woForm.title,
+                description: woForm.description || null,
+                type: woForm.type,
+                priority: woForm.priority,
+                estimatedMinutes: woForm.estimatedMinutes ? Number(woForm.estimatedMinutes) : null,
+                laborCost: woForm.laborCost ? Number(woForm.laborCost) : null,
+                partsCost: woForm.partsCost ? Number(woForm.partsCost) : null,
+              }),
+            });
+          } catch { /* non-fatal — work order was already created */ }
+        }
         setShowWorkOrderModal(false);
         setWoForm({ title: '', description: '', machineId: '', type: 'PREVENTIVE', priority: 'MEDIUM', dueAt: '', estimatedMinutes: '', assignedToId: '', laborCost: '', partsCost: '' });
+        setSelectedTemplateId('');
+        setSaveAsTemplate(false);
+        setNewTemplateName('');
+        setWoTemplatesLoaded(false); // re-fetch next time so newly-saved template appears
         refreshData();
       } else {
         const d = await res.json();
@@ -1970,6 +2037,18 @@ function DashboardClientInner({ user, data }: Props) {
             <span className="flex-1 text-left">QR Labels</span>
           </Link>
           <Link
+            href="/dashboard/templates"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] hover:text-[var(--text-primary)]"
+          >
+            <span className="text-[var(--text-muted)]">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+            </span>
+            <span className="flex-1 text-left">WO Templates</span>
+            <span className="text-[9px] bg-[#635bff]/10 text-[#635bff] px-1.5 py-0.5 rounded-full font-semibold">New</span>
+          </Link>
+          <Link
             href="/handbook"
             target="_blank"
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] hover:text-[var(--text-primary)]"
@@ -2453,7 +2532,7 @@ function DashboardClientInner({ user, data }: Props) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <ExportActionsBar dataset="work_orders" filterParam={woFilter} onIntegrationResult={handleExportResult} />
                   <Can permission="work_orders.create">
-                    <button onClick={() => setShowWorkOrderModal(true)} className="bg-[#635bff] text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-[#4f46e5] transition-colors">
+                    <button onClick={() => { setShowWorkOrderModal(true); loadWoTemplates(); }} className="bg-[#635bff] text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-[#4f46e5] transition-colors">
                       + New Work Order
                     </button>
                   </Can>
@@ -3649,8 +3728,29 @@ function DashboardClientInner({ user, data }: Props) {
         </div>
       </Modal>
 
-      <Modal show={showWorkOrderModal} onClose={() => { setShowWorkOrderModal(false); setSaveError(''); }} title="Create Work Order">
+      <Modal show={showWorkOrderModal} onClose={() => { setShowWorkOrderModal(false); setSaveError(''); setSelectedTemplateId(''); setSaveAsTemplate(false); setNewTemplateName(''); }} title="Create Work Order">
         <div className="space-y-5">
+          {/* Start from template */}
+          {woTemplates.length > 0 && (
+            <div className="rounded-xl p-4 border" style={{ background: 'rgba(99,91,255,0.06)', borderColor: 'rgba(99,91,255,0.25)' }}>
+              <p className="text-xs font-bold text-[#635bff] uppercase tracking-widest mb-2">Start from Template</p>
+              <select
+                value={selectedTemplateId}
+                onChange={e => applyTemplateToForm(e.target.value)}
+                className={selectClass}
+              >
+                <option value="">— Blank work order —</option>
+                {woTemplates.map(t => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}{t.estimatedMinutes ? ` · ~${t.estimatedMinutes} min` : ''}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-[var(--text-muted)] mt-1.5">
+                Picking a template will autofill the title, description, type, priority, duration and cost estimates below. Machine, due date and assignee stay yours to set.
+              </p>
+            </div>
+          )}
           {/* Work Order Details */}
           <div className="bg-[var(--bg-surface-2)] rounded-xl p-4 space-y-3">
             <p className="text-xs font-bold text-[#635bff] uppercase tracking-widest">Work Order Details</p>
@@ -3727,9 +3827,36 @@ function DashboardClientInner({ user, data }: Props) {
             </div>
           </div>
           {saveError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{saveError}</p>}
+          {/* Save as reusable template */}
+          <div className="rounded-xl p-3 border border-[var(--border)] bg-[var(--bg-surface-2)]">
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={saveAsTemplate}
+                onChange={e => setSaveAsTemplate(e.target.checked)}
+                className="mt-0.5 w-4 h-4 accent-[#635bff]"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-[var(--text-primary)]">Save this work order as a reusable template</div>
+                <div className="text-xs text-[var(--text-muted)] mt-0.5">Stores the title, description, type, priority, duration and cost estimates so you can spawn this work order again with one click.</div>
+              </div>
+            </label>
+            {saveAsTemplate && (
+              <div className="mt-3 pl-6">
+                <label className={labelClass}>Template name</label>
+                <input
+                  value={newTemplateName}
+                  onChange={e => setNewTemplateName(e.target.value)}
+                  placeholder="e.g. Monthly spindle PM"
+                  className={inputClass}
+                  maxLength={100}
+                />
+              </div>
+            )}
+          </div>
           <div className="flex gap-3 pt-1">
-            <button onClick={() => { setShowWorkOrderModal(false); setSaveError(''); }} className="flex-1 px-4 py-2.5 border border-[var(--border)] rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)]">Cancel</button>
-            <button onClick={handleCreateWorkOrder} disabled={saving || !woForm.title.trim() || !woForm.machineId} className="flex-1 px-4 py-2.5 bg-[#635bff] text-white rounded-lg text-sm font-semibold hover:bg-[#4f46e5] disabled:opacity-50 flex items-center justify-center gap-2">
+            <button onClick={() => { setShowWorkOrderModal(false); setSaveError(''); setSelectedTemplateId(''); setSaveAsTemplate(false); setNewTemplateName(''); }} className="flex-1 px-4 py-2.5 border border-[var(--border)] rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)]">Cancel</button>
+            <button onClick={handleCreateWorkOrder} disabled={saving || !woForm.title.trim() || !woForm.machineId || (saveAsTemplate && !newTemplateName.trim())} className="flex-1 px-4 py-2.5 bg-[#635bff] text-white rounded-lg text-sm font-semibold hover:bg-[#4f46e5] disabled:opacity-50 flex items-center justify-center gap-2">
               {saving ? <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Creating...</> : '+ Create Work Order'}
             </button>
           </div>
