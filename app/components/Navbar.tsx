@@ -31,8 +31,9 @@ function ProductsMenuMobileCard({ onClose }: { onClose: () => void }) {
     <div className="bg-gradient-to-br from-[#f0f4ff] to-[#f8f0ff] rounded-xl p-4">
       <div className="text-xs font-bold text-[#635bff] uppercase tracking-wider mb-3">New Feature</div>
       <div className="w-10 h-10 bg-[#635bff] rounded-xl flex items-center justify-center mb-3">
-        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+        <svg className="w-5 h-5" fill="none" stroke="#ffffff" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="7" y="2" width="10" height="20" rx="2" ry="2" strokeWidth={2} />
+          <line x1="11" y1="18" x2="13" y2="18" strokeWidth={2} strokeLinecap="round" />
         </svg>
       </div>
       <h4 className="font-bold text-[#0a2540] mb-1">Mobile App</h4>
