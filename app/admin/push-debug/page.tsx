@@ -484,28 +484,32 @@ export default function PushDebugPage() {
       {viewingDevice && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
           onClick={() => setViewingDevice(null)}
         >
           <div
-            className="rounded-xl p-5 max-w-2xl w-full max-h-[80vh] overflow-y-auto border"
-            style={{ background: 'var(--surface-1)', borderColor: 'var(--border-subtle)' }}
+            className="rounded-xl p-5 max-w-2xl w-full max-h-[80vh] overflow-y-auto border shadow-2xl"
+            style={{
+              background: '#ffffff',
+              borderColor: '#e5e7eb',
+              color: '#111827',
+            }}
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-lg" style={{ color: 'var(--text-primary)' }}>
+            <div className="flex items-center justify-between mb-3 pb-3 border-b" style={{ borderColor: '#e5e7eb' }}>
+              <h3 className="font-semibold text-lg" style={{ color: '#111827' }}>
                 📱 Device details
               </h3>
               <button
                 onClick={() => setViewingDevice(null)}
-                className="text-2xl leading-none"
-                style={{ color: 'var(--text-muted)' }}
+                className="text-2xl leading-none hover:opacity-70"
+                style={{ color: '#6b7280' }}
               >
                 ×
               </button>
             </div>
             {viewingLoading || viewingDevice._loading ? (
-              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</div>
+              <div className="text-sm" style={{ color: '#6b7280' }}>Loading…</div>
             ) : viewingDevice.error ? (
               <div className="text-sm text-red-600">{viewingDevice.error}</div>
             ) : (
@@ -520,28 +524,27 @@ export default function PushDebugPage() {
                 <Row label="Created"     value={fmtTime(viewingDevice.createdAt)} />
                 <Row label="Last used"   value={fmtTime(viewingDevice.lastUsedAt)} />
                 <Row label="Token id"    value={viewingDevice.id} mono />
-                <div>
-                  <div className="text-xs uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)' }}>
+                <div className="pt-2">
+                  <div className="text-xs uppercase tracking-wide mb-1" style={{ color: '#6b7280' }}>
                     Push token (full)
                   </div>
                   <pre className="text-[10px] p-2 rounded border overflow-x-auto whitespace-pre-wrap break-all"
-                    style={{ background: 'var(--surface-2)', borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}>
+                    style={{ background: '#f9fafb', borderColor: '#e5e7eb', color: '#374151' }}>
                     {viewingDevice.token ?? '—'}
                   </pre>
                   <button
                     onClick={() => {
                       navigator.clipboard?.writeText(viewingDevice.token ?? '').catch(() => {});
                     }}
-                    className="mt-1 px-2 py-1 rounded text-[11px] border bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                    className="mt-2 px-2 py-1 rounded text-[11px] border bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
                   >
                     📋 Copy token
                   </button>
                 </div>
-                <div className="pt-3 flex justify-end gap-2 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+                <div className="pt-3 mt-3 flex justify-end gap-2 border-t" style={{ borderColor: '#e5e7eb' }}>
                   <button
                     onClick={() => setViewingDevice(null)}
-                    className="px-3 py-1.5 rounded-lg text-sm border"
-                    style={{ background: 'var(--surface-2)', borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
+                    className="px-3 py-1.5 rounded-lg text-sm border bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
                   >
                     Close
                   </button>
@@ -566,20 +569,20 @@ export default function PushDebugPage() {
       {showDeleteAllModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
           onClick={() => !deletingAll && setShowDeleteAllModal(false)}
         >
           <div
-            className="rounded-xl p-5 max-w-md w-full border"
-            style={{ background: 'var(--surface-1)', borderColor: 'var(--border-subtle)' }}
+            className="rounded-xl p-5 max-w-md w-full border shadow-2xl"
+            style={{ background: '#ffffff', borderColor: '#e5e7eb', color: '#111827' }}
             onClick={e => e.stopPropagation()}
           >
             <h3 className="font-semibold text-lg mb-2 text-red-700">⚠️ Delete ALL device tokens?</h3>
-            <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-sm mb-3" style={{ color: '#374151' }}>
               This will remove <strong>{data.counts.totalTokens}</strong> registered device token{data.counts.totalTokens === 1 ? '' : 's'}.
               User accounts are <strong>not</strong> affected; users will simply re-register their device the next time they open the app.
             </p>
-            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs mb-3" style={{ color: '#6b7280' }}>
               Type <code className="font-bold">DELETE ALL</code> below to confirm:
             </p>
             <input
@@ -589,14 +592,13 @@ export default function PushDebugPage() {
               placeholder="DELETE ALL"
               autoFocus
               className="w-full px-3 py-2 rounded-lg border text-sm font-mono mb-3"
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+              style={{ background: '#ffffff', borderColor: '#d1d5db', color: '#111827' }}
             />
             <div className="flex justify-end gap-2">
               <button
                 disabled={deletingAll}
                 onClick={() => { setShowDeleteAllModal(false); setConfirmDeleteAll(''); }}
-                className="px-3 py-1.5 rounded-lg text-sm border disabled:opacity-50"
-                style={{ background: 'var(--surface-2)', borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
+                className="px-3 py-1.5 rounded-lg text-sm border bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -618,10 +620,10 @@ export default function PushDebugPage() {
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex gap-3">
-      <div className="text-xs uppercase tracking-wide w-28 flex-shrink-0 pt-0.5" style={{ color: 'var(--text-muted)' }}>
+      <div className="text-xs uppercase tracking-wide w-28 flex-shrink-0 pt-0.5" style={{ color: '#6b7280' }}>
         {label}
       </div>
-      <div className={`flex-1 ${mono ? 'font-mono text-xs' : ''}`} style={{ color: 'var(--text-primary)' }}>
+      <div className={`flex-1 ${mono ? 'font-mono text-xs break-all' : ''}`} style={{ color: '#111827' }}>
         {value}
       </div>
     </div>
