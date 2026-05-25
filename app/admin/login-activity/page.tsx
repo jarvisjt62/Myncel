@@ -107,8 +107,54 @@ export default function LoginActivityPage() {
   const [pageSize] = useState(50);
   const [emailFilter, setEmailFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'failed'>('all');
-  const [autoRefresh, setAutoRefresh] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [viewingRow, setViewingRow] = useState<LoginRow | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingAll, setDeletingAll] = useState(false);
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState('');
+
+  async function deleteRow(id: string) {
+    if (!confirm('Delete this login event from the log?')) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/login-activity/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        alert(`Failed: ${j.error || res.status}`);
+      } else {
+        await refresh();
+      }
+    } catch (e: any) {
+      alert(`Failed: ${e?.message || 'Network error'}`);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function deleteAll() {
+    if (confirmDeleteAll.trim().toUpperCase() !== 'DELETE ALL') {
+      alert('Type DELETE ALL exactly to confirm.');
+      return;
+    }
+    setDeletingAll(true);
+    try {
+      const res = await fetch('/api/admin/login-activity/delete?all=1', { method: 'DELETE' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(`Failed: ${json.error || res.status}`);
+      } else {
+        alert(`Deleted ${json.deletedCount} login event(s).`);
+        setShowDeleteAllModal(false);
+        setConfirmDeleteAll('');
+        await refresh();
+      }
+    } catch (e: any) {
+      alert(`Failed: ${e?.message || 'Network error'}`);
+    } finally {
+      setDeletingAll(false);
+    }
+  }
 
   const refresh = useCallback(async () => {
     try {
@@ -152,10 +198,20 @@ export default function LoginActivityPage() {
             Sign-in events across all users — date, time, IP address, location, device. Failed attempts shown in red.
           </p>
         </div>
-        <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-          <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} />
-          Auto-refresh (15s)
-        </label>
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} />
+            Auto-refresh (15s)
+          </label>
+          {data && data.rows.length > 0 && (
+            <button
+              onClick={() => setShowDeleteAllModal(true)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium border bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+            >
+              🗑 Delete all login events
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -233,88 +289,64 @@ export default function LoginActivityPage() {
                   <th className="p-2.5">Location</th>
                   <th className="p-2.5">Device</th>
                   <th className="p-2.5">Reason</th>
-                  <th className="p-2.5"></th>
+                  <th className="p-2.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {data.rows.map(r => {
-                  const isExpanded = expandedId === r.id;
-                  return (
-                    <React.Fragment key={r.id}>
-                      <tr className="border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-                        <td className="p-2.5">
-                          {r.success ? (
-                            <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-green-100 text-green-800">
-                              ✓ Success
-                            </span>
-                          ) : (
-                            <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-red-100 text-red-800">
-                              ✗ Failed
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-2.5">
-                          <div style={{ color: 'var(--text-primary)' }}>{r.email ?? '—'}</div>
-                          {r.organizationName && (
-                            <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                              {r.organizationName}
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-2.5 whitespace-nowrap" title={r.createdAt}>
-                          {formatDateTime(r.createdAt)}
-                        </td>
-                        <td className="p-2.5 font-mono">{r.ipAddress ?? '—'}</td>
-                        <td className="p-2.5">
-                          {r.geo?.countryCode && (
-                            <span className="mr-1 text-[10px] font-mono px-1 rounded bg-gray-100 text-gray-700">
-                              {r.geo.countryCode}
-                            </span>
-                          )}
-                          {formatGeo(r.geo)}
-                        </td>
-                        <td className="p-2.5">{parseDevice(r.userAgent)}</td>
-                        <td className="p-2.5" style={{ color: r.success ? 'var(--text-muted)' : '#b91c1c' }}>
-                          {r.reason ? (REASON_LABEL[r.reason] ?? r.reason) : '—'}
-                        </td>
-                        <td className="p-2.5">
-                          <button
-                            onClick={() => setExpandedId(isExpanded ? null : r.id)}
-                            className="text-indigo-600 hover:text-indigo-800 text-xs underline"
-                          >
-                            {isExpanded ? 'Hide' : 'Details'}
-                          </button>
-                        </td>
-                      </tr>
-                      {isExpanded && (
-                        <tr style={{ background: 'var(--surface-2)' }}>
-                          <td colSpan={8} className="p-3">
-                            <div className="grid md:grid-cols-2 gap-3 text-xs">
-                              <div>
-                                <strong style={{ color: 'var(--text-primary)' }}>Full user-agent</strong>
-                                <pre className="mt-1 p-2 rounded border overflow-x-auto whitespace-pre-wrap break-all"
-                                  style={{ background: 'var(--surface-1)', borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}>
-                                  {r.userAgent ?? '—'}
-                                </pre>
-                              </div>
-                              <div>
-                                <strong style={{ color: 'var(--text-primary)' }}>Geo + ISP</strong>
-                                <pre className="mt-1 p-2 rounded border overflow-x-auto"
-                                  style={{ background: 'var(--surface-1)', borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}>
-                                  {JSON.stringify(r.geo, null, 2)}
-                                </pre>
-                                <div className="mt-2" style={{ color: 'var(--text-muted)' }}>
-                                  Audit log id: <code>{r.id}</code>
-                                  {r.userId && <> · user id: <code>{r.userId}</code></>}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
+                {data.rows.map(r => (
+                  <tr key={r.id} className="border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+                    <td className="p-2.5">
+                      {r.success ? (
+                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-green-100 text-green-800">
+                          ✓ Success
+                        </span>
+                      ) : (
+                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-red-100 text-red-800">
+                          ✗ Failed
+                        </span>
                       )}
-                    </React.Fragment>
-                  );
-                })}
+                    </td>
+                    <td className="p-2.5">
+                      <div style={{ color: 'var(--text-primary)' }}>{r.email ?? '—'}</div>
+                      {r.organizationName && (
+                        <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                          {r.organizationName}
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-2.5 whitespace-nowrap" title={r.createdAt}>
+                      {formatDateTime(r.createdAt)}
+                    </td>
+                    <td className="p-2.5 font-mono">{r.ipAddress ?? '—'}</td>
+                    <td className="p-2.5">
+                      {r.geo?.countryCode && (
+                        <span className="mr-1 text-[10px] font-mono px-1 rounded bg-gray-100 text-gray-700">
+                          {r.geo.countryCode}
+                        </span>
+                      )}
+                      {formatGeo(r.geo)}
+                    </td>
+                    <td className="p-2.5">{parseDevice(r.userAgent)}</td>
+                    <td className="p-2.5" style={{ color: r.success ? 'var(--text-muted)' : '#b91c1c' }}>
+                      {r.reason ? (REASON_LABEL[r.reason] ?? r.reason) : '—'}
+                    </td>
+                    <td className="p-2.5 whitespace-nowrap text-right">
+                      <button
+                        onClick={() => setViewingRow(r)}
+                        className="px-2 py-1 rounded text-[11px] mr-1 border bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
+                      >
+                        👁 View
+                      </button>
+                      <button
+                        onClick={() => deleteRow(r.id)}
+                        disabled={deletingId === r.id}
+                        className="px-2 py-1 rounded text-[11px] border bg-red-50 text-red-700 border-red-200 hover:bg-red-100 disabled:opacity-50"
+                      >
+                        {deletingId === r.id ? '…' : '🗑 Delete'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -347,6 +379,158 @@ export default function LoginActivityPage() {
           </div>
         </div>
       )}
+
+      {/* View Login Event Modal */}
+      {viewingRow && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
+          onClick={() => setViewingRow(null)}
+        >
+          <div
+            className="rounded-xl p-5 max-w-2xl w-full max-h-[85vh] overflow-y-auto border shadow-2xl"
+            style={{ background: '#ffffff', borderColor: '#e5e7eb', color: '#111827' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3 pb-3 border-b" style={{ borderColor: '#e5e7eb' }}>
+              <h3 className="font-semibold text-lg" style={{ color: '#111827' }}>
+                {viewingRow.success ? '✓ Successful login' : '✗ Failed login'}
+              </h3>
+              <button
+                onClick={() => setViewingRow(null)}
+                className="text-2xl leading-none hover:opacity-70"
+                style={{ color: '#6b7280' }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-2 text-sm">
+              <Row label="Status"      value={viewingRow.success ? 'Success' : 'Failed'} />
+              <Row label="Email"       value={viewingRow.email ?? '—'} />
+              <Row label="User"        value={viewingRow.userName ?? '—'} />
+              <Row label="User id"     value={viewingRow.userId ?? '—'} mono />
+              <Row label="Organization" value={viewingRow.organizationName ?? '—'} />
+              <Row label="Date / Time" value={formatDateTime(viewingRow.createdAt)} />
+              <Row label="IP address"  value={viewingRow.ipAddress ?? '—'} mono />
+              <Row label="Location"    value={formatGeo(viewingRow.geo)} />
+              <Row label="Country code" value={viewingRow.geo?.countryCode ?? '—'} />
+              <Row label="ISP"         value={viewingRow.geo?.isp ?? '—'} />
+              <Row label="Device"      value={parseDevice(viewingRow.userAgent)} />
+              {!viewingRow.success && (
+                <Row
+                  label="Failure reason"
+                  value={viewingRow.reason ? (REASON_LABEL[viewingRow.reason] ?? viewingRow.reason) : '—'}
+                />
+              )}
+              <Row label="Event id"    value={viewingRow.id} mono />
+
+              <div className="pt-2">
+                <div className="text-xs uppercase tracking-wide mb-1" style={{ color: '#6b7280' }}>
+                  Full user-agent
+                </div>
+                <pre className="text-[10px] p-2 rounded border overflow-x-auto whitespace-pre-wrap break-all"
+                  style={{ background: '#f9fafb', borderColor: '#e5e7eb', color: '#374151' }}>
+                  {viewingRow.userAgent ?? '—'}
+                </pre>
+              </div>
+
+              {viewingRow.geo && (
+                <div className="pt-2">
+                  <div className="text-xs uppercase tracking-wide mb-1" style={{ color: '#6b7280' }}>
+                    Raw geo data
+                  </div>
+                  <pre className="text-[10px] p-2 rounded border overflow-x-auto whitespace-pre-wrap break-all"
+                    style={{ background: '#f9fafb', borderColor: '#e5e7eb', color: '#374151' }}>
+                    {JSON.stringify(viewingRow.geo, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              <div className="pt-3 mt-3 flex justify-end gap-2 border-t" style={{ borderColor: '#e5e7eb' }}>
+                <button
+                  onClick={() => setViewingRow(null)}
+                  className="px-3 py-1.5 rounded-lg text-sm border bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={async () => {
+                    const id = viewingRow.id;
+                    setViewingRow(null);
+                    await deleteRow(id);
+                  }}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium border bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                >
+                  🗑 Delete this event
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete-all Confirm Modal */}
+      {showDeleteAllModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
+          onClick={() => !deletingAll && setShowDeleteAllModal(false)}
+        >
+          <div
+            className="rounded-xl p-5 max-w-md w-full border shadow-2xl"
+            style={{ background: '#ffffff', borderColor: '#e5e7eb', color: '#111827' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="font-semibold text-lg mb-2 text-red-700">⚠️ Delete ALL login events?</h3>
+            <p className="text-sm mb-3" style={{ color: '#374151' }}>
+              This will remove <strong>every</strong> recorded login event (successful and failed) from the
+              audit log{data?.total != null ? <> — currently <strong>{data.total.toLocaleString()}</strong> event{data.total === 1 ? '' : 's'}</> : null}.
+              User accounts are <strong>not</strong> affected.
+            </p>
+            <p className="text-xs mb-3" style={{ color: '#6b7280' }}>
+              Type <code className="font-bold">DELETE ALL</code> below to confirm:
+            </p>
+            <input
+              type="text"
+              value={confirmDeleteAll}
+              onChange={e => setConfirmDeleteAll(e.target.value)}
+              placeholder="DELETE ALL"
+              autoFocus
+              className="w-full px-3 py-2 rounded-lg border text-sm font-mono mb-3"
+              style={{ background: '#ffffff', borderColor: '#d1d5db', color: '#111827' }}
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                disabled={deletingAll}
+                onClick={() => { setShowDeleteAllModal(false); setConfirmDeleteAll(''); }}
+                className="px-3 py-1.5 rounded-lg text-sm border bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={deletingAll || confirmDeleteAll.trim().toUpperCase() !== 'DELETE ALL'}
+                onClick={deleteAll}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium border bg-red-600 text-white border-red-700 hover:bg-red-700 disabled:opacity-50"
+              >
+                {deletingAll ? 'Deleting…' : '🗑 Delete all'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex gap-3">
+      <div className="text-xs uppercase tracking-wide w-32 flex-shrink-0 pt-0.5" style={{ color: '#6b7280' }}>
+        {label}
+      </div>
+      <div className={`flex-1 ${mono ? 'font-mono text-xs break-all' : ''}`} style={{ color: '#111827' }}>
+        {value}
+      </div>
     </div>
   );
 }
