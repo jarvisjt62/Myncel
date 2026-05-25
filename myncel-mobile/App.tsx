@@ -12,6 +12,7 @@ import * as Notifications from 'expo-notifications';
 import { Linking } from 'react-native';
 
 import { AuthProvider } from '@/auth/AuthContext';
+import { SyncProvider } from '@/sync/SyncContext';
 import { RootNavigator } from '@/navigation/RootNavigator';
 
 // Keep the splash screen visible until we've finished loading auth state.
@@ -36,8 +37,10 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
-          <StatusBar style="dark" />
-          <RootNavigator />
+          <SyncProvider>
+            <StatusBar style="dark" />
+            <RootNavigator />
+          </SyncProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
