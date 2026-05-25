@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-
 /**
  * Admin → Push Debug
  *
@@ -75,6 +74,14 @@ export default function PushDebugPage() {
   const [testSending, setTestSending] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
 
+  // Device-management state
+  const [viewingDevice, setViewingDevice] = useState<any | null>(null);
+  const [viewingLoading, setViewingLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingAll, setDeletingAll] = useState(false);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState('');
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+
   const refresh = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/push-debug', { cache: 'no-store' });
@@ -117,6 +124,68 @@ export default function PushDebugPage() {
       setTestResult({ error: e?.message || 'Network error' });
     } finally {
       setTestSending(false);
+    }
+  }
+
+  async function viewDevice(id: string) {
+    setViewingLoading(true);
+    setViewingDevice({ id, _loading: true });
+    try {
+      const res = await fetch(`/api/admin/push-debug/devices/${id}`, { cache: 'no-store' });
+      const json = await res.json();
+      if (!res.ok) {
+        setViewingDevice({ error: json.error || `HTTP ${res.status}` });
+      } else {
+        setViewingDevice(json);
+      }
+    } catch (e: any) {
+      setViewingDevice({ error: e?.message || 'Network error' });
+    } finally {
+      setViewingLoading(false);
+    }
+  }
+
+  async function deleteDevice(id: string) {
+    if (!confirm('Delete this device token?\n\nThe user keeps their account; their next app launch will re-register a fresh token.')) {
+      return;
+    }
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/push-debug/devices/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        alert(`Failed to delete: ${j.error || res.status}`);
+      } else {
+        await refresh();
+      }
+    } catch (e: any) {
+      alert(`Failed to delete: ${e?.message || 'Network error'}`);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function deleteAllDevices() {
+    if (confirmDeleteAll.trim().toUpperCase() !== 'DELETE ALL') {
+      alert('Type DELETE ALL exactly to confirm.');
+      return;
+    }
+    setDeletingAll(true);
+    try {
+      const res = await fetch('/api/admin/push-debug/devices?all=1', { method: 'DELETE' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(`Failed: ${json.error || res.status}`);
+      } else {
+        alert(`Deleted ${json.deletedCount} device token(s).`);
+        setShowDeleteAllModal(false);
+        setConfirmDeleteAll('');
+        await refresh();
+      }
+    } catch (e: any) {
+      alert(`Failed: ${e?.message || 'Network error'}`);
+    } finally {
+      setDeletingAll(false);
     }
   }
 
@@ -250,9 +319,19 @@ export default function PushDebugPage() {
 
       {/* Devices */}
       <section className="rounded-xl p-5 border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border-subtle)' }}>
-        <h2 className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
-          📱 Registered devices <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>({data.tokens.length} most recent)</span>
-        </h2>
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+            📱 Registered devices <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>({data.tokens.length} most recent · {data.counts.totalTokens} total)</span>
+          </h2>
+          {data.counts.totalTokens > 0 && (
+            <button
+              onClick={() => { setConfirmDeleteAll(''); setShowDeleteAllModal(true); }}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium border bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+            >
+              🗑 Delete all devices
+            </button>
+          )}
+        </div>
         {data.tokens.length === 0 ? (
           <div className="text-sm p-4 rounded bg-gray-50 border border-gray-200" style={{ color: 'var(--text-secondary)' }}>
             No devices have registered for push yet. Once a tester installs the iOS or Android app and grants push permission, they&apos;ll show up here.
@@ -269,6 +348,7 @@ export default function PushDebugPage() {
                   <th className="p-2">Token</th>
                   <th className="p-2">Last used</th>
                   <th className="p-2">Created</th>
+                  <th className="p-2 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -281,6 +361,21 @@ export default function PushDebugPage() {
                     <td className="p-2 font-mono">{t.tokenSuffix ?? '—'}</td>
                     <td className="p-2" title={t.lastUsedAt}>{fmtAgo(t.lastUsedAt)}</td>
                     <td className="p-2" title={t.createdAt}>{fmtAgo(t.createdAt)}</td>
+                    <td className="p-2 whitespace-nowrap text-right">
+                      <button
+                        onClick={() => viewDevice(t.id)}
+                        className="px-2 py-1 rounded text-[11px] mr-1 border bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
+                      >
+                        👁 View
+                      </button>
+                      <button
+                        onClick={() => deleteDevice(t.id)}
+                        disabled={deletingId === t.id}
+                        className="px-2 py-1 rounded text-[11px] border bg-red-50 text-red-700 border-red-200 hover:bg-red-100 disabled:opacity-50"
+                      >
+                        {deletingId === t.id ? '…' : '🗑 Delete'}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -384,6 +479,151 @@ export default function PushDebugPage() {
           </div>
         )}
       </section>
+
+      {/* View Device Modal */}
+      {viewingDevice && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setViewingDevice(null)}
+        >
+          <div
+            className="rounded-xl p-5 max-w-2xl w-full max-h-[80vh] overflow-y-auto border"
+            style={{ background: 'var(--surface-1)', borderColor: 'var(--border-subtle)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-lg" style={{ color: 'var(--text-primary)' }}>
+                📱 Device details
+              </h3>
+              <button
+                onClick={() => setViewingDevice(null)}
+                className="text-2xl leading-none"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                ×
+              </button>
+            </div>
+            {viewingLoading || viewingDevice._loading ? (
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</div>
+            ) : viewingDevice.error ? (
+              <div className="text-sm text-red-600">{viewingDevice.error}</div>
+            ) : (
+              <div className="space-y-2 text-sm">
+                <Row label="User"        value={viewingDevice.user?.email ?? '—'} />
+                <Row label="Name"        value={viewingDevice.user?.name ?? '—'} />
+                <Row label="Role"        value={viewingDevice.user?.role ?? '—'} />
+                <Row label="Org id"      value={viewingDevice.user?.organizationId ?? '—'} mono />
+                <Row label="Platform"    value={String(viewingDevice.platform).toUpperCase()} />
+                <Row label="Device"      value={viewingDevice.deviceName ?? '—'} />
+                <Row label="App version" value={viewingDevice.appVersion ?? '—'} />
+                <Row label="Created"     value={fmtTime(viewingDevice.createdAt)} />
+                <Row label="Last used"   value={fmtTime(viewingDevice.lastUsedAt)} />
+                <Row label="Token id"    value={viewingDevice.id} mono />
+                <div>
+                  <div className="text-xs uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)' }}>
+                    Push token (full)
+                  </div>
+                  <pre className="text-[10px] p-2 rounded border overflow-x-auto whitespace-pre-wrap break-all"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}>
+                    {viewingDevice.token ?? '—'}
+                  </pre>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard?.writeText(viewingDevice.token ?? '').catch(() => {});
+                    }}
+                    className="mt-1 px-2 py-1 rounded text-[11px] border bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                  >
+                    📋 Copy token
+                  </button>
+                </div>
+                <div className="pt-3 flex justify-end gap-2 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+                  <button
+                    onClick={() => setViewingDevice(null)}
+                    className="px-3 py-1.5 rounded-lg text-sm border"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const id = viewingDevice.id;
+                      setViewingDevice(null);
+                      await deleteDevice(id);
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium border bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                  >
+                    🗑 Delete this device
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete-all Confirm Modal */}
+      {showDeleteAllModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => !deletingAll && setShowDeleteAllModal(false)}
+        >
+          <div
+            className="rounded-xl p-5 max-w-md w-full border"
+            style={{ background: 'var(--surface-1)', borderColor: 'var(--border-subtle)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="font-semibold text-lg mb-2 text-red-700">⚠️ Delete ALL device tokens?</h3>
+            <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+              This will remove <strong>{data.counts.totalTokens}</strong> registered device token{data.counts.totalTokens === 1 ? '' : 's'}.
+              User accounts are <strong>not</strong> affected; users will simply re-register their device the next time they open the app.
+            </p>
+            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+              Type <code className="font-bold">DELETE ALL</code> below to confirm:
+            </p>
+            <input
+              type="text"
+              value={confirmDeleteAll}
+              onChange={e => setConfirmDeleteAll(e.target.value)}
+              placeholder="DELETE ALL"
+              autoFocus
+              className="w-full px-3 py-2 rounded-lg border text-sm font-mono mb-3"
+              style={{ background: 'var(--surface-2)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                disabled={deletingAll}
+                onClick={() => { setShowDeleteAllModal(false); setConfirmDeleteAll(''); }}
+                className="px-3 py-1.5 rounded-lg text-sm border disabled:opacity-50"
+                style={{ background: 'var(--surface-2)', borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
+              >
+                Cancel
+              </button>
+              <button
+                disabled={deletingAll || confirmDeleteAll.trim().toUpperCase() !== 'DELETE ALL'}
+                onClick={deleteAllDevices}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium border bg-red-600 text-white border-red-700 hover:bg-red-700 disabled:opacity-50"
+              >
+                {deletingAll ? 'Deleting…' : '🗑 Delete all'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex gap-3">
+      <div className="text-xs uppercase tracking-wide w-28 flex-shrink-0 pt-0.5" style={{ color: 'var(--text-muted)' }}>
+        {label}
+      </div>
+      <div className={`flex-1 ${mono ? 'font-mono text-xs' : ''}`} style={{ color: 'var(--text-primary)' }}>
+        {value}
+      </div>
     </div>
   );
 }

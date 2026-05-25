@@ -65,6 +65,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: '/admin/alerts',        label: 'Alerts',         icon: '🔔' },
         { href: '/admin/emergency',     label: 'Emergency Broadcast', icon: '🚨' },
         { href: '/admin/push-debug',    label: 'Push Debug',     icon: '📡' },
+        { href: '/admin/login-activity', label: 'Login Activity', icon: '🕒' },
         { href: '/admin/ai-chat-log',   label: 'AI Chat Log',    icon: '🧠' },
         { href: '/handbook',            label: 'User Handbook',   icon: '📖' },
         { href: '/admin/reports',       label: 'Reports',         icon: '📈' },
