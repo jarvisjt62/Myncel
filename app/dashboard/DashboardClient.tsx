@@ -17,6 +17,7 @@ import ExportButtons from '../components/dashboard/ExportButtons';
 import RolesTab from './RolesTab';
 import { PermissionsProvider, Can, usePermissions } from '../components/PermissionsProvider';
 import { formatCurrency, getCurrencySymbol } from '@/app/lib/currency';
+import { useSync } from '@/lib/sync/SyncProvider';
 
 // ── Change Password Component ──────────────────────────────────────────────
 function ChangePasswordSection() {
@@ -370,6 +371,10 @@ const Modal = ({ show, onClose, title, children }: { show: boolean; onClose: () 
 function DashboardClientInner({ user, data }: Props) {
   const { isDark } = useTheme();
   const perms = usePermissions();
+  // Offline-aware mutation queue. Lets work-order status changes survive
+  // a flaky cell connection by queuing the PATCH locally and replaying it
+  // when connectivity returns. See lib/sync/SyncProvider.tsx.
+  const sync = useSync();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [remoteSessions, setRemoteSessions] = useState<any[]>([]);
   const [remoteSessionsLoading, setRemoteSessionsLoading] = useState(false);
@@ -589,8 +594,25 @@ function DashboardClientInner({ user, data }: Props) {
     setLoadingDetail(false);
   };
 
-  // Update work order status
+  // Update work order status. When the device is offline, queue the
+  // PATCH locally so the user gets an instant optimistic update and the
+  // mutation replays automatically once connectivity returns.
   const updateWoStatus = async (woId: string, status: string) => {
+    // Optimistic local update — keeps the UI snappy regardless of network.
+    setWorkOrders(prev => prev.map(w => w.id === woId ? { ...w, status } : w));
+    if (woDetail?.id === woId) setWoDetail((prev: any) => ({ ...prev, status }));
+    if (selectedWorkOrder?.id === woId) setSelectedWorkOrder((prev: any) => ({ ...prev, status }));
+
+    if (sync.connectivity === 'offline') {
+      await sync.enqueueMutation({
+        kind: 'workOrder.updateStatus',
+        targetId: woId,
+        payload: { status },
+        label: `Set work order → ${status.replace(/_/g, ' ').toLowerCase()}`,
+      });
+      return;
+    }
+
     try {
       const res = await fetch(`/api/work-orders/${woId}`, {
         method: 'PATCH',
@@ -602,8 +624,25 @@ function DashboardClientInner({ user, data }: Props) {
         setWorkOrders(prev => prev.map(w => w.id === woId ? { ...w, status: updated.workOrder.status } : w));
         if (woDetail?.id === woId) setWoDetail((prev: any) => ({ ...prev, status: updated.workOrder.status }));
         if (selectedWorkOrder?.id === woId) setSelectedWorkOrder((prev: any) => ({ ...prev, status: updated.workOrder.status }));
+      } else {
+        // Network reachable but server rejected — queue for retry so the
+        // user's intent isn't silently lost.
+        await sync.enqueueMutation({
+          kind: 'workOrder.updateStatus',
+          targetId: woId,
+          payload: { status },
+          label: `Set work order → ${status.replace(/_/g, ' ').toLowerCase()}`,
+        });
       }
-    } catch { /* ignore */ }
+    } catch {
+      // Connection dropped mid-request — queue it.
+      await sync.enqueueMutation({
+        kind: 'workOrder.updateStatus',
+        targetId: woId,
+        payload: { status },
+        label: `Set work order → ${status.replace(/_/g, ' ').toLowerCase()}`,
+      });
+    }
   };
 
   // Resolve alert

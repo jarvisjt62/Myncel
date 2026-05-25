@@ -5,6 +5,8 @@ import { ReactNode } from 'react';
 import NotificationsBootstrap from './NotificationsBootstrap';
 import CapacitorSplashHide from './CapacitorSplashHide';
 import MobileSplashOverlay from './MobileSplashOverlay';
+import SyncIndicator from './SyncIndicator';
+import { SyncProvider } from '@/lib/sync/SyncProvider';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -21,7 +23,14 @@ export default function Providers({ children }: ProvidersProps) {
           Capacitor mobile app. Guaranteed 2s minimum on every device. */}
       <MobileSplashOverlay />
       <NotificationsBootstrap />
-      {children}
+      {/* Offline-aware mutation queue. Wraps the whole app so any
+          page (web or Capacitor WebView) can call useSync() and queue
+          API writes when the device is offline. */}
+      <SyncProvider>
+        {children}
+        {/* Floating pill in the bottom-right that surfaces queue state. */}
+        <SyncIndicator />
+      </SyncProvider>
     </SessionProvider>
   );
 }
