@@ -90,9 +90,9 @@ export default function EquipmentImportPage() {
         const validRows: ValidatedEquipmentRow[] = [];
         const rowErrors: RowError[] = [];
         rows.forEach((raw, idx) => {
-          const r = validateEquipmentRow(raw, idx + 2);
-          if (r.ok) validRows.push(r.row);
-          else rowErrors.push(...r.errors);
+          const r: any = validateEquipmentRow(raw, idx + 2);
+          if (r.ok) validRows.push(r.row as ValidatedEquipmentRow);
+          else rowErrors.push(...(r.errors as RowError[]));
         });
 
         setPreview({

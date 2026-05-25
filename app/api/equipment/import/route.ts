@@ -98,11 +98,11 @@ export async function POST(req: NextRequest) {
       // rowIndex is 1-based and accounts for the header row at line 1,
       // so the first data row reports as line 2 — matches what the user
       // sees when they open the CSV in Excel.
-      const result = validateEquipmentRow(raw, idx + 2);
+      const result: any = validateEquipmentRow(raw, idx + 2);
       if (result.ok) {
-        validRows.push(result.row);
+        validRows.push(result.row as ValidatedEquipmentRow);
       } else {
-        rowErrors.push(...result.errors);
+        rowErrors.push(...(result.errors as RowError[]));
       }
     });
 
