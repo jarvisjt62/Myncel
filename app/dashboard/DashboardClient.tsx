@@ -2387,6 +2387,14 @@ function DashboardClientInner({ user, data }: Props) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <ExportActionsBar dataset="machines" onIntegrationResult={handleExportResult} />
                   <Can permission="machines.create">
+                    <Link
+                      href="/dashboard/equipment/import"
+                      className="bg-white border border-slate-300 text-slate-700 text-sm px-4 py-2 rounded-lg font-medium hover:bg-slate-50 transition-colors inline-flex items-center gap-1"
+                    >
+                      📥 Import CSV
+                    </Link>
+                  </Can>
+                  <Can permission="machines.create">
                     <button onClick={() => setShowMachineModal(true)} className="bg-[#635bff] text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-[#4f46e5] transition-colors">
                       + Add Machine
                     </button>
