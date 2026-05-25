@@ -6,7 +6,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Card } from '@/components/Card';
 import { Badge, statusVariant, priorityVariant } from '@/components/Badge';
 import { EmptyState } from '@/components/EmptyState';
-import { SyncIndicator } from '@/components/SyncIndicator';
 import { workOrdersApi } from '@/api/endpoints';
 import type { WorkOrder, WorkOrderStatus } from '@/api/types';
 import { colors, radius, spacing, typography } from '@/theme';
@@ -54,10 +53,7 @@ export default function WorkOrdersListScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <View style={styles.headerTopRow}>
-          <Text style={styles.title}>Work Orders</Text>
-          <SyncIndicator />
-        </View>
+        <Text style={styles.title}>Work Orders</Text>
         <Text style={styles.subtitle}>
           {filtered.length} {filtered.length === 1 ? 'order' : 'orders'}
         </Text>
@@ -146,13 +142,6 @@ export default function WorkOrdersListScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bgPage },
   header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
-  headerTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
   title: { fontSize: typography.xxl, fontWeight: typography.bold, color: colors.text },
   subtitle: { fontSize: typography.sm, color: colors.textMuted, marginTop: 2 },
   filterRow: {

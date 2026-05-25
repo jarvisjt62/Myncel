@@ -5,10 +5,8 @@ import { useFocusEffect, useRoute, type RouteProp } from '@react-navigation/nati
 import { Card } from '@/components/Card';
 import { Badge, statusVariant, priorityVariant } from '@/components/Badge';
 import { Button } from '@/components/Button';
-import { SyncIndicator } from '@/components/SyncIndicator';
 import { Can } from '@/auth/Can';
 import { workOrdersApi } from '@/api/endpoints';
-import { useSync } from '@/sync/SyncContext';
 import type { WorkOrder, WorkOrderStatus } from '@/api/types';
 import { colors, spacing, typography } from '@/theme';
 import { formatDateTime, isOverdue } from '@/utils/date';
@@ -21,7 +19,6 @@ const STATUS_OPTIONS: WorkOrderStatus[] = ['OPEN', 'IN_PROGRESS', 'ON_HOLD', 'CO
 export default function WorkOrderDetailScreen() {
   const route = useRoute<RProps>();
   const { id } = route.params;
-  const { connectivity, enqueueMutation, statusForTarget } = useSync();
 
   const [wo, setWo] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,34 +41,10 @@ export default function WorkOrderDetailScreen() {
     if (!wo || updating) return;
     setUpdating(status);
     try {
-      if (connectivity === 'online') {
-        // Online → send immediately for snappiest UX.
-        const updated = await workOrdersApi.updateStatus(wo.id, status);
-        setWo(updated);
-      } else {
-        // Offline → queue + optimistic UI. Connectivity flip will drain.
-        await enqueueMutation({
-          kind: 'workOrder.updateStatus',
-          targetId: wo.id,
-          payload: { status },
-          label: `Set ${wo.number ? `#${wo.number}` : 'work order'} → ${status.replace('_', ' ')}`,
-        });
-        setWo({ ...wo, status });
-      }
+      const updated = await workOrdersApi.updateStatus(wo.id, status);
+      setWo(updated);
     } catch (err) {
-      // Online send failed (e.g. server 500) — fall back to the queue
-      // so the change isn't silently lost.
-      try {
-        await enqueueMutation({
-          kind: 'workOrder.updateStatus',
-          targetId: wo.id,
-          payload: { status },
-          label: `Set ${wo.number ? `#${wo.number}` : 'work order'} → ${status.replace('_', ' ')}`,
-        });
-        setWo({ ...wo, status });
-      } catch {
-        Alert.alert('Error', err instanceof Error ? err.message : 'Failed to update.');
-      }
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to update.');
     } finally {
       setUpdating(null);
     }
@@ -96,16 +69,6 @@ export default function WorkOrderDetailScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.syncRow}>
-          <SyncIndicator />
-          {statusForTarget(id) === 'pending' || statusForTarget(id) === 'syncing' ? (
-            <Text style={styles.syncHint}>
-              {statusForTarget(id) === 'syncing'
-                ? 'Saving your change…'
-                : 'Will sync when you’re back online.'}
-            </Text>
-          ) : null}
-        </View>
         <Text style={styles.number}>#{wo.number}</Text>
         <Text style={styles.title}>{wo.title}</Text>
 
@@ -179,18 +142,6 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   errorText: { color: colors.danger, fontSize: typography.sm },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  syncRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  syncHint: {
-    fontSize: typography.xs,
-    color: colors.textMuted,
-    fontStyle: 'italic',
-  },
   number: { fontSize: typography.sm, color: colors.textMuted, fontWeight: typography.semibold, marginBottom: spacing.xs },
   title: { fontSize: typography.xxl, fontWeight: typography.bold, color: colors.text, marginBottom: spacing.md },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
