@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AchForm from './AchForm';
 import MobileBillingFallback from './MobileBillingFallback';
-import { useIsCapacitorWebview } from '@/lib/use-capacitor-webview';
+import { useIsCapacitorWebview, useIsIOSApp } from '@/lib/use-capacitor-webview';
 
 interface PlanDef {
   id: string;
@@ -138,6 +138,11 @@ export default function BillingClient({
   // rendering hardcoded USD prices. Until Stripe regional pricing
   // ships, we render a price-free fallback inside the mobile app.
   const isMobileApp = useIsCapacitorWebview();
+  // Apple Guideline 3.1.1 (External Purchase Links) — on iOS the
+  // billing fallback must contain NO clickable affordance leading
+  // to an external purchase site. On Android we keep the
+  // "Open billing on myncel.com" button.
+  const isIOSApp = useIsIOSApp();
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -337,6 +342,7 @@ export default function BillingClient({
         isActiveTrial={isActiveTrial}
         isTrialExpired={isTrialExpired}
         subscriptionStatus={subscriptionStatus}
+        isIOSApp={isIOSApp}
       />
     );
   }

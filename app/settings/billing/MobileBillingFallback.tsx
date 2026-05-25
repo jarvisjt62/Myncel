@@ -10,6 +10,16 @@
  * Shows a price-free view (no $, no /mo, no checkout buttons) so
  * Google Play / Apple App Store reviewers never see hardcoded USD
  * prices inside the binary. CTA opens myncel.com in the OS browser.
+ *
+ * Apple Guideline 3.1.1 (External Purchase Links) compliance:
+ *   On iOS we render a STRICTER variant that contains NO link, NO
+ *   button, NO URL pointing to an external purchase site. Apple
+ *   considers any clickable affordance that "directs the user out of
+ *   the app to a webpage to make a purchase" a 3.1.1 violation —
+ *   even if the destination is your own marketing site.
+ *
+ *   On Android we keep the "Open billing on myncel.com" button. Google
+ *   allows external billing links for B2B SaaS.
  */
 
 import { useState } from 'react';
@@ -24,6 +34,8 @@ interface Props {
   isActiveTrial: boolean;
   isTrialExpired: boolean;
   subscriptionStatus: string | null;
+  /** True when running inside the iOS Capacitor app — hides external billing CTA per Apple 3.1.1. */
+  isIOSApp?: boolean;
 }
 
 export default function MobileBillingFallback({
@@ -34,6 +46,7 @@ export default function MobileBillingFallback({
   isActiveTrial,
   isTrialExpired,
   subscriptionStatus,
+  isIOSApp = false,
 }: Props) {
   const [opening, setOpening] = useState(false);
   // Build a friendly, price-free status string.
@@ -97,6 +110,10 @@ export default function MobileBillingFallback({
    * `_blank` and just reloads the URL inside the same webview —
    * which is exactly the bug the user reported ("button does
    * nothing").
+   *
+   * NEVER called on iOS — Apple Guideline 3.1.1 prohibits external
+   * purchase links of any kind. The button itself is not rendered
+   * on iOS.
    */
   async function openBillingExternal(e: React.MouseEvent) {
     e.preventDefault();
@@ -205,51 +222,80 @@ export default function MobileBillingFallback({
         >
           Manage your plan from a web browser
         </h2>
-        <p
-          className="mt-2 text-sm leading-relaxed"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          For your security, Myncel subscriptions and billing are managed on
-          our website. Open <span className="font-semibold">myncel.com</span>{' '}
-          in your phone or computer browser to view plans, start a free trial,
-          change your subscription, update your payment method, or download
-          invoices.
-        </p>
 
-        <a
-          href={billingUrl}
-          onClick={openBillingExternal}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[15px] font-semibold text-white shadow-sm transition disabled:opacity-60"
-          style={{ background: '#635bff' }}
-          aria-busy={opening}
-        >
-          {opening ? 'Opening browser…' : 'Open billing on myncel.com'}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-4 w-4"
-            aria-hidden="true"
-          >
-            <path d="M7 7h10v10" />
-            <path d="M7 17 17 7" />
-          </svg>
-        </a>
+        {isIOSApp ? (
+          // ── iOS variant ─────────────────────────────────────────────
+          // No clickable affordance, no URL, no purchase CTA.
+          // Apple Guideline 3.1.1 prohibits any link or button that
+          // sends the user out of the app to a purchase flow.
+          <>
+            <p
+              className="mt-2 text-sm leading-relaxed"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              Myncel subscriptions and billing are managed on a web
+              browser. To view plans, change your subscription, update
+              your payment method, or download invoices, please visit
+              Myncel using a web browser on any device.
+            </p>
+            <p
+              className="mt-4 text-xs leading-5"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Already on a plan? Your subscription continues to work
+              normally in the app — you don&apos;t need to do anything.
+            </p>
+          </>
+        ) : (
+          // ── Android / other (Google Play allows external billing) ───
+          <>
+            <p
+              className="mt-2 text-sm leading-relaxed"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              For your security, Myncel subscriptions and billing are managed on
+              our website. Open <span className="font-semibold">myncel.com</span>{' '}
+              in your phone or computer browser to view plans, start a free trial,
+              change your subscription, update your payment method, or download
+              invoices.
+            </p>
 
-        <p
-          className="mt-4 text-xs leading-5"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          Already on a plan? Your subscription continues to work in the app.
-          You only need a web browser to <em>change</em> your plan or view
-          billing history.
-        </p>
+            <a
+              href={billingUrl}
+              onClick={openBillingExternal}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[15px] font-semibold text-white shadow-sm transition disabled:opacity-60"
+              style={{ background: '#635bff' }}
+              aria-busy={opening}
+            >
+              {opening ? 'Opening browser…' : 'Open billing on myncel.com'}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
+                <path d="M7 7h10v10" />
+                <path d="M7 17 17 7" />
+              </svg>
+            </a>
+
+            <p
+              className="mt-4 text-xs leading-5"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Already on a plan? Your subscription continues to work in the app.
+              You only need a web browser to <em>change</em> your plan or view
+              billing history.
+            </p>
+          </>
+        )}
       </div>
 
       {/* Help row */}
