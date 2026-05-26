@@ -925,6 +925,8 @@ enum IntegrationType {
   TWILIO
   GOOGLE_SHEETS
   WEBHOOKS
+  PAGERDUTY
+  MS_TEAMS
 }
 
 enum IntegrationStatus {

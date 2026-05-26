@@ -704,7 +704,7 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '🔔',
     title: 'Alerts & Notifications',
     summary:
-      'Configure how Myncel reaches you when something needs attention — in-app, email, SMS, mobile push, Slack, or any external system via Webhooks (Microsoft Teams, PagerDuty, Opsgenie, and others).',
+      'Configure how Myncel reaches you when something needs attention — in-app, email, SMS, mobile push, Slack, Microsoft Teams, PagerDuty, or any external system via Webhooks.',
     sections: [
       {
         heading: 'Notification channels',
@@ -717,8 +717,9 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
           'SMS — for urgent alerts. Available on the Growth plan and above. Worldwide coverage via Twilio with E.164-formatted numbers.',
           'Mobile push — to the iOS or Android app via APNs and FCM. Banner on lock screen, badge on icon, optional sound, and tap-to-deep-link straight to the work order or alert.',
           'Slack — post to a channel of your choice. Configure in /settings/integrations → Slack.',
-          'Webhooks — POST a JSON payload to any URL you control. Useful for piping into custom dashboards, paging tools, or BI systems. This is also the path for Microsoft Teams (Teams Incoming Webhook URL), PagerDuty (Events API v2 endpoint), and Opsgenie (REST webhook) until native integrations ship.',
-          'Native Microsoft Teams, PagerDuty, and Opsgenie integrations are on the roadmap. See the Roadmap chapter.',
+          'Microsoft Teams — adaptive-card alerts to any Teams channel via Incoming Webhook. Configure in /settings/integrations → Microsoft Teams. See the Integrations chapter.',
+          'PagerDuty — page on-call engineers via PagerDuty Events API v2 with severity-aware routing and auto-resolve. Configure in /settings/integrations → PagerDuty. See the Integrations chapter.',
+          'Webhooks — POST a JSON payload to any URL you control. Useful for piping into custom dashboards or any tool not covered by the native integrations above (e.g. Opsgenie until its native integration ships).',
         ],
       },
       {
@@ -832,26 +833,76 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '🔌',
     title: 'Integrations',
     summary:
-      'Myncel plays nicely with the rest of your stack — Slack, ERP / accounting systems, the public REST API and Webhooks for everything else, and the full set of industrial protocols for IoT and SCADA data.',
+      'Myncel plays nicely with the rest of your stack — Slack, Microsoft Teams, PagerDuty, ERP / accounting systems, the public REST API and Webhooks for everything else, and the full set of industrial protocols for IoT and SCADA data.',
     sections: [
       {
-        heading: 'Communication tools — Slack (and Teams via Webhook)',
+        heading: 'Slack — channel notifications',
         body: [
-          'Connect Slack to push alerts and work-order updates into the channels your team already lives in. Microsoft Teams is on the roadmap as a native integration; until then, use a Teams Incoming Webhook through our Webhooks integration — Teams will render the alert as a message card.',
+          'Connect Slack to push alerts and work-order updates into the channels your team already lives in. Setup is a one-click OAuth flow: you authorize the Myncel app inside your Slack workspace, choose a default channel, and Myncel starts posting events the next time something happens.',
         ],
         steps: [
           'Open /settings/integrations.',
-          'Click Connect under Slack and authorize the workspace (OAuth flow).',
-          'Pick which Slack channel receives notifications (new critical alert, new work order, status change).',
-          'For Microsoft Teams, create an Incoming Webhook in your Teams channel, then in /settings/webhooks add the Teams webhook URL with the events you want to forward.',
-          'Save.',
+          'Click Connect under Slack. You are redirected to Slack to approve the workspace install.',
+          'Pick the channel that should receive Myncel notifications (e.g. #maintenance or #on-call). You can change this later under /settings/notifications.',
+          'Choose which event types post to Slack — work order created, work order completed, alert triggered, PM overdue. Each can be toggled independently.',
+          'Click Save. From the Connected card you can press 💬 Send Digest to post a one-shot maintenance summary to verify the channel is wired correctly.',
+        ],
+        bullets: [
+          'Messages include rich formatting — work-order title, machine, priority, assignee, and a deep link back to /work-orders/<id>.',
+          'Critical alerts include a red highlight bar; warnings use amber; info uses neutral grey.',
+          'Disconnecting from /settings/integrations revokes the Slack token immediately and stops all posting.',
         ],
       },
       {
-        heading: 'On-call paging (PagerDuty / Opsgenie via Webhooks)',
+        heading: 'Microsoft Teams — adaptive-card alerts',
         body: [
-          'Native PagerDuty and Opsgenie integrations are on the roadmap. Today you can route critical alerts to either tool through our generic Webhooks integration: PagerDuty\'s Events API v2 endpoint (https://events.pagerduty.com/v2/enqueue) and Opsgenie\'s REST webhooks both accept a JSON POST. Add the URL in /settings/webhooks, choose which alert types forward, and Myncel will fire incidents that follow your existing on-call rotations and escalation policies.',
+          'Microsoft Teams is now a first-class native integration. Myncel posts Adaptive Card v1.4 messages to any Teams channel through a per-channel Incoming Webhook URL — no app install, no admin approval, no OAuth dance. Each Teams channel can have its own webhook, so different sites or teams can receive different subsets of events by connecting Myncel to multiple channels (one connection per Myncel organization is supported today; multi-channel is on the roadmap).',
+          'Cards are colour-coded by severity (critical / error → red, warning → amber, info → blue, success → green) and include the machine name, sensor or task, severity, and an "Open in Myncel" action button that deep-links to the relevant page.',
         ],
+        steps: [
+          'In Microsoft Teams, open the channel that should receive Myncel alerts.',
+          'Click the channel ••• menu → Connectors. (On newer tenants this may be Workflows → "Post to a channel when a webhook request is received".)',
+          'Find Incoming Webhook → Configure. Give it a name (e.g. "Myncel"), optionally upload an icon, and click Create.',
+          'Copy the long URL that begins with https://<tenant>.webhook.office.com/webhookb2/...',
+          'Open /settings/integrations in Myncel and click Connect under Microsoft Teams.',
+          'Paste the webhook URL, give the channel a friendly label (purely cosmetic), and click Connect Teams.',
+          'Myncel posts a single confirmation card to verify wiring. From the Connected card you can press 👥 Test Card any time to re-test.',
+        ],
+        bullets: [
+          'Events that fire a Teams card today: work_order.created, work_order.completed, alert.triggered, pm.overdue.',
+          'Severity → colour mapping: CRITICAL/HIGH → attention (red), WARNING/MEDIUM → warning (amber), INFO/LOW → accent (blue), SUCCESS → good (green).',
+          'Disconnecting from /settings/integrations revokes the saved webhook URL — Teams will stop receiving cards immediately.',
+        ],
+        callout: {
+          type: 'info',
+          text: 'Teams Incoming Webhooks are per-channel and act as both ID and secret — anyone with the URL can post to that channel. Treat the URL like a password and never commit it to source control. If a URL leaks, delete the connector in Teams and create a new one.',
+        },
+      },
+      {
+        heading: 'PagerDuty — on-call paging via Events API v2',
+        body: [
+          'PagerDuty is a native integration for on-call paging. When a critical alert fires or a PM goes overdue, Myncel triggers a PagerDuty incident on the service you choose, which then follows your existing on-call rotations and escalation policies. When the alert is resolved in Myncel, the matching PagerDuty incident is auto-resolved (deduplicated by a stable Myncel resource ID), so on-call engineers never have to manually clear our incidents.',
+          'Setup is a single 32-character Integration Key — no OAuth, no webhooks to configure on the PagerDuty side beyond the standard Events API V2 integration that ships in every PagerDuty service.',
+        ],
+        steps: [
+          'Sign in to PagerDuty → Services → pick the Service that should handle Myncel alerts (or create a new one named e.g. "Myncel — Production Floor").',
+          'Open the service → Integrations tab → click "+ Add a new integration".',
+          'Choose Events API V2 as the Integration Type → Add Integration.',
+          'Copy the Integration Key (a 32-character hexadecimal string).',
+          'In Myncel open /settings/integrations and click Connect under PagerDuty.',
+          'Paste the Integration Key, give the service a friendly label (e.g. "Production Floor"), and click Connect PagerDuty.',
+          'Myncel triggers + auto-resolves a single test incident on that service so you can verify the wiring in your PagerDuty timeline. From the Connected card you can press 🚨 Test Page any time.',
+        ],
+        bullets: [
+          'Severity mapping — Myncel CRITICAL → PagerDuty critical (pages immediately), HIGH → error, WARNING/MEDIUM → warning, INFO/LOW → info (no page).',
+          'Dedup keys — incidents are keyed by Myncel resource ID + event type. Re-firing the same alert updates the existing incident instead of opening a new one.',
+          'Auto-resolve — when an alert is acknowledged or resolved in Myncel, a Resolve event is posted to PagerDuty so the on-call rotation does not get false re-pages.',
+          'Routing-key rotation — to rotate, generate a new Events API V2 integration in the same PagerDuty service, paste the new key into Myncel, then delete the old integration in PagerDuty.',
+        ],
+        callout: {
+          type: 'warning',
+          text: 'The Integration Key is both ID and secret. Anyone with the key can post incidents to your service — treat it like a password. Use a dedicated PagerDuty service for Myncel rather than reusing a service that accepts events from many sources.',
+        },
       },
       {
         heading: 'ERP and accounting',
@@ -1193,11 +1244,9 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
       {
         heading: 'Integrations',
         body: [
-          'Today the native integrations are: Slack (channels and DMs), QuickBooks Online (parts purchases → bills), Google Sheets (export schedules and WOs), and Twilio (SMS alerts). Anything else can be wired through Webhooks (Settings → Webhooks). The roadmap turns the most-requested webhook recipes into native one-click integrations.',
+          'Today the native integrations are: Slack (channels and DMs), Microsoft Teams (adaptive-card alerts to any channel via Incoming Webhook), PagerDuty (Events API v2 with severity-aware paging), QuickBooks Online (parts purchases → bills), Google Sheets (export schedules and WOs), and Twilio (SMS alerts). Anything else can be wired through Webhooks (Settings → Webhooks). The roadmap turns the remaining most-requested webhook recipes into native one-click integrations.',
         ],
         bullets: [
-          'Microsoft Teams native integration (channels, adaptive cards, @mentions). Today: Webhook → Teams Incoming Webhook URL.',
-          'PagerDuty native integration with on-call schedules and escalation policies. Today: Webhook → PagerDuty Events API v2.',
           'Opsgenie native integration. Today: Webhook → Opsgenie REST API.',
           'SAP S/4HANA, NetSuite, Microsoft Dynamics 365, Oracle Fusion, Sage Intacct, Xero — native ERP/accounting integrations. Today: QuickBooks Online is native; everything else via Webhooks or the public REST API.',
           'SAML 2.0 SSO and SCIM 2.0 auto-provisioning for Okta, Azure AD, Google Workspace, OneLogin. Today: email + password (with optional 2FA) and Google OAuth.',

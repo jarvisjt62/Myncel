@@ -31,6 +31,8 @@ type ModalType =
   | { kind: 'zapier'; apiKey: string; webhookUrl: string }
   | { kind: 'oauth'; integration: string; name: string }
   | { kind: 'webhooks' }
+  | { kind: 'pagerduty' }
+  | { kind: 'ms_teams' }
   | null;
 
 const INTEGRATION_META: Record<string, { icon: string; name: string; description: string; category: string }> = {
@@ -40,9 +42,11 @@ const INTEGRATION_META: Record<string, { icon: string; name: string; description
   twilio:        { icon: '📱', name: 'SMS Notifications', description: 'Send work order alerts via SMS to your team using Twilio', category: 'Communication' },
   webhooks:      { icon: '🔗', name: 'Webhooks',        description: 'Send real-time events to your own endpoints', category: 'Developer' },
   google_sheets: { icon: '📊', name: 'Google Sheets',   description: 'Export reports and data to Google Sheets automatically', category: 'Productivity' },
+  pagerduty:     { icon: '🚨', name: 'PagerDuty',       description: 'Page on-call engineers for breakdowns and overdue PMs via PagerDuty Events API v2', category: 'Communication' },
+  ms_teams:      { icon: '👥', name: 'Microsoft Teams', description: 'Get adaptive-card alerts in any Teams channel via Incoming Webhook', category: 'Communication' },
 };
 
-const ALL_IDS = ['slack', 'quickbooks', 'zapier', 'twilio', 'webhooks', 'google_sheets'];
+const ALL_IDS = ['slack', 'quickbooks', 'zapier', 'twilio', 'webhooks', 'google_sheets', 'pagerduty', 'ms_teams'];
 
 function IntegrationsPage() {
   const [integrations, setIntegrations] = useState<Record<string, IntegrationData>>({});
@@ -52,6 +56,14 @@ function IntegrationsPage() {
   const [twilioForm, setTwilioForm] = useState({ accountSid: '', authToken: '', fromNumber: '' });
   const [twilioError, setTwilioError] = useState('');
   const [twilioSaving, setTwilioSaving] = useState(false);
+  // PagerDuty connect form
+  const [pdForm, setPdForm] = useState({ routingKey: '', serviceName: 'Myncel Alerts' });
+  const [pdError, setPdError] = useState('');
+  const [pdSaving, setPdSaving] = useState(false);
+  // Microsoft Teams connect form
+  const [teamsForm, setTeamsForm] = useState({ webhookUrl: '', channelName: 'Myncel Alerts' });
+  const [teamsError, setTeamsError] = useState('');
+  const [teamsSaving, setTeamsSaving] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [exporting, setExporting] = useState<string | null>(null);
   const [exportResult, setExportResult] = useState<
@@ -283,6 +295,20 @@ function IntegrationsPage() {
     }
     if (id === 'webhooks') { setModal({ kind: 'webhooks' }); return; }
 
+    if (id === 'pagerduty') {
+      setPdForm({ routingKey: '', serviceName: 'Myncel Alerts' });
+      setPdError('');
+      setModal({ kind: 'pagerduty' });
+      return;
+    }
+
+    if (id === 'ms_teams') {
+      setTeamsForm({ webhookUrl: '', channelName: 'Myncel Alerts' });
+      setTeamsError('');
+      setModal({ kind: 'ms_teams' });
+      return;
+    }
+
     setWorking(id);
     try {
       const res = await fetch(`/api/integrations/${id}/connect`);
@@ -432,6 +458,85 @@ function IntegrationsPage() {
     } catch { setTwilioError('Failed to save. Please try again.'); }
     finally { setTwilioSaving(false); }
   };
+
+  /* ── PagerDuty connect / test ─────────────────────────────────────── */
+  const handlePagerDutySave = async () => {
+    setPdError('');
+    const key = pdForm.routingKey.trim();
+    if (!/^[a-fA-F0-9]{32}$/.test(key)) {
+      setPdError('Integration Key must be a 32-character hex string from PagerDuty → Service → Integrations → Events API V2.');
+      return;
+    }
+    setPdSaving(true);
+    try {
+      const res = await fetch('/api/integrations/pagerduty/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ routingKey: key, serviceName: pdForm.serviceName.trim() || 'Myncel Alerts' }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setModal(null);
+        showToast('success', data.message || 'PagerDuty connected. Test incident triggered + resolved on your service.');
+        invalidateCache('integrations');
+        fetchIntegrations(false);
+      } else {
+        setPdError(data.error || 'Failed to connect PagerDuty.');
+      }
+    } catch { setPdError('Connection failed. Please try again.'); }
+    finally { setPdSaving(false); }
+  };
+
+  const handlePagerDutyTest = async () => {
+    setExporting('pagerduty');
+    try {
+      const res = await fetch('/api/integrations/pagerduty/test', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) showToast('success', 'Test incident sent to PagerDuty (auto-resolves in 5s).');
+      else showToast('error', data.error || 'Test failed.');
+    } catch { showToast('error', 'Test failed. Please try again.'); }
+    finally { setExporting(null); }
+  };
+
+  /* ── Microsoft Teams connect / test ───────────────────────────────── */
+  const handleTeamsSave = async () => {
+    setTeamsError('');
+    const url = teamsForm.webhookUrl.trim();
+    if (!/^https:\/\/[^/]+\.webhook\.office\.com\//.test(url)) {
+      setTeamsError('Webhook URL must look like https://<tenant>.webhook.office.com/webhookb2/... — copy it from Teams → Channel → Connectors → Incoming Webhook → Configure.');
+      return;
+    }
+    setTeamsSaving(true);
+    try {
+      const res = await fetch('/api/integrations/teams/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webhookUrl: url, channelName: teamsForm.channelName.trim() || 'Myncel Alerts' }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setModal(null);
+        showToast('success', data.message || 'Microsoft Teams connected. Confirmation card posted to your channel.');
+        invalidateCache('integrations');
+        fetchIntegrations(false);
+      } else {
+        setTeamsError(data.error || 'Failed to connect Microsoft Teams.');
+      }
+    } catch { setTeamsError('Connection failed. Please try again.'); }
+    finally { setTeamsSaving(false); }
+  };
+
+  const handleTeamsTest = async () => {
+    setExporting('ms_teams');
+    try {
+      const res = await fetch('/api/integrations/teams/test', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) showToast('success', 'Test card posted to your Teams channel.');
+      else showToast('error', data.error || 'Test failed.');
+    } catch { showToast('error', 'Test failed. Please try again.'); }
+    finally { setExporting(null); }
+  };
+
 
   const connectedIds = ALL_IDS.filter(isConnected);
   const disabledPlatformIds = ALL_IDS.filter(isDisabledPlatform);
@@ -762,6 +867,28 @@ function IntegrationsPage() {
                                 {exporting === 'slack' ? 'Sending…' : '💬 Send Digest'}
                               </button>
                             )}
+                            {id === 'pagerduty' && (
+                              <button
+                                onClick={handlePagerDutyTest}
+                                disabled={exporting === 'pagerduty'}
+                                className="px-3 py-2 text-xs font-medium rounded-lg disabled:opacity-50 transition-colors inline-flex items-center gap-1.5"
+                                style={{ background: '#06ac38', color: 'white' }}
+                                title="Trigger a one-shot test incident in PagerDuty (auto-resolves)"
+                              >
+                                {exporting === 'pagerduty' ? 'Sending…' : '🚨 Test Page'}
+                              </button>
+                            )}
+                            {id === 'ms_teams' && (
+                              <button
+                                onClick={handleTeamsTest}
+                                disabled={exporting === 'ms_teams'}
+                                className="px-3 py-2 text-xs font-medium rounded-lg disabled:opacity-50 transition-colors inline-flex items-center gap-1.5"
+                                style={{ background: '#4b53bc', color: 'white' }}
+                                title="Post a test adaptive card to your Teams channel"
+                              >
+                                {exporting === 'ms_teams' ? 'Sending…' : '👥 Test Card'}
+                              </button>
+                            )}
                             <button
                               onClick={() => handleDisconnect(id)}
                               disabled={working === id}
@@ -1077,6 +1204,127 @@ function IntegrationsPage() {
                   style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}>
                   Close
                 </button>
+              </div>
+            )}
+
+            {/* PagerDuty connect */}
+            {modal.kind === 'pagerduty' && (
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <span className="text-3xl">🚨</span>
+                  <div>
+                    <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Connect PagerDuty</h2>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Page on-call engineers via Events API v2</p>
+                  </div>
+                </div>
+                <div className="text-sm mb-5 rounded-lg p-3 border space-y-2" style={{ color: 'var(--text-secondary)', background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
+                  <p>To get your <strong>Integration Key</strong>:</p>
+                  <ol className="list-decimal pl-5 space-y-0.5 text-xs">
+                    <li>Open <a href="https://pagerduty.com" target="_blank" rel="noopener noreferrer" className="text-[#635bff] hover:underline">PagerDuty</a> → <strong>Services</strong> → pick or create the service that should handle Myncel alerts.</li>
+                    <li>Open the service → <strong>Integrations</strong> tab → <strong>+ Add a new integration</strong>.</li>
+                    <li>Choose <strong>Events API V2</strong> as the Integration Type → <strong>Add Integration</strong>.</li>
+                    <li>Copy the <strong>Integration Key</strong> (a 32-character hex string) and paste it below.</li>
+                  </ol>
+                  <p className="text-xs">When you click Connect, Myncel will trigger + auto-resolve a single test incident on this service so you can verify wiring in your timeline.</p>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-secondary)' }}>Integration Key (Routing Key)</label>
+                    <input
+                      type="text"
+                      value={pdForm.routingKey}
+                      onChange={e => setPdForm(prev => ({ ...prev, routingKey: e.target.value }))}
+                      placeholder="e.g. 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d"
+                      maxLength={32}
+                      className="w-full px-3 py-2.5 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#635bff]/30"
+                      style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
+                    />
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>32 hex characters — found in PagerDuty service → Integrations.</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-secondary)' }}>Service Label (optional)</label>
+                    <input
+                      type="text"
+                      value={pdForm.serviceName}
+                      onChange={e => setPdForm(prev => ({ ...prev, serviceName: e.target.value }))}
+                      placeholder="Myncel Alerts"
+                      className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#635bff]/30"
+                      style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
+                    />
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Shown in incident summaries — purely cosmetic.</p>
+                  </div>
+                  {pdError && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{pdError}</div>}
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <button onClick={handlePagerDutySave} disabled={pdSaving}
+                    className="flex-1 bg-[#635bff] text-white font-semibold py-2.5 rounded-lg text-sm hover:bg-[#4f46e5] disabled:opacity-50 transition-colors">
+                    {pdSaving ? 'Connecting…' : 'Connect PagerDuty'}
+                  </button>
+                  <button onClick={() => setModal(null)}
+                    className="px-5 py-2.5 rounded-lg text-sm transition-colors"
+                    style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Microsoft Teams connect */}
+            {modal.kind === 'ms_teams' && (
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <span className="text-3xl">👥</span>
+                  <div>
+                    <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Connect Microsoft Teams</h2>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Adaptive-card alerts via Incoming Webhook</p>
+                  </div>
+                </div>
+                <div className="text-sm mb-5 rounded-lg p-3 border space-y-2" style={{ color: 'var(--text-secondary)', background: 'var(--bg-surface-2)', borderColor: 'var(--border)' }}>
+                  <p>To get a <strong>Webhook URL</strong>:</p>
+                  <ol className="list-decimal pl-5 space-y-0.5 text-xs">
+                    <li>Open Microsoft Teams → pick the <strong>channel</strong> that should receive Myncel alerts.</li>
+                    <li>Click the channel <strong>•••</strong> menu → <strong>Connectors</strong> (or <strong>Workflows</strong> on newer tenants).</li>
+                    <li>Find <strong>Incoming Webhook</strong> → <strong>Configure</strong> → give it a name (e.g. "Myncel") and optionally upload an icon → <strong>Create</strong>.</li>
+                    <li>Copy the URL that begins with <code className="text-[#635bff]">https://&lt;tenant&gt;.webhook.office.com/...</code> and paste it below.</li>
+                  </ol>
+                  <p className="text-xs">When you click Connect, Myncel will post a single confirmation adaptive card to that channel so you can verify wiring.</p>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-secondary)' }}>Webhook URL</label>
+                    <textarea
+                      value={teamsForm.webhookUrl}
+                      onChange={e => setTeamsForm(prev => ({ ...prev, webhookUrl: e.target.value }))}
+                      placeholder="https://yourtenant.webhook.office.com/webhookb2/..."
+                      rows={3}
+                      className="w-full px-3 py-2.5 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#635bff]/30"
+                      style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-secondary)' }}>Channel Label (optional)</label>
+                    <input
+                      type="text"
+                      value={teamsForm.channelName}
+                      onChange={e => setTeamsForm(prev => ({ ...prev, channelName: e.target.value }))}
+                      placeholder="Myncel Alerts"
+                      className="w-full px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#635bff]/30"
+                      style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
+                    />
+                  </div>
+                  {teamsError && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{teamsError}</div>}
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <button onClick={handleTeamsSave} disabled={teamsSaving}
+                    className="flex-1 bg-[#635bff] text-white font-semibold py-2.5 rounded-lg text-sm hover:bg-[#4f46e5] disabled:opacity-50 transition-colors">
+                    {teamsSaving ? 'Connecting…' : 'Connect Teams'}
+                  </button>
+                  <button onClick={() => setModal(null)}
+                    className="px-5 py-2.5 rounded-lg text-sm transition-colors"
+                    style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}>
+                    Cancel
+                  </button>
+                </div>
               </div>
             )}
 

@@ -72,6 +72,28 @@ const INTEGRATION_TYPES = [
     oauthUrl: '/api/integrations/google-sheets/connect',
     docsUrl: '/docs/integrations/google-sheets',
     platformWide: true,
+  },
+  {
+    id: 'pagerduty',
+    name: 'PagerDuty',
+    description: 'Page on-call engineers via PagerDuty Events API v2 for breakdowns and overdue PMs.',
+    icon: '🚨',
+    category: 'Communication',
+    features: ['Trigger / acknowledge / resolve', 'Per-org routing key', 'Severity-aware paging'],
+    configFields: ['routingKey', 'serviceName'],
+    docsUrl: '/docs/integrations/pagerduty',
+    platformWide: false,
+  },
+  {
+    id: 'ms_teams',
+    name: 'Microsoft Teams',
+    description: 'Get adaptive-card alerts in any Teams channel via Incoming Webhook.',
+    icon: '👥',
+    category: 'Communication',
+    features: ['Adaptive Cards v1.4', 'Per-channel webhook', 'Severity-coloured alerts'],
+    configFields: ['webhookUrl', 'channelName'],
+    docsUrl: '/docs/integrations/microsoft-teams',
+    platformWide: false,
   }
 ];
 

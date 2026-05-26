@@ -27,6 +27,8 @@ import {
 } from '@/lib/email';
 import { sendPushToUsers } from './push';
 import { filterPushDelivery } from './push-filter';
+import { pagerDutyTrigger, pagerDutyResolve, pagerDutySeverityForAlert } from '@/lib/pagerduty';
+import { sendTeamsAlert, teamsSeverityForAlert } from '@/lib/teams';
 
 const APP_URL = process.env.NEXTAUTH_URL || 'https://myncel.com';
 
@@ -381,6 +383,18 @@ export async function dispatchNotifications(
       console.error('Webhook dispatch error:', err)
     );
 
+    // ── PagerDuty (only fires for alerts / overdue PMs) ────────────
+    if (event.type === 'alert.triggered' || event.type === 'pm.overdue') {
+      dispatchPagerDuty(organizationId, event).catch(err =>
+        console.error('PagerDuty dispatch error:', err)
+      );
+    }
+
+    // ── Microsoft Teams (same events as Slack) ─────────────────────
+    dispatchTeams(organizationId, event).catch(err =>
+      console.error('Teams dispatch error:', err)
+    );
+
     // In-app notifications (bell icon)
     createInAppNotifications(organizationId, event).catch(err =>
       console.error('In-app notification error:', err)
@@ -588,5 +602,150 @@ async function createInAppNotifications(
     );
   } catch (err) {
     console.error('createInAppNotifications error:', err);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   PagerDuty fan-out
+   Fired for alerts and overdue PMs. dedup_key keys are stable per
+   logical incident so re-firing the same event updates the existing
+   incident in PagerDuty rather than creating a new one.
+   ──────────────────────────────────────────────────────────────────── */
+async function dispatchPagerDuty(
+  organizationId: string,
+  event: NotificationEvent
+): Promise<void> {
+  try {
+    const integration = await safeQuery(
+      db.integration.findFirst({
+        where: { organizationId, type: 'PAGERDUTY' as any, status: 'CONNECTED' },
+      }),
+      null
+    );
+    if (!integration?.apiKey) return;
+    const routingKey = integration.apiKey;
+
+    if (event.type === 'alert.triggered') {
+      const e = event as any;
+      await pagerDutyTrigger({
+        routingKey,
+        dedupKey: `myncel-alert-${e.alertId || `${organizationId}-${e.machineName}-${e.alertType}`}`,
+        summary: `${e.alertType || 'Alert'} on ${e.machineName}`,
+        source: e.machineName || 'Myncel',
+        severity: pagerDutySeverityForAlert(e.severity),
+        component: e.sensorName,
+        group: e.location,
+        class: e.alertType,
+        customDetails: {
+          message: e.message,
+          severity: e.severity,
+          machineId: e.machineId,
+          alertId: e.alertId,
+        },
+        clickThroughUrl: `${APP_URL}/dashboard#alerts`,
+      });
+    } else if (event.type === 'pm.overdue') {
+      const e = event as any;
+      await pagerDutyTrigger({
+        routingKey,
+        dedupKey: `myncel-pm-${e.taskId || `${organizationId}-${e.machineName}-${e.taskTitle}`}`,
+        summary: `PM overdue: ${e.taskTitle} on ${e.machineName}`,
+        source: e.machineName || 'Myncel',
+        severity: e.daysOverdue && e.daysOverdue > 7 ? 'error' : 'warning',
+        class: 'pm_overdue',
+        customDetails: {
+          taskTitle: e.taskTitle,
+          daysOverdue: e.daysOverdue,
+          machineName: e.machineName,
+        },
+        clickThroughUrl: `${APP_URL}/dashboard#schedules`,
+      });
+    }
+  } catch (err) {
+    console.error('PagerDuty dispatch error:', err);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   Microsoft Teams fan-out — adaptive cards.
+   Fires for the same events that Slack does.
+   ──────────────────────────────────────────────────────────────────── */
+async function dispatchTeams(
+  organizationId: string,
+  event: NotificationEvent
+): Promise<void> {
+  try {
+    const integration = await safeQuery(
+      db.integration.findFirst({
+        where: { organizationId, type: 'MS_TEAMS' as any, status: 'CONNECTED' },
+      }),
+      null
+    );
+    if (!integration?.webhookUrl) return;
+    const webhookUrl = integration.webhookUrl;
+
+    if (event.type === 'work_order.created') {
+      const e = event as any;
+      await sendTeamsAlert({
+        webhookUrl,
+        title: `New work order: ${e.title}`,
+        badge: `WO #${e.workOrderNumber} • ${e.priority || 'NORMAL'}`,
+        severity: e.priority === 'CRITICAL' || e.priority === 'HIGH' ? 'warning' : 'info',
+        message: `Created on ${e.machineName}.${e.assignee ? ` Assigned to ${e.assignee}.` : ''}${e.dueDate ? ` Due ${e.dueDate}.` : ''}`,
+        facts: [
+          { name: 'Machine', value: e.machineName },
+          ...(e.assignee ? [{ name: 'Assignee', value: e.assignee }] : []),
+          ...(e.dueDate ? [{ name: 'Due', value: e.dueDate }] : []),
+          { name: 'Priority', value: e.priority || 'NORMAL' },
+        ],
+        actions: [{ title: 'Open work order', url: `${APP_URL}/dashboard#work-orders` }],
+      });
+    } else if (event.type === 'work_order.completed') {
+      const e = event as any;
+      await sendTeamsAlert({
+        webhookUrl,
+        title: `Work order completed: ${e.title}`,
+        badge: `WO #${e.workOrderNumber}`,
+        severity: 'success',
+        message: `${e.completedBy} completed work on ${e.machineName}.`,
+        facts: [
+          { name: 'Machine', value: e.machineName },
+          { name: 'Completed by', value: e.completedBy },
+        ],
+        actions: [{ title: 'View details', url: `${APP_URL}/dashboard#work-orders` }],
+      });
+    } else if (event.type === 'alert.triggered') {
+      const e = event as any;
+      await sendTeamsAlert({
+        webhookUrl,
+        title: `${e.alertType || 'Alert'} on ${e.machineName}`,
+        badge: e.severity || 'ALERT',
+        severity: teamsSeverityForAlert(e.severity),
+        message: e.message || 'A sensor threshold was exceeded or a fault code was reported.',
+        facts: [
+          { name: 'Machine', value: e.machineName },
+          ...(e.sensorName ? [{ name: 'Sensor', value: e.sensorName }] : []),
+          { name: 'Severity', value: e.severity || 'unspecified' },
+        ],
+        actions: [{ title: 'Open alert', url: `${APP_URL}/dashboard#alerts` }],
+      });
+    } else if (event.type === 'pm.overdue') {
+      const e = event as any;
+      await sendTeamsAlert({
+        webhookUrl,
+        title: `PM overdue: ${e.taskTitle}`,
+        badge: `${e.daysOverdue || '?'} day${e.daysOverdue === 1 ? '' : 's'} overdue`,
+        severity: e.daysOverdue && e.daysOverdue > 7 ? 'error' : 'warning',
+        message: `Scheduled preventive maintenance on ${e.machineName} is past due.`,
+        facts: [
+          { name: 'Machine', value: e.machineName },
+          { name: 'Task', value: e.taskTitle },
+          { name: 'Days overdue', value: String(e.daysOverdue || '?') },
+        ],
+        actions: [{ title: 'View schedule', url: `${APP_URL}/dashboard#schedules` }],
+      });
+    }
+  } catch (err) {
+    console.error('Teams dispatch error:', err);
   }
 }
