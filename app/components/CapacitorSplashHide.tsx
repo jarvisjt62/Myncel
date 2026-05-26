@@ -33,10 +33,16 @@ declare global {
   interface Window {
     Capacitor?: {
       isNativePlatform?: () => boolean;
+      getPlatform?: () => string;
       Plugins?: {
         SplashScreen?: {
           hide: (opts?: { fadeOutDuration?: number }) => Promise<void>;
           show?: (opts?: any) => Promise<void>;
+        };
+        StatusBar?: {
+          getInfo?: () => Promise<{ height?: number; visible?: boolean; style?: string }>;
+          setOverlaysWebView?: (opts: { overlay: boolean }) => Promise<void>;
+          setStyle?: (opts: { style: 'DARK' | 'LIGHT' | 'DEFAULT' }) => Promise<void>;
         };
       };
     };
@@ -77,6 +83,43 @@ export default function CapacitorSplashHide() {
     try {
       document.body.classList.add('capacitor-app');
     } catch {}
+
+    // ─── Samsung S24 Ultra fix ────────────────────────────────────────
+    // env(safe-area-inset-top) returns 0 on Samsung One UI when the
+    // StatusBar plugin isn't configured for edge-to-edge. Probe the
+    // plugin (if available) and inject the real pixel height as a CSS
+    // variable so .modal-safe-pad / headers can use it. If the plugin
+    // isn't registered, the 32px hard floor in globals.css kicks in.
+    (async () => {
+      try {
+        const statusBar = window.Capacitor?.Plugins?.StatusBar;
+        if (statusBar?.getInfo) {
+          const info = await statusBar.getInfo();
+          const h = typeof info?.height === 'number' && info.height > 0 ? info.height : 0;
+          if (h > 0) {
+            document.documentElement.style.setProperty(
+              '--capacitor-status-bar-height',
+              `${Math.round(h)}px`
+            );
+            console.log('[myncel-splash] StatusBar height injected:', h, 'px');
+          }
+        } else {
+          // Fallback heuristic: Samsung devices with high-res displays
+          // typically have a 32-48px status bar. Use a conservative 36px
+          // as the injected variable on Android specifically.
+          const platform = window.Capacitor?.getPlatform?.();
+          if (platform === 'android') {
+            document.documentElement.style.setProperty(
+              '--capacitor-status-bar-height',
+              '36px'
+            );
+            console.log('[myncel-splash] StatusBar plugin missing — using Android heuristic 36px');
+          }
+        }
+      } catch (e) {
+        console.warn('[myncel-splash] StatusBar probe failed', e);
+      }
+    })();
 
     const hide = async (reason: string) => {
       if (hidden) return;

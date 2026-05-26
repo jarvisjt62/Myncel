@@ -201,9 +201,9 @@ export default function EquipmentImportPage() {
         // this padding the page heading is hidden behind the system clock
         // / signal icons. `max(...)` keeps the original 32px breathing
         // room as a floor for desktop browsers where the inset is 0.
-        paddingTop: 'max(2rem, calc(env(safe-area-inset-top, 0px) + 1rem))',
-        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
-        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
+        paddingTop: 'max(2rem, calc(var(--safe-area-top, 0px) + 1rem))',
+        paddingLeft: 'max(1rem, var(--safe-area-left, 0px))',
+        paddingRight: 'max(1rem, var(--safe-area-right, 0px))',
       }}
     >
       <div className="max-w-6xl mx-auto">

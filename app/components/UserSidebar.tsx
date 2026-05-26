@@ -655,7 +655,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
             style={{
               backgroundColor: 'var(--bg-sidebar)',
               height: '100dvh',
-              left: 'env(safe-area-inset-left, 0px)',
+              left: 'var(--safe-area-left, 0px)',
             }}
           >
             {/* Close button — positioned with top:env(safe-area-inset-top) so
@@ -663,7 +663,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
             <button
               onClick={() => setSidebarOpen(false)}
               className="absolute right-3 p-1.5 rounded-lg hover:bg-[var(--bg-surface-2)] text-[var(--text-muted)] z-10"
-              style={{ top: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
+              style={{ top: 'calc(var(--safe-area-top, 0px) + 0.75rem)' }}
               aria-label="Close menu"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -687,14 +687,14 @@ function UserShellInner({ user, children }: UserSidebarProps) {
             backgroundColor: 'var(--bg-nav)',
             borderBottom: '1px solid var(--border)',
             // Top: clear the system status bar (Samsung clock / iOS notch) in BOTH portrait + landscape.
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
+            paddingTop: 'calc(var(--safe-area-top, 0px) + 0.75rem)',
             paddingBottom: '0.75rem',
             // Left/Right: in landscape on iPhone X+ the camera notch lives on one side and the
             // home-indicator/rounded corner on the other. Without these insets the page title
             // and bell/avatar slide UNDER the notch. max() keeps a sane minimum on browsers
             // where env(safe-area-inset-*) resolves to 0 (desktop, Android portrait, etc.).
-            paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))',
-            paddingRight: 'max(0.75rem, env(safe-area-inset-right, 0px))',
+            paddingLeft: 'max(0.75rem, var(--safe-area-left, 0px))',
+            paddingRight: 'max(0.75rem, var(--safe-area-right, 0px))',
           }}
         >
           <div className="flex items-center gap-3">
@@ -733,8 +733,8 @@ function UserShellInner({ user, children }: UserSidebarProps) {
         <div
           className="flex-1 min-w-0"
           style={{
-            paddingLeft: 'env(safe-area-inset-left, 0px)',
-            paddingRight: 'env(safe-area-inset-right, 0px)',
+            paddingLeft: 'var(--safe-area-left, 0px)',
+            paddingRight: 'var(--safe-area-right, 0px)',
           }}
         >
           {children}

@@ -353,7 +353,7 @@ export default function ExportButtons() {
               // bottom of the report (tables, action buttons) is never
               // hidden behind the Android gesture-nav bar / iOS home
               // indicator.
-              maxHeight: 'min(90dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px))',
+              maxHeight: 'min(90dvh, calc(100dvh - var(--safe-area-top, 0px) - var(--safe-area-bottom, 0px) - 16px))',
             }}
           >
             {/* Modal Header */}
@@ -379,7 +379,7 @@ export default function ExportButtons() {
             <div
               className="p-5"
               style={{
-                paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
+                paddingBottom: 'calc(1.25rem + var(--safe-area-bottom, 0px))',
               }}
             >
               {/* Period Selector */}

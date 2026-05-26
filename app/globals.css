@@ -61,12 +61,26 @@ body {
 }
 
 /* When running inside the Capacitor shell, body class `capacitor-app` is
-   added by CapacitorSplashHide.tsx. We DO NOT add body-level padding here
-   because the dashboard top bar is `sticky top-0` — it would slide UP under
-   the status bar regardless. Instead each component uses
-   `calc(env(safe-area-inset-top) + ...)` directly on its own padding. */
+   added by CapacitorSplashHide.tsx.
+
+   ⚠️  Samsung One UI 6/7 (S24 Ultra etc.) bug:
+   `env(safe-area-inset-top)` returns **0px** in the Capacitor WebView when
+   the StatusBar plugin isn't configured for edge-to-edge mode. Result:
+   modals & headers slide under the status bar icons.
+
+   Fix: hard-floor the safe-area variables to a sane minimum (32px top,
+   16px bottom) whenever we're inside the Capacitor shell. If the native
+   side later injects a real pixel value via `--capacitor-status-bar-height`
+   (set by CapacitorSplashHide.tsx using the StatusBar plugin), we use that
+   instead. The `max()` of all three guarantees we never go below the floor. */
 body.capacitor-app {
-  /* Reserved for future capacitor-specific tweaks. */
+  --safe-area-top: max(
+    var(--capacitor-status-bar-height, 32px),
+    env(safe-area-inset-top, 0px)
+  );
+  --safe-area-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
 }
 
 /* Utility classes any component can use directly. */
@@ -92,17 +106,17 @@ body.capacitor-app {
    and the inset wins via `max(...)`.
    ───────────────────────────────────────────────────────────────────── */
 .modal-safe-pad {
-  padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
-  padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
-  padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
+  padding-top: max(0.5rem, var(--safe-area-top));
+  padding-bottom: max(0.5rem, var(--safe-area-bottom));
+  padding-left: max(0.5rem, var(--safe-area-left));
+  padding-right: max(0.5rem, var(--safe-area-right));
 }
 @media (min-width: 640px) {
   .modal-safe-pad {
-    padding-top: max(1rem, env(safe-area-inset-top, 0px));
-    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
-    padding-left: max(1rem, env(safe-area-inset-left, 0px));
-    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+    padding-top: max(1rem, var(--safe-area-top));
+    padding-bottom: max(1rem, var(--safe-area-bottom));
+    padding-left: max(1rem, var(--safe-area-left));
+    padding-right: max(1rem, var(--safe-area-right));
   }
 }
 

@@ -54,7 +54,7 @@ function ProductsMenuMobileCard({ onClose }: { onClose: () => void }) {
 
 const ProductsMenu = ({ isOpen, onClose }: MegaMenuProps) => (
   <div className={`fixed bg-white border border-[#e6ebf1] rounded-2xl shadow-2xl transition-all duration-200 z-50 w-[1024px] max-w-[calc(100vw-2rem)] ${isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
-    style={{ left: '50%', top: 'calc(env(safe-area-inset-top, 0px) + 72px)', transform: isOpen ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(-8px)' }}>
+    style={{ left: '50%', top: 'calc(var(--safe-area-top, 0px) + 72px)', transform: isOpen ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(-8px)' }}>
     <div className="p-6 grid grid-cols-4 gap-6">
       {/* Column 1 */}
       <div>
@@ -127,7 +127,7 @@ const ProductsMenu = ({ isOpen, onClose }: MegaMenuProps) => (
 
 const SolutionsMenu = ({ isOpen, onClose }: MegaMenuProps) => (
   <div className={`fixed bg-white border border-[#e6ebf1] rounded-2xl shadow-2xl transition-all duration-200 z-50 w-[920px] max-w-[calc(100vw-2rem)] ${isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
-    style={{ left: '50%', top: 'calc(env(safe-area-inset-top, 0px) + 72px)', transform: isOpen ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(-8px)' }}>
+    style={{ left: '50%', top: 'calc(var(--safe-area-top, 0px) + 72px)', transform: isOpen ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(-8px)' }}>
     <div className="p-6 grid grid-cols-3 gap-6">
       <div>
         <div className="text-xs font-bold text-[#8898aa] uppercase tracking-wider mb-3">Manufacturing</div>

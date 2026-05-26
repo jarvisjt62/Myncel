@@ -336,17 +336,15 @@ const Modal = ({ show, onClose, title, children }: { show: boolean; onClose: () 
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 modal-safe-pad"
       style={{
-        // Respect the device safe-area on every side. On a Samsung / iPhone
-        // running inside the Capacitor WebView, env(safe-area-inset-top) is
-        // ~36-50px (status bar) and env(safe-area-inset-bottom) is ~16-30px
-        // (gesture nav / home indicator). On desktop browsers all four
-        // values are 0 so the layout is unchanged. The `max(...)` keeps the
-        // existing 8/16px breathing room as a floor on devices that don't
-        // expose a safe-area inset (older Androids).
-        paddingTop: 'max(0.5rem, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))',
-        paddingLeft: 'max(0.5rem, env(safe-area-inset-left, 0px))',
-        paddingRight: 'max(0.5rem, env(safe-area-inset-right, 0px))',
+        // Respect the device safe-area on every side. We read from the
+        // CSS variable `--safe-area-top` (defined in globals.css) which
+        // hard-floors to 32px when running inside the Capacitor shell on
+        // Samsung One UI (where env(safe-area-inset-top) bug-returns 0).
+        // On desktop browsers all four values are 0 so layout is unchanged.
+        paddingTop: 'max(0.5rem, var(--safe-area-top, 0px))',
+        paddingBottom: 'max(0.5rem, var(--safe-area-bottom, 0px))',
+        paddingLeft: 'max(0.5rem, var(--safe-area-left, 0px))',
+        paddingRight: 'max(0.5rem, var(--safe-area-right, 0px))',
       }}
     >
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
@@ -354,11 +352,8 @@ const Modal = ({ show, onClose, title, children }: { show: boolean; onClose: () 
         className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-2xl max-h-[90dvh] overflow-y-auto mx-0 overscroll-contain"
         style={{
           // Reserve room for the Android gesture-nav bar / iOS home
-          // indicator so the modal's bottom action buttons (Cancel /
-          // Register Machine, etc.) aren't clipped on phones in the
-          // Capacitor WebView. env(safe-area-inset-bottom) is 0 on
-          // desktops/browsers without a home indicator.
-          maxHeight: 'min(90dvh, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 16px))',
+          // indicator so the modal's bottom action buttons aren't clipped.
+          maxHeight: 'min(90dvh, calc(100dvh - var(--safe-area-top, 0px) - var(--safe-area-bottom, 0px) - 16px))',
         }}
       >
         <div className="flex items-center justify-between p-5 border-b border-[var(--border)] sticky top-0 [background:var(--bg-surface)] z-10">
@@ -373,7 +368,7 @@ const Modal = ({ show, onClose, title, children }: { show: boolean; onClose: () 
             // Extra bottom padding so the last form row / action buttons
             // are above the gesture-nav bar on Android & the home
             // indicator on iOS.
-            paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
+            paddingBottom: 'calc(1.25rem + var(--safe-area-bottom, 0px))',
           }}
         >
           {children}

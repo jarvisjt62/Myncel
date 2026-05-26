@@ -253,7 +253,7 @@ export default function QuickActions() {
           <div
             className="relative rounded-2xl [background:var(--bg-surface)] shadow-2xl w-full max-w-md border border-[var(--border)] overflow-y-auto overscroll-contain"
             style={{
-              maxHeight: 'min(90dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px))',
+              maxHeight: 'min(90dvh, calc(100dvh - var(--safe-area-top, 0px) - var(--safe-area-bottom, 0px) - 16px))',
             }}
           >
             {/* Header */}
@@ -283,7 +283,7 @@ export default function QuickActions() {
             <div
               className="p-5 space-y-4"
               style={{
-                paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
+                paddingBottom: 'calc(1.25rem + var(--safe-area-bottom, 0px))',
               }}
             >
               {submitSuccess ? (
