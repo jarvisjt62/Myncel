@@ -242,10 +242,13 @@ export default function ExportActionsBar({
         <span>{busy === 'csv' ? 'Saving…' : 'CSV'}</span>
       </button>
 
-      {/* PDF (real binary download — works inside Capacitor WebView, mobile Safari, desktop) */}
+      {/* PDF (real binary download — works inside Capacitor WebView, mobile Safari, desktop)
+          target="_blank" so Capacitor hands the link to the system browser where
+          downloads are reliable. download attr makes regular browsers save directly. */}
       <a
         href={downloadUrl('pdf')}
         download
+        target="_blank"
         rel="noopener noreferrer"
         className={`${btnBase} border border-[var(--border)] text-[var(--text-secondary)] hover:border-[#635bff] hover:text-[#635bff]`}
         title="Download PDF report"

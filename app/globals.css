@@ -240,6 +240,107 @@ body.capacitor-app {
   }
 }
 
+/* ─── UNIVERSAL CAPACITOR SAFE-AREA RULES ─────────────────────────────
+   Inside the Capacitor app (.capacitor-app on <html>) ANY element that is
+   `position: fixed` AND anchored to the top/bottom of the viewport via
+   the conventional Tailwind classes (top-0, bottom-0, top-safe, etc.)
+   automatically picks up the safe-area inset. This means:
+
+   • Modal backdrops fixed inset-0 → top padding adds the status-bar.
+   • Toast popups fixed top-* / bottom-* → never under the notch / home bar.
+   • Mobile bottom navigation → never under the gesture bar.
+   • Sticky headers → never under the status bar.
+
+   We use attribute selectors so existing components don't need to change.
+   The cascade: each rule appends a safe-area inset to whatever the
+   component already has, via `padding-*: max(existing, inset)`.
+
+   This block only fires inside .capacitor-app; on regular web it's inert.
+   ──────────────────────────────────────────────────────────────────── */
+
+/* 1. Any fixed-positioned element that spans top of viewport gets top inset.
+   Tailwind's `inset-0` resolves to top:0 + bottom:0 + left:0 + right:0,
+   which is the modal-backdrop pattern. We DON'T want to push the backdrop
+   itself down (it should still cover the full screen) — we want to push
+   its CONTENT down. So instead we add scroll-padding-top to the whole
+   document and per-component selectors below. */
+html.capacitor-app {
+  /* Browser-managed scroll into view (e.g. when an input is focused) won't
+     hide the field under the system status bar. */
+  scroll-padding-top: var(--safe-area-top);
+  scroll-padding-bottom: var(--safe-area-bottom);
+}
+
+/* 2. Sticky / fixed elements anchored to top:0 — the default for headers,
+   announcement bars, and toast containers. Add safe-area as padding so
+   the content shows below the status bar. */
+.capacitor-app .fixed.top-0,
+.capacitor-app [class*="fixed"][class*="top-0"]:not([class*="bottom-0"]),
+.capacitor-app .sticky.top-0 {
+  padding-top: max(var(--safe-area-top), 0px);
+}
+
+/* 3. Fixed elements at the bottom — bottom navigation, FABs, toast popups. */
+.capacitor-app .fixed.bottom-0,
+.capacitor-app [class*="fixed"][class*="bottom-0"]:not([class*="top-0"]) {
+  padding-bottom: max(var(--safe-area-bottom), 0px);
+}
+
+/* 4. Modal backdrops (fixed + inset-0) — keep the backdrop covering the
+   full viewport but ensure the centered content within respects insets.
+   The backdrop layer itself must stay full-bleed for visual coverage. */
+.capacitor-app .fixed.inset-0,
+.capacitor-app [class*="fixed"][class*="inset-0"] {
+  /* Add scroll padding so a scrollable modal body doesn't hide content
+     under the status bar at scroll-top. */
+  scroll-padding-top: var(--safe-area-top);
+  scroll-padding-bottom: var(--safe-area-bottom);
+}
+
+/* 5. NOTE: Modal CONTENT inside backdrops already handles safe-area via
+   the existing .modal-safe-pad utility (which composes with each modal's
+   `p-2 sm:p-4` wrapper). We deliberately do NOT add a generic
+   `.fixed.inset-0 > .bg-white { margin-top: ... }` rule here because it
+   would break the vertical centering of every modal in the app. Modals
+   that need explicit safe-area padding should add `.modal-safe-pad` to
+   their backdrop element. */
+
+/* 6. Top-anchored toasts (fixed top-{N}) — apply safe-area-top via top
+   override. Targets `top-4`, `top-6`, `top-8` Tailwind classes. */
+.capacitor-app .fixed.top-4 { top: max(1rem, var(--safe-area-top)) !important; }
+.capacitor-app .fixed.top-6 { top: max(1.5rem, var(--safe-area-top)) !important; }
+.capacitor-app .fixed.top-8 { top: max(2rem, var(--safe-area-top)) !important; }
+
+/* 7. Bottom-anchored toasts and FABs — same idea on the bottom edge. */
+.capacitor-app .fixed.bottom-4 { bottom: max(1rem, var(--safe-area-bottom)) !important; }
+.capacitor-app .fixed.bottom-6 { bottom: max(1.5rem, var(--safe-area-bottom)) !important; }
+.capacitor-app .fixed.bottom-8 { bottom: max(2rem, var(--safe-area-bottom)) !important; }
+
+/* 8. Side-anchored fixed elements (chat widget bubbles, drawers) get
+   left/right inset support. */
+.capacitor-app .fixed.left-4 { left: max(1rem, var(--safe-area-left)) !important; }
+.capacitor-app .fixed.right-4 { right: max(1rem, var(--safe-area-right)) !important; }
+
+/* 9. NOTE: We intentionally do NOT add body-level safe-area padding here.
+   Many pages already apply their own --safe-area-top via inline style or
+   .force-pt-safe-32, and adding body padding on top would double-up.
+   Instead, the per-component rules above (modals, toasts, fixed elements)
+   handle the actual problem cases. Pages that need full-screen safe-area
+   padding should add the .pt-safe / .pb-safe utility classes directly. */
+
+/* 10. Inputs that focus and trigger the on-screen keyboard — make sure
+    they stay above the keyboard (Capacitor pushes the WebView up but only
+    if the active input is visible). Combined with scroll-padding-top
+    above this prevents the "ghost focused input under status bar" bug. */
+.capacitor-app input:focus,
+.capacitor-app textarea:focus,
+.capacitor-app select:focus {
+  scroll-margin-top: calc(var(--safe-area-top) + 1rem);
+  scroll-margin-bottom: calc(var(--safe-area-bottom) + 1rem);
+}
+
+/* ─── END UNIVERSAL CAPACITOR SAFE-AREA RULES ─────────────────────── */
+
 
 /* Stripe-style gradient blob */
 .gradient-blob {

@@ -341,7 +341,7 @@ export default function ApprovalPoliciesClient() {
 
       {/* Editor modal */}
       {editing && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-safe-pad">
           <div className="bg-white w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-xl modal-safe-pad max-h-[90vh] overflow-y-auto">
             <div className="p-5 border-b border-gray-100 sticky top-0 bg-white z-10">
               <h2 className="text-lg font-semibold">

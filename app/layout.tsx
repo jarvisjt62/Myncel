@@ -113,13 +113,20 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `(function(){try{
               var ua = (navigator.userAgent||'').toLowerCase();
+              // Force-enable Capacitor mode via ?capacitor-preview=1 query param
+              // so we can debug the mobile-app layout from a desktop browser.
+              var force = (location.search||'').indexOf('capacitor-preview=1') > -1
+                || localStorage.getItem('myncel-capacitor-preview') === '1';
               var isCap = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
                 || ua.indexOf('myncel-app')>-1
                 || (ua.indexOf('android')>-1 && ua.indexOf('wv')>-1)
-                || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+                || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+                || force;
+              if(force){ try{localStorage.setItem('myncel-capacitor-preview','1');}catch(e){} }
               if(isCap){
                 var html = document.documentElement;
                 html.classList.add('capacitor-app');
+                if (force) html.classList.add('capacitor-preview');
                 // Inject as inline style so var() resolves on first paint
                 // BEFORE the CSS bundle even loads. Hard floor 32px top,
                 // 16px bottom — overridden later if @capacitor/status-bar
@@ -132,6 +139,54 @@ export default function RootLayout({
                   try{document.body.classList.add('capacitor-app');}catch(e){}
                 });
                 if(document.body){ try{document.body.classList.add('capacitor-app');}catch(e){} }
+
+                /* ─── Capacitor download link interceptor ──────────────
+                   iOS WKWebView ignores both window.print() AND <a download>.
+                   The reliable fix is to open the URL with window.open(url, '_blank'),
+                   which Capacitor's default link policy hands off to Safari /
+                   Chrome where downloads work natively.
+
+                   We intercept clicks on any link that:
+                     (a) has a [download] attribute (server-served binary), OR
+                     (b) starts with /api/ AND has format=pdf or format=csv
+
+                   This means every export button across the app — PDF, CSV,
+                   work-orders, machines, alerts, parts, scheduled reports —
+                   automatically works in the Capacitor app without per-button
+                   changes.
+                   ────────────────────────────────────────────────────── */
+                document.addEventListener('click', function(ev){
+                  try {
+                    var el = ev.target;
+                    while (el && el.tagName !== 'A') { el = el.parentElement; }
+                    if (!el || el.tagName !== 'A') return;
+                    var href = el.getAttribute('href') || '';
+                    var hasDownload = el.hasAttribute('download');
+                    var isExportApi = href.indexOf('/api/') === 0
+                      && (href.indexOf('format=pdf') > -1 || href.indexOf('format=csv') > -1);
+                    if (!hasDownload && !isExportApi) return;
+                    // Build absolute URL so the system browser doesn't get confused.
+                    var absHref = href;
+                    if (absHref.indexOf('http') !== 0) {
+                      absHref = location.origin + (absHref.charAt(0)==='/' ? '' : '/') + absHref;
+                    }
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    // Try Capacitor's Browser plugin first (if installed in shell).
+                    try {
+                      var Cap = window.Capacitor;
+                      if (Cap && Cap.Plugins && Cap.Plugins.Browser && typeof Cap.Plugins.Browser.open === 'function') {
+                        Cap.Plugins.Browser.open({ url: absHref });
+                        return;
+                      }
+                    } catch (_) {}
+                    // Fallback: plain window.open with _blank — Capacitor's default
+                    // link handler routes this to the system browser on both iOS
+                    // and Android. If even that fails, last resort is location =.
+                    var w = window.open(absHref, '_blank');
+                    if (!w) { window.location.href = absHref; }
+                  } catch (e) { /* never block the user */ }
+                }, true);
               }
             }catch(e){}})();`
           }}

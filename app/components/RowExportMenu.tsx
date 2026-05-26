@@ -298,6 +298,7 @@ export default function RowExportMenu({
           <a
             href={pdfUrl()}
             download
+            target="_blank"
             rel="noopener noreferrer"
             onClick={() => setGlobalOpen(null)}
             className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/5"

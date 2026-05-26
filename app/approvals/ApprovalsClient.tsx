@@ -351,7 +351,7 @@ export default function ApprovalsClient() {
 
       {/* Decision modal */}
       {decideOn && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-safe-pad">
           <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl modal-safe-pad max-h-[90vh] overflow-y-auto">
             <div className="p-5 border-b border-gray-100">
               <h2 className="text-lg font-semibold">
