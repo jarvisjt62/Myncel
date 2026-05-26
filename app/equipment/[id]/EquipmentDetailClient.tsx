@@ -25,7 +25,7 @@ function modalPortal(node: React.ReactNode): React.ReactPortal | null {
   return createPortal(node, document.body);
 }
 
-type TabKey = 'overview' | 'documents' | 'parts' | 'schedules' | 'timeline' | 'telemetry';
+type TabKey = 'overview' | 'documents' | 'parts' | 'schedules' | 'timeline' | 'telemetry' | 'ai';
 
 interface Machine {
   id: string;
@@ -64,6 +64,7 @@ const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'schedules', label: 'Schedules', icon: '📅' },
   { key: 'timeline', label: 'Timeline', icon: '🕒' },
   { key: 'telemetry', label: 'Telemetry', icon: '📈' },
+  { key: 'ai', label: 'AI', icon: '🤖' },
 ];
 
 function breadcrumb(m: Machine): string {
@@ -200,6 +201,7 @@ export default function EquipmentDetailClient({ initialMachine }: { initialMachi
         {tab === 'schedules' && <SchedulesTab machineId={machine.id} />}
         {tab === 'timeline' && <TimelineTab machineId={machine.id} />}
         {tab === 'telemetry' && <TelemetryTab machineId={machine.id} />}
+        {tab === 'ai' && <AITab machineId={machine.id} machineName={machine.name} />}
       </div>
     </div>
   );
@@ -1117,4 +1119,378 @@ function formatRelativeTime(iso: string): string {
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return new Date(iso).toLocaleDateString();
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// AI tab — Big Bet #4
+// Per-machine AI settings (override org defaults) + recent detections + forecasts.
+// ────────────────────────────────────────────────────────────────────────
+
+type AIModel = 'STATISTICAL' | 'HYBRID' | 'LLM_ASSISTED';
+type AISeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+interface AIMachineSettings {
+  enabled: boolean;
+  model: AIModel | null;
+  sensitivity: number | null;
+  minAlertSeverity: AISeverity | null;
+  forecastHorizonDays: number | null;
+  thresholds: Record<string, { warn: number; crit: number; unit?: string }> | null;
+  notes: string | null;
+}
+
+interface AIEffective {
+  enabled: boolean;
+  model: AIModel;
+  sensitivity: number;
+  minAlertSeverity: AISeverity;
+  forecastHorizonDays: number;
+  thresholds: Record<string, { warn: number; crit: number; unit?: string }> | null;
+}
+
+interface AIDetectionRow {
+  id: string;
+  sensorType: string;
+  value: number;
+  unit: string | null;
+  baseline: number | null;
+  deviation: number | null;
+  threshold: number | null;
+  severity: AISeverity;
+  message: string;
+  recommendation: string | null;
+  feedback: 'PENDING' | 'CONFIRMED' | 'REJECTED';
+  modelUsed: AIModel;
+  detectedAt: string;
+  alert: { id: string; severity: AISeverity; isResolved: boolean } | null;
+}
+
+interface AIForecastRow {
+  id: string;
+  sensorType: string;
+  predictedFailureAt: string | null;
+  confidence: number;
+  recommendation: string;
+  horizonDays: number;
+  generatedAt: string;
+}
+
+const AI_SEV_COLORS: Record<AISeverity, string> = {
+  LOW: '#9ca3af',
+  MEDIUM: '#f59e0b',
+  HIGH: '#f97316',
+  CRITICAL: '#dc2626',
+};
+
+function AITab({ machineId, machineName }: { machineId: string; machineName: string }) {
+  const [settings, setSettings] = useState<AIMachineSettings | null>(null);
+  const [effective, setEffective] = useState<AIEffective | null>(null);
+  const [detections, setDetections] = useState<AIDetectionRow[]>([]);
+  const [forecasts, setForecasts] = useState<AIForecastRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
+
+  async function refresh() {
+    setLoading(true);
+    try {
+      const [sRes, dRes] = await Promise.all([
+        fetch(`/api/ai/settings/${machineId}`).then((r) => r.json()),
+        fetch(`/api/ai/detect/${machineId}`).then((r) => r.json()),
+      ]);
+      setSettings(sRes?.settings || {
+        enabled: true, model: null, sensitivity: null, minAlertSeverity: null,
+        forecastHorizonDays: null, thresholds: null, notes: null,
+      });
+      setEffective(sRes?.effective || null);
+      setDetections(dRes?.detections || []);
+      setForecasts(dRes?.forecasts || []);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { refresh(); }, [machineId]);
+
+  async function save(patch: Partial<AIMachineSettings>) {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/ai/settings/${machineId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || 'Save failed');
+      }
+      const j = await res.json();
+      setSettings(j.settings);
+      setEffective(j.effective);
+      setToast({ type: 'ok', msg: 'Saved.' });
+    } catch (err: any) {
+      setToast({ type: 'err', msg: err?.message || 'Save failed' });
+    } finally {
+      setSaving(false);
+      setTimeout(() => setToast(null), 2400);
+    }
+  }
+
+  async function runNow() {
+    setRunning(true);
+    try {
+      const res = await fetch(`/api/ai/detect/${machineId}`, { method: 'POST' });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || 'Run failed');
+      }
+      await refresh();
+      setToast({ type: 'ok', msg: 'Engine ran.' });
+    } catch (err: any) {
+      setToast({ type: 'err', msg: err?.message || 'Run failed' });
+    } finally {
+      setRunning(false);
+      setTimeout(() => setToast(null), 2400);
+    }
+  }
+
+  async function feedback(id: string, value: 'CONFIRMED' | 'REJECTED') {
+    try {
+      await fetch(`/api/ai/feedback/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedback: value }),
+      });
+      setDetections((rows) => rows.map((r) => (r.id === id ? { ...r, feedback: value } : r)));
+    } catch {/* ignore */}
+  }
+
+  if (loading || !settings || !effective) {
+    return <div className="text-sm text-[var(--text-secondary)] py-6">Loading AI insights…</div>;
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-[var(--text-primary)]">🤖 AI insights for {machineName}</h3>
+          <p className="text-xs text-[var(--text-secondary)] mt-1">
+            Settings here override the org default. Empty fields inherit from <a href="/settings/ai" className="underline">Settings → AI</a>.
+          </p>
+        </div>
+        <button
+          onClick={runNow}
+          disabled={running || !effective.enabled}
+          className="rounded-lg bg-[var(--accent)] text-white text-sm font-medium px-4 py-2 hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+        >
+          {running ? 'Running…' : '⚡ Run engine'}
+        </button>
+      </div>
+
+      {/* Effective settings card */}
+      <div className="rounded-xl border p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs"
+           style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Status</div>
+          <div className={`text-sm font-semibold ${effective.enabled ? 'text-green-600' : 'text-gray-500'}`}>
+            {effective.enabled ? 'Enabled' : 'Disabled'}
+          </div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Model</div>
+          <div className="text-sm font-semibold text-[var(--text-primary)]">{effective.model}</div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Sensitivity</div>
+          <div className="text-sm font-semibold text-[var(--text-primary)]">{effective.sensitivity} ({(5 - (effective.sensitivity / 100) * 3).toFixed(1)}σ)</div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Forecast horizon</div>
+          <div className="text-sm font-semibold text-[var(--text-primary)]">{effective.forecastHorizonDays}d</div>
+        </div>
+      </div>
+
+      {/* Per-machine override controls */}
+      <div className="rounded-xl border p-4 space-y-3" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+        <div className="text-sm font-semibold text-[var(--text-primary)]">Per-machine overrides</div>
+
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={settings.enabled}
+            onChange={(e) => save({ enabled: e.target.checked })}
+            className="accent-[var(--accent)]"
+          />
+          <span className="text-[var(--text-primary)]">AI enabled for this machine</span>
+        </label>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Model override</label>
+            <select
+              value={settings.model ?? ''}
+              onChange={(e) => save({ model: (e.target.value || null) as any })}
+              className="w-full rounded-lg border px-3 py-2 text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border)]"
+            >
+              <option value="">— Inherit org default —</option>
+              <option value="STATISTICAL">Statistical</option>
+              <option value="HYBRID">Hybrid</option>
+              <option value="LLM_ASSISTED">LLM-assisted</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Sensitivity override (0–100)</label>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={settings.sensitivity ?? ''}
+              onChange={(e) => setSettings((s) => s ? { ...s, sensitivity: e.target.value === '' ? null : parseInt(e.target.value) } : s)}
+              onBlur={() => save({ sensitivity: settings.sensitivity })}
+              placeholder="inherit"
+              className="w-full rounded-lg border px-3 py-2 text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border)]"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Min alert severity</label>
+            <select
+              value={settings.minAlertSeverity ?? ''}
+              onChange={(e) => save({ minAlertSeverity: (e.target.value || null) as any })}
+              className="w-full rounded-lg border px-3 py-2 text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border)]"
+            >
+              <option value="">— Inherit org default —</option>
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="CRITICAL">Critical</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Forecast horizon (days)</label>
+            <input
+              type="number"
+              min={1}
+              max={365}
+              value={settings.forecastHorizonDays ?? ''}
+              onChange={(e) => setSettings((s) => s ? { ...s, forecastHorizonDays: e.target.value === '' ? null : parseInt(e.target.value) } : s)}
+              onBlur={() => save({ forecastHorizonDays: settings.forecastHorizonDays })}
+              placeholder="inherit"
+              className="w-full rounded-lg border px-3 py-2 text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border)]"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Notes</label>
+          <textarea
+            value={settings.notes ?? ''}
+            onChange={(e) => setSettings((s) => s ? { ...s, notes: e.target.value || null } : s)}
+            onBlur={() => save({ notes: settings.notes })}
+            rows={2}
+            placeholder="Anything specific about this machine's AI behaviour…"
+            className="w-full rounded-lg border px-3 py-2 text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border)]"
+          />
+        </div>
+      </div>
+
+      {/* Forecasts */}
+      <div>
+        <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-2">📅 Predictive forecasts ({forecasts.length})</h4>
+        {forecasts.length === 0 ? (
+          <div className="rounded-xl border p-4 text-sm text-[var(--text-muted)] italic"
+               style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+            No active forecasts. The engine needs at least 10 sensor readings over the last 30 days to project a trajectory.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {forecasts.map((f) => (
+              <div key={f.id} className="rounded-xl border p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                   style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-[var(--text-primary)]">
+                    {f.sensorType} → expected to cross threshold {f.predictedFailureAt ? new Date(f.predictedFailureAt).toLocaleDateString() : '—'}
+                  </div>
+                  <div className="text-xs text-[var(--text-secondary)] mt-0.5">{f.recommendation}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-bold text-[var(--accent)]">{f.confidence}%</div>
+                  <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">confidence</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Recent detections */}
+      <div>
+        <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-2">🔍 Recent anomaly detections ({detections.length})</h4>
+        {detections.length === 0 ? (
+          <div className="rounded-xl border p-4 text-sm text-[var(--text-muted)] italic"
+               style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+            No detections yet. Click <strong>⚡ Run engine</strong> above to scan recent sensor readings.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {detections.map((d) => (
+              <div key={d.id} className="rounded-xl border p-3"
+                   style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', borderLeft: `4px solid ${AI_SEV_COLORS[d.severity]}` }}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold uppercase tracking-wide" style={{ color: AI_SEV_COLORS[d.severity] }}>
+                        {d.severity}
+                      </span>
+                      <span className="text-xs text-[var(--text-muted)]">·</span>
+                      <span className="text-xs text-[var(--text-secondary)]">{d.modelUsed}</span>
+                      <span className="text-xs text-[var(--text-muted)]">·</span>
+                      <span className="text-xs text-[var(--text-secondary)]">{formatRelativeTime(d.detectedAt)}</span>
+                    </div>
+                    <div className="text-sm text-[var(--text-primary)] mt-1">{d.message}</div>
+                    {d.recommendation && (
+                      <div className="text-xs text-[var(--text-secondary)] mt-1 italic">→ {d.recommendation}</div>
+                    )}
+                  </div>
+                  {d.feedback === 'PENDING' ? (
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => feedback(d.id, 'CONFIRMED')}
+                        className="text-xs px-2 py-1 rounded border border-green-300 text-green-700 hover:bg-green-50"
+                        title="Confirm — this was a real anomaly"
+                      >
+                        ✓ Real
+                      </button>
+                      <button
+                        onClick={() => feedback(d.id, 'REJECTED')}
+                        className="text-xs px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50"
+                        title="Reject — this was a false positive"
+                      >
+                        ✗ False
+                      </button>
+                    </div>
+                  ) : (
+                    <span className={`text-[10px] px-2 py-1 rounded font-semibold ${
+                      d.feedback === 'CONFIRMED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      {d.feedback}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {toast && (
+        <div className={`fixed bottom-4 right-4 z-50 rounded-lg px-4 py-2.5 text-sm shadow-lg ${
+          toast.type === 'ok' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          {toast.msg}
+        </div>
+      )}
+    </div>
+  );
 }

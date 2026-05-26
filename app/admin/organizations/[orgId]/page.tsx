@@ -129,6 +129,36 @@ export default async function AdminOrgControlPage({ params }: { params: { orgId:
     orderBy: { createdAt: 'desc' },
   }).catch(() => []);
 
+  // Big Bet #4 — AI / Predictive Maintenance rollup
+  const [aiSettings, recentDetections, recentForecasts, anomalyTotals] = await Promise.all([
+    db.orgAISettings.findUnique({ where: { organizationId: org.id } }).catch(() => null),
+    db.anomalyDetection.findMany({
+      where: { organizationId: org.id },
+      orderBy: { detectedAt: 'desc' },
+      take: 25,
+      select: {
+        id: true, sensorType: true, value: true, unit: true, severity: true,
+        message: true, recommendation: true, feedback: true, modelUsed: true,
+        detectedAt: true, machine: { select: { id: true, name: true } },
+      },
+    }).catch(() => []),
+    db.predictiveForecast.findMany({
+      where: { organizationId: org.id, validUntil: { gte: new Date() } },
+      orderBy: { generatedAt: 'desc' },
+      take: 25,
+      select: {
+        id: true, sensorType: true, predictedFailureAt: true, confidence: true,
+        recommendation: true, horizonDays: true, generatedAt: true,
+        machine: { select: { id: true, name: true } },
+      },
+    }).catch(() => []),
+    db.anomalyDetection.groupBy({
+      by: ['feedback'],
+      where: { organizationId: org.id },
+      _count: { _all: true },
+    }).catch(() => [] as any[]),
+  ]);
+
   return (
     <OrgControlClient
       org={{
@@ -252,6 +282,47 @@ export default async function AdminOrgControlPage({ params }: { params: { orgId:
           machineCategory: t.machine?.category ?? null,
           machineStatus: t.machine?.status ?? null,
         })),
+        ai: {
+          settings: aiSettings ? {
+            enabled: aiSettings.enabled,
+            model: aiSettings.model,
+            sensitivity: aiSettings.sensitivity,
+            minAlertSeverity: aiSettings.minAlertSeverity,
+            forecastHorizonDays: aiSettings.forecastHorizonDays,
+            autoCreateWorkOrders: aiSettings.autoCreateWorkOrders,
+            updatedAt: aiSettings.updatedAt.toISOString(),
+          } : null,
+          detections: recentDetections.map(d => ({
+            id: d.id,
+            sensorType: d.sensorType,
+            value: d.value,
+            unit: d.unit,
+            severity: d.severity,
+            message: d.message,
+            recommendation: d.recommendation,
+            feedback: d.feedback,
+            modelUsed: d.modelUsed,
+            detectedAt: d.detectedAt.toISOString(),
+            machineId: d.machine?.id ?? null,
+            machineName: d.machine?.name ?? null,
+          })),
+          forecasts: recentForecasts.map(f => ({
+            id: f.id,
+            sensorType: f.sensorType,
+            predictedFailureAt: f.predictedFailureAt?.toISOString() ?? null,
+            confidence: f.confidence,
+            recommendation: f.recommendation,
+            horizonDays: f.horizonDays,
+            generatedAt: f.generatedAt.toISOString(),
+            machineId: f.machine?.id ?? null,
+            machineName: f.machine?.name ?? null,
+          })),
+          totals: {
+            confirmed: anomalyTotals.find(t => t.feedback === 'CONFIRMED')?._count?._all ?? 0,
+            rejected: anomalyTotals.find(t => t.feedback === 'REJECTED')?._count?._all ?? 0,
+            pending: anomalyTotals.find(t => t.feedback === 'PENDING')?._count?._all ?? 0,
+          },
+        },
       }}
       auditLogs={auditLogs.map(l => ({
         id: l.id,

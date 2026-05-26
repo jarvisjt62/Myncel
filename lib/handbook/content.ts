@@ -1302,7 +1302,129 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
   },
 
   // ------------------------------------------------------------------
-  // 10. ACCOUNT, BILLING & PLANS
+  // 10. AI & PREDICTIVE MAINTENANCE
+  // ------------------------------------------------------------------
+  {
+    slug: 'ai-predictive-maintenance',
+    emoji: '🤖',
+    title: 'AI & Predictive Maintenance',
+    summary:
+      'How Myncel\'s AI engine watches your sensor streams, detects anomalies before they become failures, and forecasts when a machine is likely to cross a critical threshold. Covers the three available models, sensitivity tuning, per-machine overrides, the confirm/reject feedback loop, quiet hours, auto work-order creation, and the SuperAdmin view.',
+    sections: [
+      {
+        heading: 'What the AI engine actually does',
+        body: [
+          'Myncel ships a built-in anomaly-detection and predictive-failure engine that runs on top of every sensor reading you log — manually, via the Edge Gateway, via OBD-II / J1939 / NMEA 2000 / MAVLink, or via a telematics importer. It is on by default for every workspace and you do not need to install or configure anything else. The engine has two jobs: spot readings that look statistically unusual for that specific machine and that specific sensor, and project simple linear trends forward in time so you get a heads-up days before a value would cross a critical threshold.',
+          'The engine is intentionally transparent. Every detection records the baseline mean, the rolling standard deviation, the EWMA-smoothed value, the threshold that was crossed, the sigma multiple, the severity, and a plain-language recommendation. Every forecast records the predicted crossing date, a confidence percentage derived from the regression\'s R², and the horizon used. Nothing is a black box — you can always click into a detection and see exactly why the engine flagged it.',
+        ],
+        bullets: [
+          'Anomaly detection — rolling z-score plus EWMA (λ = 0.3) over the last 30 samples per sensor. Flags the latest reading when its absolute deviation exceeds the configured sigma threshold, or when a custom warn / critical threshold is crossed.',
+          'Predictive forecasting — least-squares linear regression over the last 30 days per sensor. Projects forward up to your configured horizon (default 14 days) and emits a forecast when the trend is on track to cross a critical level.',
+          'Severity grading — sigma-ratio based: ≥ 2.0× threshold is CRITICAL, ≥ 1.5× is HIGH, ≥ 1.0× is MEDIUM, anything below is LOW. Same scale across every sensor type and every domain.',
+          'Dedup window — 5 minutes per machine + sensor type, so a noisy reading that hovers around a threshold does not generate dozens of duplicate alerts.',
+          'Forecast TTL — 24 hours. Forecasts auto-expire and the engine regenerates them on the next run, so you never see stale predictions on the dashboard.',
+        ],
+      },
+      {
+        heading: 'The three AI models',
+        body: [
+          'Myncel offers three model kinds. They all use the same statistical core; what changes is how much extra context is layered on top. You pick the model once at the workspace level under Settings → AI & Predictive, and you can override it per-machine on the equipment page.',
+        ],
+        bullets: [
+          'Statistical (default) — pure rolling z-score + EWMA + linear regression. Deterministic, explainable, fast, no external API calls. This is the right choice for 95% of workspaces and is the only model we recommend leaving on for safety-critical equipment.',
+          'Hybrid — same statistical core, but the recommendation text is enriched with rule-based context (sensor type, asset category, recent work orders on the same asset). Still fully local, still no external calls, just smarter wording on the alert.',
+          'LLM-Assisted — adds a sanity-check pass through a language model before an alert is published. The LLM cannot create or suppress alerts on its own; it only annotates them with extra reasoning. Use this only if you have a heavy false-positive problem that sensitivity tuning has not solved. Custom instructions become available when this model is selected.',
+        ],
+        callout: {
+          type: 'tip',
+          text: 'Start with Statistical. We strongly recommend leaving every workspace on Statistical for the first month. Look at the confirm/reject ratio in your detection feed before deciding to upgrade — most workspaces never need anything more.',
+        },
+      },
+      {
+        heading: 'Sensitivity, severity, and quiet hours',
+        body: [
+          'Sensitivity is a single 0 → 100 slider that maps linearly onto a sigma threshold. The math is intentional: 0 means "only fire on extreme outliers" and 100 means "fire on any small deviation". The default of 50 corresponds to 3σ, which is the standard SPC (statistical process control) threshold and is what you want for almost every sensor.',
+        ],
+        bullets: [
+          '0 → 5σ — silent. Practically nothing fires. Use this only when you are commissioning a new asset and want to suppress alerts.',
+          '50 → 3σ — SPC standard. Default. About 0.27% of normal readings trip this naturally, which is the right rate for most production sensors.',
+          '100 → 2σ — paranoid. About 4.5% of normal readings trip this. Useful only on extremely stable, well-instrumented assets where you genuinely want to chase every wobble.',
+          'Minimum severity — independent of sensitivity. Even if the engine detects an anomaly, no alert is published unless the severity meets or exceeds your floor. Most workspaces set this to MEDIUM.',
+          'Quiet hours — a UTC window during which alerts are queued silently and delivered at the next active hour. Useful for workspaces that do not run 24×7 and do not want overnight pings on a non-critical pump.',
+          'Auto-create work orders — when on, every CRITICAL detection auto-opens a work order assigned to the machine\'s default technician. Off by default; turn it on once you trust the false-positive rate.',
+        ],
+        callout: {
+          type: 'warning',
+          text: 'Sensitivity is per-organization, not per-sensor. A single sensitivity setting applies to every sensor on every machine in the workspace. If one specific machine needs a tighter or looser setting, override it on the machine\'s AI tab — do not raise the global sensitivity to chase one noisy asset.',
+        },
+      },
+      {
+        heading: 'Per-machine overrides',
+        body: [
+          'Every machine has its own AI tab on the equipment detail page. By default, every field on that tab is set to "inherit from organization" — null in the database — so a workspace-level change automatically applies everywhere. When you flip an override on, only that field is overridden; everything else keeps inheriting. This is how you tune sensitivity for a single noisy asset without affecting the rest of the fleet.',
+        ],
+        steps: [
+          'Open the equipment detail page for the machine you want to tune.',
+          'Click the 🤖 AI tab.',
+          'Read the "Effective settings" card at the top — this shows what the engine will actually use for this machine right now (your overrides plus inheritance).',
+          'Toggle the override switch next to any field you want to change. The control becomes editable.',
+          'Pick a new value, or leave the override off to keep inheriting.',
+          'Click Save. The change takes effect on the next engine run, or immediately if you click "Run engine now".',
+          'Add a note in the Notes field — future-you will appreciate knowing why this machine has a custom sensitivity.',
+        ],
+        bullets: [
+          'Custom thresholds — for a specific machine, you can set explicit warn / critical values per sensor type that override the statistical engine entirely. Useful for sensors with a regulated red line (battery voltage, hydraulic pressure, vessel exhaust temp).',
+          'Per-machine model — you can run a single high-value asset on LLM-Assisted while leaving the rest of the fleet on Statistical.',
+          'Per-machine quiet hours — not currently overridable per machine; set once at the workspace level. On the roadmap.',
+        ],
+      },
+      {
+        heading: 'The confirm/reject feedback loop',
+        body: [
+          'Every detection lands in a feed on the equipment AI tab and on the SuperAdmin AI tab with three possible states: PENDING, CONFIRMED, or REJECTED. When a technician confirms a detection, you are telling the engine "yes, this was a real problem". When they reject it, you are telling the engine "false positive". This feedback is recorded against the detection and is what powers the rolling false-positive rate shown on the SuperAdmin dashboard.',
+          'Today the feedback is not used to retrain the model — the statistical core does not need training data. It is used for visibility: if a workspace is rejecting more than 30% of detections, the SuperAdmin view will surface that and recommend lowering sensitivity. Future models may consume this feedback for fine-tuning; the data is being collected so that path stays open.',
+        ],
+        bullets: [
+          'PENDING — the default state. A detection has been published as an alert but no human has weighed in yet.',
+          'CONFIRMED — a technician opened the detection, agreed with it, and clicked Confirm. Counts as a true positive.',
+          'REJECTED — a technician opened the detection, disagreed, and clicked Reject. Counts as a false positive. The associated alert is automatically dismissed.',
+        ],
+      },
+      {
+        heading: 'Running the engine',
+        body: [
+          'The engine runs automatically every time a new sensor reading is ingested, and additionally on a 15-minute background sweep across every machine in every workspace. You can also trigger it manually from Settings → AI & Predictive (workspace-wide) or from any equipment AI tab (single machine). A manual run is useful right after you change sensitivity or thresholds and want to see results immediately rather than waiting for the next sweep.',
+        ],
+        bullets: [
+          'POST /api/ai/detect — runs the engine across every machine in the workspace. Returns counts of machines scanned, machines skipped because AI is disabled on them, detections created, and forecasts created.',
+          'POST /api/ai/detect/[machineId] — runs the engine for a single machine. Same response shape.',
+          'GET /api/ai/detect/[machineId] — returns the last 50 detections plus all currently-active forecasts for the machine.',
+          'POST /api/ai/feedback/[detectionId] — accepts { feedback: "CONFIRMED" | "REJECTED" } and updates the detection.',
+          'GET / PATCH /api/ai/settings — workspace-level settings (OWNER / ADMIN only for PATCH).',
+          'GET / PATCH /api/ai/settings/[machineId] — per-machine overrides (OWNER / ADMIN / TECHNICIAN can edit).',
+        ],
+      },
+      {
+        heading: 'SuperAdmin view',
+        body: [
+          'Every Org Control Center has a 🤖 AI tab between Operations and Billing. It shows, for that one customer workspace: the master enabled / disabled pill, the active model, the current sensitivity, the minimum severity, the forecast horizon, a feedback rollup (pending / confirmed / rejected counts over the last 25 detections), the active forecasts table (asset, sensor, predicted crossing date, confidence), and the last 25 detections with severity-colored left borders and feedback pills. It is read-only — SuperAdmin can see exactly what the customer is doing but cannot change settings on their behalf, which keeps the audit trail clean.',
+        ],
+        callout: {
+          type: 'info',
+          text: 'Read-only by design. SuperAdmin can observe a workspace\'s AI configuration and outcomes but cannot change them. If a customer needs help tuning sensitivity, walk them through it on a screenshare — do not edit their settings server-side.',
+        },
+      },
+      {
+        heading: 'Costs and limits',
+        body: [
+          'The Statistical and Hybrid models add zero cost — they run inside the same Node process that serves the rest of Myncel and use no external APIs. The LLM-Assisted model is metered: each anomaly that is post-processed by the LLM consumes one inference call, and inference calls are counted against your monthly plan limit. Workspaces on Starter and Pro plans get 500 LLM calls/month included; Growth gets 5,000; Enterprise is uncapped. The current count is shown at the bottom of Settings → AI & Predictive when LLM-Assisted is selected.',
+        ],
+      },
+    ],
+  },
+
+  // ------------------------------------------------------------------
+  // 11. ACCOUNT, BILLING & PLANS
   // ------------------------------------------------------------------
   {
     slug: 'account-billing-plans',
@@ -1360,7 +1482,7 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     ],
   },
   // ------------------------------------------------------------------
-  // 11. TROUBLESHOOTING
+  // 12. TROUBLESHOOTING
   // ------------------------------------------------------------------
   {
     slug: 'troubleshooting',
@@ -1439,7 +1561,7 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
   },
 
   // ------------------------------------------------------------------
-  // 12. ROADMAP — what's coming next (and what isn't here yet)
+  // 13. ROADMAP — what's coming next (and what isn't here yet)
   // ------------------------------------------------------------------
   {
     slug: 'roadmap',
@@ -1516,8 +1638,7 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
         bullets: [
           'SNMP connector for network and IT-OT bridge devices (printers, UPS, switches, environmental sensors).',
           'Native cloud connectors for AWS IoT Core, Azure IoT Hub, and GCP IoT (today: bridge them via MQTT).',
-          'AI Settings panel per machine — configurable thresholds, model selection, alert sensitivity. Today: alerts use a single tenant-wide policy.',
-          'On-device anomaly detection (run the model inside the Edge Gateway, not just in the cloud) for low-bandwidth sites.',
+          'On-device anomaly detection (run the model inside the Edge Gateway, not just in the cloud) for low-bandwidth sites — today, the AI engine runs cloud-side. The full per-org / per-machine AI Settings panel with statistical, hybrid, and LLM-assisted models is now shipped (see the AI & Predictive Maintenance chapter).',
         ],
       },
       {
@@ -1571,7 +1692,7 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
   },
 
   // ------------------------------------------------------------------
-  // 13. GLOSSARY
+  // 14. GLOSSARY
   // ------------------------------------------------------------------
   {
     slug: 'glossary',

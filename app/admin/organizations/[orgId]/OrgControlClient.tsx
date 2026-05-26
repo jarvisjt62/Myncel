@@ -69,6 +69,43 @@ interface OrgData {
     machineCategory: string | null;
     machineStatus: string | null;
   }>;
+  ai: {
+    settings: {
+      enabled: boolean;
+      model: string;
+      sensitivity: number;
+      minAlertSeverity: string;
+      forecastHorizonDays: number;
+      autoCreateWorkOrders: boolean;
+      updatedAt: string;
+    } | null;
+    detections: Array<{
+      id: string;
+      sensorType: string;
+      value: number;
+      unit: string | null;
+      severity: string;
+      message: string;
+      recommendation: string | null;
+      feedback: string;
+      modelUsed: string;
+      detectedAt: string;
+      machineId: string | null;
+      machineName: string | null;
+    }>;
+    forecasts: Array<{
+      id: string;
+      sensorType: string;
+      predictedFailureAt: string | null;
+      confidence: number;
+      recommendation: string;
+      horizonDays: number;
+      generatedAt: string;
+      machineId: string | null;
+      machineName: string | null;
+    }>;
+    totals: { confirmed: number; rejected: number; pending: number };
+  };
 }
 
 interface AuditEntry { id: string; action: string; entity: string; entityId: string | null; changes: string | null; createdAt: string; userName: string | null; }
@@ -83,7 +120,7 @@ const ROLE_COLORS: Record<string,string> = { OWNER:'#8b5cf6', ADMIN:'#6366f1', T
 const STATUS_COLORS: Record<string,string> = { OPERATIONAL:'#10b981', MAINTENANCE:'#f59e0b', BREAKDOWN:'#ef4444', RETIRED:'#6b7280' };
 const WO_STATUS_COLORS: Record<string,string> = { OPEN:'#6366f1', IN_PROGRESS:'#f59e0b', ON_HOLD:'#6b7280', COMPLETED:'#10b981', CANCELLED:'#ef4444' };
 const SEVERITY_COLORS: Record<string,string> = { CRITICAL:'#ef4444', HIGH:'#f97316', MEDIUM:'#f59e0b', LOW:'#10b981' };
-const TABS = ['overview','users','machines','fleet','work-orders','alerts','operations','billing','integrations','identity','activity'] as const;
+const TABS = ['overview','users','machines','fleet','work-orders','alerts','operations','ai','billing','integrations','identity','activity'] as const;
 type Tab = typeof TABS[number];
 
 /* ─── Small helpers ─────────────────────────────────────────────── */
@@ -200,7 +237,7 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
   /* ─── Render ─────────────────────────────────────────── */
   const tabIcons: Record<Tab, string> = {
     overview: '📊', users: '👥', machines: '⚙️', fleet: '🚛', 'work-orders': '📋',
-    alerts: '🔔', operations: '🛠️', billing: '💳', integrations: '🔌', identity: '🔐', activity: '📋',
+    alerts: '🔔', operations: '🛠️', ai: '🤖', billing: '💳', integrations: '🔌', identity: '🔐', activity: '📋',
   };
 
   return (
@@ -838,6 +875,160 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
           </div>
         </div>
       )}
+
+      {/* ═══════════════ AI / PREDICTIVE TAB ═══════════════ */}
+      {activeTab==='ai' && (() => {
+        const ai = org.ai;
+        const sev = ai.settings;
+        const sevColors: Record<string, string> = {
+          LOW: '#9ca3af', MEDIUM: '#f59e0b', HIGH: '#f97316', CRITICAL: '#dc2626',
+        };
+        const fbColors: Record<string, string> = {
+          PENDING: '#6366f1', CONFIRMED: '#10b981', REJECTED: '#9ca3af',
+        };
+        const masterEnabled = sev?.enabled ?? true;
+        return (
+          <div className="space-y-5">
+            {/* Header summary */}
+            <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:22 }}>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div>
+                  <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:'0 0 6px' }}>🤖 AI &amp; Predictive Maintenance</h2>
+                  <p style={{ fontSize:13,color:'var(--text-secondary)',margin:0 }}>
+                    SuperAdmin oversight of this org&rsquo;s anomaly detection &amp; forecasting. Read-only here — operators tune their own settings under <code>/settings/ai</code>.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span style={{
+                    fontSize:11,fontWeight:700,padding:'4px 10px',borderRadius:999,
+                    background: masterEnabled ? '#d1fae5' : '#f3f4f6',
+                    color: masterEnabled ? '#065f46' : '#6b7280',
+                  }}>
+                    {masterEnabled ? '● ENABLED' : '○ DISABLED'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+                <div>
+                  <div style={{ fontSize:10,textTransform:'uppercase',color:'var(--text-muted)',letterSpacing:'0.05em' }}>Model</div>
+                  <div style={{ fontSize:14,fontWeight:700,color:'var(--text-primary)' }}>{sev?.model ?? 'STATISTICAL'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize:10,textTransform:'uppercase',color:'var(--text-muted)',letterSpacing:'0.05em' }}>Sensitivity</div>
+                  <div style={{ fontSize:14,fontWeight:700,color:'var(--text-primary)' }}>{sev?.sensitivity ?? 50}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize:10,textTransform:'uppercase',color:'var(--text-muted)',letterSpacing:'0.05em' }}>Min severity</div>
+                  <div style={{ fontSize:14,fontWeight:700,color:sevColors[sev?.minAlertSeverity ?? 'LOW'] }}>{sev?.minAlertSeverity ?? 'LOW'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize:10,textTransform:'uppercase',color:'var(--text-muted)',letterSpacing:'0.05em' }}>Forecast horizon</div>
+                  <div style={{ fontSize:14,fontWeight:700,color:'var(--text-primary)' }}>{sev?.forecastHorizonDays ?? 30}d</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Detection feedback rollup */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:18 }}>
+                <div style={{ fontSize:10,textTransform:'uppercase',color:'var(--text-muted)' }}>Pending review</div>
+                <div style={{ fontSize:28,fontWeight:800,color:'#6366f1',marginTop:4 }}>{ai.totals.pending}</div>
+                <div style={{ fontSize:11,color:'var(--text-secondary)' }}>operators haven&rsquo;t yet confirmed/rejected</div>
+              </div>
+              <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:18 }}>
+                <div style={{ fontSize:10,textTransform:'uppercase',color:'var(--text-muted)' }}>Confirmed real</div>
+                <div style={{ fontSize:28,fontWeight:800,color:'#10b981',marginTop:4 }}>{ai.totals.confirmed}</div>
+                <div style={{ fontSize:11,color:'var(--text-secondary)' }}>operator marked as a true anomaly</div>
+              </div>
+              <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:18 }}>
+                <div style={{ fontSize:10,textTransform:'uppercase',color:'var(--text-muted)' }}>False positives</div>
+                <div style={{ fontSize:28,fontWeight:800,color:'#9ca3af',marginTop:4 }}>{ai.totals.rejected}</div>
+                <div style={{ fontSize:11,color:'var(--text-secondary)' }}>used to reduce future noise</div>
+              </div>
+            </div>
+
+            {/* Active forecasts */}
+            <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:22 }}>
+              <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:'0 0 12px' }}>📅 Active forecasts ({ai.forecasts.length})</h2>
+              {ai.forecasts.length === 0 ? (
+                <p style={{ fontSize:13,color:'var(--text-muted)',fontStyle:'italic',margin:0 }}>No active forecasts — engine hasn&rsquo;t yet projected any threshold crossings inside the configured horizon.</p>
+              ) : (
+                <div style={{ overflowX:'auto' }}>
+                  <table style={{ width:'100%',fontSize:12,borderCollapse:'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom:'1px solid var(--border)' }}>
+                        <th style={{ textAlign:'left',padding:'8px 6px',fontWeight:600,color:'var(--text-secondary)',fontSize:10,textTransform:'uppercase' }}>Asset</th>
+                        <th style={{ textAlign:'left',padding:'8px 6px',fontWeight:600,color:'var(--text-secondary)',fontSize:10,textTransform:'uppercase' }}>Sensor</th>
+                        <th style={{ textAlign:'left',padding:'8px 6px',fontWeight:600,color:'var(--text-secondary)',fontSize:10,textTransform:'uppercase' }}>Predicted crossing</th>
+                        <th style={{ textAlign:'right',padding:'8px 6px',fontWeight:600,color:'var(--text-secondary)',fontSize:10,textTransform:'uppercase' }}>Confidence</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ai.forecasts.map(f => (
+                        <tr key={f.id} style={{ borderBottom:'1px solid var(--border-subtle)' }}>
+                          <td style={{ padding:'8px 6px',color:'var(--text-primary)',fontWeight:500 }}>{f.machineName ?? '—'}</td>
+                          <td style={{ padding:'8px 6px',color:'var(--text-secondary)' }}>{f.sensorType}</td>
+                          <td style={{ padding:'8px 6px',color:'var(--text-secondary)' }}>
+                            {f.predictedFailureAt ? new Date(f.predictedFailureAt).toLocaleDateString() : '—'}
+                          </td>
+                          <td style={{ padding:'8px 6px',textAlign:'right',color:'var(--accent)',fontWeight:700 }}>{f.confidence}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Recent detections */}
+            <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:22 }}>
+              <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:'0 0 12px' }}>🔍 Recent detections (last 25)</h2>
+              {ai.detections.length === 0 ? (
+                <p style={{ fontSize:13,color:'var(--text-muted)',fontStyle:'italic',margin:0 }}>No detections yet for this org.</p>
+              ) : (
+                <div className="space-y-2">
+                  {ai.detections.map(d => (
+                    <div key={d.id} style={{
+                      borderLeft:`4px solid ${sevColors[d.severity] ?? '#9ca3af'}`,
+                      background:'var(--bg-card)',
+                      border:'1px solid var(--border)',
+                      borderRadius:8,
+                      padding:'10px 12px',
+                    }}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div style={{ flex:1,minWidth:0 }}>
+                          <div className="flex items-center gap-2 flex-wrap" style={{ fontSize:11 }}>
+                            <span style={{ fontWeight:700,color:sevColors[d.severity] ?? '#9ca3af',textTransform:'uppercase' }}>{d.severity}</span>
+                            <span style={{ color:'var(--text-muted)' }}>·</span>
+                            <span style={{ color:'var(--text-secondary)',fontWeight:600 }}>{d.machineName ?? 'Unknown'}</span>
+                            <span style={{ color:'var(--text-muted)' }}>·</span>
+                            <span style={{ color:'var(--text-secondary)' }}>{d.sensorType}</span>
+                            <span style={{ color:'var(--text-muted)' }}>·</span>
+                            <span style={{ color:'var(--text-secondary)' }}>{d.modelUsed}</span>
+                            <span style={{ color:'var(--text-muted)' }}>·</span>
+                            <span style={{ color:'var(--text-secondary)' }}>{new Date(d.detectedAt).toLocaleString()}</span>
+                          </div>
+                          <div style={{ fontSize:13,color:'var(--text-primary)',marginTop:4 }}>{d.message}</div>
+                          {d.recommendation && (
+                            <div style={{ fontSize:12,color:'var(--text-secondary)',marginTop:2,fontStyle:'italic' }}>→ {d.recommendation}</div>
+                          )}
+                        </div>
+                        <span style={{
+                          fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:4,
+                          background: fbColors[d.feedback] + '22',
+                          color: fbColors[d.feedback],
+                          flexShrink: 0,
+                        }}>{d.feedback}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ═══════════════ BILLING TAB ═══════════════ */}
       {activeTab==='billing' && (

@@ -57,7 +57,7 @@ model User {
   // True when this user is owned by SCIM provisioning. Local UI hides
   // delete and role-edit affordances on SCIM-managed rows so the IdP
   // remains the source of truth.
-  scimManaged Boolean @default(false)
+  scimManaged    Boolean @default(false)
 
   // Relations
   organizationId              String?
@@ -211,7 +211,7 @@ model Organization {
   paypalSubscriptionId String?
 
   // Localization
-  currency    String    @default("USD") // ISO 4217 currency code (e.g. USD, EUR, GBP, NGN)
+  currency           String  @default("USD") // ISO 4217 currency code (e.g. USD, EUR, GBP, NGN)
   // Floor plan (HMI)
   floorPlanImageUrl  String? @db.Text // base64 data URL of floor plan image
   floorPlanPositions String? @db.Text // JSON string of machine positions
@@ -256,8 +256,13 @@ model Organization {
   customRoles Role[]
 
   // SSO / SCIM (per-tenant identity-provider config)
-  ssoConfig   SsoConfig?
-  scimTokens  ScimToken[]
+  ssoConfig  SsoConfig?
+  scimTokens ScimToken[]
+
+  // AI / Predictive maintenance (Big Bet #4)
+  aiSettings          OrgAISettings?
+  anomalyDetections   AnomalyDetection[]
+  predictiveForecasts PredictiveForecast[]
 
   @@map("organizations")
 }
@@ -265,7 +270,7 @@ model Organization {
 // ===== MACHINES =====
 
 model Machine {
-  id            String          @id @default(cuid())
+  id            String  @id @default(cuid())
   name          String
   model         String?
   manufacturer  String?
@@ -274,21 +279,21 @@ model Machine {
   location      String? // legacy free-text fallback (still displayed when hierarchy fields are empty)
 
   // Structured location hierarchy (all optional — set as much or as little as you want)
-  siteId     String?
-  buildingId String?
-  floorId    String?
-  roomId     String?
-  site       Site?     @relation(fields: [siteId], references: [id], onDelete: SetNull)
-  building   Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
-  floor      Floor?    @relation(fields: [floorId], references: [id], onDelete: SetNull)
-  room       Room?     @relation(fields: [roomId], references: [id], onDelete: SetNull)
-  category      MachineCategory @default(OTHER)
-  status        MachineStatus   @default(OPERATIONAL)
-  criticality   Criticality     @default(MEDIUM)
-  notes         String?         @db.Text
-  imageUrl      String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  siteId      String?
+  buildingId  String?
+  floorId     String?
+  roomId      String?
+  site        Site?           @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  building    Building?       @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  floor       Floor?          @relation(fields: [floorId], references: [id], onDelete: SetNull)
+  room        Room?           @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  category    MachineCategory @default(OTHER)
+  status      MachineStatus   @default(OPERATIONAL)
+  criticality Criticality     @default(MEDIUM)
+  notes       String?         @db.Text
+  imageUrl    String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
   // Runtime tracking
   totalHours    Float     @default(0)
@@ -304,6 +309,9 @@ model Machine {
   machineDeviceTokens   MachineDeviceToken[]
   remoteSupportSessions RemoteSupportSession[]
   documents             MachineDocument[]
+  aiSettings            MachineAISettings?
+  anomalyDetections     AnomalyDetection[]
+  predictiveForecasts   PredictiveForecast[]
 
   @@index([organizationId, siteId])
   @@index([organizationId, buildingId])
@@ -504,8 +512,8 @@ model WorkOrder {
 
 model WorkOrderTemplate {
   id               String        @id @default(cuid())
-  name             String        // Human-readable e.g. "30-day Haas VF-2 PM"
-  title            String        // Template's default WO title (can include {machine} placeholder later)
+  name             String // Human-readable e.g. "30-day Haas VF-2 PM"
+  title            String // Template's default WO title (can include {machine} placeholder later)
   description      String?       @db.Text
   type             WorkOrderType @default(PREVENTIVE)
   priority         Priority      @default(MEDIUM)
@@ -583,6 +591,10 @@ model Alert {
   machine        Machine?     @relation(fields: [machineId], references: [id], onDelete: Cascade)
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Back-link: a single Alert may have produced 0..N AnomalyDetection rows
+  // (e.g. the engine raised one Alert covering multiple sensors). Optional.
+  anomalyDetections AnomalyDetection[]
 
   @@map("alerts")
 }
@@ -866,6 +878,8 @@ enum AlertType {
   MACHINE_BREAKDOWN
   LOW_PARTS
   SENSOR_THRESHOLD
+  SENSOR_ANOMALY // AI-detected anomaly (Big Bet #4) — distinct from a fixed-threshold cross
+  PREDICTIVE_FAILURE // AI predictive forecast surfaced as an alert
   WORK_ORDER_ASSIGNED
   WORK_ORDER_OVERDUE
 }
@@ -1353,9 +1367,9 @@ model UserRoleAssignment {
 // =================================================================
 
 model SavedReport {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
-  description String?  @db.Text
+  description String? @db.Text
 
   // Which dataset this report queries.
   dataset ReportDataset
@@ -1364,15 +1378,15 @@ model SavedReport {
   filters Json @default("{}")
 
   // Schedule. NEVER means "manual only".
-  schedule  ReportSchedule @default(NEVER)
+  schedule   ReportSchedule @default(NEVER)
   // Hour (0-23) at which the schedule fires; default 8am.
-  hourLocal Int            @default(8)
+  hourLocal  Int            @default(8)
   // ISO timezone (e.g. "America/New_York"). Defaults to UTC if absent.
-  timezone  String         @default("UTC")
+  timezone   String         @default("UTC")
   // Email recipients (JSON array of email strings).
-  recipients Json @default("[]")
+  recipients Json           @default("[]")
   // CSV / XLSX / PDF — only CSV is implemented today.
-  format     ReportFormat @default(CSV)
+  format     ReportFormat   @default(CSV)
 
   // Bookkeeping.
   isActive    Boolean   @default(true)
@@ -1446,8 +1460,8 @@ model ApprovalPolicy {
 
   // Match criteria. Empty arrays = match any.
   // Stored as JSON arrays of enum strings to keep migrations simple.
-  matchPriorities Json @default("[]") // e.g. ["CRITICAL","HIGH"]
-  matchTypes      Json @default("[]") // e.g. ["EMERGENCY"]
+  matchPriorities Json  @default("[]") // e.g. ["CRITICAL","HIGH"]
+  matchTypes      Json  @default("[]") // e.g. ["EMERGENCY"]
   // Minimum total cost (parts + labor) that activates this policy. 0 = always.
   minTotalCost    Float @default(0)
 
@@ -1540,11 +1554,11 @@ model ApprovalRequest {
 }
 
 model ApprovalDecision {
-  id        String           @id @default(cuid())
+  id        String          @id @default(cuid())
   stepOrder Int
   decision  ApprovalOutcome
-  comment   String?          @db.Text
-  decidedAt DateTime         @default(now())
+  comment   String?         @db.Text
+  decidedAt DateTime        @default(now())
 
   requestId String
   request   ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
@@ -1572,4 +1586,198 @@ enum ApprovalStatus {
 enum ApprovalOutcome {
   APPROVED
   REJECTED
+}
+
+// ===== AI / PREDICTIVE MAINTENANCE =====
+//
+// Big Bet #4 — Per-org and per-machine AI configuration plus the records
+// produced by the anomaly-detection and predictive-maintenance engines.
+//
+// Architecture:
+//   OrgAISettings      — single row per organization, holds defaults
+//   MachineAISettings  — optional override per machine; falls back to org
+//   AnomalyDetection   — every flagged anomaly (creates an Alert too)
+//   PredictiveForecast — forward-looking predicted-failure-by entries
+//
+// All four are gated by Organization.aiEnabled (soft kill-switch the
+// SuperAdmin can flip). The engine library lives in lib/ai/.
+
+model OrgAISettings {
+  id String @id @default(cuid())
+
+  // Master switch — when false the engine ignores this org entirely.
+  enabled Boolean @default(true)
+
+  // Detection model. 'statistical' uses rolling z-score + EWMA, no external
+  // calls. 'hybrid' adds seasonal decomposition. 'llm-assisted' summarizes
+  // detections via the in-app chat AI. SuperAdmin can pin a model via
+  // platform settings to override per-org choice.
+  model AIModelKind @default(STATISTICAL)
+
+  // 0–100. 0 = silent (model must be 5σ certain), 100 = paranoid (1σ).
+  // Default 50 maps to ~3σ, the industry-standard SPC threshold.
+  sensitivity Int @default(50)
+
+  // Minimum severity (LOW/MEDIUM/HIGH/CRITICAL) the engine is allowed to
+  // raise. Anything below this is logged as a Detection but does not
+  // create an Alert. Lets ops teams suppress noisy LOW alerts.
+  minAlertSeverity Severity @default(LOW)
+
+  // Forecast horizon in days. The predictive engine projects sensor
+  // trajectories N days forward and flags expected threshold crossings.
+  forecastHorizonDays Int @default(30)
+
+  // When true, every detection automatically opens a draft work order
+  // (status = OPEN) tied to the affected machine. Most orgs leave this
+  // off until they trust the model.
+  autoCreateWorkOrders Boolean @default(false)
+
+  // Quiet hours (UTC, 0–23). Detections raised inside this window are
+  // queued and emitted at quietHoursEnd. NULL = no quiet hours.
+  quietHoursStart Int?
+  quietHoursEnd   Int?
+
+  // Slack/Teams channel override for AI-only alerts. NULL = use the
+  // standard alert channel from NotificationSetting.
+  alertChannelOverride String?
+
+  // Free-form custom instructions appended to the LLM prompt when
+  // model = LLM_ASSISTED. e.g. "Always cite SAE J1939 SPN if the
+  // signal source is a J1939 PGN."
+  customInstructions String? @db.Text
+
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("org_ai_settings")
+}
+
+model MachineAISettings {
+  id String @id @default(cuid())
+
+  // Per-machine enable. Lets you AI-disable a single noisy machine
+  // without touching the org default.
+  enabled Boolean @default(true)
+
+  // Optional model override. NULL = inherit org.
+  model AIModelKind?
+
+  // Optional sensitivity override 0–100. NULL = inherit org.
+  sensitivity Int?
+
+  // Optional severity floor override. NULL = inherit org.
+  minAlertSeverity Severity?
+
+  // Optional forecast horizon override in days. NULL = inherit org.
+  forecastHorizonDays Int?
+
+  // Per-sensor-type custom thresholds, stored as JSON for flexibility.
+  // Shape: { "vibration_mm_s": { warn: 4.5, crit: 7.1, unit: "mm/s" }, ... }
+  // When set, these take priority over the statistical model's
+  // computed thresholds.
+  thresholds Json?
+
+  // Free-form notes shown on the machine's AI tab.
+  notes String? @db.Text
+
+  machineId String  @unique
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("machine_ai_settings")
+}
+
+model AnomalyDetection {
+  id String @id @default(cuid())
+
+  // What the engine saw.
+  sensorType String // matches SensorReading.type (e.g. "vibration")
+  value      Float
+  unit       String?
+
+  // Statistical context at time of detection.
+  baseline  Float? // computed mean / EWMA expected value
+  deviation Float? // how many σ from baseline (positive or negative)
+  threshold Float? // the threshold that was crossed
+
+  // Severity raised (also stamped on the linked Alert if created).
+  severity Severity
+
+  // Free-form short message ("Vibration 7.2 mm/s — 4.1σ above baseline of 2.3 mm/s").
+  message String @db.Text
+
+  // Suggested action ("Inspect spindle bearings; schedule lubrication
+  // within 7 days"). Populated by LLM_ASSISTED; otherwise NULL.
+  recommendation String? @db.Text
+
+  // Resolution: did an operator confirm or reject this detection?
+  // FEEDBACK_PENDING → AI shows it in the inbox. CONFIRMED → trains
+  // the model (in future). REJECTED → adds to false-positive list.
+  feedback AnomalyFeedback @default(PENDING)
+
+  // Engine stamp.
+  modelUsed  AIModelKind
+  detectedAt DateTime    @default(now())
+
+  // Optional links — every detection ideally has both.
+  alertId String?
+  alert   Alert?  @relation(fields: [alertId], references: [id], onDelete: SetNull)
+
+  machineId String
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, detectedAt])
+  @@index([machineId, sensorType, detectedAt])
+  @@map("anomaly_detections")
+}
+
+model PredictiveForecast {
+  id String @id @default(cuid())
+
+  sensorType String
+
+  // When the engine expects the threshold to be crossed.
+  predictedFailureAt DateTime?
+
+  // 0–100 confidence percentage.
+  confidence Int
+
+  // Recommended action / lead-time.
+  recommendation String @db.Text
+
+  // Forecast horizon used (snapshot of org/machine setting at render time).
+  horizonDays Int
+
+  generatedAt DateTime @default(now())
+  validUntil  DateTime // typically generatedAt + 1 day
+
+  machineId String
+  machine   Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, generatedAt])
+  @@index([machineId, sensorType, generatedAt])
+  @@map("predictive_forecasts")
+}
+
+enum AIModelKind {
+  STATISTICAL // rolling z-score + EWMA, no external calls
+  HYBRID // statistical + seasonal decomposition
+  LLM_ASSISTED // statistical + LLM-summarized recommendations
+}
+
+enum AnomalyFeedback {
+  PENDING // shown to operator, no decision yet
+  CONFIRMED // operator agreed it was a real anomaly
+  REJECTED // false positive — used to suppress similar future detections
 }
