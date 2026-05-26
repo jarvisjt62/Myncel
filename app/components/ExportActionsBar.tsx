@@ -192,11 +192,46 @@ export default function ExportActionsBar({
   const btnBase =
     'inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 whitespace-nowrap';
 
+  // Robust CSV download that works everywhere — including mobile browsers
+  // and the Capacitor / Expo WebView, where a plain <a download="..."> is
+  // often ignored and the browser just navigates to a page showing the raw
+  // CSV text. Fetching the response as a Blob and triggering a synthetic
+  // anchor click reliably saves the file on every platform.
+  const handleCsvDownload = async () => {
+    if (busy) return;
+    try {
+      setBusy('csv');
+      const res = await fetch(downloadUrl('csv'), { credentials: 'include' });
+      if (!res.ok) throw new Error(`CSV export failed (${res.status})`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      // Try to read filename from Content-Disposition; fall back to a sane default.
+      const disp = res.headers.get('Content-Disposition') || '';
+      const m = /filename="?([^";]+)"?/i.exec(disp);
+      const filename = m?.[1] || `${dataset}-${new Date().toISOString().slice(0, 10)}.csv`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // Revoke after a short delay so the browser has time to start the save.
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      toast(`CSV downloaded: ${filename}`, true);
+    } catch (err: any) {
+      toast(err?.message || 'Failed to download CSV', false);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <div ref={wrapRef} className="flex items-center gap-1.5 flex-wrap">
-      {/* CSV download */}
-      <a
-        href={downloadUrl('csv')}
+      {/* CSV download — fetches as Blob so it works in every mobile WebView */}
+      <button
+        type="button"
+        onClick={handleCsvDownload}
+        disabled={busy === 'csv'}
         className={`${btnBase} border border-[var(--border)] text-[var(--text-secondary)] hover:border-[#635bff] hover:text-[#635bff]`}
         title="Download as CSV"
       >
@@ -205,8 +240,8 @@ export default function ExportActionsBar({
           <polyline points="7 10 12 15 17 10" />
           <line x1="12" y1="15" x2="12" y2="3" />
         </svg>
-        <span>CSV</span>
-      </a>
+        <span>{busy === 'csv' ? 'Saving…' : 'CSV'}</span>
+      </button>
 
       {/* PDF (print-ready HTML) */}
       <a

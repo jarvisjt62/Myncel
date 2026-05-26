@@ -259,6 +259,7 @@ export async function GET(
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>${escHtml(title)} — ${escHtml(orgName)} — ${today}</title>
 <style>
   @page { size: A4 landscape; margin: 14mm; }
@@ -280,12 +281,16 @@ export async function GET(
   .report-toolbar .back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; background: #f6f9fc; color: #0a2540; border: 1px solid #e6ebf1; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: none; }
   .report-toolbar .back-btn:hover { background: #eef2ff; border-color: #c7d2fe; }
   .report-toolbar .print-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; background: #635bff; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; box-shadow: 0 4px 12px rgba(99,91,255,0.3); }
-  body { padding-top: 64px; padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-  .report-toolbar { padding-top: max(10px, env(safe-area-inset-top, 0px)); }
+  /* Hard-floor 32px on top so the toolbar never sits behind a phone status bar.
+     Samsung One UI / older Android Chrome both report env(safe-area-inset-top)=0
+     even when the URL bar / status bar are drawing over the page, so we can't
+     rely on env() alone. The max() picks whichever is bigger. */
+  .report-toolbar { padding-top: max(32px, env(safe-area-inset-top, 0px)); padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); }
+  body { padding-top: calc(64px + max(32px, env(safe-area-inset-top, 0px))); padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
   @media (max-width: 600px) {
     .report-toolbar .back-btn span.lbl, .report-toolbar .print-btn span.lbl { display: none; }
     .report-toolbar .back-btn, .report-toolbar .print-btn { padding: 9px 12px; }
-    body { font-size: 11px; padding: 64px 12px 16px 12px; }
+    body { font-size: 11px; padding: calc(64px + max(32px, env(safe-area-inset-top, 0px))) 12px 16px 12px; }
     table { font-size: 9px; }
     th, td { padding: 5px 4px; }
   }

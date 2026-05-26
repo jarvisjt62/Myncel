@@ -265,15 +265,35 @@ export default function RowExportMenu({
             Download
           </div>
 
-          <a
-            href={csvUrl()}
-            onClick={() => setGlobalOpen(null)}
-            className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/5"
+          <button
+            type="button"
+            onClick={async () => {
+              setGlobalOpen(null);
+              try {
+                const res = await fetch(csvUrl(), { credentials: 'include' });
+                if (!res.ok) throw new Error(`CSV failed (${res.status})`);
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const disp = res.headers.get('Content-Disposition') || '';
+                const m = /filename="?([^";]+)"?/i.exec(disp);
+                const filename = m?.[1] || `${dataset}-${recordId}.csv`;
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 4000);
+              } catch (err: any) {
+                onResult?.({ success: false, message: err?.message || 'CSV download failed' });
+              }
+            }}
+            className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/5 w-full text-left"
             style={{ color: 'var(--text-primary)' }}
           >
             <span>📥</span>
             <span>CSV</span>
-          </a>
+          </button>
 
           <a
             href={pdfUrl()}

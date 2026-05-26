@@ -3881,7 +3881,7 @@ function DashboardClientInner({ user, data }: Props) {
               </div>
             </div>
             <div>
-              <label className={labelClass}>Location (structured)</label>
+              <label className={labelClass}>Location (structured) <span className="text-[var(--text-muted)] font-normal">— optional</span></label>
               <LocationPicker
                 value={{ siteId: machineForm.siteId, buildingId: machineForm.buildingId, floorId: machineForm.floorId, roomId: machineForm.roomId }}
                 onChange={(v) => setMachineForm({ ...machineForm, ...v })}
@@ -3889,11 +3889,11 @@ function DashboardClientInner({ user, data }: Props) {
                 compact
               />
               <p className="text-xs text-[var(--text-muted)] mt-1">
-                Set up your hierarchy in <a href="/settings/locations" className="underline">Settings → Locations</a>.
+                Skip this entirely if you haven't set up a hierarchy yet — just use the free-text label below. You can always add structured locations later in <a href="/settings/locations" className="underline">Settings → Locations</a>.
               </p>
             </div>
             <div>
-              <label className={labelClass}>Location label (free-text fallback)</label>
+              <label className={labelClass}>Location label <span className="text-[var(--text-muted)] font-normal">— free-text, works without any setup</span></label>
               <input value={machineForm.location} onChange={e => setMachineForm({...machineForm, location: e.target.value})} placeholder="e.g. Plant 1 — Bay A — Line 3" className={inputClass} />
             </div>
           </div>
