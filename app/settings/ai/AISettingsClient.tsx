@@ -381,9 +381,16 @@ export default function AISettingsClient() {
 
       {toast && (
         <div
-          className={`fixed bottom-4 right-4 z-50 rounded-lg px-4 py-2.5 text-sm shadow-lg ${
+          className={`fixed z-50 rounded-lg px-4 py-2.5 text-sm shadow-lg ${
             toast.type === 'ok' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
           }`}
+          style={{
+            bottom: 'max(16px, env(safe-area-inset-bottom, 0px))',
+            right: 'max(16px, env(safe-area-inset-right, 0px))',
+            left: 'max(16px, env(safe-area-inset-left, 0px))',
+            maxWidth: 'calc(100vw - 32px)',
+            marginLeft: 'auto',
+          }}
         >
           {toast.msg}
         </div>

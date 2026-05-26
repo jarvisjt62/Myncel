@@ -1373,3 +1373,44 @@ html, body {
    We can't target generically without adding a hook, so individual
    modals that need it set inline padding-bottom (see Modal in
    DashboardClient.tsx and ExportButtons.tsx). */
+
+/* ============================================================================
+ * MOBILE TOAST SAFE-AREA UTILITY  (added during final mobile-responsiveness pass)
+ *
+ * Many components use `fixed bottom-4 right-4` (or bottom-6) for toast
+ * notifications. On Capacitor (Android & iOS) and iOS Safari these can
+ * overlap the home indicator or gesture nav. This utility floors the
+ * bottom/right offsets to the safe-area inset.
+ *
+ * Usage:  <div className="toast-safe ..."> instead of `fixed bottom-4 right-4`
+ * Or override via @supports for the existing "fixed bottom-4 right-4" / "fixed bottom-6 right-6"
+ * patterns so we don't have to touch every component. We do that below.
+ * ========================================================================== */
+
+.toast-safe {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  z-index: 100;
+}
+
+/* Auto-floor existing tailwind classes used across the app for toasts.
+ * .fixed.bottom-4 / bottom-6 with .right-4 / right-6 should respect safe-area. */
+.fixed.bottom-4 {
+  bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important;
+}
+.fixed.bottom-6 {
+  bottom: max(24px, env(safe-area-inset-bottom, 0px)) !important;
+}
+.fixed.right-4 {
+  right: max(16px, env(safe-area-inset-right, 0px)) !important;
+}
+.fixed.right-6 {
+  right: max(24px, env(safe-area-inset-right, 0px)) !important;
+}
+.fixed.left-4 {
+  left: max(16px, env(safe-area-inset-left, 0px)) !important;
+}
+.fixed.left-6 {
+  left: max(24px, env(safe-area-inset-left, 0px)) !important;
+}

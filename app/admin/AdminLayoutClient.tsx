@@ -272,8 +272,12 @@ function AdminShell({ children, navSections, externalLinks, userName }: Props) {
 
         {/* Mobile Bottom Nav */}
         <nav
-          className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-2 py-2 overflow-x-auto"
-          style={{ backgroundColor: 'var(--bg-nav)', borderTop: '1px solid var(--border)' }}
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-2 pt-2 overflow-x-auto"
+          style={{
+            backgroundColor: 'var(--bg-nav)',
+            borderTop: '1px solid var(--border)',
+            paddingBottom: 'max(8px, env(safe-area-inset-bottom, 0px))',
+          }}
         >
           <div className="flex gap-1 justify-around">
             {navSections[0].items.slice(0, 5).map((item) => {
