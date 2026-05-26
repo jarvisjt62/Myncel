@@ -568,7 +568,10 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
           'Step 1: name "Supervisor sign-off", required permission "work_orders.approve_safety", requireAll unchecked. Anyone in the org with that permission can sign off.',
           'Click Create policy. The policy is active immediately. The next time anyone tries to mark an EMERGENCY work order COMPLETED, Myncel parks it in PENDING_APPROVAL and emails everyone with work_orders.approve_safety.',
         ],
-        callout: 'Tip: Build a tier ladder by stacking multiple policies on the same trigger with different minTotalCost values. The most expensive matching policy wins, so you can require one supervisor under $5k, two supervisors $5k–$25k, and the plant manager above $25k — all on a single PRE_CLOSE trigger.',
+        callout: {
+          type: 'tip',
+          text: 'Build a tier ladder by stacking multiple policies on the same trigger with different minTotalCost values. The most expensive matching policy wins, so you can require one supervisor under $5k, two supervisors $5k–$25k, and the plant manager above $25k — all on a single PRE_CLOSE trigger.',
+        },
       },
       {
         heading: 'Parts, labor, and cost capture',
