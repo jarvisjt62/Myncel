@@ -1,30 +1,30 @@
 # Myncel CMMS — Task Tracker
 
-## ✅ Completed This Session
+## ✅ Completed (recent)
 
-- [x] SMS fix: `smsCriticalOnly: true` → set to false via one-time API route (deleted after)
-- [x] Nigerian SMS: Added `+234` country code support in sms.ts
-- [x] Global phone numbers: Full 170+ country selector in notifications settings
-  - toE164() and splitE164() helpers
-  - Country dropdown + local number input
-  - Live E.164 preview under the inputs
-  - Universal sms.ts normalisation
-  - TypeScript clean — 0 errors
-  - Committed `27bf3a0` and pushed to main
-- [x] Mobile app icons: Real Myncel logo composited onto all 5 Expo assets
-- [x] Mobile API endpoints: All 12 routes under /api/mobile/
-- [x] JWT mobile auth: lib/mobile-auth.ts with signMobileToken/verifyMobileToken
-- [x] MobilePushToken Prisma model added to schema.prisma
-- [x] prisma db push: Runs automatically via Vercel build script on next deploy
+- [x] **QR-label printable sheets** (multi-per-page) — 9 templates: Avery 5160/5163/5164 (Letter) + L7160/L7163/L7165/L7167 (A4) + thermal 50×80 + 100×150. Per-machine quantity, skip-first-N slots for partial-sheet reuse, sheet preview at 60%, pixel-perfect print via CSS Grid in mm units. Handbook updated. Committed `fee3244`.
+- [x] **PagerDuty native integration** (Events API v2) — trigger / ack / resolve, severity-aware, auto-resolve on alert clear. Connect modal in /settings/integrations + handbook step-by-step. Committed `c919cd5`.
+- [x] **Microsoft Teams native integration** (Adaptive Cards v1.4) — Incoming Webhook URL, severity → colour, confirmation card on connect. Connect modal + handbook. Committed `c919cd5`.
 
-## 🔲 Remaining (user action required)
+## 🔧 Postponed (do not resume without explicit user request)
 
-- [ ] Set MOBILE_JWT_SECRET in Vercel environment variables
-  → Vercel Dashboard → Project → Settings → Environment Variables
-  → Add: MOBILE_JWT_SECRET = (any long random string, e.g. 64-char hex)
+- [ ] **Samsung S24 Ultra status-bar overlap** — 3 attempts failed (v1 body class, v2 html class + display-mode standalone, v3 inline style + force-pt-safe-32 !important). User said postpone.
 
-- [ ] Mobile app publishing (user needs accounts):
-  → Apple Developer Program: $99/yr — https://developer.apple.com/programs/
-  → Google Play Console: $25 one-time — https://play.google.com/console/
-  → Then run: cd myncel-mobile && eas build --platform all
-  → Then: eas submit --platform all
+## 🎯 Next phase (in order)
+
+- [ ] **Saved & scheduled reports** — user-saved report definitions, "Email me a CSV every Monday 8am" cron, multi-report dashboards. Update reports chapter in handbook.
+- [ ] **Multi-step approval workflows** — pre-create budget approval, pre-close safety sign-off, vendor quote approval. Configurable per criticality. Update Work Orders chapter in handbook.
+- [ ] **4-level location hierarchy** — Site → Building → Floor → Room (instead of single `location` string). Migration + filters + breadcrumb UI. Update Equipment chapter.
+- [ ] **Tabbed equipment detail page** — separate Documents / Parts / Timeline / Telemetry / Schedules tabs. In-browser DWG / P&ID preview. Update Equipment chapter.
+
+## 🚀 Big bets (after the above)
+
+- [ ] **Full mobile offline editing with sync queue** — Capacitor + IndexedDB queue + conflict resolution. Open WOs, complete checklists, attach photos offline → auto-sync on reconnect.
+- [ ] **SAML 2.0 SSO + SCIM 2.0** — Okta, Azure AD / Entra, OneLogin, JumpCloud. Auto-provisioning + de-provisioning.
+- [ ] **OBD-II / J1939 / NMEA 2000 fleet & marine connectors** — vehicles, heavy trucks, vessels.
+- [ ] **AI Settings panel per machine** — per-machine threshold tuning, model selection, alert sensitivity.
+
+## 📜 Standing rules (every shipped feature must satisfy)
+
+1. Verify mobile responsiveness — mobile web (landscape + portrait) AND mobile apps (Android + iOS).
+2. Update `lib/handbook/content.ts` — REMOVE shipped item from Roadmap chapter, INSERT detailed step-by-step content into the relevant chapter matching the existing `body[]` / `bullets[]` / `steps[]` / `callout` style.
