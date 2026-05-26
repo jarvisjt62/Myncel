@@ -287,7 +287,7 @@ export async function cancelApprovalRequest(
 
 async function reload(
   id: string,
-): Promise<{ ok: true; request: FullRequest }> {
+): Promise<{ ok: true; request: FullRequest } | { ok: false; reason: string }> {
   const fresh = await db.approvalRequest.findUnique({
     where: { id },
     include: {
@@ -295,5 +295,6 @@ async function reload(
       decisions: { orderBy: { decidedAt: 'asc' } },
     },
   });
+  if (!fresh) return { ok: false, reason: 'Request vanished after update' };
   return { ok: true, request: fresh as FullRequest };
 }
