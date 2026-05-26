@@ -540,8 +540,35 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
       {
         heading: 'Approval workflows',
         body: [
-          'Multi-step approval workflows for work orders (pre-create budget approval, pre-close safety sign-off, vendor quote approval) are on the roadmap. See the Roadmap chapter at the end of this handbook for status. Today, work orders move directly from OPEN through IN_PROGRESS to COMPLETED without a separate approval gate, though Owners and Admins can require that work orders above a chosen criticality always be assigned to a specific manager.',
+          'Myncel ships a multi-step approval engine that gates work-order transitions. Each approval policy targets a specific trigger — pre-start (when someone tries to move a WO to IN_PROGRESS), pre-close (when someone tries to mark it COMPLETED), or vendor quote (a logical channel for committing high-cost parts) — and matches against priority, work-order type, and minimum total cost. When a matching transition is attempted, the work order is parked in a new PENDING_APPROVAL status and an approval request is opened with one ordered step per policy step. Each step names either a permission gate (e.g. work_orders.approve_budget) or an explicit list of named approver users, and can be configured to require any one approver or every named approver.',
+          'Approvers see a queue at /approvals (sidebar → Approvals) showing every request waiting on them, with full work-order context, the current step name, and Approve / Reject buttons. Approving the final step automatically applies the original requested transition — moving the WO to IN_PROGRESS or COMPLETED and stamping startedAt / completedAt — while rejection at any step rolls the WO back to its previous status and captures the rejecter\'s comment in the audit trail. Every decision is timestamped, attributed to a specific user, and stored permanently. Approvers receive an email the moment a step opens up, with a one-click "Review work order" button.',
+          'Owners and admins manage policies at Settings → Approvals (/settings/approvals). They can pause a policy without deleting it, edit thresholds, reorder steps, and add or remove named approvers without affecting requests already in flight. Users holding the work_orders.manage_approvals permission can also bypass any approval by appending ?bypass=1 to the work-order PATCH call (intended for break-glass automation, audited via the standard work-order log). The number of pending approvals is visible in your /approvals queue badge so nothing falls through the cracks.',
         ],
+        bullets: [
+          'Three trigger types — pre-start budget approval, pre-close safety sign-off, vendor quote approval.',
+          'Match by any combination of priority (CRITICAL / HIGH / MEDIUM / LOW), work-order type (PREVENTIVE / CORRECTIVE / EMERGENCY / INSPECTION / PROJECT), and minimum total cost (parts + labor in the org\'s currency).',
+          'Up to 10 ordered steps per policy. Each step uses a permission gate, a named-user list, or both.',
+          'requireAll flag per step — first approver advances by default, or require every named approver to sign off.',
+          'Email notifications to all eligible approvers when a step opens; final-state email to the requester.',
+          'Full audit trail — every approval and rejection is timestamped with attribution and an optional comment.',
+          'Bypass via work_orders.manage_approvals + ?bypass=1 query param for break-glass scenarios.',
+        ],
+      },
+      {
+        heading: 'Setting up your first approval policy',
+        body: [
+          'A practical example: require the maintenance supervisor to sign off on any EMERGENCY-type work order before it can be closed. Open Settings → Approvals, click "+ New policy", and fill in the editor:',
+        ],
+        steps: [
+          'Name: "Emergency WO close-out sign-off".',
+          'Trigger: "Pre-close safety sign-off" (fires on the OPEN/IN_PROGRESS → COMPLETED transition).',
+          'Match priorities: leave empty (any priority).',
+          'Match types: select EMERGENCY only.',
+          'Minimum total cost: 0 (any cost).',
+          'Step 1: name "Supervisor sign-off", required permission "work_orders.approve_safety", requireAll unchecked. Anyone in the org with that permission can sign off.',
+          'Click Create policy. The policy is active immediately. The next time anyone tries to mark an EMERGENCY work order COMPLETED, Myncel parks it in PENDING_APPROVAL and emails everyone with work_orders.approve_safety.',
+        ],
+        callout: 'Tip: Build a tier ladder by stacking multiple policies on the same trigger with different minTotalCost values. The most expensive matching policy wins, so you can require one supervisor under $5k, two supervisors $5k–$25k, and the plant manager above $25k — all on a single PRE_CLOSE trigger.',
       },
       {
         heading: 'Parts, labor, and cost capture',
@@ -1240,10 +1267,9 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
       {
         heading: 'Work orders',
         body: [
-          'Work orders today support assignment, priority, status, checklists, photo attachments, comments, schedules (with all 9 frequency types including BY_HOURS), and labor / cost capture. The roadmap adds approval workflows and reusable templates.',
+          'Work orders today support assignment, priority, status, checklists, photo attachments, comments, schedules (with all 9 frequency types including BY_HOURS), labor / cost capture, and multi-step approval workflows (see the Work Orders chapter for the full approvals walk-through). The roadmap adds reusable templates and richer parts-reservation logic.',
         ],
         bullets: [
-          'Multi-step approval workflows (e.g. supervisor approval before a high-cost WO can be marked complete; safety officer sign-off on lockout/tagout work).',
           'Reusable Work Order templates — define a "30-day Haas VF-2 PM" once, spawn it from any machine.',
           'Parts reservation and auto-deduction from inventory when a WO is completed.',
           'Labor timer that runs in the mobile app (today labor is entered as a number when completing the WO).',

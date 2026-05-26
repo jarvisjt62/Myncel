@@ -6,6 +6,7 @@
 - [x] **PagerDuty native integration** (Events API v2) — trigger / ack / resolve, severity-aware, auto-resolve on alert clear. Connect modal in /settings/integrations + handbook step-by-step. Committed `c919cd5`.
 - [x] **Microsoft Teams native integration** (Adaptive Cards v1.4) — Incoming Webhook URL, severity → colour, confirmation card on connect. Connect modal + handbook. Committed `c919cd5`.
 - [x] **Saved & scheduled reports** — 6 datasets (Work Orders, Alerts, Machines, Parts, Downtime, PM Compliance), on-demand CSV download, run+email, daily/weekly/monthly schedule with timezone-aware DST-safe nextRun, pause/resume, edit, delete. Vercel cron every 15 min. Mobile responsive. Handbook rewritten + Roadmap updated. Committed `0e184d3`.
+- [x] **Multi-step approval workflows** — `ApprovalPolicy` + `ApprovalRequest` engine with PRE_START / PRE_CLOSE / VENDOR_QUOTE triggers, per-step permission OR named-user gates, requireAll flag, full step-walking + rollback, audit trail. Hooked into WO PATCH route — transitions to IN_PROGRESS / COMPLETED park the WO in new PENDING_APPROVAL status. `/approvals` user queue page (My Queue + All tabs, Approve/Reject/Cancel). `/settings/approvals` policy editor with up-to-10 ordered steps, priority/type/cost match criteria, pause/resume. 4 new permission keys seeded. Email notifications to approvers + requester. Mobile responsive (max-w-2xl modal, modal-safe-pad, flex-wrap actions). Handbook updated + Roadmap line removed.
 
 ## 🔧 Postponed (do not resume without explicit user request)
 
@@ -13,7 +14,6 @@
 
 ## 🎯 Next phase (in order)
 
-- [ ] **Multi-step approval workflows** — pre-create budget approval, pre-close safety sign-off, vendor quote approval. Configurable per criticality. Update Work Orders chapter in handbook.
 - [ ] **4-level location hierarchy** — Site → Building → Floor → Room (instead of single `location` string). Migration + filters + breadcrumb UI. Update Equipment chapter.
 - [ ] **Tabbed equipment detail page** — separate Documents / Parts / Timeline / Telemetry / Schedules tabs. In-browser DWG / P&ID preview. Update Equipment chapter.
 

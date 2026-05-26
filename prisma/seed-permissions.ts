@@ -32,6 +32,10 @@ const PERMISSIONS: PermissionSeed[] = [
   { key: 'work_orders.assign', category: 'Work Orders', label: 'Assign work orders to technicians' },
   { key: 'work_orders.close',  category: 'Work Orders', label: 'Close / complete work orders' },
   { key: 'work_orders.export', category: 'Work Orders', label: 'Export work orders' },
+  { key: 'work_orders.approve_budget', category: 'Work Orders', label: 'Approve budget for high-cost work orders' },
+  { key: 'work_orders.approve_safety', category: 'Work Orders', label: 'Approve safety / lockout sign-off on work orders' },
+  { key: 'work_orders.approve_vendor', category: 'Work Orders', label: 'Approve vendor / parts quotes' },
+  { key: 'work_orders.manage_approvals', category: 'Work Orders', label: 'Manage approval policies' },
 
   // Machines
   { key: 'machines.view',   category: 'Machines', label: 'View machines' },
@@ -126,6 +130,7 @@ const SYSTEM_ROLES: SystemRole[] = [
     icon: '🛡️',
     permissionKeys: [
       'work_orders.view','work_orders.create','work_orders.edit','work_orders.delete','work_orders.assign','work_orders.close','work_orders.export',
+      'work_orders.approve_budget','work_orders.approve_safety','work_orders.approve_vendor','work_orders.manage_approvals',
       'machines.view','machines.create','machines.edit','machines.delete','machines.export',
       'parts.view','parts.create','parts.edit','parts.delete','parts.adjust_stock','parts.export',
       'schedules.view','schedules.create','schedules.edit','schedules.delete','schedules.complete',

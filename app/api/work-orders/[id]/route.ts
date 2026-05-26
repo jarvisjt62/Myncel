@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { guardPermission, hasPermission } from '@/lib/permissions';
+import { findApplicablePolicy, openApprovalRequest } from '@/lib/approvals/engine';
+import { notifyApprovalStep } from '@/lib/approvals/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,6 +77,77 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         return denied;
       }
     }
+
+    // ===== APPROVAL GATE =====
+    // If the caller is requesting a transition to IN_PROGRESS or COMPLETED,
+    // check whether an active approval policy blocks it. If so, park the
+    // work order in PENDING_APPROVAL and open an ApprovalRequest. Bypass
+    // is allowed for users with work_orders.manage_approvals.
+    const url = new URL(req.url);
+    const bypassApproval = url.searchParams.get('bypass') === '1';
+    const wantsStart = body.status === 'IN_PROGRESS';
+    const wantsClose = body.status === 'COMPLETED' || body.status === 'DONE' || body.status === 'CLOSED';
+    const isStatusOnlyTransition = onlyStatus && (wantsStart || wantsClose);
+
+    if (isStatusOnlyTransition && wo.status !== 'PENDING_APPROVAL' && !bypassApproval) {
+      const trigger = wantsStart ? 'PRE_START' : 'PRE_CLOSE';
+      const canBypass = await hasPermission(userId, 'work_orders.manage_approvals');
+      if (!canBypass) {
+        const policy = await findApplicablePolicy(wo.organizationId, trigger as any, wo);
+        if (policy) {
+          // Check no PENDING request already exists.
+          const existing = await db.approvalRequest.findFirst({
+            where: { workOrderId: wo.id, status: 'PENDING' },
+            select: { id: true },
+          });
+          if (existing) {
+            return NextResponse.json(
+              { error: 'This work order already has a pending approval request', approvalRequestId: existing.id },
+              { status: 409 },
+            );
+          }
+
+          const opened = await openApprovalRequest({
+            workOrderId: wo.id,
+            trigger: trigger as any,
+            requestedTransition: wantsStart ? 'IN_PROGRESS' : 'COMPLETED',
+            previousStatus: wo.status,
+            requestedById: userId,
+          });
+          if (!opened.ok) {
+            return NextResponse.json({ error: opened.reason }, { status: 400 });
+          }
+
+          // Park the WO in PENDING_APPROVAL.
+          const parked = await db.workOrder.update({
+            where: { id: wo.id },
+            data: { status: 'PENDING_APPROVAL' },
+            include: {
+              machine: { select: { name: true } },
+              assignedTo: { select: { name: true, email: true } },
+            },
+          });
+
+          // Fire-and-forget approver notifications.
+          notifyApprovalStep(opened.request.id).catch((e) =>
+            console.error('[approvals] notifyApprovalStep error:', e),
+          );
+
+          return NextResponse.json({
+            success: true,
+            workOrder: parked,
+            approvalRequest: {
+              id: opened.request.id,
+              policyName: opened.request.policy.name,
+              currentStepOrder: opened.request.currentStepOrder,
+              totalSteps: opened.request.policy.steps.length,
+            },
+            message: `Work order requires approval: ${opened.request.policy.name}`,
+          });
+        }
+      }
+    }
+    // ===== END APPROVAL GATE =====
 
     const now = new Date();
     const updated = await db.workOrder.update({

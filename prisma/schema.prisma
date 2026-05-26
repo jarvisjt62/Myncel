@@ -68,6 +68,10 @@ model User {
   // Saved & scheduled reports
   savedReports SavedReport[] @relation("SavedReportOwner")
 
+  // Multi-step approvals
+  approvalRequests  ApprovalRequest[]  @relation("ApprovalRequester")
+  approvalDecisions ApprovalDecision[] @relation("ApprovalDecider")
+
   @@map("users")
 }
 
@@ -219,6 +223,8 @@ model Organization {
   remoteSupportSessions RemoteSupportSession[]
   machineDeviceTokens   MachineDeviceToken[]
   savedReports          SavedReport[]
+  approvalPolicies      ApprovalPolicy[]
+  approvalRequests      ApprovalRequest[]
 
   // Custom roles per org
   customRoles Role[]
@@ -329,6 +335,7 @@ model WorkOrder {
   maintenanceTask       MaintenanceTask?       @relation(fields: [maintenanceTaskId], references: [id])
   parts                 WorkOrderPart[]
   remoteSupportSessions RemoteSupportSession[]
+  approvalRequests      ApprovalRequest[]
 
   @@map("work_orders")
 }
@@ -643,6 +650,7 @@ enum WorkOrderType {
 
 enum WorkOrderStatus {
   OPEN
+  PENDING_APPROVAL
   IN_PROGRESS
   ON_HOLD
   COMPLETED
@@ -1127,4 +1135,159 @@ enum ReportFormat {
   CSV
   XLSX
   PDF
+}
+
+// ===== APPROVAL WORKFLOWS =====
+//
+// Multi-step approvals gate work-order transitions. An ApprovalPolicy
+// belongs to an organization and matches against work orders by trigger
+// (PRE_START / PRE_CLOSE / VENDOR_QUOTE) plus criteria (priority, type,
+// minTotalCost). When a matching transition is attempted, an
+// ApprovalRequest is opened against the WO with one ApprovalDecision
+// row per approver per step. The WO status moves to PENDING_APPROVAL
+// while the request is open. Final-step approval re-applies the
+// originally requested transition; rejection returns the WO to its
+// previous status with the rejection comment captured.
+//
+// Each ApprovalPolicyStep names its required permission (e.g.
+// "work_orders.approve_budget") OR an explicit set of approver user IDs.
+// requireAll=false (default) means any one approver in the step can
+// move it forward; requireAll=true requires every named approver.
+
+model ApprovalPolicy {
+  id          String  @id @default(cuid())
+  name        String
+  description String? @db.Text
+
+  // When this policy fires.
+  trigger ApprovalTrigger
+
+  // Match criteria. Empty arrays = match any.
+  // Stored as JSON arrays of enum strings to keep migrations simple.
+  matchPriorities Json @default("[]") // e.g. ["CRITICAL","HIGH"]
+  matchTypes      Json @default("[]") // e.g. ["EMERGENCY"]
+  // Minimum total cost (parts + labor) that activates this policy. 0 = always.
+  minTotalCost    Float @default(0)
+
+  isActive Boolean @default(true)
+
+  // Ordered steps (1, 2, 3, …).
+  steps ApprovalPolicyStep[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  approvalRequests ApprovalRequest[]
+
+  @@index([organizationId])
+  @@index([trigger, isActive])
+  @@map("approval_policies")
+}
+
+model ApprovalPolicyStep {
+  id    String @id @default(cuid())
+  order Int // 1-based step number
+  name  String // e.g. "Supervisor sign-off"
+
+  // Permission gate — any user with this permission can act on this step.
+  // Empty string = use approverUserIds instead.
+  requiredPermission String @default("")
+
+  // Specific approver user IDs (JSON array of user IDs). Empty = use permission.
+  approverUserIds Json @default("[]")
+
+  // If true, every named approver must approve. If false, the first
+  // approval advances the request.
+  requireAll Boolean @default(false)
+
+  policyId String
+  policy   ApprovalPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@unique([policyId, order])
+  @@map("approval_policy_steps")
+}
+
+model ApprovalRequest {
+  id String @id @default(cuid())
+
+  // The trigger snapshot at the time of request — so changing the
+  // policy after the fact does not retroactively change history.
+  trigger ApprovalTrigger
+
+  // Status: PENDING / APPROVED / REJECTED / CANCELLED.
+  status ApprovalStatus @default(PENDING)
+
+  // Pointer into the policy. We DO walk the policy live so that
+  // adding more steps mid-flight is supported, but the policyId is
+  // fixed at request time.
+  currentStepOrder Int @default(1)
+
+  // The transition the requester wanted (e.g. "IN_PROGRESS" or
+  // "COMPLETED"). When the final step is approved we apply this
+  // transition to the work order.
+  requestedTransition String
+
+  // The status the WO had before going into PENDING_APPROVAL — so we
+  // can roll back on rejection.
+  previousStatus String
+
+  decidedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  policyId String
+  policy   ApprovalPolicy @relation(fields: [policyId], references: [id], onDelete: Restrict)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  requestedById String?
+  requestedBy   User?   @relation("ApprovalRequester", fields: [requestedById], references: [id], onDelete: SetNull)
+
+  decisions ApprovalDecision[]
+
+  @@index([organizationId, status])
+  @@index([workOrderId])
+  @@map("approval_requests")
+}
+
+model ApprovalDecision {
+  id        String           @id @default(cuid())
+  stepOrder Int
+  decision  ApprovalOutcome
+  comment   String?          @db.Text
+  decidedAt DateTime         @default(now())
+
+  requestId String
+  request   ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  userId String?
+  user   User?   @relation("ApprovalDecider", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([requestId, stepOrder])
+  @@map("approval_decisions")
+}
+
+enum ApprovalTrigger {
+  PRE_START // Before WO can move to IN_PROGRESS
+  PRE_CLOSE // Before WO can move to COMPLETED
+  VENDOR_QUOTE // Before a vendor / parts cost above threshold can be committed
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ApprovalOutcome {
+  APPROVED
+  REJECTED
 }

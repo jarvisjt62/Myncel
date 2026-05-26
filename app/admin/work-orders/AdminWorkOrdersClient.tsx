@@ -28,6 +28,7 @@ interface WorkOrder {
 
 const statusColors: Record<string, string> = {
   OPEN: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  PENDING_APPROVAL: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
   IN_PROGRESS: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   ON_HOLD: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
   COMPLETED: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
@@ -41,7 +42,7 @@ const priorityColors: Record<string, string> = {
   LOW: 'text-emerald-400',
 };
 
-const STATUS_FLOW = ['OPEN', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED'];
+const STATUS_FLOW = ['OPEN', 'PENDING_APPROVAL', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELLED'];
 const TYPES = ['PREVENTIVE', 'CORRECTIVE', 'EMERGENCY', 'INSPECTION', 'PROJECT'];
 const PRIORITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
 
@@ -146,7 +147,12 @@ export default function AdminWorkOrdersClient({ workOrders: initial }: { workOrd
         setWorkOrders(prev => prev.map(w => w.id === selected.id ? { ...w, ...updatedWo, dueAt: updatedWo.dueAt ?? null, completedAt: updatedWo.completedAt ?? null } : w));
         setSelected(prev => prev ? { ...prev, ...updatedWo } : prev);
         setDetail(null);
-        setSaveSuccess('Work order updated successfully!');
+        // If the server parked the WO in PENDING_APPROVAL, surface the policy.
+        if (updated.approvalRequest) {
+          setSaveSuccess(updated.message || `Approval required (${updated.approvalRequest.policyName}). Step ${updated.approvalRequest.currentStepOrder} of ${updated.approvalRequest.totalSteps}.`);
+        } else {
+          setSaveSuccess('Work order updated successfully!');
+        }
         setEditMode(false);
       } else {
         const d = await res.json();

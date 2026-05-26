@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: '/settings/billing',       label: 'Billing',       icon: '💳', cacheKey: null, adminOnly: false },
   { href: '/settings/api-keys',      label: 'API Keys',      icon: '🔑', cacheKey: 'api-keys', adminOnly: false },
   { href: '/settings/webhooks',      label: 'Webhooks',      icon: '🪝', cacheKey: 'webhooks', adminOnly: false },
+  { href: '/settings/approvals',     label: 'Approvals',     icon: '✅', cacheKey: 'approvals', adminOnly: false },
   // Visible only to OWNER / ADMIN. Routes to a per-org Emergency Broadcast page.
   { href: '/settings/emergency-broadcast', label: 'Emergency Broadcast', icon: '🚨', cacheKey: null, adminOnly: true },
 ];
@@ -23,6 +24,7 @@ const PREFETCH_ENDPOINTS: Record<string, string> = {
   'integrations': '/api/integrations',
   'api-keys': '/api/settings/api-keys',
   'webhooks': '/api/webhooks',
+  'approvals': '/api/approval-policies',
 };
 
 export default function SettingsShell({ children, userRole }: { children: React.ReactNode; userRole?: string | null }) {
