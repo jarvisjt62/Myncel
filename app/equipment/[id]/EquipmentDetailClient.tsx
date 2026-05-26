@@ -1023,36 +1023,70 @@ function TelemetryTab({ machineId }: { machineId: string }) {
           {latest.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-4">
               {latest.map((r) => (
-                <div key={r.type} className="rounded-lg border p-3" style={{ borderColor: 'var(--border)', background: 'var(--bg-page)' }}>
-                  <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{r.type}</div>
-                  <div className="text-lg font-semibold text-[var(--text-primary)] mt-0.5">
-                    {r.value} <span className="text-xs text-[var(--text-muted)]">{r.unit}</span>
+                <div
+                  key={r.type}
+                  className="rounded-lg border p-3 min-w-0"
+                  style={{ borderColor: 'var(--border)', background: 'var(--bg-page)' }}
+                >
+                  <div
+                    className="text-[10px] uppercase tracking-wide text-[var(--text-muted)] truncate"
+                    title={r.type}
+                  >
+                    {r.type}
                   </div>
-                  <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                    {new Date(r.recordedAt).toLocaleString()}
+                  <div className="text-lg font-semibold text-[var(--text-primary)] mt-0.5 flex items-baseline gap-1 flex-wrap">
+                    <span className="tabular-nums">{formatSensorValue(r.value)}</span>
+                    <span className="text-xs text-[var(--text-muted)] whitespace-nowrap">{r.unit}</span>
+                  </div>
+                  <div className="text-[10px] text-[var(--text-muted)] mt-0.5 truncate" title={new Date(r.recordedAt).toLocaleString()}>
+                    {formatRelativeTime(r.recordedAt)}
                   </div>
                 </div>
               ))}
             </div>
           )}
+
           <div className="text-[10px] uppercase tracking-wide text-[var(--text-muted)] mb-1">Recent readings (latest 50)</div>
-          <div className="overflow-x-auto">
+
+          {/* Mobile: compact card list — no narrow-column wrapping */}
+          <ul className="sm:hidden divide-y" style={{ borderColor: 'var(--border)' }}>
+            {readings.slice(0, 50).map((r) => (
+              <li key={r.id} className="py-2 flex items-center justify-between gap-3 min-w-0">
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-[var(--text-primary)] truncate" title={r.type}>
+                    {r.type}
+                  </div>
+                  <div className="text-[11px] text-[var(--text-muted)] truncate">
+                    {new Date(r.recordedAt).toLocaleString()}
+                  </div>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <div className="text-sm font-semibold text-[var(--text-primary)] tabular-nums">
+                    {formatSensorValue(r.value)} <span className="text-xs font-normal text-[var(--text-muted)]">{r.unit}</span>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {/* Desktop / tablet: full table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
                 <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
-                  <th className="text-left py-2 pr-3">When</th>
-                  <th className="text-left py-2 pr-3">Type</th>
-                  <th className="text-right py-2 pr-3">Value</th>
-                  <th className="text-left py-2 pl-3">Unit</th>
+                  <th className="text-left py-2 pr-3 whitespace-nowrap">When</th>
+                  <th className="text-left py-2 pr-3 whitespace-nowrap">Type</th>
+                  <th className="text-right py-2 pr-3 whitespace-nowrap">Value</th>
+                  <th className="text-left py-2 pl-3 whitespace-nowrap">Unit</th>
                 </tr>
               </thead>
               <tbody>
                 {readings.slice(0, 50).map((r) => (
                   <tr key={r.id} className="border-b" style={{ borderColor: 'var(--border)' }}>
-                    <td className="py-2 pr-3 text-[var(--text-muted)]">{new Date(r.recordedAt).toLocaleString()}</td>
-                    <td className="py-2 pr-3">{r.type}</td>
-                    <td className="text-right py-2 pr-3 font-medium">{r.value}</td>
-                    <td className="py-2 pl-3 text-[var(--text-muted)]">{r.unit}</td>
+                    <td className="py-2 pr-3 text-[var(--text-muted)] whitespace-nowrap">{new Date(r.recordedAt).toLocaleString()}</td>
+                    <td className="py-2 pr-3 whitespace-nowrap">{r.type}</td>
+                    <td className="text-right py-2 pr-3 font-medium tabular-nums whitespace-nowrap">{formatSensorValue(r.value)}</td>
+                    <td className="py-2 pl-3 text-[var(--text-muted)] whitespace-nowrap">{r.unit}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1062,4 +1096,25 @@ function TelemetryTab({ machineId }: { machineId: string }) {
       )}
     </Card>
   );
+}
+
+// Format a sensor value with reasonable precision. Avoids long floats like 58.45000001
+// that ruin column widths on narrow viewports.
+function formatSensorValue(v: number): string {
+  if (!Number.isFinite(v)) return '—';
+  if (Math.abs(v) >= 1000) return v.toFixed(0);
+  if (Math.abs(v) >= 100) return v.toFixed(1);
+  return v.toFixed(2);
+}
+
+// "12s ago", "3m ago", "2h ago", or a date string when older than a day.
+function formatRelativeTime(iso: string): string {
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return '—';
+  const diff = (Date.now() - t) / 1000;
+  if (diff < 0) return 'just now';
+  if (diff < 60) return `${Math.floor(diff)}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return new Date(iso).toLocaleDateString();
 }
