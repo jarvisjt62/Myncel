@@ -659,7 +659,7 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
           'When sensors are connected to a machine, Myncel\'s AI engine learns the machine\'s normal behavior over a 7–14 day baseline period. After that it watches in real time for deviations: a vibration signature creeping up, a motor running hotter than usual, current draw drifting outside the normal envelope, a pump\'s discharge pressure drifting downward.',
           'When the AI sees a meaningful change it raises a predictive alert and (optionally) auto-creates a work order. Predictive alerts include the machine, the sensor, what changed, the confidence level, and an estimated time-to-failure window when one can be calculated. The alert links to a chart so the technician can see exactly which signature triggered it.',
           'The AI is not a black box. Every prediction is explainable — clicking "Why this alert?" shows the contributing signals, the historical baseline, and the deviation magnitude. Technicians and reliability engineers learn the machine alongside the model.',
-          'For the full configuration walkthrough — choosing between the Statistical, Hybrid, and LLM-Assisted models; tuning sensitivity (the slider maps linearly onto a sigma threshold, with 50 = 3σ as the default SPC standard); setting per-machine overrides; reviewing detections in the confirm/reject feedback loop; and reading the SuperAdmin AI tab — see the dedicated AI & Predictive Maintenance chapter.',
+          'For the full configuration walkthrough — choosing between the Statistical, Hybrid, and LLM-Assisted models; tuning sensitivity (the slider maps linearly onto a sigma threshold, with 50 = 3σ as the default SPC standard); setting per-machine overrides; and reviewing detections in the confirm/reject feedback loop — see the dedicated AI & Predictive Maintenance chapter.',
         ],
         bullets: [
           'No data-science expertise required — baselines are automatic; sensitivity is a single slider per organization with optional per-machine override.',
@@ -1294,13 +1294,6 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
           text: 'See /docs/telematics for full payload examples for every provider, the field-mapping reference table, and the curl recipes you can paste into your provider\'s scheduled-job UI.',
         },
       },
-      {
-        heading: 'SuperAdmin parity for fleets',
-        body: [
-          'The SuperAdmin Org Control Center surfaces fleet rollups alongside industrial equipment so you can see at a glance how each customer\'s portfolio is composed. Open Admin → Organizations → <org> → Machines and the new Fleet rollup pill row breaks the asset count down by category: Industrial, Forklift / AGV, Light vehicles, Heavy trucks, Vessels, Drones / UAVs, Other. The same machine list table that already showed name / category / status / location / created date now treats vehicle / vessel / drone categories as first-class.',
-          'SuperAdmin still controls every workspace-level setting that affects fleets — billing tier, integrations, SSO/SCIM, alerts, audit log retention. None of that changes; it just now applies cleanly to mixed-domain workspaces too.',
-        ],
-      },
     ],
   },
 
@@ -1312,7 +1305,7 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '🤖',
     title: 'AI & Predictive Maintenance',
     summary:
-      'How Myncel\'s AI engine watches your sensor streams, detects anomalies before they become failures, and forecasts when a machine is likely to cross a critical threshold. Covers the three available models, sensitivity tuning, per-machine overrides, the confirm/reject feedback loop, quiet hours, auto work-order creation, and the SuperAdmin view.',
+      'How Myncel\'s AI engine watches your sensor streams, detects anomalies before they become failures, and forecasts when a machine is likely to cross a critical threshold. Covers the three available models, sensitivity tuning, per-machine overrides, the confirm/reject feedback loop, quiet hours, and auto work-order creation.',
     sections: [
       {
         heading: 'What the AI engine actually does',
@@ -1384,8 +1377,8 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
       {
         heading: 'The confirm/reject feedback loop',
         body: [
-          'Every detection lands in a feed on the equipment AI tab and on the SuperAdmin AI tab with three possible states: PENDING, CONFIRMED, or REJECTED. When a technician confirms a detection, you are telling the engine "yes, this was a real problem". When they reject it, you are telling the engine "false positive". This feedback is recorded against the detection and is what powers the rolling false-positive rate shown on the SuperAdmin dashboard.',
-          'Today the feedback is not used to retrain the model — the statistical core does not need training data. It is used for visibility: if a workspace is rejecting more than 30% of detections, the SuperAdmin view will surface that and recommend lowering sensitivity. Future models may consume this feedback for fine-tuning; the data is being collected so that path stays open.',
+          'Every detection lands in a feed on the equipment AI tab with three possible states: PENDING, CONFIRMED, or REJECTED. When a technician confirms a detection, you are telling the engine "yes, this was a real problem". When they reject it, you are telling the engine "false positive". This feedback is recorded against the detection and powers a rolling false-positive rate shown on your workspace AI dashboard.',
+          'Today the feedback is not used to retrain the model — the statistical core does not need training data. It is used for visibility: if your workspace is rejecting more than 30% of detections, the AI dashboard surfaces that and recommends lowering sensitivity. Future models may consume this feedback for fine-tuning; the data is being collected so that path stays open.',
         ],
         bullets: [
           'PENDING — the default state. A detection has been published as an alert but no human has weighed in yet.',
@@ -1406,16 +1399,6 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
           'GET / PATCH /api/ai/settings — workspace-level settings (OWNER / ADMIN only for PATCH).',
           'GET / PATCH /api/ai/settings/[machineId] — per-machine overrides (OWNER / ADMIN / TECHNICIAN can edit).',
         ],
-      },
-      {
-        heading: 'SuperAdmin view',
-        body: [
-          'Every Org Control Center has a 🤖 AI tab between Operations and Billing. It shows, for that one customer workspace: the master enabled / disabled pill, the active model, the current sensitivity, the minimum severity, the forecast horizon, a feedback rollup (pending / confirmed / rejected counts over the last 25 detections), the active forecasts table (asset, sensor, predicted crossing date, confidence), and the last 25 detections with severity-colored left borders and feedback pills. It is read-only — SuperAdmin can see exactly what the customer is doing but cannot change settings on their behalf, which keeps the audit trail clean.',
-        ],
-        callout: {
-          type: 'info',
-          text: 'Read-only by design. SuperAdmin can observe a workspace\'s AI configuration and outcomes but cannot change them. If a customer needs help tuning sensitivity, walk them through it on a screenshare — do not edit their settings server-side.',
-        },
       },
       {
         heading: 'Costs and limits',
