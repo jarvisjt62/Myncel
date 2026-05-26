@@ -132,6 +132,18 @@ const sections = [
     ],
   },
   {
+    icon: '🤖',
+    title: 'AI & Predictive Maintenance',
+    color: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700',
+    slug: 'ai',
+    articles: [
+      { title: 'How the anomaly engine works', time: '6 min', popular: true, slug: '_ai#how-it-works' },
+      { title: 'Three AI models — Statistical / Hybrid / LLM-Assisted', time: '5 min', popular: false, slug: '_ai#models' },
+      { title: 'Sensitivity, severity & quiet hours', time: '4 min', popular: false, slug: '_ai#sensitivity' },
+      { title: 'Per-machine overrides & feedback loop', time: '5 min', popular: false, slug: '_ai#overrides' },
+    ],
+  },
+  {
     icon: '⚡',
     title: 'API & Integrations',
     color: 'bg-slate-50 border-slate-200 text-slate-700',

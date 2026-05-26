@@ -659,11 +659,13 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
           'When sensors are connected to a machine, Myncel\'s AI engine learns the machine\'s normal behavior over a 7–14 day baseline period. After that it watches in real time for deviations: a vibration signature creeping up, a motor running hotter than usual, current draw drifting outside the normal envelope, a pump\'s discharge pressure drifting downward.',
           'When the AI sees a meaningful change it raises a predictive alert and (optionally) auto-creates a work order. Predictive alerts include the machine, the sensor, what changed, the confidence level, and an estimated time-to-failure window when one can be calculated. The alert links to a chart so the technician can see exactly which signature triggered it.',
           'The AI is not a black box. Every prediction is explainable — clicking "Why this alert?" shows the contributing signals, the historical baseline, and the deviation magnitude. Technicians and reliability engineers learn the machine alongside the model.',
+          'For the full configuration walkthrough — choosing between the Statistical, Hybrid, and LLM-Assisted models; tuning sensitivity (the slider maps linearly onto a sigma threshold, with 50 = 3σ as the default SPC standard); setting per-machine overrides; reviewing detections in the confirm/reject feedback loop; and reading the SuperAdmin AI tab — see the dedicated AI & Predictive Maintenance chapter.',
         ],
         bullets: [
-          'No data-science expertise required — baselines are automatic; sensitivity is a single slider per machine.',
-          'Sensitivity is per-machine and per-axis (Equipment → AI Settings).',
-          'Available on the Growth plan and above. Starter plan supports rules-based alerts (fixed thresholds).',
+          'No data-science expertise required — baselines are automatic; sensitivity is a single slider per organization with optional per-machine override.',
+          'Three model kinds: Statistical (rolling z-score + EWMA, default), Hybrid (statistical + rule-based context), LLM-Assisted (statistical + language-model annotated recommendations).',
+          'Configurable in two places: workspace defaults at /settings/ai, per-machine override on the equipment detail page → 🤖 AI tab.',
+          'Available on every plan from Starter upward — what changes by plan is the LLM-call quota for the LLM-Assisted model (Statistical and Hybrid have no per-call cost).',
           'Models supported include vibration ISO 10816 zoning, electrical-signature analysis, thermal drift, pump cavitation, compressor surge, bearing fault frequencies, and gearbox mesh-frequency analysis.',
         ],
       },
@@ -812,6 +814,7 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
         heading: 'Alert rules and thresholds',
         body: [
           'Rules-based alerts are the simpler cousin of AI predictive alerts. They fire when a sensor value crosses a fixed threshold you define — for example "alert me if any chiller goes above 12 °C return temperature for more than 5 minutes". Use them when the threshold is well-known and stable; use AI predictive alerts when you want the system to find anomalies you have not thought of.',
+          'AI predictive alerts (anomalies the engine flagged statistically, plus failure forecasts based on linear-trend regression) are configured separately in Settings → AI & Predictive — see the AI & Predictive Maintenance chapter for the full walkthrough. The two systems coexist: a sensor can have a rule-based threshold AND be watched by the AI engine, and they will publish independently.',
         ],
         steps: [
           'Go to Equipment → [machine] → Alerts → "+ New Rule".',
