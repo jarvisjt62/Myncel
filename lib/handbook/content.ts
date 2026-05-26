@@ -231,14 +231,25 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
         body: [
           'Every machine in Myncel automatically gets a unique QR code. Print the QR sticker, apply it to the machine, and any technician with the mobile app can scan it to instantly land on that machine\'s page — its history, open work orders, attached info, and a one-tap "Create Work Order" button.',
           'QR codes are durable and cheap. We recommend printing on weatherproof polyester labels (3M 7811 or similar). For outdoor or wash-down equipment, laminate them or use stainless-steel etched tags with the same code.',
+          'Myncel ships with a built-in QR Label Sheet generator at /equipment/qr-labels. It supports the most common sticker-sheet formats out of the box, prints multiple labels per page aligned to the perforations, and lets you reuse partial sheets without wasting stickers. The generator runs entirely in your browser — there is no upload, no third-party service, and the labels never leave your device until you hit Print.',
         ],
         steps: [
           'Open /equipment/qr-labels (or click "Print QR" from a machine\'s detail panel).',
-          'Choose label size: Small (50×50 mm), Medium (80×60 mm), or Large (100×80 mm).',
-          'Pick which machines to print (single, selected subset, or all).',
-          'Click Print and use your browser\'s print dialog to send to a label printer or a sheet of self-adhesive label stock.',
-          'Apply the labels to a flat, clean, eye-level surface on each machine — typically next to the controls.',
-          'Test by scanning with the Myncel mobile app from arm\'s length.',
+          'Choose a Sheet Template that matches the sticker sheet you have. The generator includes Avery 5160 / 5260 (30 per Letter sheet, the most common US format), Avery 5163 (10 per page), Avery 5164 (6 per page, largest), and the European A4 equivalents L7160 (21 per A4), L7163 (14 per A4), L7165 (8 per A4), and L7167 (1 per A4 — full-page poster). Single-label thermal printers are also supported (50×80 mm and 100×150 mm presets cover Brother QL-820NWB, Dymo LabelWriter, and Zebra GK420 / ZD420).',
+          'In the Show on Label panel, toggle the fields you want printed under the QR — Serial Number, Location, Status Badge, and Manufacturer / Model. Less is more on small labels (Avery 5160) — just the machine name and S/N is plenty. On Avery 5164 you can show everything.',
+          'Set the App URL field. The QR code on each label will encode that URL plus the machine\'s ID, e.g. https://www.myncel.com/equipment/clx123abc. When a phone camera scans the code it opens that link directly. If your tenant uses a custom domain, paste it here.',
+          'In the Machines panel, untick any machine you do not want a label for. For each ticked machine you can also set a Quantity (1–99) — useful when you want 5 identical labels for one machine to apply on multiple sides of a large vessel or on its access doors.',
+          'If you are reusing a sticker sheet that already has some labels missing (very common — you printed 3 last week and 27 are still on the sheet), set Skip first slots to 3. The first 3 grid positions on the first sheet stay blank so the printer skips over them and your new labels land on the still-attached stickers.',
+          'Inspect the on-screen preview. Every sheet shows in the preview at 60% scale with the exact mm dimensions of the chosen template. The header tells you exactly how many labels and how many sheets you are about to print, e.g. "120 labels on 4 sheets". Click any individual label to enlarge the QR for a quick visual check.',
+          'Click "🖨️ Print N labels (M sheets)". A new browser tab opens with a print-ready document and the print dialog opens automatically. In the dialog: set Scale to 100% (NOT "Fit to page" — that throws off the perforation alignment), tick Background graphics so the colored status badges print, and pick the right paper size (Letter for 5160 / 5163 / 5164; A4 for L7160 / L7163 / L7165 / L7167).',
+          'Apply the labels to a flat, clean, eye-level surface on each machine — typically next to the controls or on the maintenance access panel. Test by scanning with the Myncel mobile app from arm\'s length.',
+        ],
+        bullets: [
+          'Avery 5160 / 5260 — 30 labels per Letter sheet. The cheapest and most-stocked format. Labels are 25.4 × 66.7 mm (1" × 2⅝") — small but enough for the QR plus machine name and S/N.',
+          'Avery 5163 / 5263 — 10 labels per Letter sheet. Labels are 50.8 × 101.6 mm (2" × 4"). Plenty of room for QR + name + manufacturer + model + S/N + location + status badge.',
+          'Avery 5164 / 5264 — 6 labels per Letter sheet. Labels are 84.7 × 101.6 mm (3⅓" × 4"). Best for large outdoor equipment where the label needs to be legible from across a yard.',
+          'Avery L7160 (21 / A4), L7163 (14 / A4), L7165 (8 / A4), L7167 (1 / A4) — the European A4 line. Same idea, different paper size.',
+          'Thermal printers — Brother QL-820NWB, Dymo LabelWriter 550, Zebra ZD420 / GK420. Pick the 50×80 mm or 100×150 mm preset, set your printer to use the correct continuous-roll size, and Myncel emits one label per "page" so the printer cuts cleanly between labels.',
         ],
         callout: {
           type: 'info',
@@ -1231,7 +1242,6 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
           'Smaller items that do not fit the categories above but are tracked.',
         ],
         bullets: [
-          'In-app printable QR-label sheets with multiple labels per page (today: one label per page at the chosen size).',
           'Saved reports and scheduled email exports (today: ad-hoc CSV download from each list view).',
           'Multi-language UI (today: English only; the handbook is English only).',
         ],
