@@ -18,6 +18,20 @@ import RolesTab from './RolesTab';
 import { PermissionsProvider, Can, usePermissions } from '../components/PermissionsProvider';
 import { formatCurrency, getCurrencySymbol } from '@/app/lib/currency';
 import { useSync } from '@/lib/sync/SyncProvider';
+import LocationPicker from '../components/LocationPicker';
+
+/**
+ * Build the human-readable location string for a Machine row.
+ * Prefers Site › Building › Floor › Room when any of those relations are
+ * present; falls back to the legacy free-text `location` field.
+ */
+function machineLocLabel(m: any): string {
+  const parts = [m?.site?.name, m?.building?.name, m?.floor?.name, m?.room?.name].filter(
+    (x: any) => typeof x === 'string' && x.trim().length > 0,
+  );
+  if (parts.length > 0) return parts.join(' › ');
+  return (m?.location || '').trim();
+}
 
 // ── Change Password Component ──────────────────────────────────────────────
 function ChangePasswordSection() {
@@ -700,6 +714,10 @@ function DashboardClientInner({ user, data }: Props) {
       status: m.status || 'OPERATIONAL',
       notes: m.notes || '',
       imageUrl: m.imageUrl || null,
+      siteId: m.siteId ?? null,
+      buildingId: m.buildingId ?? null,
+      floorId: m.floorId ?? null,
+      roomId: m.roomId ?? null,
     });
   };
   const saveEditMachine = async () => {
@@ -968,7 +986,8 @@ function DashboardClientInner({ user, data }: Props) {
 
   // Form states for machine
   const [machineForm, setMachineForm] = useState({
-    name: '', serialNumber: '', yearInstalled: '', model: '', manufacturer: '', location: '', category: 'OTHER', criticality: 'MEDIUM', status: 'OPERATIONAL', notes: ''
+    name: '', serialNumber: '', yearInstalled: '', model: '', manufacturer: '', location: '', category: 'OTHER', criticality: 'MEDIUM', status: 'OPERATIONAL', notes: '',
+    siteId: null as string | null, buildingId: null as string | null, floorId: null as string | null, roomId: null as string | null,
   });
 
   // Form states for work order
@@ -1074,7 +1093,7 @@ function DashboardClientInner({ user, data }: Props) {
       });
       if (res.ok) {
         setShowMachineModal(false);
-        setMachineForm({ name: '', serialNumber: '', yearInstalled: '', model: '', manufacturer: '', location: '', category: 'OTHER', criticality: 'MEDIUM', status: 'OPERATIONAL', notes: '' });
+        setMachineForm({ name: '', serialNumber: '', yearInstalled: '', model: '', manufacturer: '', location: '', category: 'OTHER', criticality: 'MEDIUM', status: 'OPERATIONAL', notes: '', siteId: null, buildingId: null, floorId: null, roomId: null });
         refreshData();
       } else {
         const d = await res.json();
@@ -1365,7 +1384,7 @@ function DashboardClientInner({ user, data }: Props) {
                 { label: 'Model', value: m.model },
                 { label: 'Manufacturer', value: m.manufacturer },
                 { label: 'Serial Number', value: m.serialNumber },
-                { label: 'Location', value: m.location },
+                { label: 'Location', value: machineLocLabel(m) || m.location },
                 { label: 'Category', value: m.category },
                 { label: 'Criticality', value: m.criticality },
                 { label: 'Year Installed', value: m.yearInstalled },
@@ -2439,7 +2458,7 @@ function DashboardClientInner({ user, data }: Props) {
                             </span>
                           </div>
                           {m.model && <p className="text-xs text-[var(--text-muted)] break-words mt-0.5">{m.model}</p>}
-                          {m.location && <p className="text-xs text-[var(--text-secondary)] break-words mt-0.5">📍 {m.location}</p>}
+                          {(() => { const lbl = machineLocLabel(m); return lbl ? <p className="text-xs text-[var(--text-secondary)] break-words mt-0.5">📍 {lbl}</p> : null; })()}
                           <div className="flex items-center justify-between mt-2 gap-2">
                             <span className="text-xs text-[var(--text-muted)]">
                               {m._count.workOrders} work order{m._count.workOrders === 1 ? '' : 's'}
@@ -2518,7 +2537,7 @@ function DashboardClientInner({ user, data }: Props) {
                             </div>
                           </div>
                         </td>
-                        <td className="px-3 sm:px-5 py-3.5 text-[var(--text-secondary)] hidden md:table-cell">{m.location ?? '—'}</td>
+                        <td className="px-3 sm:px-5 py-3.5 text-[var(--text-secondary)] hidden md:table-cell">{machineLocLabel(m) || '—'}</td>
                         <td className="px-3 sm:px-5 py-3.5">
                           <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${
                             m.status === 'OPERATIONAL' || m.status === 'OK' ? 'bg-green-100 text-green-700' :
@@ -3766,7 +3785,19 @@ function DashboardClientInner({ user, data }: Props) {
               </div>
             </div>
             <div>
-              <label className={labelClass}>Location / Zone</label>
+              <label className={labelClass}>Location (structured)</label>
+              <LocationPicker
+                value={{ siteId: machineForm.siteId, buildingId: machineForm.buildingId, floorId: machineForm.floorId, roomId: machineForm.roomId }}
+                onChange={(v) => setMachineForm({ ...machineForm, ...v })}
+                selectClassName={selectClass}
+                compact
+              />
+              <p className="text-xs text-[var(--text-muted)] mt-1">
+                Set up your hierarchy in <a href="/settings/locations" className="underline">Settings → Locations</a>.
+              </p>
+            </div>
+            <div>
+              <label className={labelClass}>Location label (free-text fallback)</label>
               <input value={machineForm.location} onChange={e => setMachineForm({...machineForm, location: e.target.value})} placeholder="e.g. Plant 1 — Bay A — Line 3" className={inputClass} />
             </div>
           </div>
@@ -3819,7 +3850,7 @@ function DashboardClientInner({ user, data }: Props) {
               <label className={labelClass}>Machine *</label>
               <select value={woForm.machineId} onChange={e => setWoForm({...woForm, machineId: e.target.value})} className={selectClass}>
                 <option value="">— Select a machine —</option>
-                {machines.map(m => <option key={m.id} value={m.id}>{m.name}{m.location ? ` (${m.location})` : ''}</option>)}
+                {machines.map(m => <option key={m.id} value={m.id}>{m.name}{(machineLocLabel(m) ? ` (${machineLocLabel(m)})` : '')}</option>)}
               </select>
             </div>
             <div>
@@ -3933,7 +3964,7 @@ function DashboardClientInner({ user, data }: Props) {
               <label className={labelClass}>Machine *</label>
               <select value={taskForm.machineId} onChange={e => setTaskForm({...taskForm, machineId: e.target.value})} className={selectClass}>
                 <option value="">— Select a machine —</option>
-                {machines.map(m => <option key={m.id} value={m.id}>{m.name}{m.location ? ` (${m.location})` : ''}</option>)}
+                {machines.map(m => <option key={m.id} value={m.id}>{m.name}{(machineLocLabel(m) ? ` (${machineLocLabel(m)})` : '')}</option>)}
               </select>
             </div>
             <div>
@@ -4309,8 +4340,22 @@ function DashboardClientInner({ user, data }: Props) {
                   <input value={editMachineForm.model || ''} onChange={e => setEditMachineForm({...editMachineForm, model: e.target.value})} className={inputClass} placeholder="e.g. CNC-200X" />
                 </div>
                 <div>
-                  <label className={labelClass}>Location</label>
+                  <label className={labelClass}>Location (free-text)</label>
                   <input value={editMachineForm.location || ''} onChange={e => setEditMachineForm({...editMachineForm, location: e.target.value})} className={inputClass} placeholder="e.g. Bay A" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className={labelClass}>Location (structured)</label>
+                  <LocationPicker
+                    value={{
+                      siteId: editMachineForm.siteId ?? null,
+                      buildingId: editMachineForm.buildingId ?? null,
+                      floorId: editMachineForm.floorId ?? null,
+                      roomId: editMachineForm.roomId ?? null,
+                    }}
+                    onChange={(v) => setEditMachineForm({ ...editMachineForm, ...v })}
+                    selectClassName={selectClass}
+                    compact
+                  />
                 </div>
                 <div>
                   <label className={labelClass}>Status</label>

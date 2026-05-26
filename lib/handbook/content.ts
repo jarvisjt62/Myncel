@@ -437,14 +437,30 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
       {
         heading: 'Organizing equipment with locations',
         body: [
-          'Each machine has a Location field — today this is a single free-text value. The convention we recommend is "Site — Building — Line/Cell" (e.g. "Plant 1 — Bay A — Line 3" or "Hospital — Wing C — OR-2"). Stick to one format across your fleet so search and filtering work consistently.',
-          'Every screen — Equipment, Work Orders, Schedules, Alerts, Reports, even the AI assistant — can be filtered by typing into the search box, which matches against the location text along with name, manufacturer, model, category, status, and criticality. This works fine up to roughly 500 machines.',
+          'Myncel ships a four-level structured location hierarchy out of the box: Site → Building → Floor → Room. Every level is optional, so you can use as little or as much depth as your operation needs. A single-building manufacturer might only use Site + Building + Room. A multi-campus hospital network will use all four. Each Machine record can be linked to one Site, one Building, one Floor, and one Room — and as you set a deeper level the parents are inferred and locked so the chain stays consistent.',
+          'Alongside the structured hierarchy, every machine still has a free-text Location label that you can use as a quick fallback (handy for one-off zones that don\'t deserve their own Site, like "Shipping Dock 4" inside a building you haven\'t mapped). Search matches across the structured names AND the free-text label, so either approach works.',
         ],
         bullets: [
-          'Use a consistent separator (em-dash " — " or " / ") so the parts split cleanly on screen.',
-          'Use the Category field (CNC / Compressor / Generator / Pump / …) and the Criticality field (Low / Medium / High / Critical) for cross-cutting groups. They appear as filters in /admin/machines and Equipment.',
-          'A formal four-level location hierarchy (Organization → Site → Building → Cell/Line) and dedicated cross-cutting groups with rule-based auto-population are on the roadmap. See the Roadmap chapter for status.',
+          'A Site is one physical address (e.g. "Plant 1", "Houston Yard", "Mercy Hospital — Main Campus"). Optional fields: short code, address, timezone.',
+          'A Building lives inside a Site (e.g. "Building A", "Warehouse 3", "ICU Wing"). Buildings inherit the Site\'s timezone.',
+          'A Floor lives inside a Building. Use the optional level number for sorting (-1 basement, 0 ground, 1 first floor, …).',
+          'A Room lives on a Floor. Use this for bays, lines, mech rooms, OR suites — anywhere a single piece of equipment lives.',
+          'Equipment list filters by any combination of these levels. Pick a Site to see all machines at that site; pick Site + Building + Floor + Room to drill all the way down.',
+          'When you select Room first, Myncel auto-populates the Floor / Building / Site so you never have a Room pointing to the wrong Floor.',
         ],
+        steps: [
+          'Go to Settings → Locations.',
+          'Click "+ Add Site" and give the first site a name (e.g. "Plant 1"). Optionally add a short code, address, and timezone. Save.',
+          'Click the site row to expand it, then "+ Building". Repeat per building you maintain.',
+          'Expand a building, click "+ Floor". Repeat per floor.',
+          'Expand a floor, click "+ Room". Repeat per bay / line / mech room / OR.',
+          'Open Equipment → "+ Add Machine" (or "Edit" on an existing machine). Use the Site / Building / Floor / Room dropdowns under "Location (structured)" — selecting a Site narrows the Building dropdown, and so on.',
+          'Optional: keep using the free-text "Location label" field for quick descriptions on top of (or instead of) the structured picker. Every screen displays the structured breadcrumb when set, falling back to the free-text label.',
+        ],
+        callout: {
+          type: 'tip',
+          text: 'Deleting a parent (e.g. a Site) cascades down: every Building, Floor, and Room beneath it is also deleted. Machines whose pointer landed on a deleted level are kept — their structured location simply unsets and the free-text label takes over. The delete confirm dialog warns you with the exact machine count first, so you can never silently orphan a fleet.',
+        },
       },
       {
         heading: 'The equipment record — health, history, and details',
@@ -1251,7 +1267,6 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
           'CSV / Excel bulk importer in the UI — drag-drop a spreadsheet, map columns to fields, preview, import. Today only the API does bulk.',
           'Named importers for common CMMS migrations — SAP PM, IBM Maximo, Limble, UpKeep, eMaint, Fiix, MaintainX, Hippo. Today: do the export from the source system to CSV, then call the public REST API.',
           'Telematics importers for fleet — Toyota I_Site (forklifts), Crown InfoLink, John Deere Operations Center, Caterpillar VisionLink. Today: pull data via their public APIs into a script, then post to /api/machines and the gateway ingest endpoint.',
-          '4-level location hierarchy (Site → Building → Floor → Room) with hierarchical filters in the Equipment list. Today: a single free-text Location field with the convention "Site — Building — Line".',
           'Equipment groups / parent-child relationships (e.g. a "Compressor pack" parent containing 4 individual compressors). Today: model each compressor as its own machine and put the pack name in the Notes or Location field.',
         ],
       },

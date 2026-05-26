@@ -226,6 +226,12 @@ model Organization {
   approvalPolicies      ApprovalPolicy[]
   approvalRequests      ApprovalRequest[]
 
+  // Location hierarchy (Site → Building → Floor → Room)
+  sites     Site[]
+  buildings Building[]
+  floors    Floor[]
+  rooms     Room[]
+
   // Custom roles per org
   customRoles Role[]
 
@@ -241,7 +247,17 @@ model Machine {
   manufacturer  String?
   serialNumber  String?
   yearInstalled Int?
-  location      String?
+  location      String? // legacy free-text fallback (still displayed when hierarchy fields are empty)
+
+  // Structured location hierarchy (all optional — set as much or as little as you want)
+  siteId     String?
+  buildingId String?
+  floorId    String?
+  roomId     String?
+  site       Site?     @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  building   Building? @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  floor      Floor?    @relation(fields: [floorId], references: [id], onDelete: SetNull)
+  room       Room?     @relation(fields: [roomId], references: [id], onDelete: SetNull)
   category      MachineCategory @default(OTHER)
   status        MachineStatus   @default(OPERATIONAL)
   criticality   Criticality     @default(MEDIUM)
@@ -264,7 +280,119 @@ model Machine {
   machineDeviceTokens   MachineDeviceToken[]
   remoteSupportSessions RemoteSupportSession[]
 
+  @@index([organizationId, siteId])
+  @@index([organizationId, buildingId])
+  @@index([organizationId, floorId])
+  @@index([organizationId, roomId])
   @@map("machines")
+}
+
+// ===== LOCATION HIERARCHY (Site → Building → Floor → Room) =====
+//
+// All four levels are optional on Machine; you can set any prefix you like
+// (e.g. just Site, or Site + Building) and the rest of the chain stays null.
+// Deletes cascade DOWN (delete a Site → all its Buildings/Floors/Rooms go).
+// Machines whose linked level is deleted get SetNull so the row survives.
+
+model Site {
+  id        String   @id @default(cuid())
+  name      String
+  code      String? // optional short code (e.g. "PLT-1")
+  address   String?
+  timezone  String? // e.g. "America/Chicago" — optional, falls back to org tz
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  buildings Building[]
+  floors    Floor[]
+  rooms     Room[]
+  machines  Machine[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("sites")
+}
+
+model Building {
+  id        String   @id @default(cuid())
+  name      String
+  code      String?
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  floors   Floor[]
+  rooms    Room[]
+  machines Machine[]
+
+  @@unique([siteId, name])
+  @@index([organizationId])
+  @@index([siteId])
+  @@map("buildings")
+}
+
+model Floor {
+  id        String   @id @default(cuid())
+  name      String // e.g. "Ground", "Floor 2", "Mezzanine"
+  level     Int? // numeric floor level if applicable (0 = ground, -1 = basement)
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  buildingId String
+  building   Building @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  siteId     String
+  site       Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  rooms    Room[]
+  machines Machine[]
+
+  @@unique([buildingId, name])
+  @@index([organizationId])
+  @@index([buildingId])
+  @@index([siteId])
+  @@map("floors")
+}
+
+model Room {
+  id        String   @id @default(cuid())
+  name      String // e.g. "Bay A", "Line 3", "Mech Room"
+  code      String?
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  floorId    String
+  floor      Floor    @relation(fields: [floorId], references: [id], onDelete: Cascade)
+  buildingId String
+  building   Building @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  siteId     String
+  site       Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  machines Machine[]
+
+  @@unique([floorId, name])
+  @@index([organizationId])
+  @@index([floorId])
+  @@index([buildingId])
+  @@index([siteId])
+  @@map("rooms")
 }
 
 // ===== MAINTENANCE TASKS (PM Schedules) =====

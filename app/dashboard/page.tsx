@@ -26,6 +26,10 @@ async function getDashboardData(organizationId: string) {
         orderBy: { name: 'asc' },
         include: {
           _count: { select: { workOrders: true, maintenanceTasks: true } },
+          site: { select: { id: true, name: true } },
+          building: { select: { id: true, name: true } },
+          floor: { select: { id: true, name: true } },
+          room: { select: { id: true, name: true } },
         },
       }).catch(() => []),
       db.workOrder.findMany({

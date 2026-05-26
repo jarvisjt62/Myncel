@@ -78,6 +78,61 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const denied = await guardPermission(session.user.id, 'machines.edit');
     if (denied) return denied;
 
+    // If any of the location-hierarchy fields are being touched, validate the
+    // chain. We treat siteId / buildingId / floorId / roomId as a unit: if any
+    // are present in the body we re-resolve the full chain, otherwise leave
+    // every relation untouched.
+    const touchesHierarchy = ['siteId', 'buildingId', 'floorId', 'roomId'].some((k) => k in body);
+
+    let hierarchyData: Record<string, string | null> = {};
+    if (touchesHierarchy) {
+      const siteId = 'siteId' in body ? body.siteId ?? null : machine.siteId;
+      const buildingId = 'buildingId' in body ? body.buildingId ?? null : machine.buildingId;
+      const floorId = 'floorId' in body ? body.floorId ?? null : machine.floorId;
+      const roomId = 'roomId' in body ? body.roomId ?? null : machine.roomId;
+
+      const norm = (v: any) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+      let nSite = norm(siteId),
+        nBld = norm(buildingId),
+        nFlr = norm(floorId),
+        nRm = norm(roomId);
+
+      if (nRm) {
+        const room = await db.room.findUnique({ where: { id: nRm } });
+        if (!room || room.organizationId !== machine.organizationId)
+          return NextResponse.json({ error: 'Room not found in this organization' }, { status: 400 });
+        nFlr = nFlr ?? room.floorId;
+        nBld = nBld ?? room.buildingId;
+        nSite = nSite ?? room.siteId;
+        if (room.floorId !== nFlr)
+          return NextResponse.json({ error: 'Room does not belong to the selected floor' }, { status: 400 });
+      }
+      if (nFlr) {
+        const floor = await db.floor.findUnique({ where: { id: nFlr } });
+        if (!floor || floor.organizationId !== machine.organizationId)
+          return NextResponse.json({ error: 'Floor not found in this organization' }, { status: 400 });
+        nBld = nBld ?? floor.buildingId;
+        nSite = nSite ?? floor.siteId;
+        if (floor.buildingId !== nBld)
+          return NextResponse.json({ error: 'Floor does not belong to the selected building' }, { status: 400 });
+      }
+      if (nBld) {
+        const bld = await db.building.findUnique({ where: { id: nBld } });
+        if (!bld || bld.organizationId !== machine.organizationId)
+          return NextResponse.json({ error: 'Building not found in this organization' }, { status: 400 });
+        nSite = nSite ?? bld.siteId;
+        if (bld.siteId !== nSite)
+          return NextResponse.json({ error: 'Building does not belong to the selected site' }, { status: 400 });
+      }
+      if (nSite) {
+        const site = await db.site.findUnique({ where: { id: nSite } });
+        if (!site || site.organizationId !== machine.organizationId)
+          return NextResponse.json({ error: 'Site not found in this organization' }, { status: 400 });
+      }
+
+      hierarchyData = { siteId: nSite, buildingId: nBld, floorId: nFlr, roomId: nRm };
+    }
+
     const updated = await db.machine.update({
       where: { id: params.id },
       data: {
@@ -89,6 +144,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         ...(body.manufacturer !== undefined ? { manufacturer: body.manufacturer } : {}),
         ...(body.imageUrl !== undefined ? { imageUrl: body.imageUrl } : {}),
         ...(body.lastServiceAt ? { lastServiceAt: new Date(body.lastServiceAt) } : {}),
+        ...hierarchyData,
       },
     });
 

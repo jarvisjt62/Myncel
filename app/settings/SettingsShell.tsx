@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: '/settings/api-keys',      label: 'API Keys',      icon: '🔑', cacheKey: 'api-keys', adminOnly: false },
   { href: '/settings/webhooks',      label: 'Webhooks',      icon: '🪝', cacheKey: 'webhooks', adminOnly: false },
   { href: '/settings/approvals',     label: 'Approvals',     icon: '✅', cacheKey: 'approvals', adminOnly: false },
+  { href: '/settings/locations',     label: 'Locations',     icon: '📍', cacheKey: 'locations', adminOnly: false },
   // Visible only to OWNER / ADMIN. Routes to a per-org Emergency Broadcast page.
   { href: '/settings/emergency-broadcast', label: 'Emergency Broadcast', icon: '🚨', cacheKey: null, adminOnly: true },
 ];
