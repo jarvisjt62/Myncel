@@ -148,45 +148,74 @@ export default function RootLayout({
 
                    We intercept clicks on any link that:
                      (a) has a [download] attribute (server-served binary), OR
-                     (b) starts with /api/ AND has format=pdf or format=csv
+                     (b) starts with /api/ AND has format=pdf
 
-                   This means every export button across the app — PDF, CSV,
-                   work-orders, machines, alerts, parts, scheduled reports —
-                   automatically works in the Capacitor app without per-button
-                   changes.
+                   IMPORTANT exclusions:
+                   - blob:, data:, mailto:, tel:, javascript: schemes — these
+                     are programmatic / in-memory URLs that the WebView handles
+                     directly and must NEVER be rewritten. CSV export uses
+                     blob: + URL.createObjectURL(); intercepting it produces a
+                     404 (Vercel sees "/blob:https://..." and serves not-found).
+                   - format=csv — same reason: the csvUrl path uses fetch +
+                     blob; the explicit GET-as-link path also works fine in
+                     Capacitor without interception.
+                   - Programmatic clicks (ev.isTrusted === false) — those
+                     come from explicit code paths that already know what
+                     they're doing.
+
+                   Also: only fire inside a REAL Capacitor app, not the
+                   ?capacitor-preview=1 mode. Preview mode is for layout
+                   debugging only; it must not change actual behavior of
+                   downloads.
                    ────────────────────────────────────────────────────── */
-                document.addEventListener('click', function(ev){
-                  try {
-                    var el = ev.target;
-                    while (el && el.tagName !== 'A') { el = el.parentElement; }
-                    if (!el || el.tagName !== 'A') return;
-                    var href = el.getAttribute('href') || '';
-                    var hasDownload = el.hasAttribute('download');
-                    var isExportApi = href.indexOf('/api/') === 0
-                      && (href.indexOf('format=pdf') > -1 || href.indexOf('format=csv') > -1);
-                    if (!hasDownload && !isExportApi) return;
-                    // Build absolute URL so the system browser doesn't get confused.
-                    var absHref = href;
-                    if (absHref.indexOf('http') !== 0) {
-                      absHref = location.origin + (absHref.charAt(0)==='/' ? '' : '/') + absHref;
-                    }
-                    ev.preventDefault();
-                    ev.stopPropagation();
-                    // Try Capacitor's Browser plugin first (if installed in shell).
+                var isRealCap = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+                  || ua.indexOf('myncel-app') > -1
+                  || (ua.indexOf('android') > -1 && ua.indexOf('wv') > -1);
+                if (isRealCap) {
+                  document.addEventListener('click', function(ev){
                     try {
-                      var Cap = window.Capacitor;
-                      if (Cap && Cap.Plugins && Cap.Plugins.Browser && typeof Cap.Plugins.Browser.open === 'function') {
-                        Cap.Plugins.Browser.open({ url: absHref });
+                      if (ev.isTrusted === false) return; // programmatic click — leave alone
+                      var el = ev.target;
+                      while (el && el.tagName !== 'A') { el = el.parentElement; }
+                      if (!el || el.tagName !== 'A') return;
+                      var href = el.getAttribute('href') || '';
+                      if (!href) return;
+                      // Skip non-http schemes — they are handled by the WebView directly.
+                      var lower = href.toLowerCase();
+                      if (lower.indexOf('blob:') === 0
+                          || lower.indexOf('data:') === 0
+                          || lower.indexOf('mailto:') === 0
+                          || lower.indexOf('tel:') === 0
+                          || lower.indexOf('sms:') === 0
+                          || lower.indexOf('javascript:') === 0) {
                         return;
                       }
-                    } catch (_) {}
-                    // Fallback: plain window.open with _blank — Capacitor's default
-                    // link handler routes this to the system browser on both iOS
-                    // and Android. If even that fails, last resort is location =.
-                    var w = window.open(absHref, '_blank');
-                    if (!w) { window.location.href = absHref; }
-                  } catch (e) { /* never block the user */ }
-                }, true);
+                      var hasDownload = el.hasAttribute('download');
+                      var isPdfApi = href.indexOf('/api/') === 0 && href.indexOf('format=pdf') > -1;
+                      if (!hasDownload && !isPdfApi) return;
+                      // Build absolute URL so the system browser doesn't get confused.
+                      var absHref = href;
+                      if (absHref.indexOf('http') !== 0) {
+                        absHref = location.origin + (absHref.charAt(0)==='/' ? '' : '/') + absHref;
+                      }
+                      ev.preventDefault();
+                      ev.stopPropagation();
+                      // Try Capacitor's Browser plugin first (if installed in shell).
+                      try {
+                        var Cap = window.Capacitor;
+                        if (Cap && Cap.Plugins && Cap.Plugins.Browser && typeof Cap.Plugins.Browser.open === 'function') {
+                          Cap.Plugins.Browser.open({ url: absHref });
+                          return;
+                        }
+                      } catch (_) {}
+                      // Fallback: plain window.open with _blank — Capacitor's default
+                      // link handler routes this to the system browser on both iOS
+                      // and Android. If even that fails, last resort is location =.
+                      var w = window.open(absHref, '_blank');
+                      if (!w) { window.location.href = absHref; }
+                    } catch (e) { /* never block the user */ }
+                  }, true);
+                }
               }
             }catch(e){}})();`
           }}
