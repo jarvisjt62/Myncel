@@ -3,6 +3,14 @@ const nextConfig = {
   // ── Performance: faster client-side navigation ──────────────────────────
   experimental: {
     optimisticClientCache: true,
+    // pdfkit ships its built-in AFM fonts as static files (js/data/*.afm)
+    // that Next.js's webpack would otherwise tree-shake out of the
+    // serverless function bundle. Marking it as a server external package
+    // keeps it as a runtime require() so the whole package (AFM data
+    // included) is copied verbatim into the Vercel function. Without this,
+    // /api/exports?format=pdf and /api/work-orders/export?format=pdf
+    // crash on the first PDF render because Helvetica.afm cannot be found.
+    serverComponentsExternalPackages: ['pdfkit'],
   },
 
   // ── Compiler optimizations ───────────────────────────────────────────────
