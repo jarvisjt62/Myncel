@@ -43,6 +43,32 @@ interface OrgData {
     updatedAt: string;
   } | null;
   scimTokens: Array<{ id: string; label: string; prefix: string; lastUsedAt: string | null; createdAt: string }>;
+  // Big Bet #3 — Fleet tab payload
+  fleetMachines: Array<{
+    id: string;
+    name: string;
+    category: string;
+    status: string;
+    location: string | null;
+    createdAt: string;
+    workOrderCount: number;
+    alertCount: number;
+    gatewayTokenCount: number;
+    lastReading: { type: string; value: number; unit: string; recordedAt: string } | null;
+  }>;
+  gatewayTokens: Array<{
+    id: string;
+    name: string;
+    tokenPrefix: string;
+    isActive: boolean;
+    lastSeenAt: string | null;
+    revokedAt: string | null;
+    createdAt: string;
+    machineId: string;
+    machineName: string | null;
+    machineCategory: string | null;
+    machineStatus: string | null;
+  }>;
 }
 
 interface AuditEntry { id: string; action: string; entity: string; entityId: string | null; changes: string | null; createdAt: string; userName: string | null; }
@@ -57,7 +83,7 @@ const ROLE_COLORS: Record<string,string> = { OWNER:'#8b5cf6', ADMIN:'#6366f1', T
 const STATUS_COLORS: Record<string,string> = { OPERATIONAL:'#10b981', MAINTENANCE:'#f59e0b', BREAKDOWN:'#ef4444', RETIRED:'#6b7280' };
 const WO_STATUS_COLORS: Record<string,string> = { OPEN:'#6366f1', IN_PROGRESS:'#f59e0b', ON_HOLD:'#6b7280', COMPLETED:'#10b981', CANCELLED:'#ef4444' };
 const SEVERITY_COLORS: Record<string,string> = { CRITICAL:'#ef4444', HIGH:'#f97316', MEDIUM:'#f59e0b', LOW:'#10b981' };
-const TABS = ['overview','users','machines','work-orders','alerts','operations','billing','integrations','identity','activity'] as const;
+const TABS = ['overview','users','machines','fleet','work-orders','alerts','operations','billing','integrations','identity','activity'] as const;
 type Tab = typeof TABS[number];
 
 /* ─── Small helpers ─────────────────────────────────────────────── */
@@ -173,7 +199,7 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
 
   /* ─── Render ─────────────────────────────────────────── */
   const tabIcons: Record<Tab, string> = {
-    overview: '📊', users: '👥', machines: '⚙️', 'work-orders': '📋',
+    overview: '📊', users: '👥', machines: '⚙️', fleet: '🚛', 'work-orders': '📋',
     alerts: '🔔', operations: '🛠️', billing: '💳', integrations: '🔌', identity: '🔐', activity: '📋',
   };
 
@@ -498,6 +524,200 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
           </div>
         </div>
       )}
+
+      {/* ═══════════════ FLEET TAB (Big Bet #3 multi-domain) ═══════════════ */}
+      {activeTab==='fleet' && (() => {
+        const FLEET_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
+          VEHICLE_LIGHT: { label: 'Light vehicles (cars / vans / light trucks)', emoji: '🚗', color: '#0ea5e9' },
+          VEHICLE_HEAVY: { label: 'Heavy trucks / buses / off-highway', emoji: '🚛', color: '#f97316' },
+          VESSEL: { label: 'Vessels / boats / yachts', emoji: '⛵', color: '#0284c7' },
+          DRONE_UAV: { label: 'Drones / UAVs', emoji: '🛸', color: '#a855f7' },
+          FORKLIFT: { label: 'Forklifts / AGVs', emoji: '🚜', color: '#0d9488' },
+        };
+        const fleetTotal = org.fleetMachines.length;
+        const grouped = org.fleetMachines.reduce<Record<string, typeof org.fleetMachines>>((acc, m) => {
+          (acc[m.category] ||= []).push(m);
+          return acc;
+        }, {});
+        const tokensByMachine = org.gatewayTokens.reduce<Record<string, typeof org.gatewayTokens>>((acc, t) => {
+          (acc[t.machineId] ||= []).push(t);
+          return acc;
+        }, {});
+        const fleetTokens = org.gatewayTokens.filter(t => t.machineCategory && Object.keys(FLEET_LABELS).includes(t.machineCategory));
+        const activeFleetTokens = fleetTokens.filter(t => t.isActive && !t.revokedAt);
+        const recentlySeenTokens = activeFleetTokens.filter(t => t.lastSeenAt && (Date.now() - new Date(t.lastSeenAt).getTime()) < 1000 * 60 * 60 * 24);
+        return (
+          <div style={{ display:'flex',flexDirection:'column',gap:16 }}>
+
+            {/* Header summary */}
+            <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:'16px 20px' }}>
+              <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8 }}>
+                <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:0 }}>🚛 Fleet — vehicles, vessels & UAVs</h2>
+                <div style={{ display:'flex',gap:8,fontSize:12 }}>
+                  <span style={{ padding:'4px 10px',background:'#635bff10',border:'1px solid #635bff40',borderRadius:999,color:'#635bff',fontWeight:600 }}>{fleetTotal} fleet assets</span>
+                  <span style={{ padding:'4px 10px',background:'#10b98110',border:'1px solid #10b98140',borderRadius:999,color:'#10b981',fontWeight:600 }}>{activeFleetTokens.length} active gateway tokens</span>
+                  <span style={{ padding:'4px 10px',background:'#f9731610',border:'1px solid #f9731640',borderRadius:999,color:'#f97316',fontWeight:600 }}>{recentlySeenTokens.length} streaming today</span>
+                </div>
+              </div>
+              <p style={{ margin:'8px 0 0',fontSize:12,color:'var(--text-secondary)',lineHeight:1.5 }}>
+                Big Bet #3 multi-domain expansion — OBD-II, SAE J1939, NMEA 2000, MAVLink connectors plus native importers for Geotab, Samsara, Verizon Connect, Motive, and Fleetio. Read-only on this dashboard; the customer admin manages telemetry from Equipment / Edge Gateway.
+              </p>
+            </div>
+
+            {/* Category breakdown */}
+            <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:'16px 20px' }}>
+              <h3 style={{ fontSize:13,fontWeight:700,color:'var(--text-primary)',margin:'0 0 12px',textTransform:'uppercase',letterSpacing:'0.05em' }}>By category</h3>
+              <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:10 }}>
+                {Object.entries(FLEET_LABELS).map(([cat, def]) => {
+                  const list = grouped[cat] ?? [];
+                  return (
+                    <div key={cat} style={{ background:'var(--bg-surface-2)',border:`1px solid ${def.color}40`,borderRadius:10,padding:'12px 14px' }}>
+                      <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4 }}>
+                        <span style={{ fontSize:18 }}>{def.emoji}</span>
+                        <span style={{ fontSize:22,fontWeight:700,color:def.color }}>{list.length}</span>
+                      </div>
+                      <div style={{ fontSize:12,fontWeight:600,color:'var(--text-primary)' }}>{def.label}</div>
+                      <div style={{ fontSize:11,color:'var(--text-secondary)',marginTop:4 }}>
+                        {list.reduce((s, m) => s + m.gatewayTokenCount, 0)} gateway token{list.reduce((s, m) => s + m.gatewayTokenCount, 0) === 1 ? '' : 's'}
+                        {' · '}
+                        {list.reduce((s, m) => s + m.alertCount, 0)} active alert{list.reduce((s, m) => s + m.alertCount, 0) === 1 ? '' : 's'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Fleet asset list */}
+            <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,overflow:'hidden' }}>
+              <div style={{ padding:'14px 20px',borderBottom:'1px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:8 }}>
+                <h3 style={{ fontSize:14,fontWeight:700,color:'var(--text-primary)',margin:0 }}>Fleet assets ({fleetTotal})</h3>
+                <Link href={`/admin/machines?orgId=${org.id}`} style={{ fontSize:12,fontWeight:600,color:'#635bff',textDecoration:'none' }}>Manage in Admin Machines →</Link>
+              </div>
+              <div style={{ overflowX:'auto' }}>
+                <table style={{ width:'100%',borderCollapse:'collapse' }}>
+                  <thead>
+                    <tr style={{ background:'var(--bg-surface-2)' }}>
+                      {['Asset','Category','Status','Tokens','Last reading','WO','Alerts'].map(h => (
+                        <th key={h} style={{ padding:'9px 14px',textAlign:'left',fontSize:11,fontWeight:600,color:'var(--text-secondary)',textTransform:'uppercase',letterSpacing:'0.05em',borderBottom:'1px solid var(--border)' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {org.fleetMachines.map((m, i) => {
+                      const def = FLEET_LABELS[m.category];
+                      return (
+                        <tr key={m.id} style={{ borderBottom:i < org.fleetMachines.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                          <td style={{ padding:'11px 14px',fontSize:13,fontWeight:600,color:'var(--text-primary)' }}>
+                            {m.name}
+                            {m.location && <div style={{ fontSize:11,fontWeight:400,color:'var(--text-secondary)',marginTop:2 }}>{m.location}</div>}
+                          </td>
+                          <td style={{ padding:'11px 14px',fontSize:12 }}>
+                            <span style={{ padding:'2px 8px',background:`${def?.color ?? '#6b7280'}15`,color:def?.color ?? '#6b7280',borderRadius:999,fontWeight:600 }}>
+                              {def?.emoji ?? ''} {def?.label.split(' ')[0] ?? m.category}
+                            </span>
+                          </td>
+                          <td style={{ padding:'11px 14px' }}><Badge label={m.status} color={STATUS_COLORS[m.status] ?? '#6b7280'} /></td>
+                          <td style={{ padding:'11px 14px',fontSize:12,color:m.gatewayTokenCount > 0 ? '#10b981' : 'var(--text-secondary)',fontWeight:m.gatewayTokenCount > 0 ? 600 : 400 }}>
+                            {m.gatewayTokenCount}
+                          </td>
+                          <td style={{ padding:'11px 14px',fontSize:12,color:'var(--text-secondary)' }}>
+                            {m.lastReading ? (
+                              <span title={`${m.lastReading.value} ${m.lastReading.unit} at ${fmtDateTime(m.lastReading.recordedAt)}`}>
+                                {m.lastReading.type} = {m.lastReading.value.toFixed(1)} {m.lastReading.unit}
+                                <div style={{ fontSize:10,color:'var(--text-secondary)',marginTop:2 }}>{fmtDate(m.lastReading.recordedAt)}</div>
+                              </span>
+                            ) : <span style={{ color:'var(--text-secondary)',fontStyle:'italic' }}>no telemetry yet</span>}
+                          </td>
+                          <td style={{ padding:'11px 14px',fontSize:12,color:'var(--text-secondary)' }}>{m.workOrderCount}</td>
+                          <td style={{ padding:'11px 14px',fontSize:12,color:m.alertCount > 0 ? '#ef4444' : 'var(--text-secondary)',fontWeight:m.alertCount > 0 ? 600 : 400 }}>{m.alertCount}</td>
+                        </tr>
+                      );
+                    })}
+                    {org.fleetMachines.length === 0 && (
+                      <tr><td colSpan={7} style={{ padding:28,textAlign:'center',color:'var(--text-secondary)' }}>
+                        This workspace has no fleet assets yet. The customer can add vehicles, vessels, or drones from <Link href="/dashboard" style={{ color:'#635bff',textDecoration:'underline' }}>Equipment → + Add Machine</Link> using the new categories.
+                      </td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Gateway tokens table — vehicle/vessel/UAV only */}
+            <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,overflow:'hidden' }}>
+              <div style={{ padding:'14px 20px',borderBottom:'1px solid var(--border)' }}>
+                <h3 style={{ fontSize:14,fontWeight:700,color:'var(--text-primary)',margin:0 }}>Telematics gateway tokens ({fleetTokens.length})</h3>
+                <p style={{ fontSize:11,color:'var(--text-secondary)',margin:'4px 0 0' }}>
+                  Each fleet asset that streams telemetry — via the Edge Gateway connectors (OBD-II / J1939 / NMEA 2000 / MAVLink) or via the native telematics importers (/api/telematics/import?provider=…) — has at least one Machine Gateway Token. SHA-256 hashed on the server; only the prefix is shown here.
+                </p>
+              </div>
+              <div style={{ overflowX:'auto' }}>
+                <table style={{ width:'100%',borderCollapse:'collapse' }}>
+                  <thead>
+                    <tr style={{ background:'var(--bg-surface-2)' }}>
+                      {['Asset','Token name','Prefix','Status','Last seen','Created'].map(h => (
+                        <th key={h} style={{ padding:'9px 14px',textAlign:'left',fontSize:11,fontWeight:600,color:'var(--text-secondary)',textTransform:'uppercase',letterSpacing:'0.05em',borderBottom:'1px solid var(--border)' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fleetTokens.map((t, i) => {
+                      const isStale = t.lastSeenAt ? (Date.now() - new Date(t.lastSeenAt).getTime()) > 1000 * 60 * 60 * 24 : true;
+                      const def = t.machineCategory ? FLEET_LABELS[t.machineCategory] : null;
+                      return (
+                        <tr key={t.id} style={{ borderBottom:i < fleetTokens.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                          <td style={{ padding:'11px 14px',fontSize:13,fontWeight:600,color:'var(--text-primary)' }}>
+                            {def?.emoji} {t.machineName ?? '—'}
+                          </td>
+                          <td style={{ padding:'11px 14px',fontSize:12,color:'var(--text-secondary)' }}>{t.name}</td>
+                          <td style={{ padding:'11px 14px',fontSize:12,fontFamily:'monospace',color:'var(--text-secondary)' }}>{t.tokenPrefix}…</td>
+                          <td style={{ padding:'11px 14px' }}>
+                            {t.revokedAt ? <Badge label="Revoked" color="#6b7280" /> :
+                              t.isActive ? <Badge label="Active" color="#10b981" /> :
+                              <Badge label="Inactive" color="#f59e0b" />}
+                          </td>
+                          <td style={{ padding:'11px 14px',fontSize:12,color:isStale && t.lastSeenAt ? '#f97316' : 'var(--text-secondary)' }}>
+                            {t.lastSeenAt ? fmtDateTime(t.lastSeenAt) : <span style={{ fontStyle:'italic' }}>never</span>}
+                          </td>
+                          <td style={{ padding:'11px 14px',fontSize:12,color:'var(--text-secondary)',whiteSpace:'nowrap' }}>{fmtDate(t.createdAt)}</td>
+                        </tr>
+                      );
+                    })}
+                    {fleetTokens.length === 0 && (
+                      <tr><td colSpan={6} style={{ padding:28,textAlign:'center',color:'var(--text-secondary)' }}>
+                        No fleet gateway tokens yet. The customer creates these from each vehicle/vessel/UAV machine&apos;s detail page → Create Gateway Token, then pastes the token into the Edge Gateway YAML or the telematics provider&apos;s webhook config.
+                      </td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Documentation links */}
+            <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:'16px 20px' }}>
+              <h3 style={{ fontSize:13,fontWeight:700,color:'var(--text-primary)',margin:'0 0 12px',textTransform:'uppercase',letterSpacing:'0.05em' }}>Customer docs (for reference)</h3>
+              <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:10,fontSize:13 }}>
+                {[
+                  ['🚗 OBD-II setup', '/docs/edge-gateway/obd2'],
+                  ['🚛 SAE J1939 setup', '/docs/edge-gateway/j1939'],
+                  ['⛵ NMEA 2000 setup', '/docs/edge-gateway/nmea2000'],
+                  ['🛸 MAVLink setup', '/docs/edge-gateway/mavlink'],
+                  ['🌐 Telematics importers', '/docs/telematics'],
+                  ['📋 Vehicle WO templates', '/docs/vehicle-templates'],
+                  ['📖 Fleet handbook chapter', '/handbook/vehicles-vessels-uavs'],
+                ].map(([label, href]) => (
+                  <Link key={href} href={href} target="_blank" style={{ padding:'10px 12px',background:'var(--bg-surface-2)',border:'1px solid var(--border)',borderRadius:8,color:'var(--text-primary)',textDecoration:'none',fontWeight:500,display:'flex',alignItems:'center',justifyContent:'space-between',gap:8 }}>
+                    <span>{label}</span>
+                    <span style={{ color:'#635bff',fontSize:12 }}>↗</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        );
+      })()}
 
       {/* ═══════════════ WORK ORDERS TAB ═══════════════ */}
       {activeTab==='work-orders' && (
