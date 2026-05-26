@@ -17,6 +17,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface RoomNode {
   id: string;
@@ -662,9 +663,10 @@ function ActionBtn({
 // ─────────────────────────────────────────────────────────────────────────
 
 function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return (
+  if (typeof window === 'undefined' || typeof document === 'undefined') return null;
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 modal-safe-pad"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 modal-safe-pad"
       onClick={onClose}
     >
       <div
@@ -674,7 +676,8 @@ function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClos
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

@@ -13,7 +13,21 @@ interface OrgData {
   cancelAtPeriodEnd: boolean; isActive: boolean; isSuspended: boolean;
   adminNotes: string | null; suspendedReason: string | null; suspendedAt: string | null;
   createdAt: string;
-  counts: { users: number; machines: number; workOrders: number; alerts: number; parts: number };
+  counts: {
+    users: number;
+    machines: number;
+    workOrders: number;
+    alerts: number;
+    parts: number;
+    sites?: number;
+    buildings?: number;
+    floors?: number;
+    rooms?: number;
+    machineDocuments?: number;
+    approvalPolicies?: number;
+    approvalRequests?: number;
+    savedReports?: number;
+  };
   users: Array<{ id: string; name: string; email: string; role: string; createdAt: string; lastLoginAt: string | null; twoFactorEnabled: boolean; failedLoginAttempts: number; deletionRequestedAt?: string | null }>;
   machines: Array<{ id: string; name: string; status: string; category: string; location: string | null; createdAt: string }>;
   workOrders: Array<{ id: string; woNumber: string; title: string; status: string; priority: string; createdAt: string; completedAt: string | null }>;
@@ -34,7 +48,7 @@ const ROLE_COLORS: Record<string,string> = { OWNER:'#8b5cf6', ADMIN:'#6366f1', T
 const STATUS_COLORS: Record<string,string> = { OPERATIONAL:'#10b981', MAINTENANCE:'#f59e0b', BREAKDOWN:'#ef4444', RETIRED:'#6b7280' };
 const WO_STATUS_COLORS: Record<string,string> = { OPEN:'#6366f1', IN_PROGRESS:'#f59e0b', ON_HOLD:'#6b7280', COMPLETED:'#10b981', CANCELLED:'#ef4444' };
 const SEVERITY_COLORS: Record<string,string> = { CRITICAL:'#ef4444', HIGH:'#f97316', MEDIUM:'#f59e0b', LOW:'#10b981' };
-const TABS = ['overview','users','machines','work-orders','alerts','billing','integrations','activity'] as const;
+const TABS = ['overview','users','machines','work-orders','alerts','operations','billing','integrations','activity'] as const;
 type Tab = typeof TABS[number];
 
 /* ─── Small helpers ─────────────────────────────────────────────── */
@@ -151,7 +165,7 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
   /* ─── Render ─────────────────────────────────────────── */
   const tabIcons: Record<Tab, string> = {
     overview: '📊', users: '👥', machines: '⚙️', 'work-orders': '📋',
-    alerts: '🔔', billing: '💳', integrations: '🔌', activity: '📋',
+    alerts: '🔔', operations: '🛠️', billing: '💳', integrations: '🔌', activity: '📋',
   };
 
   return (
@@ -500,6 +514,61 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
               {org.alerts.length===0 && <tr><td colSpan={5} style={{ padding:28,textAlign:'center',color:'var(--text-secondary)' }}>No alerts</td></tr>}
             </tbody>
           </table>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════ OPERATIONS TAB ═══════════════ */}
+      {activeTab==='operations' && (
+        <div style={{ display:'flex',flexDirection:'column',gap:20 }}>
+          <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:22 }}>
+            <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:'0 0 14px' }}>📍 Locations Hierarchy</h2>
+            <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:12 }}>
+              {[
+                ['Sites',     org.counts.sites ?? 0,     '🏭'],
+                ['Buildings', org.counts.buildings ?? 0, '🏢'],
+                ['Floors',    org.counts.floors ?? 0,    '🪜'],
+                ['Rooms',     org.counts.rooms ?? 0,     '🚪'],
+              ].map(([label,val,emoji])=>(
+                <div key={label as string} style={{ background:'var(--bg-surface-2)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 14px' }}>
+                  <div style={{ fontSize:11,color:'var(--text-secondary)',textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600 }}>{emoji as string} {label as string}</div>
+                  <div style={{ fontSize:22,fontWeight:800,color:'var(--text-primary)',marginTop:4 }}>{val as number}</div>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize:12,color:'var(--text-secondary)',marginTop:12,marginBottom:0 }}>
+              Org users manage these in <code>/settings/locations</code>. Site → Building → Floor → Room. SuperAdmin sees totals here; full editing happens inside the org.
+            </p>
+          </div>
+
+          <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:22 }}>
+            <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:'0 0 14px' }}>📑 Equipment Documents</h2>
+            <div style={{ display:'flex',alignItems:'baseline',gap:14 }}>
+              <div style={{ fontSize:32,fontWeight:800,color:'var(--text-primary)' }}>{org.counts.machineDocuments ?? 0}</div>
+              <div style={{ fontSize:13,color:'var(--text-secondary)' }}>manuals, drawings, P&IDs, certificates uploaded across all machines</div>
+            </div>
+          </div>
+
+          <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:22 }}>
+            <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:'0 0 14px' }}>✅ Approval Workflows</h2>
+            <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12 }}>
+              <div style={{ background:'var(--bg-surface-2)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 14px' }}>
+                <div style={{ fontSize:11,color:'var(--text-secondary)',textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600 }}>Policies defined</div>
+                <div style={{ fontSize:22,fontWeight:800,color:'var(--text-primary)',marginTop:4 }}>{org.counts.approvalPolicies ?? 0}</div>
+              </div>
+              <div style={{ background:'var(--bg-surface-2)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 14px' }}>
+                <div style={{ fontSize:11,color:'var(--text-secondary)',textTransform:'uppercase',letterSpacing:'0.05em',fontWeight:600 }}>Total approval requests</div>
+                <div style={{ fontSize:22,fontWeight:800,color:'var(--text-primary)',marginTop:4 }}>{org.counts.approvalRequests ?? 0}</div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,padding:22 }}>
+            <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:'0 0 14px' }}>📊 Saved Reports</h2>
+            <div style={{ display:'flex',alignItems:'baseline',gap:14 }}>
+              <div style={{ fontSize:32,fontWeight:800,color:'var(--text-primary)' }}>{org.counts.savedReports ?? 0}</div>
+              <div style={{ fontSize:13,color:'var(--text-secondary)' }}>saved &amp; scheduled report definitions</div>
+            </div>
           </div>
         </div>
       )}

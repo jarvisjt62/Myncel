@@ -18,7 +18,23 @@ export default async function AdminOrgControlPage({ params }: { params: { orgId:
   const org = await db.organization.findUnique({
     where: { id: params.orgId },
     include: {
-      _count: { select: { users: true, machines: true, workOrders: true, alerts: true, parts: true } },
+      _count: {
+        select: {
+          users: true,
+          machines: true,
+          workOrders: true,
+          alerts: true,
+          parts: true,
+          sites: true,
+          buildings: true,
+          floors: true,
+          rooms: true,
+          machineDocuments: true,
+          approvalPolicies: true,
+          approvalRequests: true,
+          savedReports: true,
+        },
+      },
       users: {
         select: { id: true, name: true, email: true, role: true, createdAt: true, lastLoginAt: true, twoFactorEnabled: true, failedLoginAttempts: true, deletionRequestedAt: true },
         orderBy: { createdAt: 'asc' },

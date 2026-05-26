@@ -426,7 +426,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
               !isPlanAllowed('feature.qr.enabled') ? planLockBadge('feature.qr.enabled') : undefined
             )}
 
-            {navLink('/reports', 'reports', 'Reports',
+            {navLink('/reports', 'reports', 'Saved Reports',
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-6a2 2 0 012-2h2a2 2 0 012 2v6m-6 0H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2m-6 0v4m0 0H7m2 0h6" />
               </svg>

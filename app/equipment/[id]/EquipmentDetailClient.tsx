@@ -15,7 +15,15 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
+
+// Render a modal subtree at the document body level so nothing in the
+// component tree can clip it (transforms, overflow:hidden, etc.).
+function modalPortal(node: React.ReactNode): React.ReactPortal | null {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return null;
+  return createPortal(node, document.body);
+}
 
 type TabKey = 'overview' | 'documents' | 'parts' | 'schedules' | 'timeline' | 'telemetry';
 
@@ -211,7 +219,11 @@ function Stat({ label, value }: { label: string; value: number }) {
 // ─────────────────────────────────────────────────────────────────────
 
 function OverviewTab({ machine }: { machine: Machine }) {
-  const fields: { label: string; value: string | number | null }[] = [
+  // Show structured location fields only if at least one is set; same for free-text.
+  const hasStructured = !!(machine.site || machine.building || machine.floor || machine.room);
+  const hasFreeText = !!machine.location;
+
+  const identity: { label: string; value: string | number | null | undefined }[] = [
     { label: 'Manufacturer', value: machine.manufacturer },
     { label: 'Model', value: machine.model },
     { label: 'Serial number', value: machine.serialNumber },
@@ -219,27 +231,55 @@ function OverviewTab({ machine }: { machine: Machine }) {
     { label: 'Category', value: machine.category },
     { label: 'Criticality', value: machine.criticality },
     { label: 'Status', value: machine.status },
-    { label: 'Total hours', value: machine.totalHours.toLocaleString() },
-    { label: 'Last serviced', value: machine.lastServiceAt ? new Date(machine.lastServiceAt).toLocaleDateString() : '—' },
-    { label: 'Site', value: machine.site?.name || '—' },
-    { label: 'Building', value: machine.building?.name || '—' },
-    { label: 'Floor', value: machine.floor?.name || '—' },
-    { label: 'Room', value: machine.room?.name || '—' },
-    { label: 'Free-text location', value: machine.location || '—' },
+    { label: 'Total hours', value: machine.totalHours ? machine.totalHours.toLocaleString() : null },
+    { label: 'Last serviced', value: machine.lastServiceAt ? new Date(machine.lastServiceAt).toLocaleDateString() : null },
   ];
+
+  const locationFields: { label: string; value: string | null | undefined }[] = hasStructured
+    ? [
+        { label: 'Site', value: machine.site?.name },
+        { label: 'Building', value: machine.building?.name },
+        { label: 'Floor', value: machine.floor?.name },
+        { label: 'Room', value: machine.room?.name },
+      ].filter((f) => !!f.value)
+    : [];
 
   return (
     <div className="space-y-4">
       <Card title="Identity">
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-          {fields.map((f) => (
+          {identity.map((f) => (
             <div key={f.label}>
               <dt className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{f.label}</dt>
-              <dd className="text-[var(--text-primary)] mt-0.5">{f.value ?? '—'}</dd>
+              <dd className="text-[var(--text-primary)] mt-0.5">{f.value ?? <span className="text-[var(--text-muted)]">—</span>}</dd>
             </div>
           ))}
         </dl>
       </Card>
+
+      {(hasStructured || hasFreeText) && (
+        <Card title="Location">
+          {hasStructured && locationFields.length > 0 && (
+            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3 text-sm mb-3">
+              {locationFields.map((f) => (
+                <div key={f.label}>
+                  <dt className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">{f.label}</dt>
+                  <dd className="text-[var(--text-primary)] mt-0.5">{f.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          {hasFreeText && (
+            <div className={hasStructured ? 'pt-3 border-t' : ''} style={hasStructured ? { borderColor: 'var(--border)' } : {}}>
+              <dt className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Free-text location</dt>
+              <dd className="text-[var(--text-primary)] mt-0.5 text-sm">{machine.location}</dd>
+            </div>
+          )}
+          {!hasStructured && !hasFreeText && (
+            <p className="text-sm text-[var(--text-muted)] italic">No location set. Edit the machine to assign one.</p>
+          )}
+        </Card>
+      )}
 
       {machine.notes && (
         <Card title="Notes">
@@ -247,18 +287,15 @@ function OverviewTab({ machine }: { machine: Machine }) {
         </Card>
       )}
 
-      <Card title="Edit equipment">
-        <p className="text-sm text-[var(--text-secondary)]">
-          To rename, change category, criticality, or location, open the equipment list and use the inline editor.
-        </p>
+      <div className="text-center">
         <Link
-          href="/dashboard#equipment"
-          className="inline-block mt-3 rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-page)]"
+          href={`/dashboard?editMachine=${machine.id}`}
+          className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-page)]"
           style={{ borderColor: 'var(--border)' }}
         >
-          Open in Equipment list →
+          ✏️ Edit machine details
         </Link>
-      </Card>
+      </div>
     </div>
   );
 }
@@ -342,77 +379,79 @@ function DocumentsTab({ machineId }: { machineId: string }) {
   }
 
   return (
-    <Card
-      title={`Documents${docs.length ? ` (${docs.length})` : ''}`}
-      action={
-        <button
-          onClick={() => setShowUpload(true)}
-          className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs sm:text-sm font-medium text-white hover:opacity-90"
-        >
-          + Attach document
-        </button>
-      }
-    >
-      {error && <div className="mb-3 rounded-lg p-2 text-xs bg-red-50 text-red-700">{error}</div>}
-      {loading ? (
-        <div className="text-sm text-[var(--text-muted)]">Loading…</div>
-      ) : docs.length === 0 ? (
-        <div className="text-sm text-[var(--text-muted)] italic py-6 text-center">
-          No documents yet. Attach manuals, drawings, P&IDs, and certificates so techs can reach them right from the machine.
-        </div>
-      ) : (
-        <ul className="divide-y" style={{ borderColor: 'var(--border)' }}>
-          {docs.map((d) => {
-            const kind = DOC_KINDS.find((k) => k.key === d.kind);
-            return (
-              <li key={d.id} className="py-2.5 flex flex-wrap items-center gap-2">
-                <span className="text-xl flex-shrink-0" aria-hidden>{kind?.icon || '📄'}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-[var(--text-primary)] truncate">{d.name}</div>
-                  <div className="text-xs text-[var(--text-muted)] flex flex-wrap gap-x-2 gap-y-0.5">
-                    <span>{kind?.label || d.kind}</span>
-                    {d.filename && <span>· {d.filename}</span>}
-                    {d.sizeBytes != null && <span>· {humanBytes(d.sizeBytes)}</span>}
-                    <span>· {new Date(d.createdAt).toLocaleDateString()}</span>
-                    {d.uploadedBy?.name && <span>· {d.uploadedBy.name}</span>}
+    <>
+      <Card
+        title={`Documents${docs.length ? ` (${docs.length})` : ''}`}
+        action={
+          <button
+            onClick={() => setShowUpload(true)}
+            className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs sm:text-sm font-medium text-white hover:opacity-90"
+          >
+            + Attach document
+          </button>
+        }
+      >
+        {error && <div className="mb-3 rounded-lg p-2 text-xs bg-red-50 text-red-700">{error}</div>}
+        {loading ? (
+          <div className="text-sm text-[var(--text-muted)]">Loading…</div>
+        ) : docs.length === 0 ? (
+          <div className="text-sm text-[var(--text-muted)] italic py-6 text-center">
+            No documents yet. Attach manuals, drawings, P&IDs, and certificates so techs can reach them right from the machine.
+          </div>
+        ) : (
+          <ul className="divide-y" style={{ borderColor: 'var(--border)' }}>
+            {docs.map((d) => {
+              const kind = DOC_KINDS.find((k) => k.key === d.kind);
+              return (
+                <li key={d.id} className="py-2.5 flex flex-wrap items-center gap-2">
+                  <span className="text-xl flex-shrink-0" aria-hidden>{kind?.icon || '📄'}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-[var(--text-primary)] truncate">{d.name}</div>
+                    <div className="text-xs text-[var(--text-muted)] flex flex-wrap gap-x-2 gap-y-0.5">
+                      <span>{kind?.label || d.kind}</span>
+                      {d.filename && <span>· {d.filename}</span>}
+                      {d.sizeBytes != null && <span>· {humanBytes(d.sizeBytes)}</span>}
+                      <span>· {new Date(d.createdAt).toLocaleDateString()}</span>
+                      {d.uploadedBy?.name && <span>· {d.uploadedBy.name}</span>}
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    onClick={() => setPreview(d)}
-                    className="rounded-md border px-2 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                    style={{ borderColor: 'var(--border)' }}
-                  >
-                    Preview
-                  </button>
-                  <a
-                    href={d.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    download={d.filename || undefined}
-                    className="rounded-md border px-2 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                    style={{ borderColor: 'var(--border)' }}
-                  >
-                    Download
-                  </a>
-                  <button
-                    onClick={() => deleteDoc(d.id, d.name)}
-                    className="rounded-md border px-2 py-1 text-xs text-red-600 border-red-200 hover:bg-red-50"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setPreview(d)}
+                      className="rounded-md border px-2 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      style={{ borderColor: 'var(--border)' }}
+                    >
+                      Preview
+                    </button>
+                    <a
+                      href={d.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download={d.filename || undefined}
+                      className="rounded-md border px-2 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      style={{ borderColor: 'var(--border)' }}
+                    >
+                      Download
+                    </a>
+                    <button
+                      onClick={() => deleteDoc(d.id, d.name)}
+                      className="rounded-md border px-2 py-1 text-xs text-red-600 border-red-200 hover:bg-red-50"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
 
       {showUpload && (
         <UploadModal machineId={machineId} onClose={() => setShowUpload(false)} onSaved={() => { setShowUpload(false); load(); }} />
       )}
       {preview && <PreviewModal doc={preview} onClose={() => setPreview(null)} />}
-    </Card>
+    </>
   );
 }
 
@@ -477,8 +516,8 @@ function UploadModal({ machineId, onClose, onSaved }: { machineId: string; onClo
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 modal-safe-pad" onClick={onClose}>
+  return modalPortal(
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 modal-safe-pad" onClick={onClose}>
       <form
         onSubmit={submit}
         onClick={(e) => e.stopPropagation()}
@@ -555,8 +594,8 @@ function PreviewModal({ doc, onClose }: { doc: DocumentRow; onClose: () => void 
     /\.(dxf|dwg|dwf)$/i.test(doc.filename || '') ||
     /(autocad|dxf|dwg)/i.test(doc.mimeType || '');
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 modal-safe-pad" onClick={onClose}>
+  return modalPortal(
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 modal-safe-pad" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
         className="w-full sm:max-w-4xl rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-auto"
@@ -870,37 +909,94 @@ interface SensorReading {
 
 function TelemetryTab({ machineId }: { machineId: string }) {
   const [readings, setReadings] = useState<SensorReading[]>([]);
+  const [latestByType, setLatestByType] = useState<SensorReading[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancel = false;
     setLoading(true);
-    fetch(`/api/dashboard/sensors?machineId=${machineId}`, { cache: 'no-store' })
+    setError(null);
+    fetch(`/api/dashboard/sensors?machineId=${machineId}&limit=200`, { cache: 'no-store' })
       .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
       .then(({ ok, d }) => {
         if (cancel) return;
-        if (!ok) setError(d?.error || 'Failed to load');
-        else {
-          // The endpoint may return either { readings: [...] } or a flat array.
-          const list = Array.isArray(d) ? d : d?.readings || d?.sensorReadings || [];
-          setReadings(list);
+        if (!ok) {
+          setError(d?.error || 'Failed to load telemetry');
+          return;
         }
+        // Endpoint shape: { readings: { [type]: [{value,unit,timestamp}, ...] }, latestReadings: [...], sensorTypes: [...] }
+        // Defensively handle a flat-array fallback too.
+        let flat: SensorReading[] = [];
+        let latest: SensorReading[] = [];
+
+        if (Array.isArray(d)) {
+          flat = d.map((r: any, i: number) => ({
+            id: r.id ?? `${r.type ?? 'x'}-${i}`,
+            type: r.type ?? 'unknown',
+            value: Number(r.value ?? 0),
+            unit: r.unit ?? '',
+            recordedAt: r.recordedAt ?? r.timestamp ?? new Date().toISOString(),
+          }));
+        } else if (d && typeof d === 'object') {
+          const grouped = (d.readings && typeof d.readings === 'object' && !Array.isArray(d.readings)) ? d.readings : null;
+          if (grouped) {
+            // Flatten { type: [{value,unit,timestamp}] } into SensorReading[]
+            for (const [type, arr] of Object.entries(grouped as Record<string, any[]>)) {
+              if (!Array.isArray(arr)) continue;
+              arr.forEach((r: any, i: number) => {
+                flat.push({
+                  id: `${type}-${r.timestamp ?? i}`,
+                  type,
+                  value: Number(r.value ?? 0),
+                  unit: r.unit ?? '',
+                  recordedAt: r.timestamp ?? r.recordedAt ?? new Date().toISOString(),
+                });
+              });
+            }
+          } else if (Array.isArray(d.readings)) {
+            flat = d.readings.map((r: any, i: number) => ({
+              id: r.id ?? `${r.type ?? 'x'}-${i}`,
+              type: r.type ?? 'unknown',
+              value: Number(r.value ?? 0),
+              unit: r.unit ?? '',
+              recordedAt: r.recordedAt ?? r.timestamp ?? new Date().toISOString(),
+            }));
+          }
+
+          if (Array.isArray(d.latestReadings)) {
+            latest = d.latestReadings.map((r: any, i: number) => ({
+              id: `latest-${r.type ?? i}`,
+              type: r.type ?? 'unknown',
+              value: Number(r.value ?? 0),
+              unit: r.unit ?? '',
+              recordedAt: r.timestamp ?? r.recordedAt ?? new Date().toISOString(),
+            }));
+          }
+        }
+
+        // Sort flat by recordedAt desc for the table
+        flat.sort((a, b) => (a.recordedAt < b.recordedAt ? 1 : -1));
+
+        // Build latest from flat if not provided
+        if (latest.length === 0 && flat.length > 0) {
+          const m = new Map<string, SensorReading>();
+          for (const r of flat) {
+            const cur = m.get(r.type);
+            if (!cur || cur.recordedAt < r.recordedAt) m.set(r.type, r);
+          }
+          latest = Array.from(m.values());
+        }
+
+        setReadings(flat);
+        setLatestByType(latest);
       })
-      .catch((e) => !cancel && setError(String(e)))
+      .catch((e) => !cancel && setError(String(e?.message || e)))
       .finally(() => !cancel && setLoading(false));
     return () => { cancel = true; };
   }, [machineId]);
 
-  // Group by sensor type for the latest-value strip
-  const latest = useMemo(() => {
-    const m = new Map<string, SensorReading>();
-    for (const r of readings) {
-      const cur = m.get(r.type);
-      if (!cur || cur.recordedAt < r.recordedAt) m.set(r.type, r);
-    }
-    return Array.from(m.values());
-  }, [readings]);
+  const latest = latestByType;
 
   return (
     <Card

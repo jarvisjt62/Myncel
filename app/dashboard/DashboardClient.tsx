@@ -425,6 +425,26 @@ function DashboardClientInner({ user, data }: Props) {
     return () => window.removeEventListener('hashchange', applyHash);
   }, []);
 
+  // Honour ?editMachine=<id> from links (e.g. the equipment detail page "Edit machine" button).
+  // We defer the actual open until openEditMachine + machines are wired up below.
+  const [pendingEditMachineId, setPendingEditMachineId] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('editMachine');
+      if (id) {
+        setPendingEditMachineId(id);
+        setActiveTab('equipment');
+        // Clean the URL so refresh doesn't re-open it.
+        const url = new URL(window.location.href);
+        url.searchParams.delete('editMachine');
+        window.history.replaceState({}, '', url.toString());
+      }
+    } catch {
+      /* noop */
+    }
+  }, []);
+
   const { machines: initialMachines, workOrders: initialWorkOrders, maintenanceTasks: initialTasks, alerts: initialAlerts, parts: initialParts, orgUsers, stats, currency: orgCurrencyRaw } = data;
   const orgCurrency = orgCurrencyRaw ?? 'USD';
   const currencySymbol = getCurrencySymbol(orgCurrency);
@@ -720,6 +740,17 @@ function DashboardClientInner({ user, data }: Props) {
       roomId: m.roomId ?? null,
     });
   };
+
+  // Once machines load, honour any pending ?editMachine=<id> URL param.
+  useEffect(() => {
+    if (!pendingEditMachineId) return;
+    const m = machines.find((x: any) => x.id === pendingEditMachineId);
+    if (m) {
+      openEditMachine(m);
+      setPendingEditMachineId(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingEditMachineId, machines]);
   const saveEditMachine = async () => {
     if (!editingMachine) return;
     setSaving(true); setSaveError('');
@@ -3119,6 +3150,19 @@ function DashboardClientInner({ user, data }: Props) {
           {/* ── Reports Tab ── */}
           {activeTab === 'reports' && (
             <div className="space-y-6">
+              {/* Quick link to Saved & Scheduled Reports page */}
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl p-3 sm:p-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  Looking for filterable CSV exports or scheduled email reports?
+                </div>
+                <Link
+                  href="/reports"
+                  className="text-xs sm:text-sm font-semibold rounded-lg px-3 py-1.5"
+                  style={{ backgroundColor: 'var(--accent)', color: 'white' }}
+                >
+                  Open Saved &amp; Scheduled Reports →
+                </Link>
+              </div>
               {/* Report Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
