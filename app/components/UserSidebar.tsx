@@ -682,11 +682,13 @@ function UserShellInner({ user, children }: UserSidebarProps) {
             On normal browsers env(safe-area-inset-top) resolves to 0 so the
             layout matches the previous py-3 / sm:py-4. */}
         <header
-          className="flex items-center justify-between sticky top-0 z-10"
+          className="flex items-center justify-between sticky top-0 z-10 force-pt-safe-32"
           style={{
             backgroundColor: 'var(--bg-nav)',
             borderBottom: '1px solid var(--border)',
             // Top: clear the system status bar (Samsung clock / iOS notch) in BOTH portrait + landscape.
+            // .force-pt-safe-32 above provides a !important 48px floor on .capacitor-app,
+            // and this inline calc adds normal 12px breathing room for desktop browsers.
             paddingTop: 'calc(var(--safe-area-top, 0px) + 0.75rem)',
             paddingBottom: '0.75rem',
             // Left/Right: in landscape on iPhone X+ the camera notch lives on one side and the

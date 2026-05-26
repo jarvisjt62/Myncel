@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* myncel-css-version: 2024-s24-v2 */
+/* myncel-css-version: 2024-s24-v3 */
 
 :root {
   /* Stripe-inspired color palette */
@@ -98,6 +98,16 @@ body.capacitor-app {
     --safe-area-top: max(32px, env(safe-area-inset-top, 0px));
     --safe-area-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   }
+}
+
+/* ─── Last-resort defensive selectors ──────────────────────────────────
+   These target known problem pages (CSV importer, dashboard top bar)
+   and apply a HARD-coded 32px-min top padding via @media + class
+   targeting. Triggered only inside the Capacitor shell (.capacitor-app).
+   This is independent of the --safe-area-top variable, so it works
+   even if some browser refuses to evaluate var() in time. */
+.capacitor-app .force-pt-safe-32 {
+  padding-top: max(48px, calc(env(safe-area-inset-top, 0px) + 16px)) !important;
 }
 
 /* Utility classes any component can use directly. */

@@ -195,12 +195,15 @@ export default function EquipmentImportPage() {
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div
-      className="min-h-screen bg-[#f8fafc] px-4 pb-8"
+      className="min-h-screen bg-[#f8fafc] px-4 pb-8 force-pt-safe-32"
       style={{
         // Capacitor WebView draws under the device status bar — without
         // this padding the page heading is hidden behind the system clock
-        // / signal icons. `max(...)` keeps the original 32px breathing
-        // room as a floor for desktop browsers where the inset is 0.
+        // / signal icons. The `force-pt-safe-32` class above also applies
+        // a !important hard floor of 48px on .capacitor-app, so even if
+        // var() resolution races the first paint we always have clearance.
+        // `max(...)` keeps the original 32px breathing room as a floor
+        // for desktop browsers where the inset is 0.
         paddingTop: 'max(2rem, calc(var(--safe-area-top, 0px) + 1rem))',
         paddingLeft: 'max(1rem, var(--safe-area-left, 0px))',
         paddingRight: 'max(1rem, var(--safe-area-right, 0px))',

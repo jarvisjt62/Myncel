@@ -99,16 +99,15 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Myncel" />
-        {/* ─── EARLY Capacitor detection ─────────────────────────────────
-             Runs BEFORE React hydrates so the `capacitor-app` class is on
-             <html> in the very first paint. This guarantees the safe-area
-             CSS variables (defined in globals.css) get the 32px hard floor
-             on Samsung S24 Ultra etc. where env(safe-area-inset-top) bug-
-             returns 0 inside the Capacitor WebView.
-             We don't rely on window.Capacitor (sometimes injected late) —
-             instead we sniff the UA which contains "myncel-app" as set in
-             the native Capacitor shell config, OR fall back to the standard
-             "wv" Android WebView marker.
+        {/* ─── EARLY Capacitor / mobile-app detection ──────────────────
+             Runs BEFORE React hydrates AND before the first paint.
+             When we detect a Capacitor WebView (Samsung S24 Ultra etc.
+             where env(safe-area-inset-top) bug-returns 0), we inject the
+             CSS variables DIRECTLY into the <html> element's inline
+             style. This way every `var(--safe-area-top, 0px)` resolves
+             to 32px on the very first paint — no class-selector race.
+             On normal browsers, the variables stay undefined and the
+             0px fallback applies (no layout shift on desktop).
            ─────────────────────────────────────────────────────────────── */}
         <script
           dangerouslySetInnerHTML={{
@@ -116,10 +115,22 @@ export default function RootLayout({
               var ua = (navigator.userAgent||'').toLowerCase();
               var isCap = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
                 || ua.indexOf('myncel-app')>-1
-                || (ua.indexOf('android')>-1 && ua.indexOf('wv')>-1 && ua.indexOf('chrome/')>-1 && !ua.indexOf('mobile safari'));
+                || (ua.indexOf('android')>-1 && ua.indexOf('wv')>-1)
+                || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
               if(isCap){
-                document.documentElement.classList.add('capacitor-app');
-                document.addEventListener('DOMContentLoaded', function(){ try{document.body.classList.add('capacitor-app');}catch(e){} });
+                var html = document.documentElement;
+                html.classList.add('capacitor-app');
+                // Inject as inline style so var() resolves on first paint
+                // BEFORE the CSS bundle even loads. Hard floor 32px top,
+                // 16px bottom — overridden later if @capacitor/status-bar
+                // plugin reports the real height.
+                html.style.setProperty('--safe-area-top', 'max(32px, env(safe-area-inset-top, 0px))');
+                html.style.setProperty('--safe-area-bottom', 'max(16px, env(safe-area-inset-bottom, 0px))');
+                html.style.setProperty('--safe-area-left', 'env(safe-area-inset-left, 0px)');
+                html.style.setProperty('--safe-area-right', 'env(safe-area-inset-right, 0px)');
+                document.addEventListener('DOMContentLoaded', function(){
+                  try{document.body.classList.add('capacitor-app');}catch(e){}
+                });
                 if(document.body){ try{document.body.classList.add('capacitor-app');}catch(e){} }
               }
             }catch(e){}})();`
