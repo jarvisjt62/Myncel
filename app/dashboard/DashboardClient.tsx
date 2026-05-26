@@ -1369,15 +1369,31 @@ function DashboardClientInner({ user, data }: Props) {
         <div className="absolute inset-0 bg-black/50" onClick={() => { setSelectedMachine(null); setMachineDetail(null); }} />
         <div className="relative rounded-2xl [background:var(--bg-surface)] shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-0">
           <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
-            <div className="flex items-center gap-3">
-              <div className={`w-3 h-3 rounded-full ${statusDot(m.status)}`} />
-              <h3 className="text-lg font-bold text-[var(--text-primary)]">{m.name}</h3>
+            <div className="flex items-center gap-3 min-w-0">
+              <div className={`w-3 h-3 rounded-full ${statusDot(m.status)} flex-shrink-0`} />
+              <h3 className="text-lg font-bold text-[var(--text-primary)] truncate">{m.name}</h3>
             </div>
-            <button onClick={() => { setSelectedMachine(null); setMachineDetail(null); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <a
+                href={`/equipment/${m.id}`}
+                className="hidden sm:inline-flex text-xs font-semibold text-[var(--accent)] hover:underline whitespace-nowrap"
+                title="Open the full tabbed equipment page (Documents, Parts, Timeline, Telemetry)"
+              >
+                Open detail page →
+              </a>
+              <button onClick={() => { setSelectedMachine(null); setMachineDetail(null); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
           </div>
           <div className="p-5 space-y-5">
+            {/* Mobile-only: full-width Open detail page link */}
+            <a
+              href={`/equipment/${m.id}`}
+              className="sm:hidden block text-center text-sm font-semibold text-[var(--accent)] py-2 px-3 rounded-lg border border-[var(--accent)]/30 hover:bg-[var(--accent)]/5"
+            >
+              Open detail page →
+            </a>
             {loadingDetail && <p className="text-sm text-[var(--text-muted)] animate-pulse">Loading details…</p>}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {([

@@ -15,6 +15,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const machine = await db.machine.findUnique({
       where: { id: params.id },
       include: {
+        site: { select: { id: true, name: true } },
+        building: { select: { id: true, name: true } },
+        floor: { select: { id: true, name: true } },
+        room: { select: { id: true, name: true } },
         workOrders: {
           orderBy: { createdAt: 'desc' },
           take: 5,
@@ -45,7 +49,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             updatedAt: true,
           },
         },
-        _count: { select: { workOrders: true, maintenanceTasks: true, alerts: true } },
+        _count: {
+          select: { workOrders: true, maintenanceTasks: true, alerts: true, documents: true },
+        },
       },
     });
 

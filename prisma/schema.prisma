@@ -72,6 +72,9 @@ model User {
   approvalRequests  ApprovalRequest[]  @relation("ApprovalRequester")
   approvalDecisions ApprovalDecision[] @relation("ApprovalDecider")
 
+  // Equipment documents this user uploaded
+  uploadedMachineDocuments MachineDocument[]
+
   @@map("users")
 }
 
@@ -225,6 +228,7 @@ model Organization {
   savedReports          SavedReport[]
   approvalPolicies      ApprovalPolicy[]
   approvalRequests      ApprovalRequest[]
+  machineDocuments      MachineDocument[]
 
   // Location hierarchy (Site → Building → Floor → Room)
   sites     Site[]
@@ -279,6 +283,7 @@ model Machine {
   sensorReadings        SensorReading[]
   machineDeviceTokens   MachineDeviceToken[]
   remoteSupportSessions RemoteSupportSession[]
+  documents             MachineDocument[]
 
   @@index([organizationId, siteId])
   @@index([organizationId, buildingId])
@@ -599,6 +604,52 @@ model MachineDeviceToken {
   @@index([machineId])
   @@index([organizationId])
   @@map("machine_device_tokens")
+}
+
+// ===== MACHINE DOCUMENTS =====
+//
+// Drawings, P&IDs, manuals, datasheets, certifications, photos — anything
+// you'd attach to a piece of equipment. The `kind` field drives icon
+// selection and inline-preview behaviour (PDF embedded, images inline,
+// DXF/DWG offered as download with an open-in-CAD link).
+
+model MachineDocument {
+  id          String              @id @default(cuid())
+  name        String
+  description String?             @db.Text
+  kind        MachineDocumentKind @default(OTHER)
+  /// Public URL or data URL. Today we accept either a hosted URL (S3/R2)
+  /// or a base64 data URL pasted directly. Server enforces a soft cap.
+  url         String              @db.Text
+  /// Original filename (preserved for download).
+  filename    String?
+  /// MIME type, used to choose inline preview vs. download.
+  mimeType    String?
+  /// Bytes — display only.
+  sizeBytes   Int?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  machineId      String
+  machine        Machine      @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  uploadedById   String?
+  uploadedBy     User?        @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([machineId])
+  @@index([organizationId])
+  @@map("machine_documents")
+}
+
+enum MachineDocumentKind {
+  MANUAL // OEM operating manual / service manual / parts catalog
+  DRAWING // Mechanical / electrical CAD drawing (DXF, DWG, PDF)
+  PNID // Process & instrumentation diagram
+  DATASHEET // Spec sheet / cut sheet
+  CERTIFICATE // Safety certs, calibration certs, inspection reports
+  PHOTO // Reference photos
+  OTHER
 }
 
 // ===== NOTIFICATIONS =====

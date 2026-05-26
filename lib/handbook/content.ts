@@ -465,17 +465,29 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
       {
         heading: 'The equipment record — health, history, and details',
         body: [
-          'Click any machine in the Equipment list to open its detail panel. This is the single best place to land when you are diagnosing a recurring issue or preparing for an audit. Today the panel includes:',
+          'Every machine has two ways to inspect it. The quick detail modal opens from any equipment row in the dashboard for a fast read-only glance. The full tabbed equipment page lives at /equipment/[id] and is where you go to diagnose a recurring issue, attach manuals, audit parts spend, or prepare for an inspection. Inside the quick modal you will see an "Open detail page →" link that takes you straight to the full page.',
+          'The full equipment page is organized into six tabs along the top. The active tab is reflected in the URL hash (e.g. /equipment/abc123#parts), so you can bookmark or share a deep link to any tab. On mobile the tab strip scrolls horizontally — flick left to reach Telemetry without losing your place.',
         ],
         bullets: [
-          'Machine identity — name, serial, manufacturer, model, year installed, category, status, criticality, location, notes. Click "Edit Machine" to change any field.',
-          'Machine image — drag-and-drop upload of one photo, useful for fast visual recognition on the mobile app.',
-          'Edge Gateway Tokens — create, list, and revoke per-machine tokens that authenticate edge agents pushing live data into Myncel.',
-          'Recent work orders — the latest work orders raised against this machine. Full history is available under Work Orders in the sidebar (filtered to this machine).',
-          'Recent schedules — the PM schedules attached to this machine. Full list is in /admin/schedules.',
-          'Equipment History Timeline — a chronological feed of completed work orders, status changes, and key events for the asset.',
-          'A dedicated tabbed machine page with separate Documents, Parts, and full Timeline tabs (and in-browser DWG / P&ID preview) is on the roadmap. See the Roadmap chapter.',
+          'Overview — identity (name, serial, manufacturer, model, year installed), status and criticality badges, location breadcrumb, notes, and the live equipment image. The header strip shows five live counts: open work orders, schedules, alerts, documents, and total telemetry readings.',
+          'Documents — manuals, drawings, P&IDs, datasheets, certificates, photos. Upload a file (up to 5 MB, stored as a data URL inside Myncel — no S3 setup required) or paste a hosted URL for files you already keep elsewhere. Click any row to preview: PDFs render inline in the browser, images display directly, and CAD files (DWG, DXF, STEP, IGES) drop you to a download link with a friendly "open in your CAD tool" message.',
+          'Parts — every part ever consumed on this machine, aggregated from completed work orders. You see total quantity used, total cost in your org currency, last unit cost, the number of work orders that consumed it, and the date it was last used. Useful for spotting wear-prone components and forecasting next year\'s parts budget.',
+          'Schedules — the preventive-maintenance schedules attached to this machine, with frequency, last run, next due, and a link to /admin/schedules to edit them.',
+          'Timeline — a unified vertical feed merging work orders (created and completed), alerts, and document uploads in chronological order. Each event is colour-coded by severity. Capped at the 200 most recent events; older history is available via the Reports chapter.',
+          'Telemetry — for machines with sensors or an Edge Gateway, the latest value for every sensor channel and a table of the most recent readings. Empty for machines without telemetry; no setup needed if you do not use it.',
         ],
+        steps: [
+          'From the dashboard equipment list, click a machine row to open the quick detail modal.',
+          'In the modal header, click "Open detail page →" to jump to the full tabbed page (or visit /equipment/[id] directly).',
+          'Use the tab strip at the top to switch between Overview, Documents, Parts, Schedules, Timeline, and Telemetry. The URL hash updates as you click so your tab choice is shareable.',
+          'On the Documents tab, click "+ Upload" to add a manual or drawing. Pick a file from disk (up to 5 MB) or paste an external URL, choose a kind (Manual, Drawing, P&ID, Datasheet, Certificate, Photo, Other), and save.',
+          'Click any document row to preview it. PDFs and images render inline. CAD files offer a download with guidance on opening them in your CAD viewer of choice.',
+          'On the Parts tab, sort by total cost to find your most expensive consumables on this asset, or by last-used date to spot parts that may need re-ordering.',
+        ],
+        callout: {
+          type: 'tip',
+          text: 'Document uploads are gated by the machines.edit permission, the same one that controls editing equipment records — so technicians can attach a service photo to a work order, but only managers and admins can permanently attach a master manual to the asset record. Deleting a machine cascades-delete its documents; deleting an individual document is soft on the asset (everything else stays).',
+        },
       },
     ],
   },
@@ -1273,13 +1285,12 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
       {
         heading: 'Equipment record',
         body: [
-          'The current machine detail panel shows identity, an image, Edge Gateway tokens, recent work orders and schedules, and the Equipment History timeline. The roadmap turns it into a full tabbed page with deeper drill-downs.',
+          'The full tabbed equipment page is live today (Overview, Documents, Parts, Schedules, Timeline, Telemetry — see the Equipment chapter). The roadmap items below add deeper drill-downs on top of that foundation.',
         ],
         bullets: [
-          'Full tabbed equipment page with Overview / Work Orders / Schedules / Connections / Documents / Parts / Timeline tabs.',
-          'Embedded DWG / PDF drawing viewer for piping diagrams, electrical schematics, and equipment drawings.',
-          'Per-machine document attachments (manuals, datasheets, certificates) with version history.',
-          'Per-machine bill-of-materials linking installed parts to the inventory catalog.',
+          'Embedded interactive DWG / DXF viewer with pan, zoom, layer toggling, and measurement tools (today: PDF and image preview render inline; native CAD files offer a download with a friendly "open in your CAD tool" message).',
+          'Document version history — keep every revision of a manual or drawing, with a side-by-side diff and rollback (today: each upload is a new row).',
+          'Per-machine bill-of-materials linking installed parts to the inventory catalog with low-stock alerts wired to the asset (today: the Parts tab aggregates parts ever consumed on the machine from completed work orders).',
         ],
       },
       {
