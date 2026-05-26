@@ -43,6 +43,22 @@ model User {
   // recover their account.
   deletionRequestedAt DateTime?
 
+  // SSO (SAML 2.0)
+  // When the user signs in via SAML, we record the IdP-asserted NameID
+  // here so subsequent SSO sign-ins can match the same human even if
+  // their email changes upstream.
+  samlNameId String?
+
+  // SCIM
+  // When this user was provisioned by an IdP via SCIM 2.0, we keep the
+  // external IdP identifier so PATCH/DELETE from the IdP can match the
+  // row reliably (regardless of how the IdP cycles emails).
+  scimExternalId String?
+  // True when this user is owned by SCIM provisioning. Local UI hides
+  // delete and role-edit affordances on SCIM-managed rows so the IdP
+  // remains the source of truth.
+  scimManaged Boolean @default(false)
+
   // Relations
   organizationId              String?
   organization                Organization?              @relation(fields: [organizationId], references: [id])
@@ -238,6 +254,10 @@ model Organization {
 
   // Custom roles per org
   customRoles Role[]
+
+  // SSO / SCIM (per-tenant identity-provider config)
+  ssoConfig   SsoConfig?
+  scimTokens  ScimToken[]
 
   @@map("organizations")
 }
@@ -1035,6 +1055,85 @@ model Integration {
 
   @@unique([organizationId, type])
   @@map("integrations")
+}
+
+// =================================================================
+// SSO / SCIM  (per-tenant identity-provider configuration)
+// =================================================================
+//
+// Myncel speaks SAML 2.0 (browser-redirect, signed AuthnRequest, signed
+// SAMLResponse) for sign-in and SCIM 2.0 (bearer-token REST) for user
+// auto-provisioning. Both are optional and configured per-organization
+// — different tenants can plug into Okta, Azure AD, Google Workspace,
+// OneLogin, JumpCloud, or any other SAML IdP independently.
+//
+// SsoConfig holds the IdP metadata and the SP-side certificate used to
+// sign AuthnRequests. ScimToken holds the bearer secrets the IdP sends
+// when provisioning users; we store only a SHA-256 hash so the secret
+// itself is non-recoverable from the database.
+
+model SsoConfig {
+  id             String       @id @default(cuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Whether SSO is currently active for this org. When false the
+  // /api/auth/saml/* endpoints return 404 even if the row exists.
+  enabled Boolean @default(false)
+
+  // When true, ALL non-OWNER users in this org MUST sign in via SAML.
+  // Password and Google logins are blocked. Owners can still password-
+  // sign-in as a break-glass mechanism.
+  enforced Boolean @default(false)
+
+  // IdP metadata (provided by the customer's IdP admin).
+  idpEntityId    String  @db.Text // e.g. "https://sts.windows.net/<tenant>/"
+  idpSsoUrl      String  @db.Text // SAML 2.0 SSO POST endpoint
+  idpCertificate String  @db.Text // X.509 PEM, used to verify SAMLResponse signatures
+  // Optional: overrides the default email NameID format (most IdPs
+  // ship "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress").
+  nameIdFormat   String?
+
+  // Attribute mappings (defaults match Microsoft / Okta out-of-the-box).
+  emailAttribute     String? // default: email or http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress
+  firstNameAttribute String?
+  lastNameAttribute  String?
+  groupsAttribute    String? // default: "groups" — mapped to Myncel role
+
+  // Default role assigned on first JIT provisioning if no group claim
+  // matches. Owners can lock this to MEMBER for safety.
+  defaultRole UserRole @default(MEMBER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sso_configs")
+}
+
+model ScimToken {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // First 8 chars of the token, shown in the UI so admins can identify
+  // which token is which without revealing the full secret.
+  prefix String
+
+  // SHA-256 hex of the full bearer token. The plaintext is shown ONCE
+  // at creation time and never persisted.
+  tokenHash String @unique
+
+  // Human-readable label, e.g. "Okta production" or "Azure AD".
+  label String
+
+  // Audit fields.
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  createdBy  String? // userId of the admin who minted the token
+  revokedAt  DateTime?
+
+  @@index([organizationId])
+  @@map("scim_tokens")
 }
 
 model Webhook {

@@ -34,6 +34,15 @@ interface OrgData {
   alerts: Array<{ id: string; type: string; title: string; severity: string; isResolved: boolean; createdAt: string }>;
   integrations: Array<{ id: string; type: string; name: string; status: string; createdAt: string }>;
   webhooks: Array<{ id: string; name: string; url: string; isActive: boolean; failureCount: number; lastTriggeredAt: string | null }>;
+  ssoConfig: {
+    enabled: boolean;
+    enforced: boolean;
+    idpEntityId: string;
+    idpSsoUrl: string;
+    defaultRole: string;
+    updatedAt: string;
+  } | null;
+  scimTokens: Array<{ id: string; label: string; prefix: string; lastUsedAt: string | null; createdAt: string }>;
 }
 
 interface AuditEntry { id: string; action: string; entity: string; entityId: string | null; changes: string | null; createdAt: string; userName: string | null; }
@@ -48,7 +57,7 @@ const ROLE_COLORS: Record<string,string> = { OWNER:'#8b5cf6', ADMIN:'#6366f1', T
 const STATUS_COLORS: Record<string,string> = { OPERATIONAL:'#10b981', MAINTENANCE:'#f59e0b', BREAKDOWN:'#ef4444', RETIRED:'#6b7280' };
 const WO_STATUS_COLORS: Record<string,string> = { OPEN:'#6366f1', IN_PROGRESS:'#f59e0b', ON_HOLD:'#6b7280', COMPLETED:'#10b981', CANCELLED:'#ef4444' };
 const SEVERITY_COLORS: Record<string,string> = { CRITICAL:'#ef4444', HIGH:'#f97316', MEDIUM:'#f59e0b', LOW:'#10b981' };
-const TABS = ['overview','users','machines','work-orders','alerts','operations','billing','integrations','activity'] as const;
+const TABS = ['overview','users','machines','work-orders','alerts','operations','billing','integrations','identity','activity'] as const;
 type Tab = typeof TABS[number];
 
 /* ─── Small helpers ─────────────────────────────────────────────── */
@@ -165,7 +174,7 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
   /* ─── Render ─────────────────────────────────────────── */
   const tabIcons: Record<Tab, string> = {
     overview: '📊', users: '👥', machines: '⚙️', 'work-orders': '📋',
-    alerts: '🔔', operations: '🛠️', billing: '💳', integrations: '🔌', activity: '📋',
+    alerts: '🔔', operations: '🛠️', billing: '💳', integrations: '🔌', identity: '🔐', activity: '📋',
   };
 
   return (
@@ -679,6 +688,71 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
                 {org.webhooks.length===0 && <tr><td colSpan={5} style={{ padding:28,textAlign:'center',color:'var(--text-secondary)' }}>No webhooks configured</td></tr>}
               </tbody>
             </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════ IDENTITY (SSO/SCIM) TAB ═══════════════ */}
+      {activeTab==='identity' && (
+        <div style={{ display:'grid',gap:20 }}>
+          <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,overflow:'hidden' }}>
+            <div style={{ padding:'16px 20px',borderBottom:'1px solid var(--border)' }}>
+              <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:0 }}>🔐 SAML 2.0 Single Sign-On</h2>
+              <p style={{ margin:'4px 0 0',fontSize:12,color:'var(--text-secondary)' }}>
+                Per-tenant IdP config. Read-only on this dashboard — the customer admin manages it from /settings/sso.
+              </p>
+            </div>
+            <div style={{ padding:'16px 20px',display:'grid',gridTemplateColumns:'minmax(0,1fr)',gap:14 }}>
+              {!org.ssoConfig ? (
+                <div style={{ padding:18,textAlign:'center',color:'var(--text-secondary)',fontSize:13 }}>
+                  No SSO configured for this organization.
+                </div>
+              ) : (
+                <>
+                  <div style={{ display:'flex',gap:10,flexWrap:'wrap' }}>
+                    <Badge label={org.ssoConfig.enabled ? 'Enabled' : 'Disabled'} color={org.ssoConfig.enabled ? '#10b981' : '#6b7280'} />
+                    <Badge label={org.ssoConfig.enforced ? 'Enforced' : 'Optional'} color={org.ssoConfig.enforced ? '#8b5cf6' : '#6b7280'} />
+                    <Badge label={`Default role: ${org.ssoConfig.defaultRole}`} color="#6366f1" />
+                  </div>
+                  <div style={{ display:'grid',gap:8,fontSize:12,color:'var(--text-secondary)' }}>
+                    <div><span style={{ fontWeight:600 }}>IdP Entity ID:</span> <code style={{ wordBreak:'break-all' }}>{org.ssoConfig.idpEntityId}</code></div>
+                    <div><span style={{ fontWeight:600 }}>IdP SSO URL:</span> <code style={{ wordBreak:'break-all' }}>{org.ssoConfig.idpSsoUrl}</code></div>
+                    <div><span style={{ fontWeight:600 }}>Last updated:</span> {fmtDateTime(org.ssoConfig.updatedAt)}</div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div style={{ background:'var(--bg-surface)',border:'1px solid var(--border)',borderRadius:12,overflow:'hidden' }}>
+            <div style={{ padding:'16px 20px',borderBottom:'1px solid var(--border)' }}>
+              <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:0 }}>🔑 SCIM 2.0 Provisioning Tokens ({org.scimTokens.length})</h2>
+              <p style={{ margin:'4px 0 0',fontSize:12,color:'var(--text-secondary)' }}>
+                Active bearer tokens the customer&rsquo;s IdP uses to provision users via SCIM. Plaintext is never stored.
+              </p>
+            </div>
+            <div style={{ overflowX:'auto' }}>
+              <table style={{ width:'100%',borderCollapse:'collapse' }}>
+                <thead>
+                  <tr style={{ background:'var(--bg-surface-2)' }}>
+                    {['Label','Prefix','Created','Last used'].map(h=>(
+                      <th key={h} style={{ padding:'9px 14px',textAlign:'left',fontSize:11,fontWeight:600,color:'var(--text-secondary)',textTransform:'uppercase',letterSpacing:'0.05em',borderBottom:'1px solid var(--border)' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {org.scimTokens.map((t,i)=>(
+                    <tr key={t.id} style={{ borderBottom:i<org.scimTokens.length-1?'1px solid var(--border)':'none' }}>
+                      <td style={{ padding:'11px 14px',fontSize:13,fontWeight:600,color:'var(--text-primary)' }}>{t.label}</td>
+                      <td style={{ padding:'11px 14px',fontSize:12,fontFamily:'monospace',color:'var(--text-secondary)' }}>{t.prefix}…</td>
+                      <td style={{ padding:'11px 14px',fontSize:12,color:'var(--text-secondary)',whiteSpace:'nowrap' }}>{fmtDate(t.createdAt)}</td>
+                      <td style={{ padding:'11px 14px',fontSize:12,color:'var(--text-secondary)',whiteSpace:'nowrap' }}>{t.lastUsedAt ? fmtDateTime(t.lastUsedAt) : '—'}</td>
+                    </tr>
+                  ))}
+                  {org.scimTokens.length===0 && <tr><td colSpan={4} style={{ padding:28,textAlign:'center',color:'var(--text-secondary)' }}>No active SCIM tokens</td></tr>}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { href: '/settings/approvals',     label: 'Approvals',     icon: '✅', cacheKey: 'approvals', adminOnly: false },
   { href: '/settings/locations',     label: 'Locations',     icon: '📍', cacheKey: 'locations', adminOnly: false },
   // Visible only to OWNER / ADMIN. Routes to a per-org Emergency Broadcast page.
+  { href: '/settings/sso',           label: 'SSO & SCIM',    icon: '🔐', cacheKey: null, adminOnly: true },
   { href: '/settings/emergency-broadcast', label: 'Emergency Broadcast', icon: '🚨', cacheKey: null, adminOnly: true },
 ];
 

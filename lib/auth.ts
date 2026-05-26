@@ -147,6 +147,30 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Incorrect password')
         }
 
+        // SSO enforcement check.
+        //
+        // If the user's organization has SsoConfig.enforced = true, the
+        // ONLY users who can sign in with a password are OWNERs (as a
+        // break-glass). Everyone else must go through SAML — we surface
+        // a friendly error and let the /signin page route them to
+        // /signin/sso. The admin@myncel.com platform account is always
+        // exempt so we don't lock ourselves out of customer support.
+        if (user.organizationId && user.email !== 'admin@myncel.com') {
+          const ssoCfg = await db.ssoConfig.findUnique({
+            where: { organizationId: user.organizationId },
+          })
+          if (ssoCfg?.enabled && ssoCfg.enforced && user.role !== 'OWNER') {
+            recordLoginEvent({
+              outcome: 'LOGIN_FAILED', userId: user.id, email: emailRaw,
+              organizationId: user.organizationId,
+              ipAddress, userAgent, reason: 'sso_enforced',
+            })
+            throw new Error(
+              'Your workspace requires single sign-on. Please use the "Sign in with SSO" link instead.'
+            )
+          }
+        }
+
         // Account-deletion check (Apple App Review Guideline 5.1.1(v)).
         //
         // If the user previously initiated account deletion, block

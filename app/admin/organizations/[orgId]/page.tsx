@@ -60,6 +60,22 @@ export default async function AdminOrgControlPage({ params }: { params: { orgId:
       webhooks: {
         select: { id: true, name: true, url: true, isActive: true, failureCount: true, lastTriggeredAt: true },
       },
+      ssoConfig: {
+        select: {
+          id: true,
+          enabled: true,
+          enforced: true,
+          idpEntityId: true,
+          idpSsoUrl: true,
+          defaultRole: true,
+          updatedAt: true,
+        },
+      },
+      scimTokens: {
+        where: { revokedAt: null },
+        select: { id: true, label: true, prefix: true, lastUsedAt: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+      },
     },
   });
 
@@ -144,6 +160,23 @@ export default async function AdminOrgControlPage({ params }: { params: { orgId:
           isActive: w.isActive,
           failureCount: w.failureCount,
           lastTriggeredAt: w.lastTriggeredAt?.toISOString() ?? null,
+        })),
+        ssoConfig: org.ssoConfig
+          ? {
+              enabled: org.ssoConfig.enabled,
+              enforced: org.ssoConfig.enforced,
+              idpEntityId: org.ssoConfig.idpEntityId,
+              idpSsoUrl: org.ssoConfig.idpSsoUrl,
+              defaultRole: org.ssoConfig.defaultRole,
+              updatedAt: org.ssoConfig.updatedAt.toISOString(),
+            }
+          : null,
+        scimTokens: org.scimTokens.map(t => ({
+          id: t.id,
+          label: t.label,
+          prefix: t.prefix,
+          lastUsedAt: t.lastUsedAt?.toISOString() ?? null,
+          createdAt: t.createdAt.toISOString(),
         })),
       }}
       auditLogs={auditLogs.map(l => ({

@@ -296,6 +296,20 @@ function SignInForm() {
               </svg>
               Create a free account
             </Link>
+
+            {/* SSO sign-in entry — for orgs that have configured SAML.
+                Sends the user to a thin /signin/sso page where they
+                enter their workspace slug and get redirected to the
+                IdP. */}
+            <Link
+              href="/signin/sso"
+              className="mt-3 w-full min-h-11 border border-[#e6ebf1] text-[#425466] py-2.5 rounded-lg text-sm font-medium hover:bg-[#f6f9fc] hover:border-[#c9d7e3] transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4 text-[#635bff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c1.66 0 3-1.34 3-3S13.66 5 12 5 9 6.34 9 8s1.34 3 3 3zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4zm5-7l4 4-4 4" />
+              </svg>
+              Sign in with SSO (SAML)
+            </Link>
           </div>
 
           {/* Footer note */}

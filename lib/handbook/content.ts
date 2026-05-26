@@ -72,7 +72,7 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
         ],
         callout: {
           type: 'info',
-          text: 'SAML 2.0 SSO and SCIM auto-provisioning (Okta, Azure AD, OneLogin) are on the roadmap — see the Roadmap chapter. Today the supported sign-in methods are email + password (with optional 2FA) and Google OAuth.',
+          text: 'SAML 2.0 SSO and SCIM 2.0 auto-provisioning are now shipped. Compatible with Okta, Azure AD / Entra ID, Google Workspace, OneLogin, JumpCloud, Ping, and any standards-compliant IdP. See the Integrations chapter ("Single sign-on (SSO) and SCIM provisioning") for the full setup walkthrough. The previously listed roadmap item has shipped.',
         },
       },
       {
@@ -741,9 +741,20 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
       {
         heading: 'Single sign-on (SSO) and SCIM provisioning',
         body: [
-          'SAML 2.0 single sign-on with Okta, Azure AD / Entra ID, Google Workspace, OneLogin, Ping, JumpCloud, and any standards-compliant IdP, together with SCIM 2.0 automated user provisioning and de-provisioning, are on the roadmap. See the Roadmap chapter for status.',
-          'Today, Myncel supports email + password sign-in (with optional two-factor authentication), Google OAuth ("Continue with Google"), and magic-link email recovery. Owners and Admins manage users from /settings/team — add, remove, change role, and reset password.',
+          'Myncel supports SAML 2.0 single sign-on and SCIM 2.0 user auto-provisioning. Both are configured per-organization, so different tenants can plug into completely different identity providers — Okta, Azure AD / Entra ID, Google Workspace, OneLogin, JumpCloud, Ping, and any other standards-compliant IdP — without affecting each other. See the Integrations chapter, section "Single sign-on (SSO) and SCIM provisioning", for the full step-by-step walkthrough including the Okta and Azure AD recipes.',
+          'Once SSO is enabled and enforced, all non-OWNER users in your workspace must sign in through your IdP — password and Google sign-in are blocked for them. Owners can still password sign-in as a break-glass mechanism, which is the standard recovery path if the IdP itself goes down or the connection breaks. SCIM provisioning then handles the lifecycle: new hires created in the IdP appear in Myncel within seconds, role changes flow through, and deactivated employees are automatically deprovisioned.',
         ],
+        bullets: [
+          'Owner / Admin opens /settings/sso and configures the IdP Entity ID, SSO URL, and X.509 signing certificate.',
+          'Toggle "Enable SAML SSO" → save. The /signin page now offers a "Sign in with SSO (SAML)" button alongside password sign-in.',
+          'For mandatory SSO, also toggle "Enforce SAML SSO". Owners are exempt as a break-glass.',
+          'For SCIM auto-provisioning, mint a bearer token from the same /settings/sso page and paste it into the IdP\'s SCIM provisioning screen along with the SCIM 2.0 base URL shown at the top of the page.',
+          'Group → role mapping is automatic when the IdP sends a "groups" attribute (configurable). Group names containing "owner", "admin", "tech", "operator", or "employee" map to the matching Myncel role; everyone else gets the configured default role (default: Member).',
+        ],
+        callout: {
+          type: 'info',
+          text: 'The full SP-side metadata XML is also exposed at /api/auth/saml/<your-org-slug>/metadata — most IdPs let you paste this URL once instead of typing the Entity ID and ACS URL by hand.',
+        },
       },
       {
         heading: 'Audit log',
@@ -1012,10 +1023,33 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
         ],
       },
       {
-        heading: 'Single sign-on (SSO)',
+        heading: 'Single sign-on (SSO) and SCIM provisioning',
         body: [
-          'On the Professional and Enterprise plans, SSO via SAML 2.0 and OpenID Connect is supported. Compatible with Okta, Azure AD / Entra ID, Google Workspace, OneLogin, Ping Identity, JumpCloud, and any standards-compliant identity provider. SCIM 2.0 user provisioning is also available on Enterprise.',
+          'Myncel speaks SAML 2.0 for sign-in and SCIM 2.0 for user auto-provisioning, with full per-tenant configuration. Every Myncel organization has its own IdP slot — different tenants can plug into completely different identity providers without affecting each other, and your IdP credentials are scoped to your workspace alone. We have tested the integration end-to-end with Okta, Azure AD / Entra ID, Google Workspace, OneLogin, JumpCloud, and Ping Identity, and any standards-compliant SAML 2.0 / SCIM 2.0 IdP is expected to work.',
+          'There are two pieces. SAML SSO controls how users authenticate (browser redirects to your IdP, gets a signed assertion back, lands in Myncel). SCIM provisioning controls the user lifecycle (when an employee is hired, deactivated, role-changed, or renamed in the IdP, those changes flow into Myncel automatically). You can ship just SSO, just SCIM, or both — they are independent.',
         ],
+        bullets: [
+          'SAML 2.0 (HTTP-POST binding) — signed AuthnRequest in, signed SAMLResponse with assertions back. Audience and signature validated; expired or unsigned assertions rejected.',
+          'SCIM 2.0 (RFC 7643/7644) — bearer-token auth, full Users CRUD, PATCH partial-update grammar that every major IdP sends.',
+          'JIT (just-in-time) provisioning — first SSO sign-in for a new email creates the Myncel user automatically. Combine with SCIM for full lifecycle automation.',
+          'Group → role mapping — IdP "groups" attribute (or any attribute you point us at) is mapped to the OWNER / ADMIN / TECHNICIAN / OPERATOR / EMPLOYEE / MEMBER roles via case-insensitive substring match. Highest privilege wins.',
+          'Per-tenant credentials — every org has its own IdP Entity ID, SSO URL, X.509 cert, and SCIM tokens. SuperAdmin (admin@myncel.com) can audit but not authenticate as the customer.',
+        ],
+        steps: [
+          'In Myncel, sign in as Owner or Admin and open Settings → SSO & SCIM. The page shows your SP-side URLs at the top: Entity ID / Audience, ACS URL, Metadata URL, and SCIM 2.0 base URL.',
+          'Open your IdP\'s admin console (Okta: Applications → Add Application; Azure AD: Enterprise applications → New application → Non-gallery; Google Workspace: Apps → Web and mobile apps → Add custom SAML app). Create a new app called "Myncel".',
+          'Paste the Myncel SP Entity ID and ACS URL into the IdP\'s "SP Entity ID" and "Reply URL / ACS URL" fields. Choose NameID format = email address. Optionally have the IdP send givenName, surname, and groups as additional attributes.',
+          'The IdP will give you back three values — its Entity ID (Issuer), its SSO URL, and its signing X.509 certificate (PEM). Paste these three into the matching fields under "SAML 2.0 Identity Provider" in Myncel and click Save SSO configuration.',
+          'Toggle "Enable SAML SSO". The /signin page now shows a second button, "Sign in with SSO (SAML)", that lands on /signin/sso where the user types your workspace slug and gets redirected to your IdP.',
+          'Optional but recommended for enterprise rollouts: toggle "Enforce SAML SSO". Now non-OWNER users in your org can no longer sign in with a password — they must use SSO. Owners are still allowed to password-sign-in as a break-glass.',
+          'For SCIM auto-provisioning: in the same Settings → SSO & SCIM page, scroll to "SCIM 2.0 Provisioning Tokens", give the token a label (e.g. "Okta production"), and click Generate new token. Copy the plaintext token NOW — it is shown once.',
+          'Back in your IdP, open the same Myncel app and switch on Provisioning. Paste the SCIM 2.0 Base URL and the bearer token into the IdP\'s SCIM screen. Set up the user attribute mappings (most IdPs auto-detect ours via /api/scim/v2/Schemas).',
+          'Test: in the IdP, create a test user, assign them to the Myncel app, and watch the user appear in /admin (or in the customer\'s /settings/team) within a few seconds. Deactivate the user in the IdP and watch them be soft-deleted in Myncel.',
+        ],
+        callout: {
+          type: 'info',
+          text: 'Most IdPs accept the SP metadata XML at /api/auth/saml/<your-org-slug>/metadata as a single import — paste that URL into the IdP and it will fill the Entity ID and ACS URL for you. Plaintext SCIM tokens are never stored in the database; only a SHA-256 hash is kept, so a leak does not yield IdP write access.',
+        },
       },
       {
         heading: 'Public REST API and webhooks',
@@ -1051,7 +1085,7 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
         ],
         callout: {
           type: 'info',
-          text: 'SAML/SSO and SCIM auto-provisioning are on the roadmap (see the Roadmap chapter). Today the app supports email + password (with optional 2FA on the web) and Google OAuth.',
+          text: 'SAML 2.0 SSO and SCIM 2.0 auto-provisioning are now shipped — if your workspace admin has enabled them, sign in with the "Sign in with SSO" link on the /signin screen. The mobile app uses the same SAML flow as the web app, in an in-app browser tab.',
         },
       },
       {
@@ -1365,7 +1399,6 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
         bullets: [
           'Opsgenie native integration. Today: Webhook → Opsgenie REST API.',
           'SAP S/4HANA, NetSuite, Microsoft Dynamics 365, Oracle Fusion, Sage Intacct, Xero — native ERP/accounting integrations. Today: QuickBooks Online is native; everything else via Webhooks or the public REST API.',
-          'SAML 2.0 SSO and SCIM 2.0 auto-provisioning for Okta, Azure AD, Google Workspace, OneLogin. Today: email + password (with optional 2FA) and Google OAuth.',
         ],
       },
       {
