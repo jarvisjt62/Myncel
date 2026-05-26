@@ -73,10 +73,22 @@ export const db =
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
 
-// Safe query wrapper - returns defaultValue on error instead of throwing
-export async function safeQuery<T>(query: Promise<T>, defaultValue?: T | null): Promise<T | null> {
+// Safe query wrapper - returns defaultValue on error instead of throwing.
+// Accepts either a thenable (Promise / Prisma query / etc.) OR a thunk
+// that returns one. The thunk form lets you build the Prisma query lazily
+// inside the try-block so a synchronous Prisma client error is caught
+// instead of crashing the route.
+//
+// We type the input loosely so that Prisma's `Prisma__XxxClient<T>` and
+// `PrismaPromise<T>` (which are thenable but not Promise<T> in TS terms)
+// flow through without casts at the call sites.
+export async function safeQuery<T>(
+  query: PromiseLike<T> | (() => PromiseLike<T> | T),
+  defaultValue?: T | null,
+): Promise<T | null> {
   try {
-    return await query;
+    const p = typeof query === 'function' ? (query as () => PromiseLike<T> | T)() : query;
+    return (await p) as T;
   } catch (error) {
     console.error('[DB] Query error:', error);
     return defaultValue !== undefined ? defaultValue : null;
