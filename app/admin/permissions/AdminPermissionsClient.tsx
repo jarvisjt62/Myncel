@@ -122,7 +122,7 @@ export default function AdminPermissionsClient({ initialPermissions }: { initial
       </div>
 
       {showAdd && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowAdd(false)}>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 modal-safe-pad" onClick={() => setShowAdd(false)}>
           <div className="w-full max-w-md rounded-2xl [background:var(--bg-surface)] border border-[var(--border)] shadow-2xl p-6" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4">Add Permission</h3>
             <div className="space-y-3">

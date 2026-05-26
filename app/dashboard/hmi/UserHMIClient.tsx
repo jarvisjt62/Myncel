@@ -656,7 +656,7 @@ function MachinePanel({
   const orgName = machine.organization?.name || 'Unknown';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-3" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-3 modal-safe-pad" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={onClose}>
       {toast && <Toast msg={toast.msg} type={toast.type} onDone={() => setToast(null)} />}
       <div
         className="rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto border"

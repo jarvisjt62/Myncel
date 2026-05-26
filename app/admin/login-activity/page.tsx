@@ -383,7 +383,7 @@ export default function LoginActivityPage() {
       {/* View Login Event Modal */}
       {viewingRow && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-safe-pad"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
           onClick={() => setViewingRow(null)}
         >
@@ -472,7 +472,7 @@ export default function LoginActivityPage() {
       {/* Delete-all Confirm Modal */}
       {showDeleteAllModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-safe-pad"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
           onClick={() => !deletingAll && setShowDeleteAllModal(false)}
         >

@@ -313,7 +313,7 @@ function WebhooksPage() {
 
       {/* Create/Edit Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-safe-pad" onClick={() => setShowForm(false)}>
           <div className="rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: 'var(--bg-surface)' }} onClick={e => e.stopPropagation()}>
             <div className="p-6">
               <h2 className="text-lg font-bold mb-5" style={{ color: 'var(--text-primary)' }}>

@@ -552,7 +552,7 @@ export default function AdminReportsClient({ organizations: initialOrgs }: { org
 
       {/* ── View modal ────────────────────────────────────────────────── */}
       {viewingWo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-safe-pad">
           <div className="absolute inset-0 bg-black/50" onClick={() => setViewingWo(null)} />
           <div className="relative rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--bg-surface)' }}>
             <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -581,7 +581,7 @@ export default function AdminReportsClient({ organizations: initialOrgs }: { org
 
       {/* ── Edit modal ────────────────────────────────────────────────── */}
       {editingWo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-safe-pad">
           <div className="absolute inset-0 bg-black/50" onClick={() => setEditingWo(null)} />
           <div className="relative rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--bg-surface)' }}>
             <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid var(--border)' }}>

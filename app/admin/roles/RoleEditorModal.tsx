@@ -120,7 +120,7 @@ export default function RoleEditorModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4 modal-safe-pad" onClick={onClose}>
       <div
         className="w-full sm:max-w-3xl max-h-[95vh] sm:max-h-[90vh] flex flex-col rounded-t-2xl sm:rounded-2xl [background:var(--bg-surface)] shadow-2xl border border-[var(--border)]"
         onClick={e => e.stopPropagation()}

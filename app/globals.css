@@ -79,6 +79,33 @@ body.capacitor-app {
 .min-h-safe-screen { min-height: 100dvh; min-height: 100svh; }
 .max-h-safe-screen { max-height: 100dvh; max-height: 100svh; }
 
+/* ─── Modal wrapper safe-area padding ─────────────────────────────────────
+   Every full-screen modal in the app uses
+   `fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4` as its
+   outer wrapper, then renders a centered card inside. On a Capacitor
+   WebView (Samsung / iPhone) the modal card was sliding under the system
+   status bar at the top because that 8/16px padding doesn't include the
+   safe-area inset.
+
+   This utility composes safely with the existing `p-2 sm:p-4` so we don't
+   have to rewrite every modal wrapper — we just append `.modal-safe-pad`
+   and the inset wins via `max(...)`.
+   ───────────────────────────────────────────────────────────────────── */
+.modal-safe-pad {
+  padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
+  padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
+}
+@media (min-width: 640px) {
+  .modal-safe-pad {
+    padding-top: max(1rem, env(safe-area-inset-top, 0px));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  }
+}
+
 
 /* Stripe-style gradient blob */
 .gradient-blob {

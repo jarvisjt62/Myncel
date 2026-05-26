@@ -194,39 +194,53 @@ export default function EquipmentImportPage() {
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#f8fafc] py-8 px-4">
+    <div
+      className="min-h-screen bg-[#f8fafc] px-4 pb-8"
+      style={{
+        // Capacitor WebView draws under the device status bar — without
+        // this padding the page heading is hidden behind the system clock
+        // / signal icons. `max(...)` keeps the original 32px breathing
+        // room as a floor for desktop browsers where the inset is 0.
+        paddingTop: 'max(2rem, calc(env(safe-area-inset-top, 0px) + 1rem))',
+        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
+        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
+      }}
+    >
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
-          <div>
+        {/* Header — stacks vertically on phones so the download button
+            doesn't squeeze the title and we never lose the back link. */}
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="min-w-0">
             <Link
               href="/dashboard#equipment"
-              className="text-sm text-[#635bff] hover:underline"
+              className="text-sm text-[#635bff] hover:underline inline-block"
             >
               ← Back to Equipment
             </Link>
-            <h1 className="text-2xl font-bold text-slate-900 mt-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1 break-words">
               Bulk Equipment Import
             </h1>
             <p className="text-sm text-slate-600 mt-1">
-              Upload a CSV to add many machines at once. Maximum {MAX_IMPORT_ROWS} rows per file.
+              Upload a CSV to add many machines at once. Maximum{' '}
+              {MAX_IMPORT_ROWS} rows per file.
             </p>
           </div>
           <a
             href="/api/equipment/template"
             download
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 whitespace-nowrap self-start sm:self-auto"
           >
             ⬇ Download CSV template
           </a>
         </div>
 
-        {/* Step indicator */}
-        <ol className="flex items-center gap-2 mb-6 text-xs font-medium text-slate-500">
+        {/* Step indicator — wraps to a 2-line layout on phones so the
+            third step doesn't get clipped behind the status bar icons. */}
+        <ol className="flex flex-wrap items-center gap-x-2 gap-y-2 mb-6 text-xs font-medium text-slate-500">
           {(['upload', 'preview', 'result'] as Step[]).map((s, i) => (
             <li key={s} className="flex items-center gap-2">
               <span
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0 ${
                   step === s
                     ? 'bg-[#635bff] text-white'
                     : i < ['upload', 'preview', 'result'].indexOf(step)
@@ -255,7 +269,7 @@ export default function EquipmentImportPage() {
               onDragLeave={() => setDragActive(false)}
               onDrop={onDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`bg-white rounded-2xl border-2 border-dashed p-12 text-center cursor-pointer transition-colors ${
+              className={`bg-white rounded-2xl border-2 border-dashed p-6 sm:p-12 text-center cursor-pointer transition-colors ${
                 dragActive
                   ? 'border-[#635bff] bg-[#635bff]/5'
                   : 'border-slate-300 hover:border-[#635bff]'
@@ -288,22 +302,22 @@ export default function EquipmentImportPage() {
               <h2 className="text-sm font-bold text-slate-900 mb-3">
                 Required columns
               </h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto -mx-5 sm:mx-0">
+                <table className="w-full text-sm min-w-[480px] px-5 sm:px-0">
                   <thead>
                     <tr className="text-left text-xs text-slate-500 border-b border-slate-200">
-                      <th className="py-2 pr-4 font-semibold">Column</th>
-                      <th className="py-2 pr-4 font-semibold">Required?</th>
-                      <th className="py-2 font-semibold">Notes</th>
+                      <th className="py-2 px-3 sm:pr-4 font-semibold">Column</th>
+                      <th className="py-2 px-3 sm:pr-4 font-semibold">Required?</th>
+                      <th className="py-2 px-3 font-semibold">Notes</th>
                     </tr>
                   </thead>
                   <tbody>
                     {EQUIPMENT_COLUMNS.map((c) => (
                       <tr key={c.key} className="border-b border-slate-100">
-                        <td className="py-2 pr-4 font-mono text-slate-700">
+                        <td className="py-2 px-3 sm:pr-4 font-mono text-slate-700 whitespace-nowrap align-top">
                           {c.header}
                         </td>
-                        <td className="py-2 pr-4">
+                        <td className="py-2 px-3 sm:pr-4 whitespace-nowrap align-top">
                           {c.required ? (
                             <span className="text-red-600 font-semibold">
                               required
@@ -312,7 +326,7 @@ export default function EquipmentImportPage() {
                             <span className="text-slate-400">optional</span>
                           )}
                         </td>
-                        <td className="py-2 text-slate-600">{c.hint}</td>
+                        <td className="py-2 px-3 text-slate-600 align-top">{c.hint}</td>
                       </tr>
                     ))}
                   </tbody>

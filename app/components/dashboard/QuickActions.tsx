@@ -248,7 +248,7 @@ export default function QuickActions() {
 
       {/* Log Breakdown Modal */}
       {showBreakdownModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 modal-safe-pad">
           <div className="absolute inset-0 bg-black/50" onClick={() => !submitting && setShowBreakdownModal(false)} />
           <div
             className="relative rounded-2xl [background:var(--bg-surface)] shadow-2xl w-full max-w-md border border-[var(--border)] overflow-y-auto overscroll-contain"

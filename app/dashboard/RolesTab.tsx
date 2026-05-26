@@ -293,7 +293,7 @@ function AssignRolesModal({ member, roles, onClose, onSaved }: {
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4 modal-safe-pad" onClick={onClose}>
       <div className="w-full sm:max-w-md max-h-[90vh] flex flex-col rounded-t-2xl sm:rounded-2xl [background:var(--bg-surface)] border border-[var(--border)] shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="px-4 sm:px-6 py-4 border-b border-[var(--border)]">
           <h2 className="text-lg font-bold text-[var(--text-primary)]">Assign Roles</h2>

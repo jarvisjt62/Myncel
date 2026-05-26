@@ -313,7 +313,7 @@ export default function WorkOrderTemplatesPage() {
       {/* Form modal */}
       {showForm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-safe-pad"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
           onClick={() => !saving && setShowForm(false)}
         >

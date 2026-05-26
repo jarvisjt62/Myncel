@@ -430,7 +430,7 @@ function ApiKeysPage() {
 
         {/* ── Modals ──────────────────────────────────────────── */}
         {modal && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-safe-pad">
             <div className="rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl"
               style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
 

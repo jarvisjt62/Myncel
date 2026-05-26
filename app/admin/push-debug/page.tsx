@@ -483,7 +483,7 @@ export default function PushDebugPage() {
       {/* View Device Modal */}
       {viewingDevice && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-safe-pad"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
           onClick={() => setViewingDevice(null)}
         >
@@ -568,7 +568,7 @@ export default function PushDebugPage() {
       {/* Delete-all Confirm Modal */}
       {showDeleteAllModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-safe-pad"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
           onClick={() => !deletingAll && setShowDeleteAllModal(false)}
         >

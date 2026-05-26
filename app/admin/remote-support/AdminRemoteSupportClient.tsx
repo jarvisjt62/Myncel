@@ -742,7 +742,7 @@ export default function AdminRemoteSupportClient({
 
       {/* Create Session Modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-safe-pad" style={{ background: 'rgba(0,0,0,0.5)' }}>
           <div className="w-full max-w-lg rounded-2xl p-6 shadow-2xl" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>New Remote Support Session</h3>

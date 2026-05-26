@@ -344,7 +344,7 @@ export default function PurchaseOrdersPage() {
 
       {/* ── PO Detail Modal ─── */}
       {selectedPO && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedPO(null)}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-safe-pad" onClick={() => setSelectedPO(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="p-6">
               <div className="flex items-start justify-between mb-5">
@@ -436,7 +436,7 @@ export default function PurchaseOrdersPage() {
 
       {/* ── Create PO Modal ─── */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-safe-pad" onClick={() => setShowForm(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="p-6">
               <h2 className="text-lg font-bold text-[#0a2540] mb-5">Create Purchase Order</h2>

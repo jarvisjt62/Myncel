@@ -527,7 +527,7 @@ function MachineDetailPanel({ machine, onClose, onSim, onStatusChange }: {
   const orgName = machine.organization?.name || 'Unknown Org';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 modal-safe-pad" onClick={onClose}>
       {toast && <AdminToast msg={toast.msg} type={toast.type} onDone={() => setToast(null)} />}
       <div className="[background:var(--bg-surface-2)] border border-[var(--border)] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         {/* Header */}
