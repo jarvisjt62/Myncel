@@ -102,18 +102,17 @@ export default function ExportActionsBar({
   // === CSV / PDF (local file downloads) ===
   // Work orders have their own dedicated endpoint with rich formatting.
   // Machines & alerts use a shared simple endpoint.
+  // format=pdf returns a real binary PDF (works inside Capacitor WebView).
   const downloadUrl = (format: 'csv' | 'pdf') => {
     if (dataset === 'work_orders') {
       const q = new URLSearchParams();
       q.set('format', format);
       if (filterParam) q.set('status', filterParam);
-      if (format === 'pdf') q.set('autoprint', '1');
       return `/api/work-orders/export?${q.toString()}`;
     }
     const q = new URLSearchParams();
     q.set('format', format);
     q.set('dataset', dataset);
-    if (format === 'pdf') q.set('autoprint', '1');
     return `/api/exports/${dataset}?${q.toString()}`;
   };
 
@@ -243,13 +242,13 @@ export default function ExportActionsBar({
         <span>{busy === 'csv' ? 'Saving…' : 'CSV'}</span>
       </button>
 
-      {/* PDF (print-ready HTML) */}
+      {/* PDF (real binary download — works inside Capacitor WebView, mobile Safari, desktop) */}
       <a
         href={downloadUrl('pdf')}
-        target="_blank"
+        download
         rel="noopener noreferrer"
         className={`${btnBase} border border-[var(--border)] text-[var(--text-secondary)] hover:border-[#635bff] hover:text-[#635bff]`}
-        title="Open print-ready PDF in a new tab"
+        title="Download PDF report"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />

@@ -137,8 +137,8 @@ export default function RowExportMenu({
 
   const pdfUrl = () =>
     dataset === 'work_orders'
-      ? `/api/work-orders/export?format=pdf&id=${recordId}&autoprint=1`
-      : `/api/exports/${dataset}?format=pdf&id=${recordId}&autoprint=1`;
+      ? `/api/work-orders/export?format=pdf&id=${recordId}`
+      : `/api/exports/${dataset}?format=pdf&id=${recordId}`;
 
   // ── Integration export ────────────────────────────────────────────────────
   const toast = (success: boolean, message: string, url?: string) =>
@@ -297,7 +297,7 @@ export default function RowExportMenu({
 
           <a
             href={pdfUrl()}
-            target="_blank"
+            download
             rel="noopener noreferrer"
             onClick={() => setGlobalOpen(null)}
             className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/5"

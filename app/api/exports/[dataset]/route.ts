@@ -3,6 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db, safeQuery } from '@/lib/db';
 
+// Force Node.js runtime — pdfkit needs Buffer, fs, and the embedded AFM fonts.
+// Edge runtime would silently break the format=pdf branch.
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/exports/[dataset]?format=csv|pdf
  *
@@ -166,7 +171,48 @@ export async function GET(
       });
     }
 
-    if (format === 'pdf' || format === 'html') {
+    if (format === 'pdf') {
+      // Real binary PDF — works inside Capacitor WebView (iOS WKWebView ignores
+      // window.print(), so the previous HTML-print approach silently failed in the
+      // mobile app). The browser/WebView downloads or previews the file natively.
+      const { renderTablePdf } = await import('@/lib/pdf/render-table');
+
+      const recordLabel = dataset; // 'machines' | 'alerts' | 'parts'
+      // Surface severity / status as colored pills in the PDF where applicable.
+      let severityColumnIndex: number | undefined;
+      let statusColumnIndex: number | undefined;
+      if (dataset === 'alerts') {
+        severityColumnIndex = headers.indexOf('Severity');
+        statusColumnIndex = headers.indexOf('Status');
+      } else if (dataset === 'machines') {
+        statusColumnIndex = headers.indexOf('Status');
+      } else if (dataset === 'parts') {
+        statusColumnIndex = headers.indexOf('Status');
+      }
+
+      const pdfBuffer = await renderTablePdf({
+        title,
+        orgName,
+        generatedOn: today,
+        recordLabel,
+        headers,
+        rows,
+        severityColumnIndex: severityColumnIndex !== undefined && severityColumnIndex >= 0 ? severityColumnIndex : undefined,
+        statusColumnIndex: statusColumnIndex !== undefined && statusColumnIndex >= 0 ? statusColumnIndex : undefined,
+      });
+
+      const filename = `${dataset}-${today}.pdf`;
+      return new NextResponse(new Uint8Array(pdfBuffer), {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Content-Length': String(pdfBuffer.length),
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
+
+    if (format === 'html') {
       const escHtml = (v: any) =>
         v === null || v === undefined
           ? ''
@@ -255,6 +301,13 @@ export async function GET(
         ? ['Title', 'Severity', 'Status', 'Type', 'Machine', 'Message', 'Created', 'Resolved']
         : headers;
 
+      // Build the binary-PDF download URL — preserves any filter params (e.g. ?id=...)
+      // but swaps format=html for format=pdf so the toolbar's Download button hits the
+      // real PDF endpoint that works inside Capacitor / iOS WebView.
+      const pdfParams = new URLSearchParams(searchParams);
+      pdfParams.set('format', 'pdf');
+      const pdfDownloadHref = `/api/exports/${dataset}?${pdfParams.toString()}`;
+
       const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -306,10 +359,10 @@ export async function GET(
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       <span class="lbl">Back to Dashboard</span>
     </a>
-    <button class="print-btn" id="printBtn">
+    <a class="print-btn" id="printBtn" href="${pdfDownloadHref}" download="${escHtml(dataset)}-${today}.pdf" rel="noopener">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-      <span class="lbl">Print / Save as PDF</span>
-    </button>
+      <span class="lbl">Download PDF</span>
+    </a>
   </div>
   <header>
     <div>
@@ -348,61 +401,10 @@ export async function GET(
         // else: anchor href="/dashboard" handles it natively
       });
     })();
-
-    // Print button — Capacitor-aware so it actually works inside the iOS/Android app.
-    // Plain WebViews silently ignore window.print(); we fall back to opening the same
-    // URL in the system browser, where Print/Save-as-PDF is fully supported.
-    (function () {
-      var pbtn = document.getElementById('printBtn');
-      if (!pbtn) return;
-
-      function isNativeApp() {
-        try {
-          return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-        } catch (_) { return false; }
-      }
-
-      function looksLikeMobileWebView() {
-        // iOS Safari standalone / Android Chrome WebView heuristic.
-        // Used as a secondary fallback when Capacitor isn't present but window.print is unreliable.
-        var ua = navigator.userAgent || '';
-        return /Mobile|Android|iPhone|iPad/.test(ua) && !/Chrome\/[0-9]+\..*Safari/.test(ua);
-      }
-
-      pbtn.addEventListener('click', function () {
-        // 1) Capacitor app -> open in system browser (Chrome/Safari) where Print works.
-        if (isNativeApp()) {
-          try {
-            var browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
-            var openUrl = window.location.href;
-            // hint the external browser to auto-trigger print after load
-            if (openUrl.indexOf('autoprint=1') === -1) {
-              openUrl += (openUrl.indexOf('?') === -1 ? '?' : '&') + 'autoprint=1';
-            }
-            if (browser && typeof browser.open === 'function') {
-              browser.open({ url: openUrl });
-              return;
-            }
-            // Fallback if Browser plugin isn't installed: target=_blank still opens
-            // the system browser in most Capacitor setups.
-            window.open(openUrl, '_system');
-            return;
-          } catch (_) { /* fall through to window.print() */ }
-        }
-
-        // 2) Regular browser -> native print dialog.
-        try {
-          window.print();
-        } catch (_) {
-          // 3) Last-ditch: announce to user.
-          alert('Use your browser menu \\u2192 Print to save this report as PDF.');
-        }
-      });
-    })();
-
-    if (window.location.search.includes('autoprint=1')) {
-      setTimeout(function () { try { window.print(); } catch (_) {} }, 500);
-    }
+    // The Print button is a plain <a href download> pointing at format=pdf — no
+    // JS needed. This works inside the Capacitor app (WebView treats the response
+    // as a download), in mobile Safari / Chrome (download or share-sheet preview),
+    // and on desktop browsers (download).
   </script>
 </body>
 </html>`;

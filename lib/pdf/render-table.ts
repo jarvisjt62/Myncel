@@ -1,0 +1,339 @@
+/**
+ * Server-side PDF generator for tabular reports.
+ *
+ * Why this exists: `window.print()` is a silent no-op inside iOS WKWebView
+ * (the engine Capacitor uses), and we cannot rely on `@capacitor/browser`
+ * being installed in every shell build. A real binary PDF download works
+ * everywhere — mobile Safari, mobile Chrome, the Capacitor app, the
+ * desktop site — because the browser/WebView treats the response as a
+ * download, not a page to render.
+ *
+ * Renders a simple Letter-size landscape table with header, footer,
+ * org name, page numbers, and per-status pills. Pure JS (pdfkit) so it
+ * runs on Vercel serverless without Chromium.
+ */
+
+import PDFDocument from 'pdfkit';
+
+export interface TablePdfInput {
+  title: string;
+  orgName: string;
+  generatedOn: string; // YYYY-MM-DD
+  recordLabel: string; // "machines", "alerts", "work orders", ...
+  headers: string[];
+  rows: (string | number | null | undefined)[][];
+  /**
+   * Optional: render a status pill in this column index (0-based).
+   * The cell value is matched against known severities/statuses to pick a color.
+   */
+  statusColumnIndex?: number;
+  severityColumnIndex?: number;
+  /**
+   * Optional: maximum chars per cell before truncation. Default 80.
+   */
+  maxCellChars?: number;
+}
+
+const COLOR_BG = '#ffffff';
+const COLOR_TEXT = '#111827';
+const COLOR_MUTED = '#6b7280';
+const COLOR_BORDER = '#e5e7eb';
+const COLOR_BRAND = '#0f172a';
+const COLOR_ROW_ALT = '#f9fafb';
+
+function statusBg(s: string): string {
+  if (!s) return '#9ca3af';
+  const up = String(s).toUpperCase();
+  if (up === 'OPERATIONAL' || up === 'RUNNING' || up === 'RESOLVED' || up === 'COMPLETED' || up === 'IN STOCK') return '#16a34a';
+  if (up === 'MAINTENANCE' || up === 'DEGRADED' || up === 'WARNING' || up === 'IN PROGRESS' || up === 'LOW STOCK') return '#d97706';
+  if (up === 'OFFLINE' || up === 'CRITICAL' || up === 'OPEN' || up === 'OUT OF STOCK' || up === 'CANCELLED') return '#dc2626';
+  return '#6b7280';
+}
+
+function severityBg(s: string): string {
+  switch (String(s).toUpperCase()) {
+    case 'CRITICAL': return '#dc2626';
+    case 'HIGH': return '#ea580c';
+    case 'MEDIUM': return '#d97706';
+    case 'LOW': return '#16a34a';
+    default: return '#6b7280';
+  }
+}
+
+/**
+ * Generate a PDF as a Buffer. Designed for Letter landscape (792 x 612 pt).
+ */
+export async function renderTablePdf(input: TablePdfInput): Promise<Buffer> {
+  const {
+    title,
+    orgName,
+    generatedOn,
+    recordLabel,
+    headers,
+    rows,
+    statusColumnIndex,
+    severityColumnIndex,
+    maxCellChars = 80,
+  } = input;
+
+  return new Promise<Buffer>((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({
+        size: 'LETTER',
+        layout: 'landscape',
+        margins: { top: 56, bottom: 56, left: 40, right: 40 },
+        bufferPages: true,
+        info: {
+          Title: `${title} — ${orgName}`,
+          Author: 'Myncel',
+          Creator: 'Myncel CMMS',
+          Subject: `${title} report`,
+          CreationDate: new Date(),
+        },
+      });
+
+      const chunks: Buffer[] = [];
+      doc.on('data', (c) => chunks.push(c));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      const pageWidth = doc.page.width;
+      const pageHeight = doc.page.height;
+      const left = doc.page.margins.left;
+      const right = pageWidth - doc.page.margins.right;
+      const usableWidth = right - left;
+
+      // ---------- Header ----------
+      const drawHeader = () => {
+        doc
+          .fillColor(COLOR_BRAND)
+          .font('Helvetica-Bold')
+          .fontSize(16)
+          .text('Myncel', left, 28, { lineBreak: false });
+
+        doc
+          .fillColor(COLOR_TEXT)
+          .font('Helvetica-Bold')
+          .fontSize(13)
+          .text(`${title} Report`, left + 80, 30, { lineBreak: false });
+
+        doc
+          .fillColor(COLOR_MUTED)
+          .font('Helvetica')
+          .fontSize(9)
+          .text(orgName, left + 80, 46, { lineBreak: false });
+
+        // right side: date + record count
+        const rightText = `${generatedOn}  ·  ${rows.length} ${recordLabel}`;
+        const rightW = doc.widthOfString(rightText);
+        doc
+          .fillColor(COLOR_MUTED)
+          .fontSize(9)
+          .text(rightText, right - rightW, 38, { lineBreak: false });
+
+        // separator line
+        doc
+          .strokeColor(COLOR_BORDER)
+          .lineWidth(0.5)
+          .moveTo(left, 60)
+          .lineTo(right, 60)
+          .stroke();
+      };
+
+      // ---------- Footer ----------
+      const drawFooter = (pageNum: number, pageCount: number) => {
+        const y = pageHeight - 36;
+        doc
+          .strokeColor(COLOR_BORDER)
+          .lineWidth(0.5)
+          .moveTo(left, y - 8)
+          .lineTo(right, y - 8)
+          .stroke();
+        doc
+          .fillColor(COLOR_MUTED)
+          .font('Helvetica')
+          .fontSize(8)
+          .text('Generated by Myncel · myncel.com', left, y, { lineBreak: false });
+        const pageLbl = `Page ${pageNum} of ${pageCount}`;
+        const pw = doc.widthOfString(pageLbl);
+        doc.text(pageLbl, right - pw, y, { lineBreak: false });
+      };
+
+      // ---------- Column widths ----------
+      // Heuristic: weight by header length + sample content length, then normalize.
+      const sampleSize = Math.min(rows.length, 30);
+      const weights = headers.map((h, i) => {
+        let w = Math.max(h.length, 4);
+        for (let r = 0; r < sampleSize; r++) {
+          const cell = String(rows[r]?.[i] ?? '');
+          w = Math.max(w, Math.min(cell.length, 24));
+        }
+        return w;
+      });
+      const totalWeight = weights.reduce((a, b) => a + b, 0);
+      const colWidths = weights.map((w) => Math.floor((w / totalWeight) * usableWidth));
+      // adjust last column so the row hits the right margin exactly
+      const usedWidth = colWidths.reduce((a, b) => a + b, 0);
+      colWidths[colWidths.length - 1] += usableWidth - usedWidth;
+
+      // ---------- Table body ----------
+      let y = 76;
+      const rowPadX = 5;
+      const rowPadY = 4;
+      const headerHeight = 22;
+      const minRowHeight = 18;
+
+      // First page
+      drawHeader();
+
+      // Header row
+      const drawTableHeader = () => {
+        doc
+          .fillColor('#f3f4f6')
+          .rect(left, y, usableWidth, headerHeight)
+          .fill();
+        doc
+          .strokeColor(COLOR_BORDER)
+          .lineWidth(0.5)
+          .rect(left, y, usableWidth, headerHeight)
+          .stroke();
+
+        let x = left;
+        doc.fillColor('#374151').font('Helvetica-Bold').fontSize(8.5);
+        for (let i = 0; i < headers.length; i++) {
+          doc.text(headers[i], x + rowPadX, y + 7, {
+            width: colWidths[i] - rowPadX * 2,
+            ellipsis: true,
+            lineBreak: false,
+          });
+          x += colWidths[i];
+          if (i < headers.length - 1) {
+            doc
+              .strokeColor(COLOR_BORDER)
+              .moveTo(x, y)
+              .lineTo(x, y + headerHeight)
+              .stroke();
+          }
+        }
+        y += headerHeight;
+      };
+
+      drawTableHeader();
+
+      // Helper: measure how tall a row needs to be (multi-line wrap).
+      const measureRow = (cells: any[]): number => {
+        let h = minRowHeight;
+        for (let i = 0; i < cells.length; i++) {
+          if (i === statusColumnIndex || i === severityColumnIndex) continue;
+          const txt = String(cells[i] ?? '').slice(0, maxCellChars);
+          if (!txt) continue;
+          const w = colWidths[i] - rowPadX * 2;
+          doc.font('Helvetica').fontSize(8);
+          const cellH = doc.heightOfString(txt, { width: w, lineBreak: true }) + rowPadY * 2;
+          if (cellH > h) h = cellH;
+        }
+        return Math.min(h, 60); // cap per-row height
+      };
+
+      const drawRow = (cells: any[], rowIdx: number) => {
+        const rowH = measureRow(cells);
+
+        // page break if we'd run off
+        if (y + rowH > pageHeight - 56) {
+          // finalize current page footer placeholder; we draw real footer after we know page count.
+          doc.addPage();
+          y = 76;
+          drawHeader();
+          drawTableHeader();
+        }
+
+        // alternating row background
+        if (rowIdx % 2 === 1) {
+          doc.fillColor(COLOR_ROW_ALT).rect(left, y, usableWidth, rowH).fill();
+        }
+
+        // bottom border
+        doc
+          .strokeColor(COLOR_BORDER)
+          .lineWidth(0.3)
+          .moveTo(left, y + rowH)
+          .lineTo(right, y + rowH)
+          .stroke();
+
+        let x = left;
+        for (let i = 0; i < cells.length; i++) {
+          const w = colWidths[i];
+          const raw = cells[i];
+          const value = raw === null || raw === undefined ? '' : String(raw);
+
+          if (i === severityColumnIndex && value) {
+            // pill
+            const bg = severityBg(value);
+            const label = value.toUpperCase();
+            doc.font('Helvetica-Bold').fontSize(7);
+            const labelW = Math.min(doc.widthOfString(label) + 10, w - rowPadX * 2);
+            const pillH = 12;
+            doc.fillColor(bg).roundedRect(x + rowPadX, y + (rowH - pillH) / 2, labelW, pillH, 6).fill();
+            doc.fillColor('#ffffff').text(label, x + rowPadX, y + (rowH - pillH) / 2 + 3, {
+              width: labelW,
+              align: 'center',
+              lineBreak: false,
+            });
+          } else if (i === statusColumnIndex && value) {
+            const bg = statusBg(value);
+            const label = value.toUpperCase();
+            doc.font('Helvetica-Bold').fontSize(7);
+            const labelW = Math.min(doc.widthOfString(label) + 10, w - rowPadX * 2);
+            const pillH = 12;
+            doc.fillColor(bg).roundedRect(x + rowPadX, y + (rowH - pillH) / 2, labelW, pillH, 6).fill();
+            doc.fillColor('#ffffff').text(label, x + rowPadX, y + (rowH - pillH) / 2 + 3, {
+              width: labelW,
+              align: 'center',
+              lineBreak: false,
+            });
+          } else {
+            doc.fillColor(COLOR_TEXT).font('Helvetica').fontSize(8);
+            const txt = value.slice(0, maxCellChars);
+            doc.text(txt, x + rowPadX, y + rowPadY, {
+              width: w - rowPadX * 2,
+              height: rowH - rowPadY * 2,
+              ellipsis: true,
+              lineBreak: true,
+            });
+          }
+          x += w;
+        }
+        y += rowH;
+      };
+
+      if (rows.length === 0) {
+        doc
+          .fillColor(COLOR_MUTED)
+          .font('Helvetica-Oblique')
+          .fontSize(10)
+          .text(`No ${recordLabel} to display.`, left, y + 16, { width: usableWidth, align: 'center' });
+      } else {
+        for (let i = 0; i < rows.length; i++) {
+          drawRow(rows[i], i);
+        }
+      }
+
+      // Footer on every page (we don't know total count until end, but pdfkit
+      // exposes range via bufferedPageRange when bufferPages: true — let's add).
+      // Re-render footers using bufferPages.
+      const range = doc.bufferedPageRange ? doc.bufferedPageRange() : null;
+      if (range) {
+        for (let p = range.start; p < range.start + range.count; p++) {
+          doc.switchToPage(p);
+          drawFooter(p - range.start + 1, range.count);
+        }
+      } else {
+        drawFooter(1, 1);
+      }
+
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}

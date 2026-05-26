@@ -4,6 +4,11 @@ import { authOptions } from '@/lib/auth';
 import { db, safeQuery } from '@/lib/db';
 import { formatCurrency } from '@/app/lib/currency';
 
+// Force Node.js runtime — pdfkit needs Buffer, fs, and the embedded AFM fonts.
+// Edge runtime would silently break the format=pdf branch.
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/work-orders/export?format=csv|pdf&status=ALL|OPEN|...
  *
@@ -112,7 +117,52 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    if (format === 'pdf' || format === 'html') {
+    if (format === 'pdf') {
+      // Real binary PDF — works inside Capacitor WebView (iOS WKWebView ignores
+      // window.print(), so the previous HTML-print approach silently failed in the
+      // mobile app). The browser/WebView downloads or previews the file natively.
+      const { renderTablePdf } = await import('@/lib/pdf/render-table');
+
+      const headers = [
+        'WO #', 'Title', 'Type', 'Priority', 'Status', 'Machine', 'Location',
+        'Assigned To', 'Due', 'Total Cost',
+      ];
+      const tableRows = rows.map(r => [
+        r.woNumber,
+        r.title,
+        r.type,
+        r.priority,
+        r.status,
+        r.machine,
+        r.location,
+        r.assignedTo,
+        r.due,
+        r.totalCost !== '' && r.totalCost != null ? formatCurrency(Number(r.totalCost), orgCurrency) : '',
+      ]);
+
+      const pdfBuffer = await renderTablePdf({
+        title: `Work Orders — ${filterLabel}`,
+        orgName,
+        generatedOn: today,
+        recordLabel: 'work orders',
+        headers,
+        rows: tableRows,
+        severityColumnIndex: 3, // Priority
+        statusColumnIndex: 4, // Status
+      });
+
+      const filename = `work-orders-${filterLabel.toLowerCase().replace(/\s+/g, '-')}-${today}.pdf`;
+      return new NextResponse(new Uint8Array(pdfBuffer), {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Content-Length': String(pdfBuffer.length),
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
+
+    if (format === 'html') {
       // Return a clean print-ready HTML doc. The client opens it in a new tab
       // and uses "Save as PDF" from the browser's native print dialog.
       const escHtml = (v: any) => {
@@ -148,6 +198,13 @@ export async function GET(req: NextRequest) {
       const openCount = rows.filter(r => r.status === 'OPEN').length;
       const inProgressCount = rows.filter(r => r.status === 'IN_PROGRESS').length;
       const completedCount = rows.filter(r => r.status === 'COMPLETED').length;
+
+      // Build the binary-PDF download URL — preserves filter params (?status=, ?id=)
+      // but swaps format=html for format=pdf so the toolbar's Download button hits
+      // the real PDF endpoint that works inside Capacitor / iOS WebView.
+      const pdfParams = new URLSearchParams(searchParams);
+      pdfParams.set('format', 'pdf');
+      const pdfDownloadHref = `/api/work-orders/export?${pdfParams.toString()}`;
 
       const html = `<!doctype html>
 <html lang="en">
@@ -198,10 +255,10 @@ export async function GET(req: NextRequest) {
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       <span class="lbl">Back to Dashboard</span>
     </a>
-    <button class="print-btn" id="printBtn">
+    <a class="print-btn" id="printBtn" href="${pdfDownloadHref}" download="work-orders-${filterLabel.toLowerCase().replace(/\s+/g, '-')}-${today}.pdf" rel="noopener">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-      <span class="lbl">Print / Save as PDF</span>
-    </button>
+      <span class="lbl">Download PDF</span>
+    </a>
   </div>
 
   <header>
@@ -273,48 +330,10 @@ export async function GET(req: NextRequest) {
         }
       });
     })();
-
-    // Print button — Capacitor-aware so it actually works inside the iOS/Android app.
-    // Plain WebViews silently ignore window.print(); we fall back to opening the same
-    // URL in the system browser, where Print/Save-as-PDF is fully supported.
-    (function () {
-      var pbtn = document.getElementById('printBtn');
-      if (!pbtn) return;
-
-      function isNativeApp() {
-        try {
-          return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-        } catch (_) { return false; }
-      }
-
-      pbtn.addEventListener('click', function () {
-        if (isNativeApp()) {
-          try {
-            var browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
-            var openUrl = window.location.href;
-            if (openUrl.indexOf('autoprint=1') === -1) {
-              openUrl += (openUrl.indexOf('?') === -1 ? '?' : '&') + 'autoprint=1';
-            }
-            if (browser && typeof browser.open === 'function') {
-              browser.open({ url: openUrl });
-              return;
-            }
-            window.open(openUrl, '_system');
-            return;
-          } catch (_) { /* fall through */ }
-        }
-        try {
-          window.print();
-        } catch (_) {
-          alert('Use your browser menu \\u2192 Print to save this report as PDF.');
-        }
-      });
-    })();
-
-    // Auto-open print dialog when opened via "PDF" button
-    if (window.location.search.includes('autoprint=1')) {
-      setTimeout(function () { try { window.print(); } catch (_) {} }, 500);
-    }
+    // The Print button is a plain <a href download> pointing at format=pdf — no
+    // JS needed. This works inside the Capacitor app (WebView treats the response
+    // as a download), in mobile Safari / Chrome (download or share-sheet preview),
+    // and on desktop browsers (download).
   </script>
 </body>
 </html>`;
