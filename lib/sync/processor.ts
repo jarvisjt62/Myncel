@@ -9,6 +9,11 @@
  *     next online cycle will retry.
  *   - After MAX_ATTEMPTS the mutation is left in the queue but marked
  *     as `failed`; the user can manually discard it from the drawer.
+ *
+ * Big-Bet expansion (v2):
+ *   - Added handlers for alert resolution, machine updates, and part
+ *     updates so the offline queue covers every mutation a tech might
+ *     perform from the field.
  */
 
 import { readQueue, removeById, updateById } from './syncQueue';
@@ -18,29 +23,40 @@ export const MAX_ATTEMPTS = 5;
 
 /** Map a mutation kind to an HTTP request and dispatch it. Throws on failure. */
 async function dispatchMutation(m: QueuedMutation): Promise<void> {
+  let url: string;
   switch (m.kind) {
     case 'workOrder.updateStatus':
-    case 'workOrder.update': {
-      const res = await fetch(`/api/work-orders/${m.targetId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(m.payload),
-      });
-      if (!res.ok) {
-        // Surface the server's error so the drawer can show it.
-        let detail = `${res.status} ${res.statusText}`;
-        try {
-          const data = await res.json();
-          if (data?.error) detail = data.error;
-        } catch { /* response wasn't JSON */ }
-        throw new Error(detail);
-      }
-      return;
-    }
+    case 'workOrder.update':
+      url = `/api/work-orders/${m.targetId}`;
+      break;
+    case 'alert.resolve':
+      url = `/api/alerts/${m.targetId}`;
+      break;
+    case 'machine.update':
+      url = `/api/machines/${m.targetId}`;
+      break;
+    case 'part.update':
+      url = `/api/parts/${m.targetId}`;
+      break;
     default: {
       // Unknown kind — drop it so it doesn't poison the queue forever.
       throw new Error(`Unsupported mutation kind: ${(m as QueuedMutation).kind}`);
     }
+  }
+
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(m.payload),
+  });
+  if (!res.ok) {
+    // Surface the server's error so the drawer can show it.
+    let detail = `${res.status} ${res.statusText}`;
+    try {
+      const data = await res.json();
+      if (data?.error) detail = data.error;
+    } catch { /* response wasn't JSON */ }
+    throw new Error(detail);
   }
 }
 

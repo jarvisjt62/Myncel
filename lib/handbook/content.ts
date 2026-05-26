@@ -1034,7 +1034,7 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '📱',
     title: 'Mobile App',
     summary:
-      'The Myncel mobile app for iOS and Android lets technicians work from the floor — view assigned work orders, complete checklists, scan QR codes, attach photos, and read the full handbook. Available in the App Store and Google Play. (Today the app needs a network connection for live data; full offline editing with background sync is on the roadmap — see the Roadmap chapter.)',
+      'The Myncel mobile app for iOS and Android lets technicians work from the floor — view assigned work orders, complete checklists, scan QR codes, attach photos, resolve alerts, and read the full handbook. Available in the App Store and Google Play. The app now ships with an offline-aware sync queue: when the device drops signal, work-order status changes and alert resolutions are captured locally and replayed automatically once connectivity returns. The full handbook is also bundled inside the app for zero-signal lookup.',
     sections: [
       {
         heading: 'Installing the app',
@@ -1072,13 +1072,39 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
       {
         heading: 'Working offline',
         body: [
-          'Today the Myncel mobile app needs a network connection (Wi-Fi or cellular) to load work orders, equipment data, and live sensor readings. If your phone drops signal mid-task, you can still finish typing a comment or filling a checklist field, but the work order will only save once the device is back online.',
-          'The one thing that does work fully offline is the handbook itself. Once the app has been opened with a connection at least once, the entire handbook (every chapter, every step, every diagram) is bundled inside the app and available with no signal — open Profile → 📖 Handbook to read it. This is intentional: technicians deep inside a plant or basement should always be able to look up a procedure.',
+          'The Myncel app is built for the field — basements, tunnels, loading docks, rooftops, and other places where the signal disappears. When the device goes offline, the app does not lock you out: it keeps working and silently captures everything you do into a local sync queue. The moment connectivity returns, the queue drains automatically and your changes are pushed to the server in the order you made them.',
+          'You can spot the queue at any time from the floating sync pill in the bottom-right corner of every screen. The pill is hidden when you are online and the queue is empty; it appears the moment something is pending or the device disconnects.',
+          'Tap the pill to open the sync drawer, where you can see every queued mutation, retry the drain manually with the "Retry now" button, and discard individual entries that you no longer want to send (for example a status change you reverted in your head before the network came back).',
+        ],
+        bullets: [
+          'Amber pill "● Offline (N)" — device is offline; N changes are waiting.',
+          'Blue pill "↻ N pending" — device is back online; sync runs automatically.',
+          'Blue pill "⟳ Syncing N…" — drain in progress, one mutation at a time.',
+          'Red pill "! Sync failed" — a mutation hit max retries; tap to inspect or discard.',
+          'No pill at all — you are online and the queue is empty.',
+        ],
+        steps: [
+          'Open a work order on the floor as usual; mark it In Progress, run through the checklist, mark it Completed.',
+          'If the device is offline, the status change is captured to the local queue and the UI updates instantly with an optimistic value.',
+          'Walk back into signal coverage. Within a few seconds the queue auto-drains in the background; the pill disappears once empty.',
+          'For alarms cleared offline (Alerts → Resolve), the same flow applies — the alert disappears from your list immediately and is reconciled with the server when you reconnect.',
+          'If a queued mutation fails to send (server-side error, conflict), open the pill and either Retry or Discard it.',
         ],
         callout: {
           type: 'info',
-          text: 'Full offline editing with a local sync queue (open work orders, complete checklists, attach photos, then auto-sync when the device reconnects) is on the roadmap. See the Roadmap chapter for the planned scope (extended offline cache, sync indicator, conflict resolution).',
+          text: 'The offline queue is persistent — it survives app backgrounding, device sleep, and reboots. It is stored locally on your device and is never shared between users. The handbook itself is also bundled inside the app, so you can read every chapter, every step, and every diagram with no signal at all.',
         },
+      },
+      {
+        heading: 'What is captured offline',
+        body: [
+          'The current offline coverage is focused on the highest-frequency field actions — the things technicians actually do during a round when the signal cuts out. Future releases will extend the queue to cover photo uploads (with a delayed-upload pipeline), part stock adjustments, and free-form work-order edits.',
+        ],
+        bullets: [
+          'Work order status changes (Open → In Progress → Completed → Closed).',
+          'Alert resolutions (clearing an active alarm).',
+          'Reading: the full equipment list, work order list, alert list, and handbook are bundled and viewable offline once the app has been opened online at least once.',
+        ],
       },
       {
         heading: 'QR codes and barcodes',
@@ -1365,11 +1391,10 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
       {
         heading: 'Mobile',
         body: [
-          'The mobile app today covers the full technician floor workflow when the device has a network connection: view assigned WOs, complete checklists, attach photos, scan QR codes, read the handbook offline. The roadmap closes the offline gap and adds a few power-user touches.',
+          'The mobile app covers the full technician floor workflow today — view assigned WOs, complete checklists, attach photos, scan QR codes, read the handbook offline, and (now shipped) work offline with an automatic sync queue for work-order status changes and alert resolutions (see the Mobile App chapter, "Working offline" section). The roadmap below extends the offline coverage to richer mutations and adds a few power-user touches.',
         ],
         bullets: [
-          'Full offline editing — open work orders, complete checklists, attach photos, add comments without network. All edits queued locally and auto-synced when the device reconnects.',
-          'Sync indicator in the app header (green = synced, amber = pending, red = sync error with tap-to-retry).',
+          'Extend the offline queue to cover photo uploads (delayed-upload pipeline), part stock adjustments, and free-form work-order edits (today: status changes and alert resolutions only).',
           'Extended offline cache with size selector up to 4 GB (for remote installers covering large sites).',
           'iPadOS split-screen multitasking and external-keyboard shortcuts (cmd-N for new WO, cmd-K for global search).',
           'Rich-content push notifications with embedded chart thumbnails for critical alerts.',
@@ -1381,7 +1406,6 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
           'Smaller items that do not fit the categories above but are tracked.',
         ],
         bullets: [
-          'Saved reports and scheduled email exports (today: ad-hoc CSV download from each list view).',
           'Multi-language UI (today: English only; the handbook is English only).',
         ],
       },

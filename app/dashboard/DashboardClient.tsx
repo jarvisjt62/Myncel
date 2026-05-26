@@ -689,19 +689,49 @@ function DashboardClientInner({ user, data }: Props) {
     }
   };
 
-  // Resolve alert
+  // Resolve alert. Offline-aware: optimistic local update, then either
+  // PATCH the server or queue the mutation for later replay so a tech
+  // can clear an alarm from a basement / loading dock with no signal.
   const resolveAlert = async (alertId: string) => {
+    // Optimistic local update — alarm disappears from the list immediately.
+    setAlerts(prev => prev.filter(a => a.id !== alertId));
+    setMachineDetail((prev: any) => prev ? { ...prev, alerts: (prev.alerts || []).filter((a: any) => a.id !== alertId) } : prev);
+
+    if (sync.connectivity === 'offline') {
+      await sync.enqueueMutation({
+        kind: 'alert.resolve',
+        targetId: alertId,
+        payload: { isResolved: true },
+        label: 'Resolve alert',
+      });
+      return;
+    }
+
     try {
       const res = await fetch(`/api/alerts/${alertId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isResolved: true }),
       });
-      if (res.ok) {
-        setAlerts(prev => prev.filter(a => a.id !== alertId));
-        setMachineDetail((prev: any) => prev ? { ...prev, alerts: (prev.alerts || []).filter((a: any) => a.id !== alertId) } : prev);
+      if (!res.ok) {
+        // Server reachable but rejected — queue for retry so the
+        // technician's intent isn't silently lost.
+        await sync.enqueueMutation({
+          kind: 'alert.resolve',
+          targetId: alertId,
+          payload: { isResolved: true },
+          label: 'Resolve alert',
+        });
       }
-    } catch { /* ignore */ }
+    } catch {
+      // Connection dropped mid-request — queue it.
+      await sync.enqueueMutation({
+        kind: 'alert.resolve',
+        targetId: alertId,
+        payload: { isResolved: true },
+        label: 'Resolve alert',
+      });
+    }
   };
 
   const removeMachineImage = async (machineId: string) => {
