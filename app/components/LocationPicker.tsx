@@ -106,7 +106,7 @@ export default function LocationPicker({
     });
   }
 
-  const selCls = selectClassName ?? 'w-full rounded-lg border px-3 py-2 text-sm';
+  const selCls = selectClassName ?? 'w-full rounded-lg border px-3 py-2 text-sm bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border)]';
   const lblCls = labelClassName ?? 'block text-xs font-medium text-[var(--text-secondary)] mb-1';
 
   return (
@@ -180,9 +180,11 @@ export default function LocationPicker({
           ))}
         </select>
       </div>
-      {loaded && sites.length === 0 && !compact && (
-        <p className="text-xs text-[var(--text-muted)] italic">
-          Define sites and buildings in <a href="/settings/locations" className="underline">Settings → Locations</a> to use the structured picker.
+      {loaded && sites.length === 0 && (
+        <p className={compact ? 'col-span-2 sm:col-span-4 text-xs italic text-[var(--text-muted)]' : 'text-xs text-[var(--text-muted)] italic'}>
+          {compact ? 'No sites yet — ' : 'Define sites and buildings in '}
+          <a href="/settings/locations" className="underline">Settings → Locations</a>
+          {compact ? ' to enable structured location.' : ' to use the structured picker.'}
         </p>
       )}
     </div>

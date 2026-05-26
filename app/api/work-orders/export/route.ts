@@ -174,12 +174,32 @@ export async function GET(req: NextRequest) {
   .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 9px; font-weight: 600; color: #fff; }
   .muted { color: #6b7280; }
   footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #6b7280; display: flex; justify-content: space-between; }
-  @media print { .no-print { display: none !important; } body { padding: 0; } }
-  .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #635bff; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(99,91,255,0.3); }
+  .report-toolbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 14px; background: rgba(255,255,255,0.96); backdrop-filter: blur(8px); border-bottom: 1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(15,23,42,0.06); padding-top: max(10px, env(safe-area-inset-top, 0px)); }
+  .report-toolbar .back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; background: #f6f9fc; color: #0a2540; border: 1px solid #e6ebf1; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: none; }
+  .report-toolbar .back-btn:hover { background: #eef2ff; border-color: #c7d2fe; }
+  .report-toolbar .print-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; background: #635bff; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; box-shadow: 0 4px 12px rgba(99,91,255,0.3); }
+  body { padding-top: 64px; padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  @media (max-width: 600px) {
+    .report-toolbar .back-btn span.lbl, .report-toolbar .print-btn span.lbl { display: none; }
+    .report-toolbar .back-btn, .report-toolbar .print-btn { padding: 9px 12px; }
+    body { font-size: 11px; padding: 64px 12px 16px 12px; }
+    table { font-size: 9px; }
+    th, td { padding: 5px 4px; }
+  }
+  @media print { .no-print { display: none !important; } body { padding: 0 !important; } }
 </style>
 </head>
 <body>
-  <button class="print-btn no-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  <div class="report-toolbar no-print">
+    <a href="/dashboard" class="back-btn" id="backBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      <span class="lbl">Back to Dashboard</span>
+    </a>
+    <button class="print-btn" onclick="window.print()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      <span class="lbl">Print / Save as PDF</span>
+    </button>
+  </div>
 
   <header>
     <div>
@@ -236,6 +256,20 @@ export async function GET(req: NextRequest) {
   </footer>
 
   <script>
+    // Smart back: prefer history if there's a previous entry inside the same
+    // origin (regular web flow). Fall back to /dashboard for Capacitor /
+    // direct-link / new-tab opens where there is no in-app history.
+    (function () {
+      var btn = document.getElementById('backBtn');
+      if (!btn) return;
+      btn.addEventListener('click', function (e) {
+        var canGoBack = window.history.length > 1 && document.referrer && document.referrer.indexOf(window.location.origin) === 0;
+        if (canGoBack) {
+          e.preventDefault();
+          window.history.back();
+        }
+      });
+    })();
     // Auto-open print dialog when opened via "PDF" button
     if (window.location.search.includes('autoprint=1')) {
       setTimeout(() => window.print(), 500);

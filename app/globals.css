@@ -29,6 +29,99 @@
   --gradient-pink: #e27b9d;
   --gradient-orange: #f5a623;
   --gradient-teal: #44c2c2;
+
+  /* ──────────────────────────────────────────────────────────────────────
+     Semantic theme tokens — referenced by ~90 components across the app.
+     Without these defined, components like the New Site / New Building
+     modals render with transparent backgrounds (you can see right through
+     them to the page underneath).
+     Light theme by default; dark theme overrides further down via
+     [data-theme="dark"] / .dark selectors.
+     ────────────────────────────────────────────────────────────────────── */
+  --bg-page: #ffffff;
+  --bg-card: #ffffff;
+  --bg-muted: #f6f9fc;
+  --bg-elevated: #ffffff;
+  --bg-base: #ffffff;
+  --bg-main: #ffffff;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f9fc;
+  --bg-surface: #ffffff;
+  --bg-surface-1: #ffffff;
+  --bg-surface-2: #f6f9fc;
+  --bg-sidebar: #ffffff;
+  --bg-nav: #ffffff;
+  --bg-hover: #f0f4f8;
+  --bar-bg: #f6f9fc;
+  --gauge-track: #e6ebf1;
+  --surface-1: #ffffff;
+  --surface-2: #f6f9fc;
+  --text-primary: #0a2540;
+  --text-secondary: #425466;
+  --text-muted: #8898aa;
+  --text-label: #425466;
+  --text-ultralow: #aab4c2;
+  --border: #e6ebf1;
+  --border-color: #e6ebf1;
+  --border-subtle: #f0f4f8;
+  --card-border-b: #e6ebf1;
+  --accent: #635bff;
+  --accent-blue: #0570de;
+  --accent-color: #635bff;
+  --accent-hover: #4f46e5;
+  --accent-soft: #eef2ff;
+  --accent-bg: #eef2ff;
+  --accent-border: #c7d2fe;
+  --success: #09825d;
+  --success-soft: #cbf4c9;
+  --warning: #c44b00;
+  --warning-soft: #fef3c7;
+  --danger: #cd3d64;
+  --danger-soft: #fee2e2;
+}
+
+[data-theme='dark'],
+.dark {
+  --bg-page: #0a1628;
+  --bg-card: #111c33;
+  --bg-muted: #1a2540;
+  --bg-elevated: #16223d;
+  --bg-base: #0a1628;
+  --bg-main: #0a1628;
+  --bg-primary: #111c33;
+  --bg-secondary: #16223d;
+  --bg-surface: #111c33;
+  --bg-surface-1: #111c33;
+  --bg-surface-2: #16223d;
+  --bg-sidebar: #0e1a30;
+  --bg-nav: #0e1a30;
+  --bg-hover: #1a2540;
+  --bar-bg: #1a2540;
+  --gauge-track: #243049;
+  --surface-1: #111c33;
+  --surface-2: #16223d;
+  --text-primary: #f3f6fb;
+  --text-secondary: #b3becf;
+  --text-muted: #7e8aa0;
+  --text-label: #b3becf;
+  --text-ultralow: #5a6478;
+  --border: #243049;
+  --border-color: #243049;
+  --border-subtle: #1a2540;
+  --card-border-b: #243049;
+  --accent: #7a73ff;
+  --accent-blue: #3b82f6;
+  --accent-color: #7a73ff;
+  --accent-hover: #635bff;
+  --accent-soft: #1e2547;
+  --accent-bg: #1e2547;
+  --accent-border: #3c4fe0;
+  --success: #34d399;
+  --success-soft: #053b2c;
+  --warning: #fbbf24;
+  --warning-soft: #422a05;
+  --danger: #fb7185;
+  --danger-soft: #401722;
 }
 
 * {
