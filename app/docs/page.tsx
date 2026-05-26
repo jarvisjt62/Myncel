@@ -115,6 +115,20 @@ const sections = [
       { title: 'Edge gateway setup & downloads', time: '8 min', popular: true, slug: '' },
       { title: 'Modbus, OPC UA, and MQTT connector examples', time: '10 min', popular: false, slug: 'connectors' },
       { title: 'Raspberry Pi, ESP32, and Node-RED deployment', time: '7 min', popular: false, slug: 'device-agents' },
+      { title: 'OBD-II (cars / light trucks / vans)', time: '6 min', popular: false, slug: 'obd2' },
+      { title: 'SAE J1939 (heavy trucks / off-highway)', time: '8 min', popular: false, slug: 'j1939' },
+      { title: 'NMEA 2000 (vessels / boats / yachts)', time: '8 min', popular: false, slug: 'nmea2000' },
+      { title: 'MAVLink (drones / UAVs)', time: '6 min', popular: false, slug: 'mavlink' },
+    ],
+  },
+  {
+    icon: '🚛',
+    title: 'Vehicles, Vessels & UAVs',
+    color: 'bg-orange-50 border-orange-200 text-orange-700',
+    slug: 'vehicles',
+    articles: [
+      { title: 'Telematics importers (Geotab, Samsara, Verizon, Motive, Fleetio)', time: '10 min', popular: true, slug: '_telematics' },
+      { title: 'DVIR / vessel / UAV work-order templates', time: '12 min', popular: false, slug: '_vehicle-templates' },
     ],
   },
   {
@@ -162,7 +176,7 @@ export default function Docs() {
           <h2 className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4">Popular Articles</h2>
           <div className="flex flex-wrap gap-3">
             {sections.flatMap(s => s.articles.filter(a => a.popular).map((art) => (
-              <Link key={`${s.slug}-${art.slug}`} href={s.slug === 'edge-gateway' && art.slug === '' ? '/docs/edge-gateway' : `/docs/${s.slug}/${art.slug}`} className="flex items-center gap-2 bg-[var(--bg-page)] border border-[var(--border)] rounded-lg px-4 py-2 text-sm text-[var(--text-primary)] hover:border-[#635bff] hover:text-[#635bff] transition-colors">
+              <Link key={`${s.slug}-${art.slug}`} href={s.slug === 'edge-gateway' && art.slug === '' ? '/docs/edge-gateway' : art.slug.startsWith('_') ? `/docs/${art.slug.slice(1)}` : `/docs/${s.slug}/${art.slug}`} className="flex items-center gap-2 bg-[var(--bg-page)] border border-[var(--border)] rounded-lg px-4 py-2 text-sm text-[var(--text-primary)] hover:border-[#635bff] hover:text-[#635bff] transition-colors">
                 <svg className="w-3.5 h-3.5 text-[#635bff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -187,7 +201,7 @@ export default function Docs() {
                 <ul className="space-y-2.5">
                   {section.articles.map((art) => (
                     <li key={art.slug}>
-                      <Link href={section.slug === 'edge-gateway' && art.slug === '' ? '/docs/edge-gateway' : `/docs/${section.slug}/${art.slug}`} className="flex items-start gap-2 text-sm text-[var(--text-secondary)] hover:text-[#635bff] group transition-colors">
+                      <Link href={section.slug === 'edge-gateway' && art.slug === '' ? '/docs/edge-gateway' : art.slug.startsWith('_') ? `/docs/${art.slug.slice(1)}` : `/docs/${section.slug}/${art.slug}`} className="flex items-start gap-2 text-sm text-[var(--text-secondary)] hover:text-[#635bff] group transition-colors">
                         <svg className="w-3.5 h-3.5 mt-0.5 text-[#c0ccda] group-hover:text-[#635bff] flex-shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>

@@ -425,8 +425,8 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
           'Add each truck in Myncel: Equipment → "+ Add Machine". Use a consistent name pattern such as "FORK-001 Toyota 8FGCU25" so search and reports stay clean. (For 38+ trucks, use the public REST API — POST /api/machines — with a small script to import the list in one go; see "Bulk-importing your existing equipment list" earlier in this chapter.)',
           'In /equipment/qr-labels, choose label size Small (50×50 mm), select all forklifts, and print. Apply each sticker next to the OEM data plate or on the dashboard.',
           'Author one shared "Pre-shift inspection" PM in /admin/schedules: Title = "Pre-shift inspection", Task Type = INSPECTION, Frequency = DAILY. The auto-generated work order each shift includes a checklist (parking brake, horn, forks, mast, leaks, tires, OSHA 1910.178 items). Operators tap through it on their phone.',
-          'Set runtime-based PMs per OEM schedule: 250-hour service, 500-hour service, 1,000-hour service. Use Frequency = BY_HOURS with the appropriate interval. Hours are logged either by the operator at shift end (through the inspection checklist) or pushed via the public REST API from your existing telematics provider (Toyota I_Site, Crown InfoLink, Geotab, or Samsara — POST runtime to /api/iot/ingest with a JSON body once a day from a tiny scheduled job on your side).',
-          'For impact monitoring: if your telematics provider already detects impacts, POST those events to /api/iot/ingest with type = "impact" and severity = the g-force. Myncel auto-creates a Safety work order on the matching truck with the operator and timestamp. (A native I_Site / InfoLink / Geotab / Samsara integration with one-click setup is on the roadmap.)',
+          'Set runtime-based PMs per OEM schedule: 250-hour service, 500-hour service, 1,000-hour service. Use Frequency = BY_HOURS with the appropriate interval. Hours are logged either by the operator at shift end (through the inspection checklist) or pushed automatically via the shipped telematics importers — Geotab, Samsara, Verizon Connect, Motive, and Fleetio are now native (see /docs/telematics); for Toyota I_Site / Crown InfoLink, pull data via their public APIs into a small scheduled script that POSTs to /api/telematics/import?provider=generic.',
+          'For impact monitoring: if your telematics provider already detects impacts, POST those events to /api/telematics/import (or /api/iot/ingest) with type = "impact" and severity = the g-force. Myncel auto-creates a Safety work order on the matching truck with the operator and timestamp. (Native I_Site / InfoLink one-click setup is still on the roadmap; Geotab/Samsara/Verizon/Motive/Fleetio are shipped today.)',
         ],
         bullets: [
           'No PLCs touched, no extra hardware on the trucks, no electrician involved.',
@@ -1173,6 +1173,135 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
   },
 
   // ------------------------------------------------------------------
+  // 9.5. VEHICLES, VESSELS & UAVs   (Big Bet #3 — multi-domain)
+  // ------------------------------------------------------------------
+  {
+    slug: 'vehicles-vessels-uavs',
+    emoji: '🚛',
+    title: 'Vehicles, Vessels & UAVs',
+    summary:
+      'How to use Myncel as the maintenance system for a service-vehicle fleet, a heavy-truck or off-highway operation, a marine fleet of charter boats / workboats / yachts, or a commercial drone / UAV operation. Covers every shipped connector — OBD-II, SAE J1939, NMEA 2000, MAVLink — plus the telematics importers for Geotab, Samsara, Verizon Connect, Motive, and Fleetio, and the regulatory-aligned work-order templates.',
+    sections: [
+      {
+        heading: 'Why Myncel works for fleets, vessels, and drones',
+        body: [
+          'Myncel\'s data model is domain-agnostic. A "Machine" is anything with a serial number, a maintenance schedule, and the occasional fault. The same engine that powers preventive and predictive maintenance for a CNC mill works identically for a delivery van, a Class 8 truck, a charter boat, or a survey drone. What changed in this release is that the protocol connectors and the regulatory-aligned workflows now ship out of the box — you no longer need to build a custom integration to bring vehicle, vessel, or UAV telemetry into Myncel.',
+          'Pick your domain below and follow the matching step-by-step. The Edge Gateway, Gateway Token model, work-order engine, PM schedules, alert rules, parts inventory, reports, and SuperAdmin views all behave identically across domains; only the connector configuration and the work-order templates change.',
+        ],
+        bullets: [
+          'Cars, light trucks, vans, and motorcycles — connect via OBD-II using a $25 ELM327 dongle. Reads RPM, coolant, fuel level, battery voltage, odometer, runtime, and fault codes (DTCs). See the OBD-II protocol page at /docs/edge-gateway/obd2.',
+          'Heavy trucks, buses, ag tractors, dozers, excavators, generators — connect via SAE J1939 over CAN bus. Reads engine, fuel, DEF level, transmission temperature, oil pressure, total hours, total distance, and active DM1 DTCs. See /docs/edge-gateway/j1939.',
+          'Yachts, workboats, charter fleets, sportfishing boats, ferries — connect via NMEA 2000 using an Actisense / Yacht Devices / Maretron gateway. Reads engine room, tank levels, GPS, depth, speed, and rudder angle. See /docs/edge-gateway/nmea2000.',
+          'Commercial drones (PX4 / ArduPilot) — connect via MAVLink. Reads battery, GPS, altitude, ground speed, satellite count, and autopilot status. Read-only telemetry; Myncel never sends commands to the autopilot. See /docs/edge-gateway/mavlink.',
+          'Geotab, Samsara, Verizon Connect, Motive (KeepTruckin), and Fleetio — if you already pay for fleet telematics, you do not need a second device. Forward your existing data to /api/telematics/import and Myncel becomes the CMMS layer on top. See /docs/telematics.',
+        ],
+      },
+      {
+        heading: 'Step-by-step: bring a vehicle, vessel, or UAV into Myncel',
+        body: [
+          'The same five-step flow works for every domain. The only thing that changes is the connector type you generate and the regulatory checklist you copy into the WO.',
+        ],
+        steps: [
+          'Create the asset in Admin Machines. Set the category to one of the new options: Car / Light Truck / Van, Heavy Truck / Bus / Construction, Vessel / Boat / Yacht, or Drone / UAV. Add the VIN / hull number / drone serial, license plate or registration, current odometer or engine hours, and the home location. Use a consistent naming pattern such as VEH-LIGHT-23 / VEH-HEAVY-18 / VESSEL-04 / DRONE-07 so reports and search behave well across mixed fleets.',
+          'Generate a Gateway Token. Open the machine detail and click Create Gateway Token. Copy the token once — it is shown in plain text exactly once and stored as a SHA-256 hash thereafter. Paste it into the YAML config you will run on the gateway device, or into the webhook configuration of your existing telematics provider.',
+          'Pick the connector type and generate YAML. Open /docs/edge-gateway and pick the matching connector — OBD-II, SAE J1939, NMEA 2000, or MAVLink. Each protocol page has a Gateway Config Generator that produces a ready-to-edit YAML config. Set the connector type, your endpoint (serial port, CAN interface, UDP host, or telemetry connection string), the gateway token, and download the YAML. If you are using an existing fleet telematics product, skip this step entirely and configure that provider to POST to /api/telematics/import instead.',
+          'Run the gateway or wire the importer. For OBD-II, run the Myncel edge agent on a Raspberry Pi or industrial PC inside the vehicle, on a phone running the mobile app while parked, or in a cellular OBD-II tracker. For J1939 and NMEA 2000, run the agent on a Raspberry Pi or industrial PC connected to the bus via the appropriate hardware (CAN hat for J1939, NMEA gateway for marine). For MAVLink, the agent connects to the autopilot over USB, telemetry radio, Wi-Fi, or UDP. For telematics imports, configure your existing provider (Geotab Add-In, Samsara webhook, Motive Fleet API, etc.) to POST to https://www.myncel.com/api/telematics/import?provider=<name> with the gateway token in the Authorization header.',
+          'Set schedules, thresholds, and templates. Drive PM schedules from the readings the connector emits. For light vehicles use odometer-based or BY_HOURS schedules for oil changes and inspections. For heavy trucks use total_engine_hours for OEM PM intervals (250 / 500 / 1000 hours). For vessels use engine_hours from PGN 127489. For drones use the airframe hour counter from the autopilot. Add Threshold alert rules on coolant_temp, oil_pressure, fuel_level, def_level, battery_voltage, dtc_present, and autopilot_alert to auto-open work orders. Copy the regulatory-aligned checklists from /docs/vehicle-templates into your work orders or PM schedules.',
+        ],
+        callout: {
+          type: 'info',
+          text: 'The connector reads dozens of standard signals out of the box (default presets for OBD-II PIDs, J1939 PGNs, NMEA 2000 PGNs, and MAVLink messages). You only need to list the signals you actually care about in the YAML — Myncel will not poll anything you did not ask for, which keeps bus utilization low and dongle batteries from draining the vehicle.',
+        },
+      },
+      {
+        heading: 'Domain A — service vehicle and light-truck fleets (cars, vans, sprinters)',
+        body: [
+          'Best for: car dealerships running courtesy / shuttle fleets, mobile service-tech fleets driving from job to job, courier and last-mile delivery operations, rental fleets, property-management fleets, university and corporate motor pools.',
+          'Recommended setup: one ELM327 OBD-II adapter per vehicle. For depots where vehicles return nightly, a $25 USB or $40 Wi-Fi ELM327 plus a small Raspberry Pi or industrial PC is the cheapest path. For always-on telemetry pick a $80–120 cellular OBD-II tracker that pushes directly to /api/telematics/import. Operators / drivers do daily light-vehicle walk-arounds via the mobile app using the shipped Light vehicle / van — daily check template (8 minutes, 12 items).',
+        ],
+        bullets: [
+          'Set odometer-based PMs by combining the imported odometer reading with a tiny scheduled job hitting the public REST API to convert distance into a custom counter, then trigger BY_HOURS schedules off that counter. (Native distance-frequency PMs are on the roadmap.)',
+          'Add a Threshold rule on dtc_present >= 1 to auto-open a Diagnostic — DTC detected work order when the check-engine light first appears. The driver does not need to call dispatch; the WO is already on the service writer\'s board.',
+          'For dealerships running used-car reconditioning, paste the Light vehicle / van — daily check template into the standard recon WO so every vehicle gets the same 12-item walk-around before delivery.',
+          'For mobile service-tech fleets, combine the Light vehicle template with a tools-inventory checklist (in the WO) so the technician confirms both the vehicle and the kit before the first job of the day.',
+        ],
+      },
+      {
+        heading: 'Domain B — heavy-duty truck and off-highway fleets',
+        body: [
+          'Best for: trucking and logistics companies running Class 7-8 fleets, public-works departments, school-bus operators, transit agencies with smaller fleets, ag operations with multi-tractor / combine fleets, construction companies with rolling stock, mining operations.',
+          'Recommended setup: a Raspberry Pi 4 with an MCP2515 CAN hat (~$80 total), or a PCAN-USB / Kvaser Leaf for higher-reliability fleets, or an off-the-shelf cellular J1939 telematics box for fleets that prefer no on-board host. Connect to the green 9-pin Deutsch diagnostic connector under the dash. Use the SAE J1939 — heavy truck protocol page (/docs/edge-gateway/j1939) for the bring-up sequence and CAN bring-up commands.',
+        ],
+        bullets: [
+          'Daily DVIR — paste the DVIR — Pre-trip inspection (15 items, FMCSA 49 CFR §396.11) and DVIR — Post-trip inspection (15 items) checklists from /docs/vehicle-templates into BY_DAYS schedules so each driver completes them at shift start and end on the mobile app, with photos attached for any defect.',
+          'Hours-based PMs — engine hours from PGN 0xFEE5 feed BY_HOURS schedules. Set the OEM 250 / 500 / 1000-hour service intervals; Myncel auto-creates the WO when the threshold is crossed.',
+          'Quarterly PM — paste the Heavy truck — quarterly preventive maintenance template (20 items, ~90 minutes) into a BY_DAYS or BY_HOURS schedule.',
+          'DEF monitoring — Tier 4 diesels derate when DEF runs low. Add a Threshold rule on def_level < 15% so drivers get a heads-up before the truck goes into limp-home.',
+          'DTC auto-WO — DM1 active fault codes set dtc_present = 1. Auto-create a Diagnostic — DTC detected WO with Priority = HIGH for any active code in the engine, after-treatment, or brake-system SPN ranges.',
+          'For mixed fleets — pair J1939 on the heavy units with OBD-II on the light service vehicles. The same Myncel workspace handles both; only the connector type and the templates differ.',
+        ],
+      },
+      {
+        heading: 'Domain C — commercial marine and recreational vessel fleets',
+        body: [
+          'Best for: charter operators (sportfishing, dive, day-sail, yacht charter), commercial workboats (tugs, push-boats, offshore service vessels), small ferries, marine research and survey vessels, larger private yachts that are operated semi-professionally, boatyards that maintain customer fleets.',
+          'Recommended setup: drop one Actisense W2K-1, Yacht Devices YDEN-02 / YDWG-02, or Maretron USB100 onto the boat\'s NMEA 2000 backbone. Run the Myncel edge agent (or canboat / Signal K + the agent) on a Raspberry Pi mounted in the helm console or engine room. Use the NMEA 2000 protocol page (/docs/edge-gateway/nmea2000) for hardware specifics and the canboat JSON UDP wiring.',
+        ],
+        bullets: [
+          'Pre-departure — paste the Vessel — pre-departure inspection template (24 items, USCG 46 CFR §185.502-style, ~30 minutes) into a BY_DAYS or per-charter schedule so the captain completes it on the mobile app before every trip with photos of fuel level, life jackets, and bilge.',
+          'Return checklist — paste the Vessel — return / shutdown template (15 items, ~20 minutes) so the next crew finds the boat ready and any new issues are documented.',
+          'Engine-hour PMs — engine hours from PGN 127489 (Engine Parameters Dynamic) feed BY_HOURS schedules. Volvo Penta D6 / D11, Cummins QSB / QSC / QSL marine, Yanmar 6LY3 service intervals are easy to model directly.',
+          'Engine-room alerts — Threshold rules on coolant_temp > 95°C, engine_oil_press < 200 kPa at running RPM, alternator_volt < 12.8 V, or fuel_level < 20% auto-create HIGH-priority alerts that page the captain via PagerDuty / SMS.',
+          'Geofence the marina — combine GPS lat / lon readings with a small scheduled job hitting the public REST API to detect when a charter boat exits the marina (charter started) and re-enters (return), and auto-create a fuel-and-walkdown WO on return.',
+          'Multi-engine vessels — twin-engine boats expose two NMEA 2000 engine instances. Treat each engine as its own Machine with its own gateway / instance config; the vessel itself is a third Machine that holds the hull / electronics / safety equipment WOs.',
+        ],
+      },
+      {
+        heading: 'Domain D — commercial drone / UAV operations',
+        body: [
+          'Best for: aerial-survey and mapping companies, agricultural-spray operators, public-safety and search-and-rescue UAV programs, infrastructure inspection (cell towers, power lines, wind turbines, solar farms, pipelines, bridges, roofs), film and broadcast production fleets.',
+          'Recommended setup: any standard MAVLink telemetry path — 915 / 433 MHz radio modem (RFD900x, SiK telemetry) at the ground station, USB tether for hangar diagnostics, Wi-Fi telemetry bridge for parked-mode log dumps, or a cellular companion computer onboard for live streaming. Use the MAVLink protocol page (/docs/edge-gateway/mavlink) for connection-string examples.',
+          'The connector is intentionally read-only telemetry; Myncel never sends commands to the autopilot. Manned aircraft / ARINC 429 is intentionally out of scope: that is FAA Part 43 / 145 / EASA Part-145 regulated software territory and is intentionally not a Myncel feature.',
+        ],
+        bullets: [
+          'Pre-flight — paste the UAV / drone — pre-flight checklist template (17 items, FAA 14 CFR Part 107-aligned, ~8 minutes) into a per-flight schedule. The pilot completes it on the mobile app at the launch site with photos of airframe and battery condition.',
+          'Post-flight — paste the UAV / drone — post-flight checklist (11 items, ~5 minutes) so cycle counts and anomaly logs are captured before the airframe is put back in storage.',
+          'Battery as its own Machine — track every LiPo / Li-ion battery as its own Machine (category Drone / UAV) and configure a BY_HOURS schedule that proxies for cycle count. LiPo packs typically retire at 200–300 cycles. Increment the cycle counter via the public REST API at the end of every flight.',
+          'Autopilot fault → WO — STATUSTEXT severity ≤ 3 sets autopilot_alert = 1. Auto-create a Diagnostic WO so the issue is investigated before the next flight.',
+          'Flight-hours-based PMs — total flight hours feed BY_HOURS schedules for prop replacement, ESC inspection, motor bearing checks, and gimbal service.',
+          'Multi-airframe operators — track each airframe as its own Machine and link battery Machines to flight-event WOs via the WO\'s linked-machines field so a battery\'s history follows the pack rather than any single airframe.',
+        ],
+      },
+      {
+        heading: 'Telematics importers — when you already pay for Geotab, Samsara, Verizon Connect, Motive, or Fleetio',
+        body: [
+          'If your fleet already runs a telematics product, do not pay twice. Forward the data you already have to /api/telematics/import and Myncel becomes the CMMS layer on top of telematics you already trust — odometer-based PMs, fuel-level alerts, fault-code WOs, all without a second device under the dash.',
+          'The endpoint authenticates with the same per-machine Gateway Token model as /api/iot/ingest. Each vehicle in Myncel gets a token; the remote provider\'s webhook or scheduled pusher includes the token as Authorization: Bearer <token>. Provider is detected automatically from payload shape, or pinned via the ?provider=geotab|samsara|verizon|motive|fleetio query parameter.',
+        ],
+        bullets: [
+          'Geotab — push from a MyAdmin Add-In or scheduled SDK pull. Diagnostic-keyed events ({ dateTime, diagnostic: { id, name }, value, unit }) are mapped one-to-one onto Myncel readings.',
+          'Samsara — point a Samsara webhook at /api/telematics/import?provider=samsara. Vehicle-stats snapshots ({ gpsOdometerMeters, fuelPercents, engineRpm, engineCoolantTemperatureMilliC, ecuSpeedKilometersPerHour, defLevelPercent, ... }) are flattened into individual readings with proper unit conversion (meters → km, milli-Celsius → C, milli-volts → V).',
+          'Verizon Connect / Reveal — per-signal records ({ time, deviceId, signal: { name, value, unit } }) accepted as one POST per signal or batched as an array.',
+          'Motive (KeepTruckin) — push from the Motive Fleet API. Vehicle current_state shape ({ current_state: { gps_odometer_km, fuel_percent, speed_kph, engine_hours, def_percent, ... } }) is normalized into separate readings.',
+          'Fleetio — push every meter entry as it is created in Fleetio ({ meter_entry: { meter_type, value, units, recorded_at } }).',
+          'Generic — same shape as /api/iot/ingest ({ type, value, unit, recordedAt }). Use this if your telematics provider is not in the list yet, or if you are exporting from a custom in-house system.',
+        ],
+        callout: {
+          type: 'tip',
+          text: 'See /docs/telematics for full payload examples for every provider, the field-mapping reference table, and the curl recipes you can paste into your provider\'s scheduled-job UI.',
+        },
+      },
+      {
+        heading: 'SuperAdmin parity for fleets',
+        body: [
+          'The SuperAdmin Org Control Center surfaces fleet rollups alongside industrial equipment so you can see at a glance how each customer\'s portfolio is composed. Open Admin → Organizations → <org> → Machines and the new Fleet rollup pill row breaks the asset count down by category: Industrial, Forklift / AGV, Light vehicles, Heavy trucks, Vessels, Drones / UAVs, Other. The same machine list table that already showed name / category / status / location / created date now treats vehicle / vessel / drone categories as first-class.',
+          'SuperAdmin still controls every workspace-level setting that affects fleets — billing tier, integrations, SSO/SCIM, alerts, audit log retention. None of that changes; it just now applies cleanly to mixed-domain workspaces too.',
+        ],
+      },
+    ],
+  },
+
+  // ------------------------------------------------------------------
   // 10. ACCOUNT, BILLING & PLANS
   // ------------------------------------------------------------------
   {
@@ -1338,7 +1467,7 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
         bullets: [
           'CSV / Excel bulk importer in the UI — drag-drop a spreadsheet, map columns to fields, preview, import. Today only the API does bulk.',
           'Named importers for common CMMS migrations — SAP PM, IBM Maximo, Limble, UpKeep, eMaint, Fiix, MaintainX, Hippo. Today: do the export from the source system to CSV, then call the public REST API.',
-          'Telematics importers for fleet — Toyota I_Site (forklifts), Crown InfoLink, John Deere Operations Center, Caterpillar VisionLink. Today: pull data via their public APIs into a script, then post to /api/machines and the gateway ingest endpoint.',
+          'OEM-specific fleet telematics importers — Toyota I_Site (forklifts), Crown InfoLink, John Deere Operations Center, Caterpillar VisionLink. Native importers for Geotab, Samsara, Verizon Connect, Motive (KeepTruckin), and Fleetio are now shipped — see /docs/telematics. The OEM-specific list above is what is still on the roadmap.',
           'Equipment groups / parent-child relationships (e.g. a "Compressor pack" parent containing 4 individual compressors). Today: model each compressor as its own machine and put the pack name in the Notes or Location field.',
         ],
       },
@@ -1404,21 +1533,17 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
       {
         heading: 'Multi-domain expansion (vehicles, vessels, drones)',
         body: [
-          'Myncel\'s data model and Edge Gateway architecture are domain-agnostic — a "Machine" is just something with a serial number and a maintenance schedule. The engine that powers preventive and predictive maintenance for a CNC mill works equally well for a delivery van, a bulldozer, or a workboat. What we have not shipped yet are the vehicle-side protocol connectors and the polished vertical workflows. Below is how we plan to extend Myncel beyond industrial / facility maintenance.',
-          'This is on the roadmap because we are increasingly asked about it by car dealerships running 50-vehicle service fleets, trucking and logistics companies running 200+ heavy trucks, marine charter operators with mixed fleets of boats, and construction firms with rolling stock. The same Myncel work-order, schedule, parts, and reports engine they already love for facility equipment becomes their fleet maintenance system too.',
+          'The first wave of multi-domain support is shipped — see the new "Vehicles, Vessels & UAVs" chapter for the full step-by-step. OBD-II, SAE J1939, NMEA 2000, and MAVLink connectors run on the Edge Gateway today; native importers for Geotab, Samsara, Verizon Connect, Motive (KeepTruckin), and Fleetio accept telematics directly via /api/telematics/import; and DVIR pre-trip / post-trip, USCG-style vessel pre-departure / return, and FAA Part 107-aligned UAV pre-flight / post-flight checklists are published at /docs/vehicle-templates. What is left on the roadmap below is the longer tail of EV-specific manufacturer APIs and a few additional convenience features.',
         ],
         bullets: [
-          'Cars / light trucks / motorcycles via OBD-II — the universal port under the dash on every vehicle since 1996. Plug in a $25 ELM327 dongle or an $80 cellular OBD-II tracker and Myncel reads odometer, engine hours, RPM, coolant temp, fuel level, battery voltage, and fault codes (DTCs / "check engine" codes). Estimated effort: 5–8 dev days.',
-          'Heavy trucks / buses / agricultural / construction via SAE J1939 — the heavy-duty CAN-bus protocol used by Caterpillar, John Deere, Volvo, Mack, Freightliner, Kenworth, and most ag/construction OEMs. Reads engine load, fuel rate, DEF level, transmission temp, brake wear, TPMS, idle time. Hardware: $200–500 J1939 gateway. Estimated effort: 10–15 dev days.',
-          'Telematics importers — most fleets already pay for Geotab, Samsara, Verizon Connect, Motive (KeepTruckin), or Fleetio. We will add native importers so Myncel becomes the CMMS layer on top of telematics they already trust, without asking them to plug in a second device. Estimated effort: 3–5 dev days per provider.',
-          'Vessels / yachts / workboats via NMEA 2000 (engines + nav) and Modbus (engine room). Reads GPS, heading, speed, depth, engine RPM/temp/oil pressure, fuel rate, tank levels, AIS, wind, rudder angle. Hardware: $150–400 NMEA 2000 gateway. Estimated effort: 10–14 dev days.',
-          'Drones / UAVs via MAVLink — the open protocol every PX4 / ArduPilot drone speaks. Estimated effort: 5 dev days. (Manned aircraft / ARINC 429 is intentionally out of scope: that is FAA Part 43 / EASA Part-145 regulated software territory and a separate product, not a Myncel feature.)',
-          'EV-specific manufacturer APIs — Tesla Fleet API, Ford Pro, GM OnStar Business, Rivian Fleet — for fleets that have already gone electric and need OEM-grade telemetry that OBD-II cannot provide.',
-          'Vertical-specific work-order templates — DVIR (Daily Vehicle Inspection Report) checklists, USCG / SOLAS / classification-society inspection templates for vessels, FMCSA pre-trip inspection templates for commercial trucks. Today the work-order engine is generic; these become one-click starters.',
+          'EV-specific manufacturer APIs — Tesla Fleet API, Ford Pro, GM OnStar Business, Rivian Fleet — for fleets that have already gone electric and need OEM-grade telemetry that OBD-II cannot provide (state of charge, battery thermal, regen energy, charging-session events).',
+          'Native distance-frequency PM schedules (BY_DISTANCE) — today, distance-based PMs are modeled by combining the imported odometer reading with a tiny scheduled job that pivots distance into BY_HOURS triggers. A native BY_DISTANCE frequency removes that workaround.',
+          'Additional telematics importers — Lytx, Azuga, GPS Insight, Teletrac Navman, Wialon, on top of the five already shipped (Geotab, Samsara, Verizon Connect, Motive, Fleetio).',
+          'GPS-based geofence trigger — native rule type that opens a WO when a Machine\'s gps_lat/gps_lon enters or exits a polygon (rather than requiring a customer-side scheduled job today).',
         ],
         callout: {
           type: 'info',
-          text: 'If you are running a car dealership, trucking company, marine charter operator, or any vehicle-heavy fleet and you would like to be a design partner for this domain, contact sales — early customers in this category get accelerated implementation and influence over the protocol/feature priority.',
+          text: 'If you are running a car dealership, trucking company, marine charter operator, drone-services company, or any vehicle-heavy fleet and you would like to be a design partner for the remaining items, contact sales — early customers in this category get accelerated implementation and influence over the priority of the EV-OEM API list.',
         },
       },
       {

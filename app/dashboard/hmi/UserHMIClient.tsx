@@ -16,6 +16,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   PUMP: 'Pump System', BOILER: 'Boiler / Furnace', GENERATOR: 'Generator',
   CRANE: 'Crane / Hoist', ROBOT: 'Industrial Robot', HEAT_TREATMENT: 'Heat Treatment',
   MEASURING: 'CMM / Measuring', PACKAGING: 'Packaging', FORKLIFT: 'Forklift / AGV',
+  VEHICLE_LIGHT: 'Car / Light Truck', VEHICLE_HEAVY: 'Heavy Truck / Bus',
+  VESSEL: 'Vessel / Boat', DRONE_UAV: 'Drone / UAV',
   OTHER: 'Machine',
 };
 

@@ -3846,6 +3846,12 @@ function DashboardClientInner({ user, data }: Props) {
                   <option value="PACKAGING">📦 Packaging / Wrapping</option>
                   <option value="FORKLIFT">🚜 Forklift / AGV</option>
                 </optgroup>
+                <optgroup label="Vehicles, Vessels & UAVs">
+                  <option value="VEHICLE_LIGHT">🚗 Car / Light Truck / Van</option>
+                  <option value="VEHICLE_HEAVY">🚛 Heavy Truck / Bus / Construction</option>
+                  <option value="VESSEL">⛵ Vessel / Boat / Yacht</option>
+                  <option value="DRONE_UAV">🛸 Drone / UAV</option>
+                </optgroup>
                 <optgroup label="Other">
                   <option value="OTHER">🔩 Other / Unclassified</option>
                 </optgroup>

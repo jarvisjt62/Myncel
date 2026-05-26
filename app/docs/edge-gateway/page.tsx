@@ -3,7 +3,7 @@ import GatewayConfigGenerator from '@/app/components/GatewayConfigGenerator';
 
 export const metadata = {
   title: 'Edge Gateway Setup — Myncel Docs',
-  description: 'Install the Myncel Edge Gateway for Modbus, OPC UA, MQTT, MTConnect, BACnet, Siemens S7, Rockwell EtherNet/IP, Beckhoff ADS, ESP32, Raspberry Pi, and Node-RED telemetry.',
+  description: 'Install the Myncel Edge Gateway for industrial protocols (Modbus, OPC UA, MQTT, MTConnect, BACnet, Siemens S7, Rockwell EtherNet/IP, Beckhoff ADS) and vehicle / vessel / UAV protocols (OBD-II, SAE J1939, NMEA 2000, MAVLink) on ESP32, Raspberry Pi, and Node-RED.',
 };
 
 const downloads = [
@@ -31,8 +31,8 @@ export default function EdgeGatewayDocsPage() {
       <main className="mx-auto max-w-6xl space-y-8 px-6 py-8">
         <section className="rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] p-8 shadow-sm">
           <span className="inline-block rounded-full bg-[#635bff]/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#635bff]">Edge Gateway</span>
-          <h1 className="mt-4 max-w-3xl text-4xl font-bold text-[var(--text-primary)]">Connect shop-floor equipment to Myncel with offline-safe edge telemetry.</h1>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-[var(--text-secondary)]">The Myncel Edge Gateway runs near your machines and forwards sensor, PLC, CNC, HMI, and MQTT readings into Myncel. It includes plugin-style connectors, local buffering for network outages, and ready-to-edit examples for Raspberry Pi, ESP32, and Node-RED deployments.</p>
+          <h1 className="mt-4 max-w-3xl text-4xl font-bold text-[var(--text-primary)]">Connect shop-floor, fleet, vessel, and UAV equipment to Myncel with offline-safe edge telemetry.</h1>
+          <p className="mt-4 max-w-3xl text-base leading-7 text-[var(--text-secondary)]">The Myncel Edge Gateway runs near your equipment and forwards sensor, PLC, CNC, HMI, MQTT, OBD-II, J1939, NMEA 2000, and MAVLink readings into Myncel. It includes plugin-style connectors, local buffering for network outages, and ready-to-edit examples for Raspberry Pi, ESP32, and Node-RED deployments — whether the asset is a CNC mill, a Class 8 truck, a charter boat, or a survey drone.</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <a href="/api/edge-gateway/download/package" className="rounded-lg bg-[#635bff] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4f46e5]">Download package</a>
             <Link href="#downloads" className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-surface-2)]">View all downloads</Link>
@@ -93,6 +93,30 @@ export default function EdgeGatewayDocsPage() {
             <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">Read TwinCAT symbols from Beckhoff controllers using AMS Net ID, AMS port, and symbol names.</p>
             <span className="mt-3 inline-block text-xs font-semibold text-[#635bff]">Read documentation →</span>
           </Link>
+          <Link href="/docs/edge-gateway/obd2" className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#635bff] hover:shadow-md">
+            <div className="text-2xl">🚗</div>
+            <h2 className="mt-2 text-sm font-bold text-[var(--text-primary)]">OBD-II</h2>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">Connect cars, light trucks, vans, and motorcycles via the universal OBD-II port and a $25 ELM327 dongle. Reads RPM, fuel, coolant, odometer, and fault codes.</p>
+            <span className="mt-3 inline-block text-xs font-semibold text-[#635bff]">Read documentation →</span>
+          </Link>
+          <Link href="/docs/edge-gateway/j1939" className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#635bff] hover:shadow-md">
+            <div className="text-2xl">🚛</div>
+            <h2 className="mt-2 text-sm font-bold text-[var(--text-primary)]">SAE J1939</h2>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">Connect Class 7-8 trucks, buses, ag and off-highway equipment via the heavy-duty CAN-bus protocol. Reads engine, fuel, DEF, transmission, hours, and DTCs.</p>
+            <span className="mt-3 inline-block text-xs font-semibold text-[#635bff]">Read documentation →</span>
+          </Link>
+          <Link href="/docs/edge-gateway/nmea2000" className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#635bff] hover:shadow-md">
+            <div className="text-2xl">⛵</div>
+            <h2 className="mt-2 text-sm font-bold text-[var(--text-primary)]">NMEA 2000</h2>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">Connect yachts, workboats, and commercial marine vessels via the marine-industry standard CAN-bus. Reads engine room, tank levels, GPS, depth, and speed.</p>
+            <span className="mt-3 inline-block text-xs font-semibold text-[#635bff]">Read documentation →</span>
+          </Link>
+          <Link href="/docs/edge-gateway/mavlink" className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#635bff] hover:shadow-md">
+            <div className="text-2xl">🛸</div>
+            <h2 className="mt-2 text-sm font-bold text-[var(--text-primary)]">MAVLink</h2>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">Connect ArduPilot and PX4 drones / UAVs. Reads battery, GPS, altitude, ground speed, satellite count, and autopilot status. Read-only telemetry.</p>
+            <span className="mt-3 inline-block text-xs font-semibold text-[#635bff]">Read documentation →</span>
+          </Link>
           </div>
         </section>
 
@@ -102,7 +126,7 @@ export default function EdgeGatewayDocsPage() {
             <h2 className="mt-1 text-2xl font-bold text-[var(--text-primary)]">How gateway setup works</h2>
             <div className="mt-5 space-y-4 text-sm leading-6 text-[var(--text-secondary)]">
               <p><strong>1. Create a gateway token.</strong> Open a machine detail modal in Admin Machines and click <strong>Create Gateway Token</strong>. Copy the token once and store it on the gateway device.</p>
-              <p><strong>2. Generate YAML.</strong> Choose Modbus, OPC UA, MQTT, MTConnect, BACnet, Siemens S7, Rockwell EtherNet/IP, or Beckhoff ADS and export a YAML config.</p>
+              <p><strong>2. Generate YAML.</strong> Choose Modbus, OPC UA, MQTT, MTConnect, BACnet, Siemens S7, Rockwell EtherNet/IP, Beckhoff ADS, OBD-II, SAE J1939, NMEA 2000, or MAVLink and export a YAML config.</p>
               <p><strong>3. Run the edge runtime.</strong> Install dependencies on a Raspberry Pi, industrial PC, or VM. The runtime polls connectors, buffers readings locally, and forwards batches to Myncel.</p>
               <p><strong>4. Monitor status.</strong> Last-seen timestamps and token status appear in the machine detail gateway table and the admin Gateway Services page.</p>
             </div>

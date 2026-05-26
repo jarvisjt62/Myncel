@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
-type ConnectorKey = 'modbus_tcp' | 'modbus_rtu' | 'opcua' | 'mqtt' | 'mtconnect' | 'bacnet' | 'siemens_s7' | 'rockwell_ethernet_ip' | 'beckhoff_ads';
+type ConnectorKey = 'modbus_tcp' | 'modbus_rtu' | 'opcua' | 'mqtt' | 'mtconnect' | 'bacnet' | 'siemens_s7' | 'rockwell_ethernet_ip' | 'beckhoff_ads' | 'obd2_elm327' | 'j1939_canbus' | 'nmea2000' | 'mavlink';
 
 const CONNECTORS: Record<ConnectorKey, { label: string; port: string; endpoint: string; sample: string }> = {
   modbus_tcp: {
@@ -115,6 +115,90 @@ const CONNECTORS: Record<ConnectorKey, { label: string; port: string; endpoint: 
     symbol: MAIN.PartCount
     data_type: dint
     poll_interval_ms: 1000`,
+  },
+  obd2_elm327: {
+    label: 'OBD-II (cars / light trucks)',
+    port: '/dev/ttyUSB0',
+    endpoint: 'ELM327 dongle',
+    sample: `  - name: van_42_obd2
+    type: obd2
+    serial_port: /dev/ttyUSB0
+    baudrate: 38400
+    poll_interval_ms: 5000
+    read_dtcs: true
+    signals:
+      - rpm
+      - speed
+      - coolant_temp
+      - engine_load
+      - fuel_level
+      - battery_voltage
+      - runtime
+      - odometer`,
+  },
+  j1939_canbus: {
+    label: 'SAE J1939 (heavy trucks / construction)',
+    port: 'can0',
+    endpoint: '250 kbps CAN bus',
+    sample: `  - name: kenworth_t680_18_j1939
+    type: j1939
+    can_interface: can0
+    bitrate: 250000
+    poll_interval_ms: 1000
+    read_dtcs: true
+    signals:
+      - engine_rpm
+      - vehicle_speed
+      - engine_load
+      - coolant_temp
+      - oil_pressure
+      - fuel_rate
+      - fuel_level
+      - def_level
+      - transmission_temp
+      - total_engine_hours
+      - total_distance
+      - battery_voltage`,
+  },
+  nmea2000: {
+    label: 'NMEA 2000 (vessels / boats)',
+    port: '2598',
+    endpoint: 'canboat / N2K UDP',
+    sample: `  - name: charter_boat_alpha_n2k
+    type: nmea2000
+    udp_host: 127.0.0.1
+    udp_port: 2598
+    poll_interval_ms: 1000
+    signals:
+      - engine_rpm
+      - engine_hours
+      - coolant_temp
+      - engine_oil_press
+      - fuel_rate
+      - fuel_level
+      - alternator_volt
+      - gps_lat
+      - gps_lon
+      - speed_over_ground
+      - depth
+      - water_temp`,
+  },
+  mavlink: {
+    label: 'MAVLink (drones / UAVs)',
+    port: '14550',
+    endpoint: 'udpin:0.0.0.0:14550',
+    sample: `  - name: ardupilot_quad_07
+    type: mavlink
+    connection: udpin:0.0.0.0:14550
+    poll_interval_ms: 5000
+    signals:
+      - battery_voltage
+      - battery_remaining
+      - ground_speed
+      - altitude_msl
+      - gps_fix_type
+      - satellites_visible
+      - system_load`,
   },
 };
 

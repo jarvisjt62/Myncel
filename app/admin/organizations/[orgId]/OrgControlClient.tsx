@@ -436,6 +436,43 @@ export default function OrgControlClient({ org, auditLogs }: Props) {
           <div style={{ padding:'16px 20px',borderBottom:'1px solid var(--border)' }}>
             <h2 style={{ fontSize:15,fontWeight:700,color:'var(--text-primary)',margin:0 }}>⚙️ Machines ({org.counts.machines})</h2>
           </div>
+          {/* Fleet rollup — Big Bet #3 multi-domain */}
+          {(() => {
+            const counts = {
+              industrial: 0, vehicleLight: 0, vehicleHeavy: 0, vessel: 0, drone: 0, forklift: 0, other: 0,
+            };
+            for (const m of org.machines) {
+              if (m.category === 'VEHICLE_LIGHT') counts.vehicleLight++;
+              else if (m.category === 'VEHICLE_HEAVY') counts.vehicleHeavy++;
+              else if (m.category === 'VESSEL') counts.vessel++;
+              else if (m.category === 'DRONE_UAV') counts.drone++;
+              else if (m.category === 'FORKLIFT') counts.forklift++;
+              else if (m.category === 'OTHER') counts.other++;
+              else counts.industrial++;
+            }
+            const cells: Array<[string,number,string]> = [
+              ['🏭 Industrial', counts.industrial, '#635bff'],
+              ['🚜 Forklift / AGV', counts.forklift, '#0d9488'],
+              ['🚗 Light vehicles', counts.vehicleLight, '#0ea5e9'],
+              ['🚛 Heavy trucks', counts.vehicleHeavy, '#f97316'],
+              ['⛵ Vessels', counts.vessel, '#0284c7'],
+              ['🛸 Drones / UAVs', counts.drone, '#a855f7'],
+              ['🔩 Other', counts.other, '#6b7280'],
+            ];
+            return (
+              <div style={{ padding:'12px 20px',borderBottom:'1px solid var(--border)',background:'var(--bg-surface-2)' }}>
+                <div style={{ fontSize:11,fontWeight:600,color:'var(--text-secondary)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:8 }}>Fleet rollup by category</div>
+                <div style={{ display:'flex',flexWrap:'wrap',gap:8 }}>
+                  {cells.map(([label,n,c]) => (
+                    <div key={label} style={{ display:'flex',alignItems:'center',gap:6,padding:'4px 10px',background:'var(--bg-surface)',border:`1px solid ${c}40`,borderRadius:999,fontSize:12 }}>
+                      <span>{label}</span>
+                      <span style={{ fontWeight:700,color:c }}>{n}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
           <div style={{ overflowX:'auto' }}>
           <table style={{ width:'100%',borderCollapse:'collapse' }}>
             <thead>
