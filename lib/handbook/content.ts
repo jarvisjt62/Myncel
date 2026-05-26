@@ -774,52 +774,72 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     emoji: '📈',
     title: 'Reports & Analytics',
     summary:
-      'Out-of-the-box reports for the metrics that matter — MTBF, MTTR, PM compliance, downtime, parts usage, labor utilization, cost — plus a custom report builder, scheduled email delivery, and export to CSV / Excel / PDF.',
+      'Saved & scheduled reports across the six core datasets — Work Orders, Alerts, Machines, Parts, Downtime, and PM Compliance. Save filters once, run on demand for an instant CSV download, or email a CSV attachment to your team on a daily, weekly, or monthly schedule.',
     sections: [
       {
-        heading: 'Built-in reports',
+        heading: 'Where to find Reports',
         body: [
-          'Open the Reports tab in the sidebar to see the full list of pre-built reports. Each one supports filtering by date range, facility, equipment group, and team, and every report can be exported (CSV / Excel / PDF) or scheduled to email a recipient list automatically.',
+          'Open /reports from the left sidebar (📊 Reports). The page lists every saved report in your organization with its dataset, schedule, last-run timestamp, last-run row count, and next-run timestamp. Anyone in the org can see and run shared reports; the user who created the report (the "owner") is shown next to its name.',
+        ],
+      },
+      {
+        heading: 'The six datasets',
+        body: [
+          'A report is a saved set of filters over one of these six datasets. Pick the dataset that has the columns you want when you create the report — you can change it later. Every dataset is capped at 10,000 rows per export to keep CSV downloads fast and email attachments under typical inbox limits; for larger pulls use the public REST API at /api/docs.',
         ],
         bullets: [
-          'MTBF (Mean Time Between Failures) — by machine and by group; trends over time.',
-          'MTTR (Mean Time To Repair) — labor time from work-order open to close, broken down by reason code.',
-          'PM Compliance — percentage of preventive tasks completed on time; flags repeat-late machines.',
-          'Downtime — total downtime by machine, by reason code (Mechanical, Electrical, Material, Operator, Process), by shift.',
-          'Work Order Backlog — open work orders by age, priority, and assignee.',
-          'Parts Consumption — most-used parts, stockout risk, supplier-spend rollup.',
-          'Labor Utilization — hours by technician, by equipment, by work-order type, by skill tag.',
-          'Cost Roll-up — labor + parts + vendor cost per machine, per facility, per cost center.',
-          'Predictive Alert Effectiveness — caught vs missed events; average lead time before failure.',
-          'Audit & Compliance — for FDA, NFPA, OSHA, JCI, ISO 55000, SOC 2 evidence.',
-          'Energy & sustainability — kWh per unit produced, anomalous-consumption flags.',
+          'Work Orders — WO number, title, machine, type, status, priority, assignee, created at, completed at, estimated/actual minutes, labor cost, parts cost, total cost, currency. Filters: date range, search, status, priority, machine.',
+          'Alerts — alert title, machine, severity, status (OPEN / RESOLVED), triggered at, resolved at, message. Filters: date range, search, status, machine.',
+          'Machines — name, category, status, criticality, location, manufacturer, model, serial, year installed, total runtime hours. Filters: search, status.',
+          'Parts Inventory — name, part number, quantity on hand, min quantity (reorder point), unit cost, currency, location, supplier. Filters: search.',
+          'Downtime — machine, WO number, started, ended, duration in hours, reason, cost. Computed from completed corrective + emergency work orders. Filters: date range, machine.',
+          'PM Compliance — task, machine, frequency, last completed, next due, status (ON_SCHEDULE / DUE_SOON / OVERDUE), days until due. Filters: machine, status.',
         ],
       },
       {
-        heading: 'Exporting and scheduling reports',
+        heading: 'Creating a saved report',
         body: [
-          'Every report can be exported to CSV, Excel (.xlsx with formatting preserved), or PDF (paginated, with your organization\'s logo). You can also schedule a report to be emailed automatically — for example a "weekly PM compliance" PDF every Monday morning at 06:00 to your operations director and plant manager.',
+          'Saved reports work in two modes — manual-only (just a saved set of filters you click "Run + Download" on whenever you need the CSV) and scheduled (Myncel runs it automatically and emails the CSV to a recipient list).',
         ],
         steps: [
-          'Open any report.',
-          'Apply the filters you want (date range, facility, group, team).',
-          'Click "Schedule" in the top-right.',
-          'Choose recipients (any email address, including non-Myncel users), frequency (daily / weekly / monthly / quarterly), and format (CSV / Excel / PDF).',
-          'Optionally add a one-line note that appears in the email body.',
-          'Save. The first delivery happens at the next scheduled time.',
+          'Open /reports → click "+ New Report".',
+          'Give it a clear name (e.g. "Monthly downtime — Production line") and an optional one-line description.',
+          'Pick the dataset (Work Orders / Alerts / Machines / Parts / Downtime / PM Compliance). The form below adjusts to show only the filters that dataset supports.',
+          'Set the filters: a date range with From/To pickers (where applicable), a "Title contains" search, and any dataset-specific filters.',
+          'Choose a schedule: "Manual only — no schedule", "Every day", "Every Monday", or "First day of every month".',
+          'If you picked a schedule, also pick the hour of day (00–23, in your local timezone) and confirm the timezone string (auto-detected from your browser — e.g. "America/New_York", "Europe/London", "Africa/Lagos"). Then enter recipient emails, comma- or space-separated.',
+          'Click Create Report. The report appears in the list; if scheduled, the "Next" timestamp shows when the first delivery will fire.',
+        ],
+        callout: {
+          type: 'info',
+          text: 'The cron runs every 15 minutes, so a report scheduled for 08:00 will fire some time in the 08:00–08:15 window. Reports never double-fire — once they run, the next-run timestamp is rolled forward.',
+        },
+      },
+      {
+        heading: 'Running a report on demand',
+        body: [
+          'Even on a scheduled report, you can run on demand at any time without affecting the schedule. Two buttons on each report card:',
+        ],
+        bullets: [
+          '⬇ Run + Download — runs the query immediately and streams the CSV back as a browser download. The filename is "<report-name>-<YYYY-MM-DD>.csv" and the row count is shown in a toast.',
+          '📧 Run + Email — runs the query and sends the CSV as an email attachment to all recipients on the report. Only shown if the report has at least one recipient. The email includes the row count, a one-paragraph summary, and an "Open in Myncel" deep-link.',
         ],
       },
       {
-        heading: 'Custom report builder',
+        heading: 'Pause, resume, edit, delete',
         body: [
-          'Need something not in the built-in list? On the Professional plan, the custom report builder lets you pick fields, group, filter, and visualize data from across Myncel — work orders, equipment, schedules, parts, labor, alerts, AI predictions, audit log. Saved custom reports show up in the same Reports tab, can be scheduled, and can be shared with specific users or roles.',
-          'Visualization options include tables (with conditional formatting), bar / line / area / pie charts, gauges, heatmaps, and pivot tables. You can also pin any custom report to your dashboard.',
+          'Each report card on /reports has the full set of management controls inline:',
+        ],
+        bullets: [
+          'Pause / Resume — only on scheduled reports. Pausing keeps the report and its filters but stops automatic runs. Resuming recomputes the next-run timestamp from "now" forward.',
+          'Edit — opens the same form you used to create the report. Changing the schedule, hour, or timezone immediately recomputes the next-run timestamp.',
+          'Delete — soft confirmation prompt, then permanent removal. There is no undo today; if you delete a report you used to schedule, you will need to recreate it.',
         ],
       },
       {
-        heading: 'Dashboards',
+        heading: 'What\'s on the roadmap',
         body: [
-          'Every user gets a personal dashboard. Admins can configure organization-wide dashboards (e.g. one for the morning stand-up, one for the executive review) and assign them to roles. Widgets include KPI tiles, charts from any report, work-order queues, alert feeds, and the live equipment-health map.',
+          'Today\'s release covers the high-value 80% — six datasets, CSV export, daily/weekly/monthly schedules, email delivery. Bigger analytics features (full custom-field report builder with charts, MTBF / MTTR aggregations, dashboard widgets pinned from saved reports, XLSX and PDF export, role-based sharing rules, conditional-formatting alert thresholds inside the report) are tracked in the Roadmap chapter.',
         ],
       },
     ],
@@ -1227,6 +1247,21 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
           'Reusable Work Order templates — define a "30-day Haas VF-2 PM" once, spawn it from any machine.',
           'Parts reservation and auto-deduction from inventory when a WO is completed.',
           'Labor timer that runs in the mobile app (today labor is entered as a number when completing the WO).',
+        ],
+      },
+      {
+        heading: 'Reports & analytics',
+        body: [
+          'Today Myncel ships Saved & Scheduled Reports — six datasets (Work Orders, Alerts, Machines, Parts, Downtime, PM Compliance) with filterable CSV export and daily/weekly/monthly email scheduling. The roadmap layers richer analytics on top of that engine.',
+        ],
+        bullets: [
+          'Custom field-by-field report builder with drag-and-drop columns, group-by, and pivot tables across any Myncel data model.',
+          'Pre-built MTBF / MTTR / OEE roll-up reports (today: derive from Work Orders + Downtime CSV exports in your BI tool of choice).',
+          'XLSX export with formula-friendly numeric typing and PDF export with the org logo (today: CSV only).',
+          'Charts inside the report — bar, line, area, pie, gauges — and an option to pin any saved report to the dashboard as a widget.',
+          'Role-based sharing rules (today: any org member can see any saved report; we plan to add owner-only / role-only / public visibility).',
+          'Conditional-formatting alert thresholds inside reports (highlight rows where a column crosses a threshold; emails the report only when at least one row qualifies).',
+          'Quarterly schedule cadence and arbitrary cron-string schedules (today: daily / weekly Mon / monthly 1st).',
         ],
       },
       {

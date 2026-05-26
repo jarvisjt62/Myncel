@@ -191,6 +191,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
     if (pathname.startsWith('/equipment/floor-plan')) return 'floor-plan';
     if (pathname.startsWith('/equipment')) return 'equipment';
     if (pathname.startsWith('/work-orders') || pathname.includes('workorders')) return 'workorders';
+    if (pathname.startsWith('/reports')) return 'reports';
     if (pathname.startsWith('/settings')) return 'settings';
     if (pathname.startsWith('/setup')) return 'setup';
     if (pathname.startsWith('/docs/api')) return 'api-docs';
@@ -423,6 +424,12 @@ function UserShellInner({ user, children }: UserSidebarProps) {
               </svg>,
               !isPlanAllowed('feature.qr.enabled') ? planLockBadge('feature.qr.enabled') : undefined
             )}
+
+            {navLink('/reports', 'reports', 'Reports',
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-6a2 2 0 012-2h2a2 2 0 012 2v6m-6 0H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2m-6 0v4m0 0H7m2 0h6" />
+              </svg>
+            )}
           </div>
         )}
 
@@ -614,6 +621,7 @@ function UserShellInner({ user, children }: UserSidebarProps) {
     if (pathname.startsWith('/equipment/qr-labels')) return 'QR Labels';
     if (pathname.startsWith('/equipment/floor-plan')) return 'Floor Plan';
     if (pathname.startsWith('/equipment')) return 'Equipment';
+    if (pathname.startsWith('/reports')) return 'Reports';
     if (pathname.startsWith('/settings/api-keys')) return 'API Keys';
     if (pathname.startsWith('/settings/integrations')) return 'Integrations';
     if (pathname.startsWith('/settings/notifications')) return 'Notification Settings';

@@ -18,17 +18,27 @@ interface EmailPayload {
   subject: string;
   html: string;
   from?: string;
+  /** Optional file attachments (e.g. CSV exports for scheduled reports). */
+  attachments?: Array<{ filename: string; content: string | Buffer; contentType?: string }>;
 }
 
-export async function sendEmail({ to, subject, html, from = EMAIL_ADDRESSES.support }: EmailPayload) {
+export async function sendEmail({ to, subject, html, from = EMAIL_ADDRESSES.support, attachments }: EmailPayload) {
   // If no Resend client, log and return success (for development)
   if (!resend) {
-    console.log('📧 Email not sent (no RESEND_API_KEY configured):', { to, subject, from });
+    console.log('📧 Email not sent (no RESEND_API_KEY configured):', { to, subject, from, attachmentCount: attachments?.length || 0 });
     return { success: true, data: { id: 'dev-mode' } };
   }
 
   try {
-    const { data, error } = await resend.emails.send({ from, to, subject, html });
+    const payload: any = { from, to, subject, html };
+    if (attachments?.length) {
+      payload.attachments = attachments.map(a => ({
+        filename: a.filename,
+        content: typeof a.content === 'string' ? Buffer.from(a.content, 'utf8').toString('base64') : a.content.toString('base64'),
+        contentType: a.contentType || 'application/octet-stream',
+      }));
+    }
+    const { data, error } = await resend.emails.send(payload);
     if (error) { console.error('Email error:', error); return { success: false, error }; }
     return { success: true, data };
   } catch (error) {

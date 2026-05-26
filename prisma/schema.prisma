@@ -65,6 +65,9 @@ model User {
   // Mobile app
   mobilePushTokens MobilePushToken[]
 
+  // Saved & scheduled reports
+  savedReports SavedReport[] @relation("SavedReportOwner")
+
   @@map("users")
 }
 
@@ -215,6 +218,7 @@ model Organization {
   inviteTokens          InviteToken[]
   remoteSupportSessions RemoteSupportSession[]
   machineDeviceTokens   MachineDeviceToken[]
+  savedReports          SavedReport[]
 
   // Custom roles per org
   customRoles Role[]
@@ -1037,4 +1041,90 @@ model UserRoleAssignment {
   @@id([userId, roleId])
   @@index([roleId])
   @@map("user_role_assignments")
+}
+
+// =================================================================
+// SAVED & SCHEDULED REPORTS
+// =================================================================
+//
+// A SavedReport is a user-defined filtered view over one of the
+// reportable datasets (work orders, alerts, machines, parts,
+// downtime). It can be:
+//
+//   • Run on demand from /reports → "Run now" → CSV download.
+//   • Scheduled to email recipients on a cron (DAILY at 08:00 local,
+//     WEEKLY Mon 08:00, MONTHLY 1st 08:00).
+//
+// `dataset` decides which Prisma collection is queried and which
+// columns are emitted. `filters` is a JSON blob whose shape varies
+// by dataset (see /lib/reports/datasets.ts for validators). The
+// cron runner is /api/cron/saved-reports and runs every 15 min;
+// it fires any report whose `nextRunAt` <= now.
+// =================================================================
+
+model SavedReport {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+
+  // Which dataset this report queries.
+  dataset ReportDataset
+
+  // JSON blob — schema varies by dataset (date range, status, priority…).
+  filters Json @default("{}")
+
+  // Schedule. NEVER means "manual only".
+  schedule  ReportSchedule @default(NEVER)
+  // Hour (0-23) at which the schedule fires; default 8am.
+  hourLocal Int            @default(8)
+  // ISO timezone (e.g. "America/New_York"). Defaults to UTC if absent.
+  timezone  String         @default("UTC")
+  // Email recipients (JSON array of email strings).
+  recipients Json @default("[]")
+  // CSV / XLSX / PDF — only CSV is implemented today.
+  format     ReportFormat @default(CSV)
+
+  // Bookkeeping.
+  isActive    Boolean   @default(true)
+  lastRunAt   DateTime?
+  lastRunOk   Boolean?
+  lastRunRows Int?
+  lastError   String?   @db.Text
+  nextRunAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ownerId        String
+  owner          User         @relation("SavedReportOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([ownerId])
+  @@index([nextRunAt, isActive])
+  @@map("saved_reports")
+}
+
+enum ReportDataset {
+  WORK_ORDERS
+  ALERTS
+  MACHINES
+  PARTS
+  DOWNTIME
+  PM_COMPLIANCE
+}
+
+enum ReportSchedule {
+  NEVER
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum ReportFormat {
+  CSV
+  XLSX
+  PDF
 }
