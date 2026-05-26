@@ -42,7 +42,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     decision,
     comment,
   });
-  if (!result.ok) return NextResponse.json({ error: result.reason }, { status: 400 });
+  if ('reason' in result) {
+    return NextResponse.json({ error: result.reason }, { status: 400 });
+  }
 
   // Fire notification on terminal states.
   if (result.request.status === 'APPROVED' || result.request.status === 'REJECTED') {

@@ -114,7 +114,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
             previousStatus: wo.status,
             requestedById: userId,
           });
-          if (!opened.ok) {
+          if ('reason' in opened) {
             return NextResponse.json({ error: opened.reason }, { status: 400 });
           }
 

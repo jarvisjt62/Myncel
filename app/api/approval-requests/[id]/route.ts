@@ -53,6 +53,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   }
 
   const result = await cancelApprovalRequest(params.id, userId);
-  if (!result.ok) return NextResponse.json({ error: result.reason }, { status: 400 });
+  if ('reason' in result) return NextResponse.json({ error: result.reason }, { status: 400 });
   return NextResponse.json({ ok: true, request: result.request });
 }
