@@ -288,8 +288,11 @@ export async function GET(
   .report-toolbar { padding-top: max(32px, env(safe-area-inset-top, 0px)); padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); }
   body { padding-top: calc(64px + max(32px, env(safe-area-inset-top, 0px))); padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
   @media (max-width: 600px) {
-    .report-toolbar .back-btn span.lbl, .report-toolbar .print-btn span.lbl { display: none; }
-    .report-toolbar .back-btn, .report-toolbar .print-btn { padding: 9px 12px; }
+    .report-toolbar .back-btn span.lbl { display: none; }
+    /* Replace the long label with a short one on narrow screens via CSS pseudo */
+    .report-toolbar .print-btn span.lbl { display: none; }
+    .report-toolbar .print-btn::after { content: 'PDF'; font-weight: 600; font-size: 12px; margin-left: 2px; }
+    .report-toolbar .back-btn, .report-toolbar .print-btn { padding: 9px 14px; min-height: 40px; }
     body { font-size: 11px; padding: calc(64px + max(32px, env(safe-area-inset-top, 0px))) 12px 16px 12px; }
     table { font-size: 9px; }
     th, td { padding: 5px 4px; }
@@ -303,7 +306,7 @@ export async function GET(
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       <span class="lbl">Back to Dashboard</span>
     </a>
-    <button class="print-btn" onclick="window.print()">
+    <button class="print-btn" id="printBtn">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
       <span class="lbl">Print / Save as PDF</span>
     </button>
@@ -345,8 +348,60 @@ export async function GET(
         // else: anchor href="/dashboard" handles it natively
       });
     })();
+
+    // Print button — Capacitor-aware so it actually works inside the iOS/Android app.
+    // Plain WebViews silently ignore window.print(); we fall back to opening the same
+    // URL in the system browser, where Print/Save-as-PDF is fully supported.
+    (function () {
+      var pbtn = document.getElementById('printBtn');
+      if (!pbtn) return;
+
+      function isNativeApp() {
+        try {
+          return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+        } catch (_) { return false; }
+      }
+
+      function looksLikeMobileWebView() {
+        // iOS Safari standalone / Android Chrome WebView heuristic.
+        // Used as a secondary fallback when Capacitor isn't present but window.print is unreliable.
+        var ua = navigator.userAgent || '';
+        return /Mobile|Android|iPhone|iPad/.test(ua) && !/Chrome\/[0-9]+\..*Safari/.test(ua);
+      }
+
+      pbtn.addEventListener('click', function () {
+        // 1) Capacitor app -> open in system browser (Chrome/Safari) where Print works.
+        if (isNativeApp()) {
+          try {
+            var browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
+            var openUrl = window.location.href;
+            // hint the external browser to auto-trigger print after load
+            if (openUrl.indexOf('autoprint=1') === -1) {
+              openUrl += (openUrl.indexOf('?') === -1 ? '?' : '&') + 'autoprint=1';
+            }
+            if (browser && typeof browser.open === 'function') {
+              browser.open({ url: openUrl });
+              return;
+            }
+            // Fallback if Browser plugin isn't installed: target=_blank still opens
+            // the system browser in most Capacitor setups.
+            window.open(openUrl, '_system');
+            return;
+          } catch (_) { /* fall through to window.print() */ }
+        }
+
+        // 2) Regular browser -> native print dialog.
+        try {
+          window.print();
+        } catch (_) {
+          // 3) Last-ditch: announce to user.
+          alert('Use your browser menu \\u2192 Print to save this report as PDF.');
+        }
+      });
+    })();
+
     if (window.location.search.includes('autoprint=1')) {
-      setTimeout(() => window.print(), 500);
+      setTimeout(function () { try { window.print(); } catch (_) {} }, 500);
     }
   </script>
 </body>
