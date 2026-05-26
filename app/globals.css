@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+/* myncel-css-version: 2024-s24-v2 */
+
 :root {
   /* Stripe-inspired color palette */
   --stripe-purple: #635bff;
@@ -60,8 +62,11 @@ body {
   --safe-area-right: env(safe-area-inset-right, 0px);
 }
 
-/* When running inside the Capacitor shell, body class `capacitor-app` is
-   added by CapacitorSplashHide.tsx.
+/* When running inside the Capacitor shell, class `capacitor-app` is added
+   to BOTH <html> (immediately, via inline script in layout.tsx) AND <body>
+   (after CapacitorSplashHide.tsx mounts). We match both selectors so the
+   variable resolves correctly on the very first paint regardless of which
+   element gets the class first.
 
    ⚠️  Samsung One UI 6/7 (S24 Ultra etc.) bug:
    `env(safe-area-inset-top)` returns **0px** in the Capacitor WebView when
@@ -73,6 +78,7 @@ body {
    side later injects a real pixel value via `--capacitor-status-bar-height`
    (set by CapacitorSplashHide.tsx using the StatusBar plugin), we use that
    instead. The `max()` of all three guarantees we never go below the floor. */
+html.capacitor-app,
 body.capacitor-app {
   --safe-area-top: max(
     var(--capacitor-status-bar-height, 32px),
@@ -81,6 +87,17 @@ body.capacitor-app {
   --safe-area-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   --safe-area-left: env(safe-area-inset-left, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);
+}
+
+/* Belt-and-suspenders: standalone-display PWA mode on Android (Chrome PWA
+   install + Capacitor TWA both report this) ALSO gets the safe-area floor.
+   This catches edge cases where the JS UA-sniff misses but the WebView is
+   still in fullscreen-edge-to-edge mode. */
+@media (display-mode: standalone) {
+  :root {
+    --safe-area-top: max(32px, env(safe-area-inset-top, 0px));
+    --safe-area-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* Utility classes any component can use directly. */

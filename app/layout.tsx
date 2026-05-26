@@ -99,6 +99,32 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Myncel" />
+        {/* ─── EARLY Capacitor detection ─────────────────────────────────
+             Runs BEFORE React hydrates so the `capacitor-app` class is on
+             <html> in the very first paint. This guarantees the safe-area
+             CSS variables (defined in globals.css) get the 32px hard floor
+             on Samsung S24 Ultra etc. where env(safe-area-inset-top) bug-
+             returns 0 inside the Capacitor WebView.
+             We don't rely on window.Capacitor (sometimes injected late) —
+             instead we sniff the UA which contains "myncel-app" as set in
+             the native Capacitor shell config, OR fall back to the standard
+             "wv" Android WebView marker.
+           ─────────────────────────────────────────────────────────────── */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{
+              var ua = (navigator.userAgent||'').toLowerCase();
+              var isCap = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+                || ua.indexOf('myncel-app')>-1
+                || (ua.indexOf('android')>-1 && ua.indexOf('wv')>-1 && ua.indexOf('chrome/')>-1 && !ua.indexOf('mobile safari'));
+              if(isCap){
+                document.documentElement.classList.add('capacitor-app');
+                document.addEventListener('DOMContentLoaded', function(){ try{document.body.classList.add('capacitor-app');}catch(e){} });
+                if(document.body){ try{document.body.classList.add('capacitor-app');}catch(e){} }
+              }
+            }catch(e){}})();`
+          }}
+        />
         {/* JSON-LD: Organization */}
         <script
           type="application/ld+json"
