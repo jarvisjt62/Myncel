@@ -1,30 +1,30 @@
 # Myncel CMMS — Task Tracker
 
-## ✅ Completed (recent)
+## ✅ Big bets — all shipped
 
-- [x] **QR-label printable sheets** (multi-per-page) — 9 templates: Avery 5160/5163/5164 (Letter) + L7160/L7163/L7165/L7167 (A4) + thermal 50×80 + 100×150. Per-machine quantity, skip-first-N slots for partial-sheet reuse, sheet preview at 60%, pixel-perfect print via CSS Grid in mm units. Handbook updated. Committed `fee3244`.
-- [x] **PagerDuty native integration** (Events API v2) — trigger / ack / resolve, severity-aware, auto-resolve on alert clear. Connect modal in /settings/integrations + handbook step-by-step. Committed `c919cd5`.
-- [x] **Microsoft Teams native integration** (Adaptive Cards v1.4) — Incoming Webhook URL, severity → colour, confirmation card on connect. Connect modal + handbook. Committed `c919cd5`.
-- [x] **Saved & scheduled reports** — 6 datasets (Work Orders, Alerts, Machines, Parts, Downtime, PM Compliance), on-demand CSV download, run+email, daily/weekly/monthly schedule with timezone-aware DST-safe nextRun, pause/resume, edit, delete. Vercel cron every 15 min. Mobile responsive. Handbook rewritten + Roadmap updated. Committed `0e184d3`.
-- [x] **Multi-step approval workflows** — `ApprovalPolicy` + `ApprovalRequest` engine with PRE_START / PRE_CLOSE / VENDOR_QUOTE triggers, per-step permission OR named-user gates, requireAll flag, full step-walking + rollback, audit trail. Hooked into WO PATCH route — transitions to IN_PROGRESS / COMPLETED park the WO in new PENDING_APPROVAL status. `/approvals` user queue page (My Queue + All tabs, Approve/Reject/Cancel). `/settings/approvals` policy editor with up-to-10 ordered steps, priority/type/cost match criteria, pause/resume. 4 new permission keys seeded. Email notifications to approvers + requester. Mobile responsive (max-w-2xl modal, modal-safe-pad, flex-wrap actions). Handbook updated + Roadmap line removed.
+- [x] **8.1 Big Bet #1** — Offline mobile sync (Capacitor + IndexedDB queue + conflict resolution). Commit `647616d`.
+- [x] **8.2 Big Bet #2** — SAML 2.0 SSO + SCIM 2.0 (Okta, Azure AD / Entra, OneLogin, JumpCloud). Commit `d9d1add`.
+- [x] **8.3 Big Bet #3** — OBD-II / J1939 / NMEA 2000 / MAVLink + Geotab/Samsara/Verizon/Motive/Fleetio importers. Commits `46a4d49` + `50eccc2` (SuperAdmin Fleet tab).
+- [x] **8.4 Big Bet #4** — AI Settings panel + anomaly detection + predictive forecasts. Commit `2de3274` + `91c22c2` (Supabase SQL migration).
+
+## ✅ Recent passes
+
+- [x] Handbook + Roadmap pass — AI chapter, Vehicles chapter, /docs/ai card, cross-links. Commit `68ccb37`.
+- [x] Comprehensive mobile safe-area fix — toasts, AI panels, admin bottom nav. Commit `a6c85a8`.
+- [x] Scrub SuperAdmin operational details from customer-facing handbook chapters (Predictive, AI, Vehicles). Commit `2746a0d`.
+- [x] **Print/Save-as-PDF button now works in Capacitor mobile app** — server-side binary PDF via pdfkit (`<a href download>` instead of `window.print()`, which is a no-op in iOS WKWebView). Commit `38bad5f`.
 
 ## 🔧 Postponed (do not resume without explicit user request)
 
-- [ ] **Samsung S24 Ultra status-bar overlap** — 3 attempts failed (v1 body class, v2 html class + display-mode standalone, v3 inline style + force-pt-safe-32 !important). User said postpone.
+- [ ] **Samsung S24 Ultra status-bar overlap** — 3 attempts failed. User said postpone.
 
-## 🎯 Next phase (in order)
+## 🎯 Tomorrow
 
-- [ ] **4-level location hierarchy** — Site → Building → Floor → Room (instead of single `location` string). Migration + filters + breadcrumb UI. Update Equipment chapter.
-- [ ] **Tabbed equipment detail page** — separate Documents / Parts / Timeline / Telemetry / Schedules tabs. In-browser DWG / P&ID preview. Update Equipment chapter.
-
-## 🚀 Big bets (after the above)
-
-- [ ] **Full mobile offline editing with sync queue** — Capacitor + IndexedDB queue + conflict resolution. Open WOs, complete checklists, attach photos offline → auto-sync on reconnect.
-- [ ] **SAML 2.0 SSO + SCIM 2.0** — Okta, Azure AD / Entra, OneLogin, JumpCloud. Auto-provisioning + de-provisioning.
-- [ ] **OBD-II / J1939 / NMEA 2000 fleet & marine connectors** — vehicles, heavy trucks, vessels.
-- [ ] **AI Settings panel per machine** — per-machine threshold tuning, model selection, alert sensitivity.
+- [ ] Comprehensive bug-fix + mobile-responsiveness deep dive across web, mobile apps, mobile view (landscape + portrait).
 
 ## 📜 Standing rules (every shipped feature must satisfy)
 
 1. Verify mobile responsiveness — mobile web (landscape + portrait) AND mobile apps (Android + iOS).
-2. Update `lib/handbook/content.ts` — REMOVE shipped item from Roadmap chapter, INSERT detailed step-by-step content into the relevant chapter matching the existing `body[]` / `bullets[]` / `steps[]` / `callout` style.
+2. Update `lib/handbook/content.ts` — REMOVE shipped item from Roadmap chapter, INSERT detailed step-by-step content into the relevant chapter matching the existing `body[]` / `bullets[]` / `steps[]` / `callout` style. Callout `type` ∈ `'tip' | 'warning' | 'info'` only — never `'success'`. `steps` must be flat `string[]`.
+3. SuperAdmin dashboard must control / sync with all features — but customer-facing handbook chapters must NOT describe what the SuperAdmin org does.
+4. Big Bet #4 schema must be applied via Supabase SQL Editor (`prisma/sql/big-bet-4-ai.sql`).
