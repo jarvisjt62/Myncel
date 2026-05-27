@@ -83,7 +83,6 @@ export default function Footer() {
               {[
                 { label: 'Documentation', href: '/docs' },
                 { label: 'Handbook', href: '/handbook' },
-                { label: 'Blog', href: '/blog' },
                 { label: 'Customer Stories', href: '/customers' },
                 { label: 'Maintenance Guides', href: '/guides' },
                 { label: 'Webinars', href: '/webinars' },

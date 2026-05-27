@@ -2488,18 +2488,46 @@ function DashboardClientInner({ user, data }: Props) {
           {/* ── EQUIPMENT TAB ── */}
           {activeTab === 'equipment' && (
             <div className="space-y-4">
-              {/* Top bar — two clean rows on every viewport:
-                    Row 1: count + integration chips + primary action
-                    Row 2: standalone Export ▾ dropdown
-                  This keeps the dropdown menu out of the chip strip's
-                  overflow container so it always opens correctly on
-                  mobile, and gives integrations + primary action the
-                  visual weight they deserve. */}
+              {/* Equipment Summary cards — same shape as Parts tab so the
+                  three dashboards (Equipment / Work Orders / Parts) feel
+                  consistent. The counts also let us drop the redundant
+                  "N machines registered" label from the toolbar below. */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+                <div className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                  <div className="text-[10px] sm:text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Total Machines</div>
+                  <div className="text-lg sm:text-2xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>{machines.length}</div>
+                </div>
+                <div className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                  <div className="text-[10px] sm:text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Operational</div>
+                  <div className="text-lg sm:text-2xl font-bold mt-1" style={{ color: '#10b981' }}>
+                    {machines.filter(m => m.status === 'OPERATIONAL' || m.status === 'OK').length}
+                  </div>
+                  <div className="text-[10px] sm:text-xs mt-1 hidden sm:block" style={{ color: 'var(--text-muted)' }}>Running normally</div>
+                </div>
+                <div className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                  <div className="text-[10px] sm:text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Needs Attention</div>
+                  <div className="text-lg sm:text-2xl font-bold mt-1" style={{ color: machines.filter(m => m.status === 'WARNING' || m.status === 'MAINTENANCE').length > 0 ? '#f59e0b' : 'var(--text-primary)' }}>
+                    {machines.filter(m => m.status === 'WARNING' || m.status === 'MAINTENANCE').length}
+                  </div>
+                  <div className="text-[10px] sm:text-xs mt-1 hidden sm:block" style={{ color: 'var(--text-muted)' }}>Warning or in maintenance</div>
+                </div>
+                <div className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                  <div className="text-[10px] sm:text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Down / Critical</div>
+                  <div className="text-lg sm:text-2xl font-bold mt-1" style={{ color: machines.filter(m => m.status === 'CRITICAL' || m.status === 'DOWN').length > 0 ? '#ef4444' : 'var(--text-primary)' }}>
+                    {machines.filter(m => m.status === 'CRITICAL' || m.status === 'DOWN').length}
+                  </div>
+                  <div className="text-[10px] sm:text-xs mt-1 hidden sm:block" style={{ color: 'var(--text-muted)' }}>Stopped or critical</div>
+                </div>
+              </div>
+              {/* Top bar — single row toolbar.
+                  The "N machines registered" label was removed because
+                  the analytics cards above already show Total Machines.
+                  Keeping the row keeps Export ▾ / Send to ▾ / + Add Machine
+                  cleanly horizontally scrollable on mobile. */}
               <div>
-                {/* Single row: count + Export ▾ + Send to ▾ + primary action.
+                {/* Single row: Export ▾ + Send to ▾ + primary action.
                     Scrolls horizontally on narrow phones so nothing is ever clipped. */}
                 <div className="flex items-center gap-2 overflow-x-auto scroll-fade-x -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 sm:pb-0">
-                  <p className="text-sm text-[var(--text-secondary)] flex-shrink-0">{machines.length} machines registered</p>
                   <ExportActionsBar
                     dataset="machines"
                     importHref={perms.can('machines.create') ? '/dashboard/equipment/import' : undefined}
@@ -2686,15 +2714,34 @@ function DashboardClientInner({ user, data }: Props) {
           {/* ── WORK ORDERS TAB ── */}
           {activeTab === 'workorders' && (
             <div className="space-y-4">
-              {/* Top bar — same two-row pattern as Equipment:
-                    Row 1: count + integration chips + primary action
-                    Row 2: standalone Export ▾ */}
+              {/* Work Orders Summary cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+                <div className="rounded-xl border border-[var(--border)] [background:var(--bg-surface)] p-3 sm:p-4">
+                  <div className="text-xs text-[var(--text-secondary)] mb-1">Total</div>
+                  <div className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{workOrders.length}</div>
+                </div>
+                <div className="rounded-xl border border-[var(--border)] [background:var(--bg-surface)] p-3 sm:p-4">
+                  <div className="text-xs text-[var(--text-secondary)] mb-1">Open</div>
+                  <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {workOrders.filter(wo => wo.status === 'OPEN' || wo.status === 'IN_PROGRESS').length}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-[var(--border)] [background:var(--bg-surface)] p-3 sm:p-4">
+                  <div className="text-xs text-[var(--text-secondary)] mb-1">Overdue</div>
+                  <div className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">
+                    {workOrders.filter(wo => wo.dueAt && new Date(wo.dueAt) < new Date() && wo.status !== 'COMPLETED' && wo.status !== 'CANCELLED').length}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-[var(--border)] [background:var(--bg-surface)] p-3 sm:p-4">
+                  <div className="text-xs text-[var(--text-secondary)] mb-1">Critical Open</div>
+                  <div className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400">
+                    {workOrders.filter(wo => wo.priority === 'CRITICAL' && wo.status !== 'COMPLETED' && wo.status !== 'CANCELLED').length}
+                  </div>
+                </div>
+              </div>
               <div>
-                {/* Single row: count + Export ▾ + Send to ▾ + primary action. */}
+                {/* Single row: Export ▾ + Send to ▾ + primary action. */}
                 <div className="flex items-center gap-2 overflow-x-auto scroll-fade-x -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 sm:pb-0">
-                  <p className="text-sm text-[var(--text-secondary)] flex-shrink-0">
-                    {workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length} work order{workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length !== 1 ? 's' : ''}
-                  </p>
                   <ExportActionsBar
                     dataset="work_orders"
                     filterParam={woFilter}
@@ -3624,9 +3671,11 @@ function DashboardClientInner({ user, data }: Props) {
                       Row 1: title + integration chips + primary action
                       Row 2: standalone Export ▾ */}
                 <div className="px-4 sm:px-5 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                  {/* Single row: title + Export ▾ + Send to ▾ + primary action. */}
+                  {/* Single row: Export ▾ + Send to ▾ + primary action.
+                      The "All Parts" header was removed because the same
+                      counts (Total Parts / Low Stock / Inventory Value) are
+                      already shown in the analytics cards above this table. */}
                   <div className="flex items-center gap-2 overflow-x-auto scroll-fade-x -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 sm:pb-0">
-                    <h2 className="font-semibold text-sm flex-shrink-0" style={{ color: 'var(--text-primary)' }}>All Parts</h2>
                     <ExportActionsBar
                       dataset="parts"
                       onIntegrationResult={handleExportResult}
