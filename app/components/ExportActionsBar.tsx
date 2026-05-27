@@ -230,39 +230,66 @@ export default function ExportActionsBar({
       className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pr-3 lg:mx-0 lg:px-0 lg:pr-0 lg:flex-wrap lg:overflow-visible scroll-fade-x"
       style={{ scrollbarWidth: 'none' }}
     >
-      {/* CSV download — fetches as Blob so it works in every mobile WebView */}
-      <button
-        type="button"
-        onClick={handleCsvDownload}
-        disabled={busy === 'csv'}
-        className={`${btnBase} border border-[var(--border)] text-[var(--text-secondary)] hover:border-[#635bff] hover:text-[#635bff]`}
-        title="Download as CSV"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
-        <span>{busy === 'csv' ? 'Saving…' : 'CSV'}</span>
-      </button>
-
-      {/* PDF (real binary download — works inside Capacitor WebView, mobile Safari, desktop)
-          target="_blank" so Capacitor hands the link to the system browser where
-          downloads are reliable. download attr makes regular browsers save directly. */}
-      <a
-        href={downloadUrl('pdf')}
-        download
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${btnBase} border border-[var(--border)] text-[var(--text-secondary)] hover:border-[#635bff] hover:text-[#635bff]`}
-        title="Download PDF report"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-        </svg>
-        <span>PDF</span>
-      </a>
+      {/* Combined Download menu — CSV + PDF in one chip to save space.
+          On click, reveals a small dropdown with the two download options. */}
+      <div className="relative flex-shrink-0">
+        <button
+          type="button"
+          onClick={() => setOpenMenu(openMenu === 'download' ? null : 'download')}
+          disabled={busy === 'csv'}
+          className={`${btnBase} border border-[var(--border)] text-[var(--text-secondary)] hover:border-[#635bff] hover:text-[#635bff]`}
+          title="Download report (CSV or PDF)"
+          aria-haspopup="menu"
+          aria-expanded={openMenu === 'download'}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          <span>{busy === 'csv' ? 'Saving…' : 'Export'}</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        {openMenu === 'download' && (
+          <div
+            role="menu"
+            className="absolute right-0 mt-1 z-30 min-w-[160px] rounded-lg border border-[var(--border)] [background:var(--bg-surface)] shadow-lg overflow-hidden"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => { setOpenMenu(null); handleCsvDownload(); }}
+              disabled={busy === 'csv'}
+              className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-[var(--bg-muted,#f3f4f6)] text-[var(--text-primary)] disabled:opacity-50"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              <span className="font-medium">CSV</span>
+              <span className="ml-auto text-[10px] text-[var(--text-muted)]">spreadsheet</span>
+            </button>
+            <a
+              href={downloadUrl('pdf')}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              role="menuitem"
+              onClick={() => setOpenMenu(null)}
+              className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-[var(--bg-muted,#f3f4f6)] text-[var(--text-primary)] border-t border-[var(--border)]"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              <span className="font-medium">PDF</span>
+              <span className="ml-auto text-[10px] text-[var(--text-muted)]">printable</span>
+            </a>
+          </div>
+        )}
+      </div>
 
       {/* Google Sheets */}
       {available.googleSheets && (
