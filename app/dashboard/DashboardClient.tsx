@@ -2496,27 +2496,28 @@ function DashboardClientInner({ user, data }: Props) {
                   mobile, and gives integrations + primary action the
                   visual weight they deserve. */}
               <div className="space-y-2">
-                {/* Row 1: count + primary action (always visible, no squeeze) */}
-                <div className="flex flex-row items-center gap-2">
-                  <p className="text-sm text-[var(--text-secondary)] flex-1 min-w-0 truncate">{machines.length} machines registered</p>
+                {/* Row 1: count + integration chips + primary action all on ONE row.
+                    On narrow screens the row scrolls horizontally rather than wrapping,
+                    so nothing is ever hidden behind another element. */}
+                <div className="flex items-center gap-2 overflow-x-auto scroll-fade-x -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 sm:pb-0">
+                  <p className="text-sm text-[var(--text-secondary)] flex-shrink-0">{machines.length} machines registered</p>
+                  <div className="flex-shrink-0">
+                    <ExportActionsBar
+                      dataset="machines"
+                      mode="integrations-only"
+                      onIntegrationResult={handleExportResult}
+                    />
+                  </div>
                   <Can permission="machines.create">
                     <button
                       onClick={() => setShowMachineModal(true)}
-                      className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0"
+                      className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 ml-auto"
                     >
                       + Add Machine
                     </button>
                   </Can>
                 </div>
-                {/* Row 2: integration chips — full width, scroll horizontally if needed */}
-                <div>
-                  <ExportActionsBar
-                    dataset="machines"
-                    mode="integrations-only"
-                    onIntegrationResult={handleExportResult}
-                  />
-                </div>
-                {/* Row 3: Export dropdown on its own line */}
+                {/* Row 2: Export dropdown on its own line */}
                 <div>
                   <ExportActionsBar
                     dataset="machines"
@@ -2700,30 +2701,30 @@ function DashboardClientInner({ user, data }: Props) {
                     Row 1: count + integration chips + primary action
                     Row 2: standalone Export ▾ */}
               <div className="space-y-2">
-                {/* Row 1: count + primary action */}
-                <div className="flex flex-row items-center gap-2">
-                  <p className="text-sm text-[var(--text-secondary)] flex-1 min-w-0 truncate">
+                {/* Row 1: count + integration chips + primary action all on ONE row,
+                    horizontally scrollable on narrow screens. */}
+                <div className="flex items-center gap-2 overflow-x-auto scroll-fade-x -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 sm:pb-0">
+                  <p className="text-sm text-[var(--text-secondary)] flex-shrink-0">
                     {workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length} work order{workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length !== 1 ? 's' : ''}
                   </p>
+                  <div className="flex-shrink-0">
+                    <ExportActionsBar
+                      dataset="work_orders"
+                      filterParam={woFilter}
+                      mode="integrations-only"
+                      onIntegrationResult={handleExportResult}
+                    />
+                  </div>
                   <Can permission="work_orders.create">
                     <button
                       onClick={() => { setShowWorkOrderModal(true); loadWoTemplates(); }}
-                      className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0"
+                      className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 ml-auto"
                     >
                       + New Work Order
                     </button>
                   </Can>
                 </div>
-                {/* Row 2: integration chips — full width, scroll horizontally if needed */}
-                <div>
-                  <ExportActionsBar
-                    dataset="work_orders"
-                    filterParam={woFilter}
-                    mode="integrations-only"
-                    onIntegrationResult={handleExportResult}
-                  />
-                </div>
-                {/* Row 3: Export dropdown */}
+                {/* Row 2: Export dropdown on its own line */}
                 <div>
                   <ExportActionsBar
                     dataset="work_orders"
@@ -3646,27 +3647,27 @@ function DashboardClientInner({ user, data }: Props) {
                       Row 1: title + integration chips + primary action
                       Row 2: standalone Export ▾ */}
                 <div className="px-4 sm:px-5 py-3 space-y-2" style={{ borderBottom: '1px solid var(--border)' }}>
-                  {/* Row 1: title + primary action */}
-                  <div className="flex flex-row items-center gap-2">
-                    <h2 className="font-semibold text-sm flex-1 min-w-0 truncate" style={{ color: 'var(--text-primary)' }}>All Parts</h2>
+                  {/* Row 1: title + integration chips + primary action all on ONE row,
+                      horizontally scrollable on narrow screens. */}
+                  <div className="flex items-center gap-2 overflow-x-auto scroll-fade-x -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 sm:pb-0">
+                    <h2 className="font-semibold text-sm flex-shrink-0" style={{ color: 'var(--text-primary)' }}>All Parts</h2>
+                    <div className="flex-shrink-0">
+                      <ExportActionsBar
+                        dataset="parts"
+                        mode="integrations-only"
+                        onIntegrationResult={handleExportResult}
+                      />
+                    </div>
                     <Can permission="parts.create">
                       <button
                         onClick={() => setShowPartModal(true)}
-                        className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0"
+                        className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 ml-auto"
                       >
                         + Add Part
                       </button>
                     </Can>
                   </div>
-                  {/* Row 2: integration chips — full width, scroll horizontally if needed */}
-                  <div>
-                    <ExportActionsBar
-                      dataset="parts"
-                      mode="integrations-only"
-                      onIntegrationResult={handleExportResult}
-                    />
-                  </div>
-                  {/* Row 3: Export dropdown */}
+                  {/* Row 2: Export dropdown */}
                   <div>
                     <ExportActionsBar
                       dataset="parts"

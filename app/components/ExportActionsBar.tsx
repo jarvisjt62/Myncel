@@ -49,10 +49,15 @@ export default function ExportActionsBar({
   // escape the chip strip's overflow-x-auto clipping rectangle.
   const exportBtnRef = useRef<HTMLButtonElement | null>(null);
   const [exportMenuPos, setExportMenuPos] = useState<{ top: number; left: number } | null>(null);
-  const [available, setAvailable] = useState<{ googleSheets: boolean; quickbooks: boolean; slack: boolean }>({
-    googleSheets: false,
-    quickbooks: false,
-    slack: false,
+  const [available, setAvailable] = useState<{ googleSheets: boolean; quickbooks: boolean; slack: boolean }>(() => {
+    // Hydrate from sessionStorage so the chips don't pop in on every page nav.
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = sessionStorage.getItem('myncel.integrationsAvailable');
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return { googleSheets: false, quickbooks: false, slack: false };
   });
   // Scope picker modal — user picks specific records (or "All") before running the export
   const [scopeModal, setScopeModal] = useState<
@@ -89,6 +94,14 @@ export default function ExportActionsBar({
           quickbooks: isConnected('quickbooks'),
           slack: isConnected('slack'),
         });
+        // Persist for instant render on subsequent page navs in the same session.
+        try {
+          sessionStorage.setItem('myncel.integrationsAvailable', JSON.stringify({
+            googleSheets: isConnected('google_sheets'),
+            quickbooks: isConnected('quickbooks'),
+            slack: isConnected('slack'),
+          }));
+        } catch {}
       })
       .catch(() => {});
     return () => {
@@ -289,9 +302,11 @@ export default function ExportActionsBar({
       className={
         mode === 'export-only'
           ? 'flex items-center gap-2 flex-shrink-0'
+          : mode === 'integrations-only'
+          ? 'flex items-center gap-2 flex-shrink-0'
           : 'flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pr-3 lg:mx-0 lg:px-0 lg:pr-0 lg:flex-wrap lg:overflow-visible scroll-fade-x'
       }
-      style={mode === 'export-only' ? undefined : { scrollbarWidth: 'none' }}
+      style={mode === 'both' ? { scrollbarWidth: 'none' } : undefined}
     >
       {/* Combined Download menu — CSV + PDF in one chip to save space.
           On click, reveals a small dropdown with the two download options.
