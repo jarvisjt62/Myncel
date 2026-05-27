@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     default: 'Myncel — CMMS Software for Predictive Maintenance & Work Orders',
     template: '%s | Myncel',
   },
-  description: 'Myncel is CMMS software for small manufacturers, combining predictive maintenance software, preventive maintenance software, work order management software, equipment maintenance software, alerts, and analytics to reduce downtime.',
+  description: 'CMMS software for small manufacturers, hotels, and facilities. Schedule preventive maintenance, manage work orders, and cut downtime — live in 30 minutes.',
   keywords: [
     'CMMS software',
     'predictive maintenance software',
