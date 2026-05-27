@@ -342,16 +342,35 @@ export default function QRLabelsClient({ machines }: { machines: Machine[] }) {
   const handlePrint = () => {
     const printContent = printRef.current?.innerHTML;
     if (!printContent) return;
-    const win = window.open('', '_blank');
-    if (!win) {
-      alert('Please allow popups for this site to print labels.');
-      return;
-    }
-    win.document.write(`<!DOCTYPE html><html><head>
+
+    // ── Detect Capacitor ─────────────────────────────────────────────
+    const isCapacitor =
+      typeof window !== 'undefined' &&
+      (document.documentElement.classList.contains('capacitor-app') ||
+        !!((window as any).Capacitor && (window as any).Capacitor.isNativePlatform && (window as any).Capacitor.isNativePlatform()));
+
+    const html = `<!DOCTYPE html><html><head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>QR Labels — ${template.label}</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: white; font-family: system-ui, -apple-system, sans-serif; color: #0a2540; }
+        .myncel-toolbar {
+          position: sticky; top: 0; z-index: 100;
+          background: #f3f4ff; border-bottom: 1px solid #c7d2fe;
+          padding: 12px 16px;
+          padding-top: max(12px, env(safe-area-inset-top, 12px));
+          display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+        }
+        .myncel-toolbar button, .myncel-toolbar a {
+          font: 600 13px/1 system-ui, -apple-system, sans-serif;
+          padding: 10px 16px; border-radius: 6px; cursor: pointer;
+          text-decoration: none; border: none;
+        }
+        .myncel-toolbar .primary { background: #635bff; color: white; }
+        .myncel-toolbar .secondary { background: white; color: #635bff; border: 1px solid #635bff; }
+        .myncel-toolbar .info { color: #4b5563; font-size: 12px; margin-left: auto; }
         .myncel-label { page-break-inside: avoid; break-inside: avoid; }
         @page { size: ${template.pageSize}; margin: 0; }
         .myncel-sheet {
@@ -369,14 +388,52 @@ export default function QRLabelsClient({ machines }: { machines: Machine[] }) {
           row-gap: ${template.rowGap}mm;
           justify-content: start;
           align-content: start;
+          margin: 12px auto;
+          box-shadow: 0 0 12px rgba(0,0,0,0.08);
         }
         .myncel-sheet:last-child { page-break-after: auto; break-after: auto; }
         @media print {
           body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          .myncel-toolbar { display: none !important; }
+          .myncel-sheet { margin: 0; box-shadow: none; }
           .myncel-label { border: none !important; }
         }
       </style>
-    </head><body>${printContent}</body></html>`);
+    </head><body>
+      <div class="myncel-toolbar">
+        <button class="primary" onclick="window.print()">🖨️ Print</button>
+        <a class="secondary" href="${typeof location !== 'undefined' ? location.origin : ''}/equipment/qr-labels">← Back to QR Labels</a>
+        <a class="secondary" href="${typeof location !== 'undefined' ? location.origin : ''}/dashboard">Dashboard</a>
+        <span class="info">${template.label} · ${printContent.match(/myncel-sheet/g)?.length || 1} sheet(s)</span>
+      </div>
+      ${printContent}
+    </body></html>`;
+
+    if (isCapacitor) {
+      // ── Capacitor: navigate the WebView to a blob URL that displays
+      // the print page inline. The user can tap the Print button on
+      // the page to open the system print dialog (Android), and the
+      // toolbar's "Back to QR Labels" / "Dashboard" links return
+      // them to the app via normal navigation. window.open + write
+      // doesn't work in Capacitor (no popup), so this is the
+      // reliable path.
+      try {
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        window.location.href = url;
+      } catch (e) {
+        alert('Could not open print preview. Please try printing from a desktop browser instead.');
+      }
+      return;
+    }
+
+    // ── Web: original popup flow (unchanged for backwards compat) ───
+    const win = window.open('', '_blank');
+    if (!win) {
+      alert('Please allow popups for this site to print labels.');
+      return;
+    }
+    win.document.write(html);
     win.document.close();
     win.focus();
     setTimeout(() => { win.print(); }, 600);

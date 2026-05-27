@@ -6,9 +6,6 @@ import { formatCurrency } from '@/app/lib/currency';
 type ExportType = 'equipment' | 'workorders' | 'tasks';
 
 function CSVExportButton({ type, label }: { type: ExportType; label: string }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   const icons: Record<ExportType, React.ReactNode> = {
     equipment: (
       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -27,52 +24,39 @@ function CSVExportButton({ type, label }: { type: ExportType; label: string }) {
     ),
   };
 
-  const handleExport = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/dashboard/export?type=${type}`);
-      if (!response.ok) throw new Error('Export failed');
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${type}_export_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch {
-      setError('Export failed');
-      setTimeout(() => setError(null), 3000);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ── CSV download as a real <a> link ─────────────────────────────────
+  // The previous fetch + blob + a.click() pattern is silently broken in
+  // the Capacitor Android WebView (the WebView ignores [download] on
+  // dynamically-created <a> elements). A plain anchor with [download]
+  // works reliably:
+  //   • On the web, the browser triggers a normal download (the API
+  //     route already sets Content-Disposition: attachment).
+  //   • In Capacitor, the click interceptor in app/layout.tsx sees the
+  //     [download] attribute and hands the URL off to the system
+  //     browser via window.open(_, '_blank'), where the existing
+  //     myncel.com session cookie completes the download.
+  const today = new Date().toISOString().split('T')[0];
+  const href = `/api/dashboard/export?type=${type}`;
+  const filename = `${type}_export_${today}.csv`;
 
   return (
-    <button
-      onClick={handleExport}
-      disabled={loading}
+    <a
+      href={href}
+      download={filename}
+      target="_blank"
+      rel="noopener"
       title={`Export ${label} as CSV`}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border)] text-[var(--text-secondary)] bg-[var(--bg-surface-2)] hover:border-[#635bff] hover:text-[#635bff] transition-all disabled:opacity-50"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border)] text-[var(--text-secondary)] bg-[var(--bg-surface-2)] hover:border-[#635bff] hover:text-[#635bff] transition-all no-underline"
     >
-      {loading ? (
-        <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-        </svg>
-      ) : icons[type]}
-      {error ? <span className="text-red-500">{error}</span> : label}
-    </button>
+      {icons[type]}
+      {label}
+    </a>
   );
 }
 
 export default function ExportButtons() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportPeriod, setReportPeriod] = useState('30');
-  const [generatingPDF, setGeneratingPDF] = useState(false);
-  const [generatingCSV, setGeneratingCSV] = useState(false);
   const [reportData, setReportData] = useState<any>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
 
@@ -96,194 +80,6 @@ export default function ExportButtons() {
   const handlePeriodChange = (period: string) => {
     setReportPeriod(period);
     fetchReportData(period);
-  };
-
-  const downloadCSVReport = async () => {
-    setGeneratingCSV(true);
-    try {
-      const res = await fetch(`/api/dashboard/report?format=csv&period=${reportPeriod}`);
-      if (!res.ok) throw new Error('Failed');
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `maintenance_report_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch {/* ignore */}
-    finally { setGeneratingCSV(false); }
-  };
-
-  const downloadPDFReport = async () => {
-    if (!reportData) return;
-    setGeneratingPDF(true);
-    try {
-      // Build HTML for PDF
-      const html = buildReportHTML(reportData);
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-        // Wait for content to load then trigger print
-        printWindow.onload = () => {
-          setTimeout(() => {
-            printWindow.print();
-            // printWindow.close(); // Let user close after print
-          }, 500);
-        };
-      }
-    } catch {/* ignore */}
-    finally { setGeneratingPDF(false); }
-  };
-
-  const buildReportHTML = (data: any) => {
-    const s = data.summary;
-    const now = new Date(data.generatedAt).toLocaleString();
-    const completionRate = s.totalWorkOrders > 0
-      ? Math.round((s.completedWorkOrders / s.totalWorkOrders) * 100)
-      : 0;
-
-    return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Maintenance Report - ${data.organization}</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 11px; color: #1a1a2e; background: white; padding: 24px; }
-    @page { size: A4; margin: 20mm; }
-    h1 { font-size: 22px; font-weight: 700; color: #635bff; margin-bottom: 4px; }
-    h2 { font-size: 13px; font-weight: 600; color: #635bff; border-bottom: 2px solid #635bff; padding-bottom: 4px; margin: 20px 0 10px; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb; }
-    .org { font-size: 14px; color: #6b7280; margin-top: 2px; }
-    .meta { text-align: right; color: #6b7280; font-size: 10px; line-height: 1.6; }
-    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 8px; }
-    .kpi { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; text-align: center; }
-    .kpi-value { font-size: 22px; font-weight: 700; color: #1a1a2e; }
-    .kpi-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; margin-top: 2px; }
-    .kpi.highlight .kpi-value { color: #635bff; }
-    .kpi.red .kpi-value { color: #dc2626; }
-    .kpi.green .kpi-value { color: #059669; }
-    table { width: 100%; border-collapse: collapse; font-size: 10px; }
-    th { background: #f3f4f6; color: #374151; font-weight: 600; text-align: left; padding: 6px 8px; border: 1px solid #e5e7eb; font-size: 9px; text-transform: uppercase; }
-    td { padding: 5px 8px; border: 1px solid #e5e7eb; color: #374151; }
-    tr:nth-child(even) td { background: #f9fafb; }
-    .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; }
-    .badge-green { background: #d1fae5; color: #065f46; }
-    .badge-blue { background: #dbeafe; color: #1e40af; }
-    .badge-red { background: #fee2e2; color: #991b1b; }
-    .badge-yellow { background: #fef3c7; color: #92400e; }
-    .badge-gray { background: #f3f4f6; color: #374151; }
-    .footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 9px; display: flex; justify-content: space-between; }
-    @media print { body { padding: 0; } }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div>
-      <h1>Maintenance Report</h1>
-      <div class="org">${data.organization}</div>
-    </div>
-    <div class="meta">
-      <div>Generated: ${now}</div>
-      <div>Period: Last ${data.period.days} days</div>
-      <div>${new Date(data.period.startDate).toLocaleDateString()} – ${new Date(data.period.endDate).toLocaleDateString()}</div>
-    </div>
-  </div>
-
-  <h2>Executive Summary</h2>
-  <div class="kpi-grid">
-    <div class="kpi highlight"><div class="kpi-value">${s.totalMachines}</div><div class="kpi-label">Total Equipment</div></div>
-    <div class="kpi ${s.criticalMachines > 0 ? 'red' : 'green'}"><div class="kpi-value">${s.operationalMachines}</div><div class="kpi-label">Operational</div></div>
-    <div class="kpi"><div class="kpi-value">${s.completedWorkOrders}</div><div class="kpi-label">WOs Completed</div></div>
-    <div class="kpi ${s.overdueWorkOrders > 0 ? 'red' : ''}"><div class="kpi-value">${s.overdueWorkOrders}</div><div class="kpi-label">Overdue WOs</div></div>
-  </div>
-  <div class="kpi-grid">
-    <div class="kpi"><div class="kpi-value">${formatCurrency(s.totalMaintenanceCost, data.currency, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div><div class="kpi-label">Maint. Cost</div></div>
-    <div class="kpi"><div class="kpi-value">${completionRate}%</div><div class="kpi-label">Completion Rate</div></div>
-    <div class="kpi ${s.criticalAlerts > 0 ? 'red' : ''}"><div class="kpi-value">${s.unresolvedAlerts}</div><div class="kpi-label">Open Alerts</div></div>
-    <div class="kpi"><div class="kpi-value">${s.avgCompletionTimeMinutes > 0 ? Math.round(s.avgCompletionTimeMinutes / 60) + 'h' : '—'}</div><div class="kpi-label">Avg. WO Duration</div></div>
-  </div>
-
-  <h2>Equipment Status</h2>
-  <table>
-    <thead><tr><th>Machine</th><th>Model</th><th>Location</th><th>Status</th><th>Criticality</th><th>Last Service</th><th>WOs</th></tr></thead>
-    <tbody>
-      ${data.machines.map((m: any) => `
-        <tr>
-          <td><strong>${m.name}</strong></td>
-          <td>${m.model}</td>
-          <td>${m.location}</td>
-          <td><span class="badge ${m.status === 'OPERATIONAL' ? 'badge-green' : m.status === 'CRITICAL' ? 'badge-red' : 'badge-yellow'}">${m.status}</span></td>
-          <td>${m.criticality}</td>
-          <td>${m.lastService}</td>
-          <td>${m.workOrders}</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>
-
-  <h2>Work Orders (Last ${data.period.days} Days)</h2>
-  <table>
-    <thead><tr><th>WO#</th><th>Title</th><th>Machine</th><th>Status</th><th>Priority</th><th>Assigned</th><th>Created</th><th>Cost</th></tr></thead>
-    <tbody>
-      ${data.workOrders.slice(0, 30).map((wo: any) => `
-        <tr>
-          <td class="font-mono">${wo.woNumber}</td>
-          <td>${wo.title}</td>
-          <td>${wo.machine}</td>
-          <td><span class="badge ${wo.status === 'COMPLETED' ? 'badge-green' : wo.status === 'IN_PROGRESS' ? 'badge-blue' : wo.status === 'OPEN' ? 'badge-gray' : 'badge-yellow'}">${wo.status.replace('_', ' ')}</span></td>
-          <td><span class="badge ${wo.priority === 'CRITICAL' ? 'badge-red' : wo.priority === 'HIGH' ? 'badge-yellow' : 'badge-gray'}">${wo.priority}</span></td>
-          <td>${wo.assignedTo}</td>
-          <td>${wo.created}</td>
-          <td>${wo.cost > 0 ? formatCurrency(wo.cost, data.currency, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : '—'}</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>
-
-  <h2>Upcoming Maintenance Schedule</h2>
-  <table>
-    <thead><tr><th>Task</th><th>Machine</th><th>Frequency</th><th>Priority</th><th>Next Due</th><th>Last Completed</th></tr></thead>
-    <tbody>
-      ${data.upcomingMaintenance.map((t: any) => `
-        <tr>
-          <td>${t.title}</td>
-          <td>${t.machine}</td>
-          <td>${t.frequency}</td>
-          <td>${t.priority}</td>
-          <td>${t.nextDue}</td>
-          <td>${t.lastCompleted}</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>
-
-  ${data.recentAlerts.length > 0 ? `
-  <h2>Recent Alerts</h2>
-  <table>
-    <thead><tr><th>Title</th><th>Machine</th><th>Severity</th><th>Status</th><th>Date</th></tr></thead>
-    <tbody>
-      ${data.recentAlerts.map((a: any) => `
-        <tr>
-          <td>${a.title}</td>
-          <td>${a.machine}</td>
-          <td><span class="badge ${a.severity === 'CRITICAL' ? 'badge-red' : a.severity === 'HIGH' ? 'badge-yellow' : 'badge-gray'}">${a.severity}</span></td>
-          <td><span class="badge ${a.status === 'Resolved' ? 'badge-green' : 'badge-red'}">${a.status}</span></td>
-          <td>${a.date}</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>` : ''}
-
-  <div class="footer">
-    <span>Generated by Myncel CMMS</span>
-    <span>${data.organization} · ${now}</span>
-  </div>
-</body>
-</html>`;
   };
 
   const getBadgeClass = (val: string, type: string) => {
@@ -344,16 +140,27 @@ export default function ExportButtons() {
 
       {/* Maintenance Report Modal */}
       {showReportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 modal-safe-pad">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center modal-safe-pad"
+          style={{
+            // Belt-and-braces: hard-floor the safe-area padding so the
+            // modal panel can never sit under the Samsung / Sony status
+            // bar or under the bottom gesture nav, even if env() returns
+            // 0 on this device. 36px top covers a typical Android status
+            // bar; 24px bottom covers the gesture pill.
+            paddingTop: 'max(36px, var(--safe-area-top, 0px), env(safe-area-inset-top, 0px))',
+            paddingBottom: 'max(24px, var(--safe-area-bottom, 0px), env(safe-area-inset-bottom, 0px))',
+            paddingLeft: 'max(8px, var(--safe-area-left, 0px), env(safe-area-inset-left, 0px))',
+            paddingRight: 'max(8px, var(--safe-area-right, 0px), env(safe-area-inset-right, 0px))',
+          }}
+        >
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowReportModal(false)} />
           <div
             className="relative rounded-2xl [background:var(--bg-surface)] shadow-2xl w-full max-w-2xl overflow-y-auto border border-[var(--border)] overscroll-contain"
             style={{
-              // Capacitor / mobile safe-area aware max height so the
-              // bottom of the report (tables, action buttons) is never
-              // hidden behind the Android gesture-nav bar / iOS home
-              // indicator.
-              maxHeight: 'min(90dvh, calc(100dvh - var(--safe-area-top, 0px) - var(--safe-area-bottom, 0px) - 16px))',
+              // Hard cap at 100% of the AVAILABLE area (which is already
+              // viewport minus the wrapper's safe-area padding above).
+              maxHeight: '100%',
             }}
           >
             {/* Modal Header */}
@@ -403,30 +210,35 @@ export default function ExportButtons() {
                   </button>
                 ))}
                 <div className="ml-auto flex flex-wrap gap-2">
-                  <button
-                    onClick={downloadCSVReport}
-                    disabled={generatingCSV || !reportData}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[var(--border)] text-[var(--text-secondary)] rounded-lg hover:border-[#635bff] hover:text-[#635bff] transition-all disabled:opacity-50"
+                  {/* CSV — direct anchor link. The API sets Content-Disposition
+                      so the browser downloads the file. The [download] attribute
+                      makes our Capacitor click interceptor route the URL through
+                      the system browser (where the cookie session lets the
+                      download complete reliably on Samsung / Sony). */}
+                  <a
+                    href={`/api/dashboard/report?format=csv&period=${reportPeriod}`}
+                    download={`maintenance_report_${new Date().toISOString().split('T')[0]}.csv`}
+                    target="_blank"
+                    rel="noopener"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[var(--border)] text-[var(--text-secondary)] rounded-lg hover:border-[#635bff] hover:text-[#635bff] transition-all no-underline"
                   >
-                    {generatingCSV ? (
-                      <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                    ) : (
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/></svg>
-                    )}
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/></svg>
                     CSV
-                  </button>
-                  <button
-                    onClick={downloadPDFReport}
-                    disabled={generatingPDF || !reportData}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#635bff] text-white rounded-lg hover:bg-[#4f46e5] transition-all disabled:opacity-50"
+                  </a>
+                  {/* Print / PDF — opens a server-rendered HTML page with a
+                      built-in toolbar (Print, Back to Dashboard). target=_blank
+                      makes Capacitor open it in the system browser, where the
+                      browser's native back button + the page's "Back to
+                      Dashboard" link both return the user to the app. */}
+                  <a
+                    href={`/api/dashboard/report?format=html&period=${reportPeriod}`}
+                    target="_blank"
+                    rel="noopener"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#635bff] text-white rounded-lg hover:bg-[#4f46e5] transition-all no-underline"
                   >
-                    {generatingPDF ? (
-                      <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                    ) : (
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                    )}
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                     Print / PDF
-                  </button>
+                  </a>
                 </div>
               </div>
 
