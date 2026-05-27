@@ -52,6 +52,31 @@ function UserShellInner({ user, children }: UserSidebarProps) {
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen]);
 
+  // Auto-close mobile drawer when the route changes. Defense-in-depth:
+  // every nav <Link> in the sidebar already calls setSidebarOpen(false)
+  // in its onClick, but if any future Link forgets, this catches it.
+  // Using pathname as the dep fires both on hard navigation and after
+  // hash-based tab switches that update history.
+  useEffect(() => {
+    setSidebarOpen(false);
+    setAccountOpen(false);
+  }, [pathname]);
+
+  // Escape closes drawer + account dropdown — keyboard accessibility
+  // and on Capacitor it lets the Android back-button-style gesture
+  // cleanly dismiss overlays before doing anything else.
+  useEffect(() => {
+    if (!sidebarOpen && !accountOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSidebarOpen(false);
+        setAccountOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [sidebarOpen, accountOpen]);
+
   // Mobile/Capacitor: paint <html> with the dashboard page background so
   // the area behind the gesture-nav bar (under safe-area-inset-bottom) is
   // not transparent or showing a different color. Without this, on
