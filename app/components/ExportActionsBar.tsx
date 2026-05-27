@@ -227,7 +227,7 @@ export default function ExportActionsBar({
   return (
     <div
       ref={wrapRef}
-      className="flex items-center gap-2 overflow-x-auto sm:flex-wrap no-scrollbar -mx-1 px-1 sm:mx-0 sm:px-0 sm:overflow-visible"
+      className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 lg:mx-0 lg:px-0 lg:flex-wrap lg:overflow-visible"
       style={{ scrollbarWidth: 'none' }}
     >
       {/* CSV download — fetches as Blob so it works in every mobile WebView */}

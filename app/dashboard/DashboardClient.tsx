@@ -2492,19 +2492,22 @@ function DashboardClientInner({ user, data }: Props) {
                   scrollable export chips, full-width primary actions);
                   single horizontal row on sm+ (≥640px). */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <p className="text-sm text-[var(--text-secondary)]">{machines.length} machines registered</p>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2 sm:flex-wrap">
-                  {/* Export chip strip — horizontally scrolls on mobile. */}
-                  <ExportActionsBar dataset="machines" onIntegrationResult={handleExportResult} />
+                <p className="text-sm text-[var(--text-secondary)] sm:flex-shrink-0">{machines.length} machines registered</p>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 sm:flex-1 sm:min-w-0">
+                  {/* Export chip strip — horizontally scrolls on mobile and
+                      also at narrow sm widths (landscape phone) so it never
+                      pushes the primary actions onto a second line. */}
+                  <div className="sm:flex-1 sm:min-w-0">
+                    <ExportActionsBar dataset="machines" onIntegrationResult={handleExportResult} />
+                  </div>
                   {/* Action row — Import CSV + Add Machine. On mobile they
                       split the full row evenly. On sm+ they stay paired as
-                      a group and hug the right edge via ml-auto so they
-                      don't fragment when wrapping. */}
-                  <div className="flex items-stretch gap-2 sm:ml-auto">
+                      a group and hug the right edge. */}
+                  <div className="flex items-stretch gap-2 sm:flex-shrink-0">
                     <Can permission="machines.create">
                       <Link
                         href="/dashboard/equipment/import"
-                        className="flex-1 sm:flex-none bg-white border border-slate-300 text-slate-700 text-sm h-10 sm:h-9 px-4 rounded-lg font-medium hover:bg-slate-50 transition-colors inline-flex items-center justify-center gap-1.5"
+                        className="flex-1 sm:flex-none bg-white border border-slate-300 text-slate-700 text-sm h-10 sm:h-9 px-4 rounded-lg font-medium hover:bg-slate-50 transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
                       >
                         📥 Import CSV
                       </Link>
@@ -2512,7 +2515,7 @@ function DashboardClientInner({ user, data }: Props) {
                     <Can permission="machines.create">
                       <button
                         onClick={() => setShowMachineModal(true)}
-                        className="flex-1 sm:flex-none bg-[#635bff] text-white text-sm h-10 sm:h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5"
+                        className="flex-1 sm:flex-none bg-[#635bff] text-white text-sm h-10 sm:h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
                       >
                         + Add Machine
                       </button>
@@ -2693,15 +2696,17 @@ function DashboardClientInner({ user, data }: Props) {
             <div className="space-y-4">
               {/* Top bar — same vertical-stack pattern as Equipment tab. */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <p className="text-sm text-[var(--text-secondary)]">
+                <p className="text-sm text-[var(--text-secondary)] sm:flex-shrink-0">
                   {workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length} work order{workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length !== 1 ? 's' : ''}
                 </p>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:flex-wrap">
-                  <ExportActionsBar dataset="work_orders" filterParam={woFilter} onIntegrationResult={handleExportResult} />
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 sm:flex-1 sm:min-w-0">
+                  <div className="sm:flex-1 sm:min-w-0">
+                    <ExportActionsBar dataset="work_orders" filterParam={woFilter} onIntegrationResult={handleExportResult} />
+                  </div>
                   <Can permission="work_orders.create">
                     <button
                       onClick={() => { setShowWorkOrderModal(true); loadWoTemplates(); }}
-                      className="w-full sm:w-auto sm:ml-auto bg-[#635bff] text-white text-sm h-10 sm:h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5"
+                      className="w-full sm:w-auto sm:flex-shrink-0 bg-[#635bff] text-white text-sm h-10 sm:h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
                     >
                       + New Work Order
                     </button>
@@ -3622,13 +3627,15 @@ function DashboardClientInner({ user, data }: Props) {
                     scrollable export chips, full-width Add Part); single
                     row at sm+. */}
                 <div className="px-4 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <h2 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>All Parts</h2>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:flex-wrap">
-                    <ExportActionsBar dataset="parts" onIntegrationResult={handleExportResult} />
+                  <h2 className="font-semibold text-sm sm:flex-shrink-0" style={{ color: 'var(--text-primary)' }}>All Parts</h2>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 sm:flex-1 sm:min-w-0">
+                    <div className="sm:flex-1 sm:min-w-0">
+                      <ExportActionsBar dataset="parts" onIntegrationResult={handleExportResult} />
+                    </div>
                     <Can permission="parts.create">
                       <button
                         onClick={() => setShowPartModal(true)}
-                        className="w-full sm:w-auto sm:ml-auto bg-[#635bff] text-white text-sm h-10 sm:h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5"
+                        className="w-full sm:w-auto sm:flex-shrink-0 bg-[#635bff] text-white text-sm h-10 sm:h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
                       >
                         + Add Part
                       </button>
