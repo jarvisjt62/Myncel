@@ -5,7 +5,7 @@ import ArticleSchema from '../../components/ArticleSchema';
 
 export const metadata = {
   title: 'How Hotels Can Monitor Generators and HVAC Systems to Protect Guest Experience',
-  description: 'Hotels depend on generators and HVAC systems to protect guest experience. Learn how hotel facility teams can monitor critical equipment, receive early alerts, and manage maintenance more effectively.',
+  description: 'How hotels monitor generators and HVAC to protect occupancy revenue: early alerts, PM scheduling, and audit logs that keep guest experience and brand intact.',
   alternates: { canonical: 'https://www.myncel.com/blog/hotel-generator-hvac-monitoring' },
   openGraph: {
     title: 'How Hotels Can Monitor Generators and HVAC Systems',

@@ -5,7 +5,7 @@ import ArticleSchema from '../../components/ArticleSchema';
 
 export const metadata = {
   title: 'How to Reduce Generator Downtime in Nigeria and Ghana | Myncel',
-  description: 'Generator downtime is one of the biggest operational costs for facilities in Nigeria and Ghana. Learn proven strategies to reduce breakdowns, extend generator life, and keep your operations running.',
+  description: 'Reduce generator downtime in Nigeria and Ghana with proven fuel-quality, load-bank, and PM scheduling tactics. Field notes from real West African deployments.',
   alternates: { canonical: 'https://www.myncel.com/blog/reduce-generator-downtime-nigeria-ghana' },
   openGraph: {
     title: 'How to Reduce Generator Downtime in Nigeria and Ghana',

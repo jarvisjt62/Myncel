@@ -5,7 +5,7 @@ import PriceGateMobile from '../../components/PriceGateMobile'
 
 export const metadata = {
   title: 'The Hidden Cost of Reactive Maintenance: What Your Spreadsheet Isn\'t Telling You',
-  description: 'Most small manufacturers track maintenance in spreadsheets — or don\'t track it at all. Here\'s what reactive maintenance is really costing you, with real numbers, and how to fix it without a $50,000 CMMS.',
+  description: 'Reactive maintenance looks cheap until you add overtime, expedited parts, scrap, and downtime. The real numbers, plus how to fix it without a $50,000 CMMS.',
   alternates: { canonical: 'https://www.myncel.com/blog/hidden-cost-reactive-maintenance' },
   openGraph: {
     title: 'The Hidden Cost of Reactive Maintenance',

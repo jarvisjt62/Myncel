@@ -5,7 +5,7 @@ import PriceGateMobile from '../../components/PriceGateMobile'
 
 export const metadata = {
   title: 'How to Build a Preventive Maintenance Program for a Small Manufacturing Shop',
-  description: 'A step-by-step guide to building a preventive maintenance program from scratch. Includes free PM schedule templates, equipment prioritization framework, and a 30-day implementation plan for small shops.',
+  description: 'Build a preventive maintenance program from scratch in 30 days: asset register, criticality, PM intervals, and free templates for small manufacturing shops.',
   alternates: { canonical: 'https://www.myncel.com/blog/preventive-maintenance-program' },
   openGraph: {
     title: 'How to Build a Preventive Maintenance Program — Complete Guide',

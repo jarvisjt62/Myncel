@@ -5,7 +5,7 @@ import ArticleSchema from '../../components/ArticleSchema';
 
 export const metadata = {
   title: 'Hospital Equipment Monitoring and Maintenance Compliance — A Complete Guide',
-  description: 'Hospitals depend on critical equipment around the clock. Learn how healthcare facilities can monitor critical assets, manage maintenance compliance, and protect patients and operations with better equipment visibility.',
+  description: 'Hospital equipment monitoring and JCI / DOH compliance: cold-chain logs, biomed PMs, and audit trails that protect patients and pass surveys without paper.',
   alternates: { canonical: 'https://www.myncel.com/blog/hospital-equipment-monitoring-compliance' },
   openGraph: {
     title: 'Hospital Equipment Monitoring and Maintenance Compliance',

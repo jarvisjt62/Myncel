@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export const metadata = {
   title: '10 Maintenance KPIs Every Plant Manager Should Track',
-  description: 'MTBF, MTTR, OEE, schedule compliance — here\'s what each metric means, how to calculate it, and how to start tracking it without complex software.',
+  description: '10 maintenance KPIs every plant manager should track: MTBF, MTTR, PM compliance, schedule attainment, wrench time. Formulas, target ranges, and tracking tips.',
   alternates: { canonical: 'https://www.myncel.com/blog/maintenance-kpis-plant-manager' },
   openGraph: {
     title: '10 Maintenance KPIs Every Plant Manager Should Track',

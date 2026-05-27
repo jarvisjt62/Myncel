@@ -5,7 +5,7 @@ import ArticleSchema from '../../components/ArticleSchema';
 
 export const metadata = {
   title: 'Warehouse Refrigeration Monitoring Best Practices — Protect Your Cold Chain',
-  description: 'Cold chain failures are expensive and preventable. Learn how warehouses and cold storage facilities can monitor refrigeration equipment, prevent temperature excursions, and maintain compliance records.',
+  description: 'Warehouse refrigeration monitoring: prevent spoilage claims, catch temperature excursions early, and keep FDA / FSMA cold-chain audit logs short and clean.',
   alternates: { canonical: 'https://www.myncel.com/blog/warehouse-refrigeration-monitoring' },
   openGraph: {
     title: 'Warehouse Refrigeration Monitoring Best Practices',

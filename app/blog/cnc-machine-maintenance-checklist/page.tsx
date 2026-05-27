@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export const metadata = {
   title: 'CNC Machine Maintenance Checklist: Daily, Weekly, Monthly & Annual Tasks',
-  description: 'A complete CNC machine maintenance checklist covering daily, weekly, monthly, quarterly, and annual tasks for CNC mills, lathes, and machining centers. Free printable PDF included.',
+  description: 'Daily, weekly, monthly, and annual CNC maintenance checklist for mills, lathes, and machining centers. Free printable PDF and downtime-cutting tips included.',
   alternates: { canonical: 'https://www.myncel.com/blog/cnc-machine-maintenance-checklist' },
   openGraph: {
     title: 'CNC Machine Maintenance Checklist (Daily, Weekly, Monthly)',

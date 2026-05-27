@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export const metadata = {
   title: 'How to Calculate the True ROI of Your CMMS',
-  description: 'Before and after metrics, avoided downtime costs, labor efficiency — a practical formula for calculating the exact return on your maintenance software investment.',
+  description: 'Calculate your CMMS ROI in 5 steps: avoided downtime, labor savings, parts inventory cuts, and audit risk. Free formula and example for small manufacturers.',
   alternates: { canonical: 'https://www.myncel.com/blog/cmms-roi-calculation' },
   openGraph: {
     title: 'How to Calculate the True ROI of Your CMMS',

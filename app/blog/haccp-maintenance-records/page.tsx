@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export const metadata = {
   title: 'HACCP Maintenance Records: What You Need and How to Store Them',
-  description: 'Food manufacturers face unique compliance requirements. Here\'s exactly what maintenance records FDA and USDA auditors look for — and how to keep them organized.',
+  description: 'HACCP maintenance records: exactly what FDA and USDA auditors check, retention periods, and how food manufacturers keep them audit-ready in a CMMS.',
   alternates: { canonical: 'https://www.myncel.com/blog/haccp-maintenance-records' },
   openGraph: {
     title: 'HACCP Maintenance Records: FDA & USDA Requirements Explained',

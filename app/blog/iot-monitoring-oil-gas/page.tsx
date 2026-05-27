@@ -5,7 +5,7 @@ import ArticleSchema from '../../components/ArticleSchema';
 
 export const metadata = {
   title: 'IoT Equipment Monitoring for Oil and Gas Operations — A Practical Guide',
-  description: 'Oil and gas operations depend on reliable field equipment. Learn how IoT equipment monitoring helps operators track pumps, compressors, generators, and field assets to reduce downtime and improve maintenance accountability.',
+  description: 'IoT monitoring for oil and gas: where vibration, pressure, and temperature sensors actually pay off on remote pumps, compressors, and separators.',
   alternates: { canonical: 'https://www.myncel.com/blog/iot-monitoring-oil-gas' },
   openGraph: {
     title: 'IoT Equipment Monitoring for Oil and Gas Operations',

@@ -5,7 +5,7 @@ import ArticleSchema from '../../components/ArticleSchema';
 
 export const metadata = {
   title: 'Equipment Monitoring Software for West African Facilities | Myncel',
-  description: 'Choosing equipment monitoring software for facilities in Nigeria and Ghana requires understanding local operating conditions. This guide covers what to look for, what to avoid, and how to get started.',
+  description: 'Choosing equipment monitoring software in Nigeria and Ghana: offline mobile, generator-aware, fits prepaid data plans. What to look for and what to avoid.',
   alternates: { canonical: 'https://www.myncel.com/blog/equipment-monitoring-software-west-africa' },
   openGraph: {
     title: 'Equipment Monitoring Software for West African Facilities',

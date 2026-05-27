@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export const metadata = {
   title: 'Hydraulic System Maintenance: A Complete PM Checklist',
-  description: 'Hydraulic failures are expensive and dangerous. This complete maintenance guide covers daily inspections, fluid analysis, seal replacement, pressure testing, and more.',
+  description: 'Hands-on hydraulic system maintenance: contamination control, fluid analysis, seal replacement, and pressure testing routines that prevent costly failures.',
   alternates: { canonical: 'https://www.myncel.com/blog/hydraulic-system-maintenance' },
   openGraph: {
     title: 'Hydraulic System Maintenance: Complete PM Checklist',
