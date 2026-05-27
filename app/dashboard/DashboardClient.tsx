@@ -2497,13 +2497,14 @@ function DashboardClientInner({ user, data }: Props) {
                   {/* Export chip strip — horizontally scrolls on mobile. */}
                   <ExportActionsBar dataset="machines" onIntegrationResult={handleExportResult} />
                   {/* Action row — Import CSV + Add Machine. On mobile they
-                      split the full row evenly; on sm+ they sit beside the
-                      export chips at their natural widths. */}
+                      split the full row evenly; on sm+ they hug the right
+                      edge via ml-auto so even when they wrap to a new line
+                      they stay right-aligned. */}
                   <div className="flex items-stretch gap-2 sm:contents">
                     <Can permission="machines.create">
                       <Link
                         href="/dashboard/equipment/import"
-                        className="flex-1 sm:flex-none bg-white border border-slate-300 text-slate-700 text-sm h-10 sm:h-9 px-4 rounded-lg font-medium hover:bg-slate-50 transition-colors inline-flex items-center justify-center gap-1.5"
+                        className="flex-1 sm:flex-none sm:ml-auto bg-white border border-slate-300 text-slate-700 text-sm h-10 sm:h-9 px-4 rounded-lg font-medium hover:bg-slate-50 transition-colors inline-flex items-center justify-center gap-1.5"
                       >
                         📥 Import CSV
                       </Link>
@@ -2700,7 +2701,7 @@ function DashboardClientInner({ user, data }: Props) {
                   <Can permission="work_orders.create">
                     <button
                       onClick={() => { setShowWorkOrderModal(true); loadWoTemplates(); }}
-                      className="w-full sm:w-auto bg-[#635bff] text-white text-sm h-10 sm:h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5"
+                      className="w-full sm:w-auto sm:ml-auto bg-[#635bff] text-white text-sm h-10 sm:h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5"
                     >
                       + New Work Order
                     </button>
@@ -3627,7 +3628,7 @@ function DashboardClientInner({ user, data }: Props) {
                     <Can permission="parts.create">
                       <button
                         onClick={() => setShowPartModal(true)}
-                        className="w-full sm:w-auto bg-[#635bff] text-white text-sm h-10 sm:h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5"
+                        className="w-full sm:w-auto sm:ml-auto bg-[#635bff] text-white text-sm h-10 sm:h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5"
                       >
                         + Add Part
                       </button>
