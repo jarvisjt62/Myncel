@@ -211,7 +211,7 @@ function SheetLabel({
       {/* QR */}
       <div style={{ flexShrink: 0, padding: '0.5mm', border: '0.3mm solid #0a2540', borderRadius: '1mm', background: '#fff' }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={qrDataUrl} alt="QR" data-fixed-size style={{ display: 'block', width: `${qrSizePx}mm`, height: `${qrSizePx}mm` }} />
+        <img src={qrDataUrl} alt="QR" style={{ display: 'block', width: `${qrSizePx}mm`, height: `${qrSizePx}mm` }} />
       </div>
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '0.5mm' }}>
@@ -342,24 +342,6 @@ export default function QRLabelsClient({ machines }: { machines: Machine[] }) {
   const handlePrint = () => {
     const printContent = printRef.current?.innerHTML;
     if (!printContent) return;
-
-    // ── Capacitor / mobile-app detection ─────────────────────────────
-    // window.open('', '_blank') + document.write doesn't work in
-    // Android WebView (no popup window is created). Detect that case
-    // and surface a clear message instead of silently failing.
-    const isCapacitor =
-      typeof window !== 'undefined' &&
-      (document.documentElement.classList.contains('capacitor-app') ||
-        !!((window as any).Capacitor && (window as any).Capacitor.isNativePlatform && (window as any).Capacitor.isNativePlatform()));
-    if (isCapacitor) {
-      alert(
-        'QR label sheets are designed for desktop printers (Avery / A4 sheet alignment). ' +
-          'Open this page on your computer to print, or use the Equipment list ' +
-          'to download a CSV of QR-target URLs and feed those into your label software.'
-      );
-      return;
-    }
-
     const win = window.open('', '_blank');
     if (!win) {
       alert('Please allow popups for this site to print labels.');
@@ -747,7 +729,7 @@ export default function QRLabelsClient({ machines }: { machines: Machine[] }) {
             </div>
             <div style={{ display: 'inline-block', padding: 12, background: '#fff', border: '2px solid #e2e8f0', borderRadius: 12 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={enlargedQR.qrDataUrl} alt="Enlarged QR" data-fixed-size style={{ display: 'block', width: 240, height: 240, imageRendering: 'pixelated' }} />
+              <img src={enlargedQR.qrDataUrl} alt="Enlarged QR" style={{ display: 'block', width: 240, height: 240, imageRendering: 'pixelated' }} />
             </div>
             <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 12 }}>
               Scan with any phone camera to open the equipment page.
