@@ -141,14 +141,15 @@ export default function ExportButtons() {
       {/* Maintenance Report Modal */}
       {showReportModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center modal-safe-pad"
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center modal-safe-pad"
           style={{
             // Belt-and-braces: hard-floor the safe-area padding so the
             // modal panel can never sit under the Samsung / Sony status
-            // bar or under the bottom gesture nav, even if env() returns
-            // 0 on this device. 36px top covers a typical Android status
-            // bar; 24px bottom covers the gesture pill.
-            paddingTop: 'max(36px, var(--safe-area-top, 0px), env(safe-area-inset-top, 0px))',
+            // bar (which can be ~48px on devices with camera cutouts) or
+            // under the bottom gesture nav, even if env() returns 0.
+            // We anchor to top on mobile (items-start) so the panel
+            // always sits below the safe-area zone deterministically.
+            paddingTop: 'max(56px, var(--safe-area-top, 0px), calc(env(safe-area-inset-top, 0px) + 16px))',
             paddingBottom: 'max(24px, var(--safe-area-bottom, 0px), env(safe-area-inset-bottom, 0px))',
             paddingLeft: 'max(8px, var(--safe-area-left, 0px), env(safe-area-inset-left, 0px))',
             paddingRight: 'max(8px, var(--safe-area-right, 0px), env(safe-area-inset-right, 0px))',
