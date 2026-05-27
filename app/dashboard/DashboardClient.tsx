@@ -2488,32 +2488,39 @@ function DashboardClientInner({ user, data }: Props) {
           {/* ── EQUIPMENT TAB ── */}
           {activeTab === 'equipment' && (
             <div className="space-y-4">
-              {/* Top bar — single row from sm+ (≥640px, landscape phone
-                  and up). Mobile portrait stacks the chips below. The
-                  chip strip horizontally scrolls if it can't fit. */}
-              <div className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-3">
-                {/* Row 1 (mobile portrait): count + primary action.
-                    sm+: count is the leftmost, then chips fill middle, then action */}
-                <div className="flex items-center justify-between gap-2 sm:contents">
-                  <p className="text-sm text-[var(--text-secondary)] sm:flex-shrink-0">{machines.length} machines registered</p>
+              {/* Top bar — two clean rows on every viewport:
+                    Row 1: count + integration chips + primary action
+                    Row 2: standalone Export ▾ dropdown
+                  This keeps the dropdown menu out of the chip strip's
+                  overflow container so it always opens correctly on
+                  mobile, and gives integrations + primary action the
+                  visual weight they deserve. */}
+              <div className="space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 gap-2">
+                  <p className="text-sm text-[var(--text-secondary)] sm:flex-shrink-0 sm:order-1">{machines.length} machines registered</p>
+                  {/* Integration chips — Sheets / QuickBooks / Slack */}
+                  <div className="sm:flex-1 sm:min-w-0 sm:order-2">
+                    <ExportActionsBar
+                      dataset="machines"
+                      mode="integrations-only"
+                      onIntegrationResult={handleExportResult}
+                    />
+                  </div>
                   <Can permission="machines.create">
                     <button
                       onClick={() => setShowMachineModal(true)}
-                      className="bg-[#635bff] text-white text-sm h-9 px-3 sm:px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap sm:flex-shrink-0 sm:order-3"
+                      className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap sm:flex-shrink-0 sm:order-3 w-full sm:w-auto"
                     >
                       + Add Machine
                     </button>
                   </Can>
                 </div>
-                {/* Chip strip — full-width row 2 on mobile portrait;
-                    flex-1 middle slot on sm+ (scrolls if too narrow).
-                    importHref folds the Import CSV link into the Export
-                    dropdown menu so it doesn't need its own chip. */}
-                <div className="sm:flex-1 sm:min-w-0 sm:order-2">
+                {/* Row 2 — Export dropdown on its own line */}
+                <div>
                   <ExportActionsBar
                     dataset="machines"
+                    mode="export-only"
                     importHref={perms.can('machines.create') ? '/dashboard/equipment/import' : undefined}
-                    onIntegrationResult={handleExportResult}
                   />
                 </div>
               </div>
@@ -2688,27 +2695,38 @@ function DashboardClientInner({ user, data }: Props) {
           {/* ── WORK ORDERS TAB ── */}
           {activeTab === 'workorders' && (
             <div className="space-y-4">
-              {/* Top bar — same vertical-stack pattern as Equipment tab. */}
-              <div className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-3">
-                {/* Row 1 (mobile portrait): count + primary action.
-                    sm+: count is leftmost, chips fill middle, action right */}
-                <div className="flex items-center justify-between gap-2 sm:contents">
-                  <p className="text-sm text-[var(--text-secondary)] sm:flex-shrink-0">
+              {/* Top bar — same two-row pattern as Equipment:
+                    Row 1: count + integration chips + primary action
+                    Row 2: standalone Export ▾ */}
+              <div className="space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 gap-2">
+                  <p className="text-sm text-[var(--text-secondary)] sm:flex-shrink-0 sm:order-1">
                     {workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length} work order{workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length !== 1 ? 's' : ''}
                   </p>
+                  <div className="sm:flex-1 sm:min-w-0 sm:order-2">
+                    <ExportActionsBar
+                      dataset="work_orders"
+                      filterParam={woFilter}
+                      mode="integrations-only"
+                      onIntegrationResult={handleExportResult}
+                    />
+                  </div>
                   <Can permission="work_orders.create">
                     <button
                       onClick={() => { setShowWorkOrderModal(true); loadWoTemplates(); }}
-                      className="bg-[#635bff] text-white text-sm h-9 px-3 sm:px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap sm:flex-shrink-0 sm:order-3"
+                      className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap sm:flex-shrink-0 sm:order-3 w-full sm:w-auto"
                     >
                       + New Work Order
                     </button>
                   </Can>
                 </div>
-                {/* Chip strip — full-width row 2 on mobile portrait;
-                    flex-1 middle slot on sm+ (scrolls if too narrow) */}
-                <div className="sm:flex-1 sm:min-w-0 sm:order-2">
-                  <ExportActionsBar dataset="work_orders" filterParam={woFilter} onIntegrationResult={handleExportResult} />
+                {/* Row 2 — Export dropdown on its own line */}
+                <div>
+                  <ExportActionsBar
+                    dataset="work_orders"
+                    filterParam={woFilter}
+                    mode="export-only"
+                  />
                 </div>
               </div>
               {/* Status filter pills */}
@@ -3621,27 +3639,34 @@ function DashboardClientInner({ user, data }: Props) {
 
               {/* Parts Table */}
               <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                {/* Header bar — vertical stack on mobile (title row,
-                    scrollable export chips, full-width Add Part); single
-                    row at sm+. */}
-                <div className="px-4 sm:px-5 py-3 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                  {/* Row 1 (mobile portrait): title + primary action.
-                      sm+: title leftmost, chips fill middle, action right */}
-                  <div className="flex items-center justify-between gap-2 sm:contents">
-                    <h2 className="font-semibold text-sm sm:flex-shrink-0" style={{ color: 'var(--text-primary)' }}>All Parts</h2>
+                {/* Header bar — two clean rows:
+                      Row 1: title + integration chips + primary action
+                      Row 2: standalone Export ▾ */}
+                <div className="px-4 sm:px-5 py-3 space-y-2" style={{ borderBottom: '1px solid var(--border)' }}>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 gap-2">
+                    <h2 className="font-semibold text-sm sm:flex-shrink-0 sm:order-1" style={{ color: 'var(--text-primary)' }}>All Parts</h2>
+                    <div className="sm:flex-1 sm:min-w-0 sm:order-2">
+                      <ExportActionsBar
+                        dataset="parts"
+                        mode="integrations-only"
+                        onIntegrationResult={handleExportResult}
+                      />
+                    </div>
                     <Can permission="parts.create">
                       <button
                         onClick={() => setShowPartModal(true)}
-                        className="bg-[#635bff] text-white text-sm h-9 px-3 sm:px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap sm:flex-shrink-0 sm:order-3"
+                        className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap sm:flex-shrink-0 sm:order-3 w-full sm:w-auto"
                       >
                         + Add Part
                       </button>
                     </Can>
                   </div>
-                  {/* Chip strip — full-width row 2 on mobile portrait;
-                      flex-1 middle slot on sm+ (scrolls if too narrow) */}
-                  <div className="sm:flex-1 sm:min-w-0 sm:order-2">
-                    <ExportActionsBar dataset="parts" onIntegrationResult={handleExportResult} />
+                  {/* Row 2 — Export dropdown on its own line */}
+                  <div>
+                    <ExportActionsBar
+                      dataset="parts"
+                      mode="export-only"
+                    />
                   </div>
                 </div>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import ScopedExportModal, { ScopeDataset } from './ScopedExportModal';
 
@@ -15,6 +16,10 @@ interface ExportActionsBarProps {
    *  item is added to the Export dropdown menu (below a divider) so the
    *  Import button doesn't need its own chip on mobile. */
   importHref?: string;
+  /** Which chips to render. Lets parents place the Export button and the
+   *  integration chips on different rows for cleaner mobile layouts.
+   *  Defaults to 'both' for backwards compatibility. */
+  mode?: 'both' | 'export-only' | 'integrations-only';
   /** Called after successful integration export so parent can toast / refresh */
   onIntegrationResult?: (result: {
     integration: 'google_sheets' | 'quickbooks' | 'slack';
@@ -35,10 +40,15 @@ export default function ExportActionsBar({
   dataset,
   filterParam,
   importHref,
+  mode = 'both',
   onIntegrationResult,
 }: ExportActionsBarProps) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  // Anchor position for the portal-rendered Export dropdown so it can
+  // escape the chip strip's overflow-x-auto clipping rectangle.
+  const exportBtnRef = useRef<HTMLButtonElement | null>(null);
+  const [exportMenuPos, setExportMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [available, setAvailable] = useState<{ googleSheets: boolean; quickbooks: boolean; slack: boolean }>({
     googleSheets: false,
     quickbooks: false,
@@ -86,16 +96,49 @@ export default function ExportActionsBar({
     };
   }, []);
 
-  // Close any open menu when clicking outside
+  // Close any open menu when clicking outside. We watch both mousedown
+  // (desktop) and touchstart (mobile WebView) so dropdowns dismiss
+  // reliably on every platform. The portal-rendered Export menu lives
+  // under document.body, so we also exclude clicks landing on the
+  // menu itself via a data attribute.
   useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setOpenMenu(null);
-      }
+    const onPointerDown = (e: Event) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (wrapRef.current?.contains(target)) return;
+      // Allow clicks inside the portal-rendered dropdown
+      const el = target as HTMLElement;
+      if (el.closest && el.closest('[data-export-menu="1"]')) return;
+      setOpenMenu(null);
     };
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('touchstart', onPointerDown, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('touchstart', onPointerDown);
+    };
   }, []);
+
+  // Reposition the Export dropdown if the user scrolls / resizes while open
+  useEffect(() => {
+    if (openMenu !== 'download') return;
+    const update = () => {
+      const el = exportBtnRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setExportMenuPos({
+        top: r.bottom + 4,
+        right: window.innerWidth - r.right,
+      });
+    };
+    update();
+    window.addEventListener('scroll', update, true);
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update, true);
+      window.removeEventListener('resize', update);
+    };
+  }, [openMenu]);
 
   const toast = (msg: string, ok = true) => {
     onIntegrationResult?.({
@@ -233,13 +276,22 @@ export default function ExportActionsBar({
   return (
     <div
       ref={wrapRef}
-      className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pr-3 lg:mx-0 lg:px-0 lg:pr-0 lg:flex-wrap lg:overflow-visible scroll-fade-x"
-      style={{ scrollbarWidth: 'none' }}
+      className={
+        mode === 'export-only'
+          ? 'flex items-center gap-2 flex-shrink-0'
+          : 'flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pr-3 lg:mx-0 lg:px-0 lg:pr-0 lg:flex-wrap lg:overflow-visible scroll-fade-x'
+      }
+      style={mode === 'export-only' ? undefined : { scrollbarWidth: 'none' }}
     >
       {/* Combined Download menu — CSV + PDF in one chip to save space.
-          On click, reveals a small dropdown with the two download options. */}
+          On click, reveals a small dropdown with the two download options.
+          The dropdown is rendered via React portal to document.body so it
+          escapes the chip strip's overflow-x-auto clipping rectangle on
+          mobile (otherwise the menu would be invisible / unclickable). */}
+      {mode !== 'integrations-only' && (<>
       <div className="relative flex-shrink-0">
         <button
+          ref={exportBtnRef}
           type="button"
           onClick={() => setOpenMenu(openMenu === 'download' ? null : 'download')}
           disabled={busy === 'csv'}
@@ -258,63 +310,67 @@ export default function ExportActionsBar({
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </button>
-        {openMenu === 'download' && (
-          <div
-            role="menu"
-            className="absolute right-0 mt-1 z-30 min-w-[160px] rounded-lg border border-[var(--border)] [background:var(--bg-surface)] shadow-lg overflow-hidden"
+      </div>
+      {openMenu === 'download' && exportMenuPos && typeof document !== 'undefined' && createPortal(
+        <div
+          role="menu"
+          data-export-menu="1"
+          className="fixed z-[60] min-w-[180px] rounded-lg border border-[var(--border)] [background:var(--bg-surface)] shadow-xl overflow-hidden"
+          style={{ top: exportMenuPos.top, right: exportMenuPos.right }}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => { setOpenMenu(null); handleCsvDownload(); }}
+            disabled={busy === 'csv'}
+            className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-[var(--bg-muted,#f3f4f6)] text-[var(--text-primary)] disabled:opacity-50"
           >
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => { setOpenMenu(null); handleCsvDownload(); }}
-              disabled={busy === 'csv'}
-              className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-[var(--bg-muted,#f3f4f6)] text-[var(--text-primary)] disabled:opacity-50"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
-              <span className="font-medium">CSV</span>
-              <span className="ml-auto text-[10px] text-[var(--text-muted)]">spreadsheet</span>
-            </button>
-            <a
-              href={downloadUrl('pdf')}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            <span className="font-medium">CSV</span>
+            <span className="ml-auto text-[10px] text-[var(--text-muted)]">spreadsheet</span>
+          </button>
+          <a
+            href={downloadUrl('pdf')}
+            download
+            target="_blank"
+            rel="noopener noreferrer"
+            role="menuitem"
+            onClick={() => setOpenMenu(null)}
+            className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-[var(--bg-muted,#f3f4f6)] text-[var(--text-primary)] border-t border-[var(--border)]"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            <span className="font-medium">PDF</span>
+            <span className="ml-auto text-[10px] text-[var(--text-muted)]">printable</span>
+          </a>
+          {importHref && (
+            <Link
+              href={importHref}
               role="menuitem"
               onClick={() => setOpenMenu(null)}
-              className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-[var(--bg-muted,#f3f4f6)] text-[var(--text-primary)] border-t border-[var(--border)]"
+              className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-[var(--bg-muted,#f3f4f6)] text-[var(--text-primary)] border-t-2 border-[var(--border)]"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
-              <span className="font-medium">PDF</span>
-              <span className="ml-auto text-[10px] text-[var(--text-muted)]">printable</span>
-            </a>
-            {importHref && (
-              <Link
-                href={importHref}
-                role="menuitem"
-                onClick={() => setOpenMenu(null)}
-                className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-[var(--bg-muted,#f3f4f6)] text-[var(--text-primary)] border-t-2 border-[var(--border)]"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-                <span className="font-medium">Import CSV</span>
-                <span className="ml-auto text-[10px] text-[var(--text-muted)]">upload</span>
-              </Link>
-            )}
-          </div>
-        )}
-      </div>
+              <span className="font-medium">Import CSV</span>
+              <span className="ml-auto text-[10px] text-[var(--text-muted)]">upload</span>
+            </Link>
+          )}
+        </div>,
+        document.body
+      )}
+      </>)}
 
       {/* Google Sheets */}
-      {available.googleSheets && (
+      {mode !== 'export-only' && available.googleSheets && (
         <button
           type="button"
           onClick={() => setScopeModal({
@@ -335,7 +391,7 @@ export default function ExportActionsBar({
       )}
 
       {/* QuickBooks */}
-      {available.quickbooks && (dataset === 'work_orders' || dataset === 'parts') && (
+      {mode !== 'export-only' && available.quickbooks && (dataset === 'work_orders' || dataset === 'parts') && (
         <button
           type="button"
           onClick={() => setScopeModal(
@@ -368,7 +424,7 @@ export default function ExportActionsBar({
       )}
 
       {/* Slack digest */}
-      {available.slack && (
+      {mode !== 'export-only' && available.slack && (
         <button
           type="button"
           onClick={() => setScopeModal({
