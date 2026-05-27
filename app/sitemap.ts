@@ -45,6 +45,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // ─── Auth ─────────────────────────────────────────────────
     entry('/signup', 'monthly', 0.8),
 
+    // Comparison pages (high-intent buyer queries: myncel vs upkeep, limble alternative)
+    entry('/compare', 'monthly', 0.8),
+    entry('/compare/myncel-vs-upkeep', 'monthly', 0.85),
+    entry('/compare/myncel-vs-limble', 'monthly', 0.85),
+
     // ─── Product Pages ────────────────────────────────────────
     entry('/products/monitoring', 'monthly', 0.8),
     entry('/products/scheduling', 'monthly', 0.8),

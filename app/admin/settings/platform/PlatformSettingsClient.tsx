@@ -324,6 +324,9 @@ export default function PlatformSettingsClient({ initialSettings }: Props) {
       {/* Force-refresh all clients */}
       <ForceRefreshCard />
 
+      {/* IndexNow ping (Bing + Yandex instant indexing) */}
+      <IndexNowCard />
+
       {/* Info box */}
       <div style={{
         marginTop: 24, padding: '16px 20px', borderRadius: 10,
@@ -471,6 +474,110 @@ function ForceRefreshCard() {
             </button>
           </div>
         )}
+      </div>
+      {result && (
+        <div
+          style={{
+            fontSize: 12,
+            padding: '8px 12px',
+            borderRadius: 8,
+            background: result.ok ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.10)',
+            color: result.ok ? '#059669' : '#dc2626',
+            fontWeight: 600,
+          }}
+        >
+          {result.ok ? '✓ ' : '⚠ '}
+          {result.msg}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IndexNowCard() {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const ping = async (mode: 'all-blog' | 'urls', urls?: string[]) => {
+    setBusy(true);
+    setResult(null);
+    try {
+      const r = await fetch('/api/admin/indexnow-ping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mode === 'urls' ? { mode, urls } : { mode }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        setResult({
+          ok: false,
+          msg: data?.error || `IndexNow rejected the ping (HTTP ${data?.status || r.status})`,
+        });
+      } else {
+        setResult({
+          ok: true,
+          msg: `Submitted ${data.submitted} URL${data.submitted === 1 ? '' : 's'} to Bing + Yandex (HTTP ${data.status}).`,
+        });
+      }
+    } catch (e: any) {
+      setResult({ ok: false, msg: e?.message || 'Network error' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        marginTop: 24,
+        padding: '20px 22px',
+        borderRadius: 12,
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <span style={{ fontSize: 22 }}>🚀</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            Ping IndexNow (Bing + Yandex)
+          </p>
+          <p
+            style={{
+              fontSize: 12,
+              color: 'var(--text-secondary)',
+              marginTop: 4,
+              lineHeight: 1.6,
+            }}
+          >
+            Notifies Bing, Yandex, DuckDuckGo, Yahoo, Ecosia, and AOL within seconds
+            that your blog posts and marketing pages are new or updated. Use this
+            after publishing a new article or shipping a major copy change so the
+            search engines re-crawl right away instead of waiting days.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => ping('all-blog')}
+          disabled={busy}
+          style={{
+            flexShrink: 0,
+            background: '#0ea5e9',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 8,
+            padding: '8px 14px',
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: busy ? 'not-allowed' : 'pointer',
+            opacity: busy ? 0.6 : 1,
+          }}
+        >
+          {busy ? 'Pinging…' : 'Ping all blog + marketing'}
+        </button>
       </div>
       {result && (
         <div
