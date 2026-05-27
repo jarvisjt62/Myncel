@@ -41,7 +41,6 @@ function buildReportHTML(data: any): string {
     .meta { text-align: right; color: #6b7280; font-size: 10px; line-height: 1.6; }
     .toolbar { background: #f3f4ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .toolbar button { background: #635bff; color: white; border: none; border-radius: 6px; padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer; }
-    .toolbar button.secondary { background: white; color: #635bff; border: 1px solid #635bff; }
     .toolbar a { color: #635bff; text-decoration: none; font-size: 12px; font-weight: 600; padding: 8px 14px; border: 1px solid #c7d2fe; border-radius: 6px; }
     .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 8px; }
     @media (max-width: 640px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .header { flex-direction: column; } .meta { text-align: left; } }
@@ -70,7 +69,6 @@ function buildReportHTML(data: any): string {
   <div class="toolbar">
     <button onclick="window.print()">🖨️ Print / Save as PDF</button>
     <a href="/dashboard">← Back to Dashboard</a>
-    <button class="secondary" onclick="history.length>1?history.back():(window.location.href='/dashboard')">← Back</button>
   </div>
   <div class="header">
     <div>
