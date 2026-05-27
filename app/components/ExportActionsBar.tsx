@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import ScopedExportModal, { ScopeDataset } from './ScopedExportModal';
 
 type Dataset = 'work_orders' | 'machines' | 'alerts' | 'parts';
@@ -10,6 +11,10 @@ interface ExportActionsBarProps {
   dataset: Dataset;
   /** Optional filter passed to CSV/PDF (e.g. current status filter for work orders) */
   filterParam?: string;
+  /** Optional path to a CSV importer page. When provided, an "Import CSV"
+   *  item is added to the Export dropdown menu (below a divider) so the
+   *  Import button doesn't need its own chip on mobile. */
+  importHref?: string;
   /** Called after successful integration export so parent can toast / refresh */
   onIntegrationResult?: (result: {
     integration: 'google_sheets' | 'quickbooks' | 'slack';
@@ -29,6 +34,7 @@ const DATASET_LABELS: Record<Dataset, string> = {
 export default function ExportActionsBar({
   dataset,
   filterParam,
+  importHref,
   onIntegrationResult,
 }: ExportActionsBarProps) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -287,6 +293,22 @@ export default function ExportActionsBar({
               <span className="font-medium">PDF</span>
               <span className="ml-auto text-[10px] text-[var(--text-muted)]">printable</span>
             </a>
+            {importHref && (
+              <Link
+                href={importHref}
+                role="menuitem"
+                onClick={() => setOpenMenu(null)}
+                className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-[var(--bg-muted,#f3f4f6)] text-[var(--text-primary)] border-t-2 border-[var(--border)]"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <span className="font-medium">Import CSV</span>
+                <span className="ml-auto text-[10px] text-[var(--text-muted)]">upload</span>
+              </Link>
+            )}
           </div>
         )}
       </div>

@@ -2492,33 +2492,29 @@ function DashboardClientInner({ user, data }: Props) {
                   and up). Mobile portrait stacks the chips below. The
                   chip strip horizontally scrolls if it can't fit. */}
               <div className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-3">
-                {/* Row 1 (mobile portrait): count + primary actions
-                    sm+: count is the leftmost, then chips fill middle, then actions */}
+                {/* Row 1 (mobile portrait): count + primary action.
+                    sm+: count is the leftmost, then chips fill middle, then action */}
                 <div className="flex items-center justify-between gap-2 sm:contents">
                   <p className="text-sm text-[var(--text-secondary)] sm:flex-shrink-0">{machines.length} machines registered</p>
-                  <div className="flex items-stretch gap-2 sm:flex-shrink-0 sm:order-3">
-                    <Can permission="machines.create">
-                      <Link
-                        href="/dashboard/equipment/import"
-                        className="bg-white border border-slate-300 text-slate-700 text-sm h-9 px-3 sm:px-4 rounded-lg font-medium hover:bg-slate-50 transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
-                      >
-                        📥 <span className="hidden md:inline">Import CSV</span><span className="md:hidden">Import</span>
-                      </Link>
-                    </Can>
-                    <Can permission="machines.create">
-                      <button
-                        onClick={() => setShowMachineModal(true)}
-                        className="bg-[#635bff] text-white text-sm h-9 px-3 sm:px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
-                      >
-                        + Add Machine
-                      </button>
-                    </Can>
-                  </div>
+                  <Can permission="machines.create">
+                    <button
+                      onClick={() => setShowMachineModal(true)}
+                      className="bg-[#635bff] text-white text-sm h-9 px-3 sm:px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap sm:flex-shrink-0 sm:order-3"
+                    >
+                      + Add Machine
+                    </button>
+                  </Can>
                 </div>
                 {/* Chip strip — full-width row 2 on mobile portrait;
-                    flex-1 middle slot on sm+ (scrolls if too narrow) */}
+                    flex-1 middle slot on sm+ (scrolls if too narrow).
+                    importHref folds the Import CSV link into the Export
+                    dropdown menu so it doesn't need its own chip. */}
                 <div className="sm:flex-1 sm:min-w-0 sm:order-2">
-                  <ExportActionsBar dataset="machines" onIntegrationResult={handleExportResult} />
+                  <ExportActionsBar
+                    dataset="machines"
+                    importHref={perms.can('machines.create') ? '/dashboard/equipment/import' : undefined}
+                    onIntegrationResult={handleExportResult}
+                  />
                 </div>
               </div>
               <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] overflow-hidden">
