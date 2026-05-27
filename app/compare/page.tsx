@@ -31,6 +31,18 @@ const COMPARISONS = [
     blurb:
       'Popular CMMS for mid-size manufacturers. See how Myncel’s flat pricing and self-serve onboarding stack up.',
   },
+  {
+    slug: 'myncel-vs-fiix',
+    competitor: 'Fiix',
+    blurb:
+      'Rockwell’s enterprise CMMS. We compare flat pricing, included IoT, and 30-minute setup against Fiix’s tier-gated model.',
+  },
+  {
+    slug: 'myncel-vs-maintainx',
+    competitor: 'MaintainX',
+    blurb:
+      'Mobile-first CMMS popular with frontline teams. See how flat pricing and included IoT compare to MaintainX’s per-user tiers.',
+  },
 ];
 
 export default function ComparePage() {
@@ -78,8 +90,7 @@ export default function ComparePage() {
             ))}
           </div>
           <p className="mt-12 text-center text-sm text-gray-500">
-            More comparisons coming soon: Fiix, Maintainx, FaultFixers, Hippo
-            CMMS. Want one prioritised?{' '}
+            More comparisons coming soon: FaultFixers, Hippo CMMS. Want one prioritised?{' '}
             <Link href="/contact" className="text-indigo-600 hover:underline">
               Tell us
             </Link>

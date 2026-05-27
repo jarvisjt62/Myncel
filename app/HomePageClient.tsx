@@ -908,6 +908,70 @@ export default function HomePageClient() {
         </div>
       </section>
 
+      {/* Switching from another CMMS — internal links to /compare hub for SEO discoverability */}
+      <section className="bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-[#0a2540] sm:text-4xl">
+              Switching from another CMMS?
+            </h2>
+            <p className="mt-4 text-lg text-[#425466]">
+              See how Myncel stacks up against the most-searched alternatives. Same features, simpler pricing, no per-technician add-ons.
+            </p>
+          </div>
+          <div className="mx-auto mt-10 grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2">
+            <Link
+              href="/compare/myncel-vs-upkeep"
+              className="group flex items-center justify-between rounded-xl border border-[#e6ebf1] bg-white px-6 py-5 transition hover:border-[#635bff] hover:shadow-md"
+            >
+              <div>
+                <div className="text-base font-semibold text-[#0a2540]">Myncel vs UpKeep</div>
+                <div className="mt-1 text-sm text-[#425466]">Feature-by-feature comparison</div>
+              </div>
+              <span className="text-xl text-[#635bff] transition group-hover:translate-x-1">→</span>
+            </Link>
+            <Link
+              href="/compare/myncel-vs-limble"
+              className="group flex items-center justify-between rounded-xl border border-[#e6ebf1] bg-white px-6 py-5 transition hover:border-[#635bff] hover:shadow-md"
+            >
+              <div>
+                <div className="text-base font-semibold text-[#0a2540]">Myncel vs Limble</div>
+                <div className="mt-1 text-sm text-[#425466]">Feature-by-feature comparison</div>
+              </div>
+              <span className="text-xl text-[#635bff] transition group-hover:translate-x-1">→</span>
+            </Link>
+            <Link
+              href="/compare/myncel-vs-fiix"
+              className="group flex items-center justify-between rounded-xl border border-[#e6ebf1] bg-white px-6 py-5 transition hover:border-[#635bff] hover:shadow-md"
+            >
+              <div>
+                <div className="text-base font-semibold text-[#0a2540]">Myncel vs Fiix</div>
+                <div className="mt-1 text-sm text-[#425466]">Feature-by-feature comparison</div>
+              </div>
+              <span className="text-xl text-[#635bff] transition group-hover:translate-x-1">→</span>
+            </Link>
+            <Link
+              href="/compare/myncel-vs-maintainx"
+              className="group flex items-center justify-between rounded-xl border border-[#e6ebf1] bg-white px-6 py-5 transition hover:border-[#635bff] hover:shadow-md"
+            >
+              <div>
+                <div className="text-base font-semibold text-[#0a2540]">Myncel vs MaintainX</div>
+                <div className="mt-1 text-sm text-[#425466]">Feature-by-feature comparison</div>
+              </div>
+              <span className="text-xl text-[#635bff] transition group-hover:translate-x-1">→</span>
+            </Link>
+          </div>
+          <div className="mt-8 text-center">
+            <Link
+              href="/compare"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#635bff] hover:text-[#4f46e5]"
+            >
+              See all comparisons →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <section className="relative overflow-hidden bg-[#635bff] py-16 text-white sm:py-24">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.28),transparent_28%),radial-gradient(circle_at_80%_0%,rgba(0,212,255,0.35),transparent_30%)]" />
         <div className="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">

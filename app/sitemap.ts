@@ -49,6 +49,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry('/compare', 'monthly', 0.8),
     entry('/compare/myncel-vs-upkeep', 'monthly', 0.85),
     entry('/compare/myncel-vs-limble', 'monthly', 0.85),
+    entry('/compare/myncel-vs-fiix', 'monthly', 0.85),
+    entry('/compare/myncel-vs-maintainx', 'monthly', 0.85),
 
     // ─── Product Pages ────────────────────────────────────────
     entry('/products/monitoring', 'monthly', 0.8),

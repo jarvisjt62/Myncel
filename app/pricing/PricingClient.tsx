@@ -352,6 +352,35 @@ export default function PricingClient({ initialCountry, initialCurrency }: Props
         </div>
       </section>
 
+      {/* Switching from another CMMS — internal comparison links for SEO */}
+      <section className="py-16 bg-[#f6f9fc] border-t border-[#e6ebf1]">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold text-[#0a2540] mb-3">Comparing Myncel to another CMMS?</h2>
+            <p className="text-[#425466]">See side-by-side feature and pricing comparisons.</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Link href="/compare/myncel-vs-upkeep" className="group rounded-lg border border-[#e6ebf1] bg-white px-4 py-3 text-center text-sm font-semibold text-[#0a2540] transition hover:border-[#635bff] hover:text-[#635bff]">
+              vs UpKeep <span className="text-[#635bff] group-hover:translate-x-0.5 inline-block transition">→</span>
+            </Link>
+            <Link href="/compare/myncel-vs-limble" className="group rounded-lg border border-[#e6ebf1] bg-white px-4 py-3 text-center text-sm font-semibold text-[#0a2540] transition hover:border-[#635bff] hover:text-[#635bff]">
+              vs Limble <span className="text-[#635bff] group-hover:translate-x-0.5 inline-block transition">→</span>
+            </Link>
+            <Link href="/compare/myncel-vs-fiix" className="group rounded-lg border border-[#e6ebf1] bg-white px-4 py-3 text-center text-sm font-semibold text-[#0a2540] transition hover:border-[#635bff] hover:text-[#635bff]">
+              vs Fiix <span className="text-[#635bff] group-hover:translate-x-0.5 inline-block transition">→</span>
+            </Link>
+            <Link href="/compare/myncel-vs-maintainx" className="group rounded-lg border border-[#e6ebf1] bg-white px-4 py-3 text-center text-sm font-semibold text-[#0a2540] transition hover:border-[#635bff] hover:text-[#635bff]">
+              vs MaintainX <span className="text-[#635bff] group-hover:translate-x-0.5 inline-block transition">→</span>
+            </Link>
+          </div>
+          <div className="mt-6 text-center">
+            <Link href="/compare" className="text-sm font-semibold text-[#635bff] hover:text-[#4f46e5]">
+              See all CMMS comparisons →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-20 bg-[#635bff]">
         <div className="max-w-3xl mx-auto px-6 text-center">

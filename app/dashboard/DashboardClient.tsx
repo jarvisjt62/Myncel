@@ -2717,7 +2717,7 @@ function DashboardClientInner({ user, data }: Props) {
               {/* Work Orders Summary cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
                 <div className="rounded-xl border border-[var(--border)] [background:var(--bg-surface)] p-3 sm:p-4">
-                  <div className="text-xs text-[var(--text-secondary)] mb-1">Total</div>
+                  <div className="text-xs text-[var(--text-secondary)] mb-1">Total Work Orders</div>
                   <div className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{workOrders.length}</div>
                 </div>
                 <div className="rounded-xl border border-[var(--border)] [background:var(--bg-surface)] p-3 sm:p-4">

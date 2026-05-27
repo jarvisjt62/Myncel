@@ -7,7 +7,7 @@
     "build": "node scripts/fetch-fx-rates.mjs && prisma generate && prisma db push --accept-data-loss && tsx prisma/seed-permissions.ts && next build",
     "start": "next start",
     "postinstall": "prisma generate",
-    "vercel-build": "node scripts/fetch-fx-rates.mjs && prisma generate && prisma db push --accept-data-loss && tsx prisma/seed-permissions.ts && next build",
+    "vercel-build": "node scripts/fetch-fx-rates.mjs && prisma generate && prisma db push --accept-data-loss && tsx prisma/seed-permissions.ts && next build && node scripts/indexnow-on-build.mjs",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
