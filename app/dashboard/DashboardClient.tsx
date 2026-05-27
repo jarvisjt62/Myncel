@@ -2496,10 +2496,10 @@ function DashboardClientInner({ user, data }: Props) {
                   mobile, and gives integrations + primary action the
                   visual weight they deserve. */}
               <div className="space-y-2">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 gap-2">
+                <div className="flex flex-row flex-wrap items-center gap-2 sm:gap-3 sm:flex-nowrap">
                   <p className="text-sm text-[var(--text-secondary)] sm:flex-shrink-0 sm:order-1">{machines.length} machines registered</p>
                   {/* Integration chips — Sheets / QuickBooks / Slack */}
-                  <div className="sm:flex-1 sm:min-w-0 sm:order-2">
+                  <div className="flex-1 min-w-0 sm:order-2">
                     <ExportActionsBar
                       dataset="machines"
                       mode="integrations-only"
@@ -2509,7 +2509,7 @@ function DashboardClientInner({ user, data }: Props) {
                   <Can permission="machines.create">
                     <button
                       onClick={() => setShowMachineModal(true)}
-                      className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap sm:flex-shrink-0 sm:order-3 w-full sm:w-auto"
+                      className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 sm:order-3"
                     >
                       + Add Machine
                     </button>
@@ -2699,11 +2699,11 @@ function DashboardClientInner({ user, data }: Props) {
                     Row 1: count + integration chips + primary action
                     Row 2: standalone Export ▾ */}
               <div className="space-y-2">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 gap-2">
+                <div className="flex flex-row flex-wrap items-center gap-2 sm:gap-3 sm:flex-nowrap">
                   <p className="text-sm text-[var(--text-secondary)] sm:flex-shrink-0 sm:order-1">
                     {workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length} work order{workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length !== 1 ? 's' : ''}
                   </p>
-                  <div className="sm:flex-1 sm:min-w-0 sm:order-2">
+                  <div className="flex-1 min-w-0 sm:order-2">
                     <ExportActionsBar
                       dataset="work_orders"
                       filterParam={woFilter}
@@ -2714,7 +2714,7 @@ function DashboardClientInner({ user, data }: Props) {
                   <Can permission="work_orders.create">
                     <button
                       onClick={() => { setShowWorkOrderModal(true); loadWoTemplates(); }}
-                      className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap sm:flex-shrink-0 sm:order-3 w-full sm:w-auto"
+                      className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 sm:order-3"
                     >
                       + New Work Order
                     </button>
@@ -3643,9 +3643,9 @@ function DashboardClientInner({ user, data }: Props) {
                       Row 1: title + integration chips + primary action
                       Row 2: standalone Export ▾ */}
                 <div className="px-4 sm:px-5 py-3 space-y-2" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 gap-2">
+                  <div className="flex flex-row flex-wrap items-center gap-2 sm:gap-3 sm:flex-nowrap">
                     <h2 className="font-semibold text-sm sm:flex-shrink-0 sm:order-1" style={{ color: 'var(--text-primary)' }}>All Parts</h2>
-                    <div className="sm:flex-1 sm:min-w-0 sm:order-2">
+                    <div className="flex-1 min-w-0 sm:order-2">
                       <ExportActionsBar
                         dataset="parts"
                         mode="integrations-only"
@@ -3655,7 +3655,7 @@ function DashboardClientInner({ user, data }: Props) {
                     <Can permission="parts.create">
                       <button
                         onClick={() => setShowPartModal(true)}
-                        className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap sm:flex-shrink-0 sm:order-3 w-full sm:w-auto"
+                        className="bg-[#635bff] text-white text-sm h-9 px-4 rounded-lg font-semibold hover:bg-[#4f46e5] transition-colors inline-flex items-center justify-center gap-1.5 whitespace-nowrap flex-shrink-0 sm:order-3"
                       >
                         + Add Part
                       </button>

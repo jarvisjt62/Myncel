@@ -48,7 +48,7 @@ export default function ExportActionsBar({
   // Anchor position for the portal-rendered Export dropdown so it can
   // escape the chip strip's overflow-x-auto clipping rectangle.
   const exportBtnRef = useRef<HTMLButtonElement | null>(null);
-  const [exportMenuPos, setExportMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const [exportMenuPos, setExportMenuPos] = useState<{ top: number; left: number } | null>(null);
   const [available, setAvailable] = useState<{ googleSheets: boolean; quickbooks: boolean; slack: boolean }>({
     googleSheets: false,
     quickbooks: false,
@@ -126,9 +126,19 @@ export default function ExportActionsBar({
       const el = exportBtnRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
+      // Left-anchor with viewport clamp so the menu is always fully on-screen,
+      // regardless of whether the Export button sits at the left or right edge.
+      const menuWidth = 200; // matches min-w-[180px] + a little padding
+      const margin = 8;
+      let left = r.left;
+      if (left + menuWidth > window.innerWidth - margin) {
+        // Prefer right-aligning the menu to the button if it would overflow right
+        left = Math.max(margin, r.right - menuWidth);
+      }
+      if (left < margin) left = margin;
       setExportMenuPos({
         top: r.bottom + 4,
-        right: window.innerWidth - r.right,
+        left,
       });
     };
     update();
@@ -316,7 +326,7 @@ export default function ExportActionsBar({
           role="menu"
           data-export-menu="1"
           className="fixed z-[60] min-w-[180px] rounded-lg border border-[var(--border)] [background:var(--bg-surface)] shadow-xl overflow-hidden"
-          style={{ top: exportMenuPos.top, right: exportMenuPos.right }}
+          style={{ top: exportMenuPos.top, left: exportMenuPos.left }}
         >
           <button
             type="button"
