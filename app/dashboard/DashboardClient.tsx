@@ -2497,14 +2497,14 @@ function DashboardClientInner({ user, data }: Props) {
                   {/* Export chip strip — horizontally scrolls on mobile. */}
                   <ExportActionsBar dataset="machines" onIntegrationResult={handleExportResult} />
                   {/* Action row — Import CSV + Add Machine. On mobile they
-                      split the full row evenly; on sm+ they hug the right
-                      edge via ml-auto so even when they wrap to a new line
-                      they stay right-aligned. */}
-                  <div className="flex items-stretch gap-2 sm:contents">
+                      split the full row evenly. On sm+ they stay paired as
+                      a group and hug the right edge via ml-auto so they
+                      don't fragment when wrapping. */}
+                  <div className="flex items-stretch gap-2 sm:ml-auto">
                     <Can permission="machines.create">
                       <Link
                         href="/dashboard/equipment/import"
-                        className="flex-1 sm:flex-none sm:ml-auto bg-white border border-slate-300 text-slate-700 text-sm h-10 sm:h-9 px-4 rounded-lg font-medium hover:bg-slate-50 transition-colors inline-flex items-center justify-center gap-1.5"
+                        className="flex-1 sm:flex-none bg-white border border-slate-300 text-slate-700 text-sm h-10 sm:h-9 px-4 rounded-lg font-medium hover:bg-slate-50 transition-colors inline-flex items-center justify-center gap-1.5"
                       >
                         📥 Import CSV
                       </Link>
