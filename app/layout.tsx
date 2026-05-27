@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import LiveChat from './components/LiveChat';
 import Providers from './components/Providers';
+import VersionGate from './components/VersionGate';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.myncel.com'),
@@ -298,6 +299,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <LiveChat />
+          <VersionGate />
         </Providers>
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {

@@ -321,6 +321,9 @@ export default function PlatformSettingsClient({ initialSettings }: Props) {
         })}
       </div>
 
+      {/* Force-refresh all clients */}
+      <ForceRefreshCard />
+
       {/* Info box */}
       <div style={{
         marginTop: 24, padding: '16px 20px', borderRadius: 10,
@@ -340,6 +343,150 @@ export default function PlatformSettingsClient({ initialSettings }: Props) {
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+/**
+ * Super-Admin only: bumps the platform.appVersion token in the DB.
+ * Within ~60 s every connected client (web + Capacitor mobile apps)
+ * polls /api/version, sees the mismatch, clears its caches, and reloads.
+ */
+function ForceRefreshCard() {
+  const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const trigger = async () => {
+    setBusy(true);
+    setResult(null);
+    try {
+      const r = await fetch('/api/admin/force-refresh', { method: 'POST' });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        setResult({ ok: false, msg: data?.error || 'Failed to trigger refresh' });
+      } else {
+        setResult({
+          ok: true,
+          msg: `All clients will reload within 60 s (token: ${String(data.appVersion).slice(0, 12)}…)`,
+        });
+      }
+    } catch (e: any) {
+      setResult({ ok: false, msg: e?.message || 'Network error' });
+    } finally {
+      setBusy(false);
+      setConfirming(false);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        marginTop: 24,
+        padding: '20px 22px',
+        borderRadius: 12,
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <span style={{ fontSize: 22 }}>🔄</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            Force refresh all clients
+          </p>
+          <p
+            style={{
+              fontSize: 12,
+              color: 'var(--text-secondary)',
+              marginTop: 4,
+              lineHeight: 1.6,
+            }}
+          >
+            Pushes a new app-version token to every connected browser and mobile app.
+            Within ~60 seconds each client clears its local caches and reloads itself
+            so users immediately see the latest deploy without restarting their apps
+            or refreshing manually. Forms with unsaved input will see a soft prompt
+            instead of a hard reload.
+          </p>
+        </div>
+        {!confirming ? (
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            disabled={busy}
+            style={{
+              flexShrink: 0,
+              background: '#635bff',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '8px 14px',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: busy ? 'not-allowed' : 'pointer',
+              opacity: busy ? 0.6 : 1,
+            }}
+          >
+            Force refresh
+          </button>
+        ) : (
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={trigger}
+              disabled={busy}
+              style={{
+                background: '#ef4444',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '8px 14px',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: busy ? 'not-allowed' : 'pointer',
+                opacity: busy ? 0.6 : 1,
+              }}
+            >
+              {busy ? 'Sending…' : 'Yes, refresh all'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              disabled={busy}
+              style={{
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                padding: '8px 14px',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
+      {result && (
+        <div
+          style={{
+            fontSize: 12,
+            padding: '8px 12px',
+            borderRadius: 8,
+            background: result.ok ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.10)',
+            color: result.ok ? '#059669' : '#dc2626',
+            fontWeight: 600,
+          }}
+        >
+          {result.ok ? '✓ ' : '⚠ '}
+          {result.msg}
+        </div>
+      )}
     </div>
   );
 }
