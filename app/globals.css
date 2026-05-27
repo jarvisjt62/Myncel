@@ -1039,21 +1039,23 @@ select {
 
 /* 2. Horizontal-scroll pill row: add a soft fade on the right edge so users
       can see there's more content to scroll to. Apply via the
-      .scroll-fade-x class added on the dashboard tab pill containers. */
+      .scroll-fade-x class added on the dashboard tab pill containers.
+      The native scrollbar is hidden on every platform — the trailing
+      fade is enough of a "more to the right" hint, and a stray 2px line
+      under the row looked dirty on mobile, especially when stacked with
+      the status filter pill row right below it. */
 .scroll-fade-x {
   position: relative;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  /* Trailing space inside the scroller so the last item is never clipped
-     and a thin scrollbar appears below it on mobile. */
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge legacy */
+  /* Trailing space inside the scroller so the last item is never clipped. */
   scroll-padding-right: 1rem;
 }
 .scroll-fade-x::-webkit-scrollbar {
-  height: 2px;
-}
-.scroll-fade-x::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 2px;
+  display: none;
+  width: 0;
+  height: 0;
 }
 /* Add an invisible trailing element so the last pill has breathing room */
 .scroll-fade-x > :last-child {
