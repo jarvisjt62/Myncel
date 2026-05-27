@@ -82,6 +82,31 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  /* ─── Search-engine ownership verifications ─────────────────────────
+     Each value is read from an env var so secrets never live in git.
+     Set these in Vercel → Settings → Environment Variables:
+       NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+       NEXT_PUBLIC_BING_SITE_VERIFICATION       (Bing Webmaster Tools)
+       NEXT_PUBLIC_YANDEX_VERIFICATION          (Yandex Webmaster)
+       NEXT_PUBLIC_PINTEREST_VERIFICATION       (Pinterest, optional)
+       NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION (Meta Business, optional)
+     If an env var is unset the corresponding tag simply isn't rendered.
+   ────────────────────────────────────────────────────────────────── */
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
+    other: {
+      ...(process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION
+        ? { 'msvalidate.01': process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION }
+        : {}),
+      ...(process.env.NEXT_PUBLIC_PINTEREST_VERIFICATION
+        ? { 'p:domain_verify': process.env.NEXT_PUBLIC_PINTEREST_VERIFICATION }
+        : {}),
+      ...(process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION
+        ? { 'facebook-domain-verification': process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION }
+        : {}),
+    },
+  },
 };
 
 export default function RootLayout({
@@ -290,6 +315,73 @@ export default function RootLayout({
                 "IoT sensor integration and threshold alerts",
                 "Multi-site dashboard",
                 "Compliance and audit records"
+              ]
+            })
+          }}
+        />
+        {/* JSON-LD: FAQPage — ten high-value buyer questions answered.
+             AI search engines (Perplexity, ChatGPT search, Claude, Gemini)
+             cite FAQ schema heavily, and Google may show them as rich
+             snippets in classic search results too. Keep answers concise
+             (one paragraph) and free of marketing fluff so LLMs reuse them.
+         */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": [
+                {
+                  "@type": "Question",
+                  "name": "What is Myncel?",
+                  "acceptedAnswer": { "@type": "Answer", "text": "Myncel is CMMS (computerized maintenance management system) software for small and mid-size manufacturers, hotels, hospitals, warehouses, and oil & gas operators. It combines preventive maintenance scheduling, work order management, parts inventory, IoT sensor monitoring, and analytics in one platform that runs on web, Android, and iOS." }
+                },
+                {
+                  "@type": "Question",
+                  "name": "How is Myncel different from UpKeep, Limble, or Fiix?",
+                  "acceptedAnswer": { "@type": "Answer", "text": "Myncel focuses on small manufacturers and facility teams that find legacy CMMS tools too expensive and slow to deploy. Customers are typically live in under 30 minutes, the mobile app works offline, and built-in IoT sensor support means predictive maintenance does not require a separate platform. Pricing starts at $79/month versus $35–80 per user per month for incumbents." }
+                },
+                {
+                  "@type": "Question",
+                  "name": "How much does Myncel cost?",
+                  "acceptedAnswer": { "@type": "Answer", "text": "Plans start at $79/month for the Starter plan, $149/month for Professional, and $299/month for Enterprise. A 14-day free trial is available with no credit card required. Annual billing includes two months free." }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Does Myncel work offline on mobile?",
+                  "acceptedAnswer": { "@type": "Answer", "text": "Yes. The Myncel mobile app for Android and iOS caches work orders, machines, and parts so technicians can continue working in poor-signal areas. Updates sync automatically once connectivity returns." }
+                },
+                {
+                  "@type": "Question",
+                  "name": "What kinds of equipment does Myncel monitor?",
+                  "acceptedAnswer": { "@type": "Answer", "text": "Myncel tracks any asset that needs scheduled maintenance: CNC lathes and mills, injection molders, hydraulic presses, conveyors, HVAC, generators, refrigeration, boilers, pumps, motors, robots, and bottling lines. IoT integration supports vibration, temperature, current, and pressure sensors over Wi-Fi, MQTT, Modbus, and BACnet." }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Can Myncel import data from a spreadsheet?",
+                  "acceptedAnswer": { "@type": "Answer", "text": "Yes. The Equipment, Work Orders, and Parts modules each include a CSV import that maps your existing columns to Myncel fields. Most customers migrate their full Excel maintenance history in under an hour." }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Does Myncel support multi-site organizations?",
+                  "acceptedAnswer": { "@type": "Answer", "text": "Yes. Organizations can manage multiple plants or facilities from a single dashboard, with role-based permissions, per-site reports, and consolidated KPIs across all locations." }
+                },
+                {
+                  "@type": "Question",
+                  "name": "What integrations does Myncel offer?",
+                  "acceptedAnswer": { "@type": "Answer", "text": "Built-in integrations include Google Sheets (export reports and data), QuickBooks (sync work orders as invoices, sync parts as items), Slack (send digests and alerts), and a public REST API plus webhooks for custom workflows." }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Is Myncel suitable for hotels, hospitals, and warehouses, not just factories?",
+                  "acceptedAnswer": { "@type": "Answer", "text": "Yes. Myncel is industry-agnostic and powers maintenance for hotels (HVAC, generators, kitchen equipment), hospitals (medical equipment compliance and audit logs), warehouses (refrigeration, conveyors, MHE), and oil & gas operators (remote pumps, compressors, separators)." }
+                },
+                {
+                  "@type": "Question",
+                  "name": "How does Myncel help with HACCP, FDA, or ISO audits?",
+                  "acceptedAnswer": { "@type": "Answer", "text": "Every work order, inspection, and sensor reading is timestamped and exportable as PDF or CSV. Maintenance Reports generate audit-ready logs covering the requested period. Permission roles ensure only authorized staff can edit historical records." }
+                }
               ]
             })
           }}
