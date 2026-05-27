@@ -2495,19 +2495,16 @@ function DashboardClientInner({ user, data }: Props) {
                   overflow container so it always opens correctly on
                   mobile, and gives integrations + primary action the
                   visual weight they deserve. */}
-              <div className="space-y-2">
-                {/* Row 1: count + integration chips + primary action all on ONE row.
-                    On narrow screens the row scrolls horizontally rather than wrapping,
-                    so nothing is ever hidden behind another element. */}
+              <div>
+                {/* Single row: count + Export ▾ + Send to ▾ + primary action.
+                    Scrolls horizontally on narrow phones so nothing is ever clipped. */}
                 <div className="flex items-center gap-2 overflow-x-auto scroll-fade-x -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 sm:pb-0">
                   <p className="text-sm text-[var(--text-secondary)] flex-shrink-0">{machines.length} machines registered</p>
-                  <div className="flex-shrink-0">
-                    <ExportActionsBar
-                      dataset="machines"
-                      mode="integrations-only"
-                      onIntegrationResult={handleExportResult}
-                    />
-                  </div>
+                  <ExportActionsBar
+                    dataset="machines"
+                    importHref={perms.can('machines.create') ? '/dashboard/equipment/import' : undefined}
+                    onIntegrationResult={handleExportResult}
+                  />
                   <Can permission="machines.create">
                     <button
                       onClick={() => setShowMachineModal(true)}
@@ -2516,14 +2513,6 @@ function DashboardClientInner({ user, data }: Props) {
                       + Add Machine
                     </button>
                   </Can>
-                </div>
-                {/* Row 2: Export dropdown on its own line */}
-                <div>
-                  <ExportActionsBar
-                    dataset="machines"
-                    mode="export-only"
-                    importHref={perms.can('machines.create') ? '/dashboard/equipment/import' : undefined}
-                  />
                 </div>
               </div>
               <div className="rounded-xl [background:var(--bg-surface)] border border-[var(--border)] overflow-hidden">
@@ -2700,21 +2689,17 @@ function DashboardClientInner({ user, data }: Props) {
               {/* Top bar — same two-row pattern as Equipment:
                     Row 1: count + integration chips + primary action
                     Row 2: standalone Export ▾ */}
-              <div className="space-y-2">
-                {/* Row 1: count + integration chips + primary action all on ONE row,
-                    horizontally scrollable on narrow screens. */}
+              <div>
+                {/* Single row: count + Export ▾ + Send to ▾ + primary action. */}
                 <div className="flex items-center gap-2 overflow-x-auto scroll-fade-x -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 sm:pb-0">
                   <p className="text-sm text-[var(--text-secondary)] flex-shrink-0">
                     {workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length} work order{workOrders.filter(wo => woFilter === 'ALL' || wo.status === woFilter).length !== 1 ? 's' : ''}
                   </p>
-                  <div className="flex-shrink-0">
-                    <ExportActionsBar
-                      dataset="work_orders"
-                      filterParam={woFilter}
-                      mode="integrations-only"
-                      onIntegrationResult={handleExportResult}
-                    />
-                  </div>
+                  <ExportActionsBar
+                    dataset="work_orders"
+                    filterParam={woFilter}
+                    onIntegrationResult={handleExportResult}
+                  />
                   <Can permission="work_orders.create">
                     <button
                       onClick={() => { setShowWorkOrderModal(true); loadWoTemplates(); }}
@@ -2723,14 +2708,6 @@ function DashboardClientInner({ user, data }: Props) {
                       + New Work Order
                     </button>
                   </Can>
-                </div>
-                {/* Row 2: Export dropdown on its own line */}
-                <div>
-                  <ExportActionsBar
-                    dataset="work_orders"
-                    filterParam={woFilter}
-                    mode="export-only"
-                  />
                 </div>
               </div>
               {/* Status filter pills */}
@@ -3646,18 +3623,14 @@ function DashboardClientInner({ user, data }: Props) {
                 {/* Header bar — two clean rows:
                       Row 1: title + integration chips + primary action
                       Row 2: standalone Export ▾ */}
-                <div className="px-4 sm:px-5 py-3 space-y-2" style={{ borderBottom: '1px solid var(--border)' }}>
-                  {/* Row 1: title + integration chips + primary action all on ONE row,
-                      horizontally scrollable on narrow screens. */}
+                <div className="px-4 sm:px-5 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                  {/* Single row: title + Export ▾ + Send to ▾ + primary action. */}
                   <div className="flex items-center gap-2 overflow-x-auto scroll-fade-x -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 sm:pb-0">
                     <h2 className="font-semibold text-sm flex-shrink-0" style={{ color: 'var(--text-primary)' }}>All Parts</h2>
-                    <div className="flex-shrink-0">
-                      <ExportActionsBar
-                        dataset="parts"
-                        mode="integrations-only"
-                        onIntegrationResult={handleExportResult}
-                      />
-                    </div>
+                    <ExportActionsBar
+                      dataset="parts"
+                      onIntegrationResult={handleExportResult}
+                    />
                     <Can permission="parts.create">
                       <button
                         onClick={() => setShowPartModal(true)}
@@ -3666,13 +3639,6 @@ function DashboardClientInner({ user, data }: Props) {
                         + Add Part
                       </button>
                     </Can>
-                  </div>
-                  {/* Row 2: Export dropdown */}
-                  <div>
-                    <ExportActionsBar
-                      dataset="parts"
-                      mode="export-only"
-                    />
                   </div>
                 </div>
 

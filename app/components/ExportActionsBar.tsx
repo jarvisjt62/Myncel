@@ -45,10 +45,12 @@ export default function ExportActionsBar({
 }: ExportActionsBarProps) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  // Anchor position for the portal-rendered Export dropdown so it can
-  // escape the chip strip's overflow-x-auto clipping rectangle.
+  // Anchor positions for the portal-rendered dropdowns so they can escape
+  // any parent overflow-x-auto clipping rectangle on mobile.
   const exportBtnRef = useRef<HTMLButtonElement | null>(null);
+  const sendBtnRef = useRef<HTMLButtonElement | null>(null);
   const [exportMenuPos, setExportMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const [sendMenuPos, setSendMenuPos] = useState<{ top: number; left: number } | null>(null);
   const [available, setAvailable] = useState<{ googleSheets: boolean; quickbooks: boolean; slack: boolean }>(() => {
     // Hydrate from sessionStorage so the chips don't pop in on every page nav.
     if (typeof window !== 'undefined') {
@@ -132,27 +134,25 @@ export default function ExportActionsBar({
     };
   }, []);
 
-  // Reposition the Export dropdown if the user scrolls / resizes while open
+  // Reposition the active dropdown if the user scrolls / resizes while open
   useEffect(() => {
-    if (openMenu !== 'download') return;
+    if (openMenu !== 'download' && openMenu !== 'send') return;
     const update = () => {
-      const el = exportBtnRef.current;
+      const el = openMenu === 'download' ? exportBtnRef.current : sendBtnRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
       // Left-anchor with viewport clamp so the menu is always fully on-screen,
-      // regardless of whether the Export button sits at the left or right edge.
-      const menuWidth = 200; // matches min-w-[180px] + a little padding
+      // regardless of whether the button sits at the left or right edge.
+      const menuWidth = 220;
       const margin = 8;
       let left = r.left;
       if (left + menuWidth > window.innerWidth - margin) {
-        // Prefer right-aligning the menu to the button if it would overflow right
         left = Math.max(margin, r.right - menuWidth);
       }
       if (left < margin) left = margin;
-      setExportMenuPos({
-        top: r.bottom + 4,
-        left,
-      });
+      const pos = { top: r.bottom + 4, left };
+      if (openMenu === 'download') setExportMenuPos(pos);
+      else setSendMenuPos(pos);
     };
     update();
     window.addEventListener('scroll', update, true);
@@ -296,6 +296,12 @@ export default function ExportActionsBar({
     }
   };
 
+  // Whether any "send to" integration is available for this dataset.
+  // QuickBooks only applies to work_orders / parts.
+  const qbApplies = dataset === 'work_orders' || dataset === 'parts';
+  const hasAnySendTarget =
+    available.googleSheets || (available.quickbooks && qbApplies) || available.slack;
+
   return (
     <div
       ref={wrapRef}
@@ -304,15 +310,10 @@ export default function ExportActionsBar({
           ? 'flex items-center gap-2 flex-shrink-0'
           : mode === 'integrations-only'
           ? 'flex items-center gap-2 flex-shrink-0'
-          : 'flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pr-3 lg:mx-0 lg:px-0 lg:pr-0 lg:flex-wrap lg:overflow-visible scroll-fade-x'
+          : 'flex items-center gap-2 flex-shrink-0'
       }
-      style={mode === 'both' ? { scrollbarWidth: 'none' } : undefined}
     >
-      {/* Combined Download menu — CSV + PDF in one chip to save space.
-          On click, reveals a small dropdown with the two download options.
-          The dropdown is rendered via React portal to document.body so it
-          escapes the chip strip's overflow-x-auto clipping rectangle on
-          mobile (otherwise the menu would be invisible / unclickable). */}
+      {/* Combined Download menu — CSV + PDF + (optional) Import in one chip. */}
       {mode !== 'integrations-only' && (<>
       <div className="relative flex-shrink-0">
         <button
@@ -394,80 +395,119 @@ export default function ExportActionsBar({
       )}
       </>)}
 
-      {/* Google Sheets */}
-      {mode !== 'export-only' && available.googleSheets && (
+      {/* Combined Send-to menu — Sheets / QuickBooks / Slack collapsed into one chip. */}
+      {mode !== 'export-only' && hasAnySendTarget && (<>
+      <div className="relative flex-shrink-0">
         <button
+          ref={sendBtnRef}
           type="button"
-          onClick={() => setScopeModal({
-            integration: 'google_sheets',
-            title: `Export ${DATASET_LABELS[dataset]} to Google Sheets`,
-            description: 'Choose which records to include in the new spreadsheet.',
-            datasets: [dataset],
-            confirmLabel: 'Create spreadsheet',
-          })}
-          disabled={busy === 'google_sheets'}
-          className={`${btnBase} text-white`}
-          style={{ background: '#0f9d58' }}
-          title={`Create a new Google Sheet with your ${DATASET_LABELS[dataset].toLowerCase()}`}
+          onClick={() => setOpenMenu(openMenu === 'send' ? null : 'send')}
+          disabled={busy !== null}
+          className={`${btnBase} border border-[var(--border)] text-[var(--text-secondary)] hover:border-[#635bff] hover:text-[#635bff]`}
+          title="Send to a connected integration"
+          aria-haspopup="menu"
+          aria-expanded={openMenu === 'send'}
         >
-          <span>📊</span>
-          <span>{busy === 'google_sheets' ? 'Exporting…' : 'Sheets'}</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <span>{busy === 'google_sheets' || busy === 'quickbooks' || busy === 'slack' ? 'Sending…' : 'Send to'}</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
         </button>
-      )}
-
-      {/* QuickBooks */}
-      {mode !== 'export-only' && available.quickbooks && (dataset === 'work_orders' || dataset === 'parts') && (
-        <button
-          type="button"
-          onClick={() => setScopeModal(
-            dataset === 'work_orders'
-              ? {
-                  integration: 'quickbooks',
-                  title: 'Create QuickBooks Invoices',
-                  description: 'Choose which completed work orders to invoice in QuickBooks.',
-                  datasets: ['work_orders'],
-                  qbDataset: 'invoices',
-                  confirmLabel: 'Create invoices',
-                }
-              : {
-                  integration: 'quickbooks',
-                  title: 'Sync Parts → QuickBooks Items',
-                  description: 'Choose which inventory parts to sync as QuickBooks items.',
-                  datasets: ['parts'],
-                  qbDataset: 'items',
-                  confirmLabel: 'Sync items',
-                }
+      </div>
+      {openMenu === 'send' && sendMenuPos && typeof document !== 'undefined' && createPortal(
+        <div
+          role="menu"
+          data-export-menu="1"
+          className="fixed z-[60] min-w-[200px] rounded-lg border border-[var(--border)] [background:var(--bg-surface)] shadow-xl overflow-hidden"
+          style={{ top: sendMenuPos.top, left: sendMenuPos.left }}
+        >
+          {available.googleSheets && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpenMenu(null);
+                setScopeModal({
+                  integration: 'google_sheets',
+                  title: `Export ${DATASET_LABELS[dataset]} to Google Sheets`,
+                  description: 'Choose which records to include in the new spreadsheet.',
+                  datasets: [dataset],
+                  confirmLabel: 'Create spreadsheet',
+                });
+              }}
+              disabled={busy === 'google_sheets'}
+              className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-[var(--bg-muted,#f3f4f6)] text-[var(--text-primary)] disabled:opacity-50"
+            >
+              <span className="w-5 h-5 inline-flex items-center justify-center rounded text-white text-[11px] font-bold" style={{ background: '#0f9d58' }}>📊</span>
+              <span className="font-medium">Google Sheets</span>
+              <span className="ml-auto text-[10px] text-[var(--text-muted)]">new sheet</span>
+            </button>
           )}
-          disabled={busy === 'quickbooks'}
-          className={`${btnBase} text-white`}
-          style={{ background: '#2ca01c' }}
-          title={dataset === 'work_orders' ? 'Create QuickBooks invoices from completed work orders' : 'Sync parts inventory as QuickBooks items'}
-        >
-          <span>💰</span>
-          <span>{busy === 'quickbooks' ? 'Creating…' : 'QuickBooks'}</span>
-        </button>
+          {available.quickbooks && qbApplies && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpenMenu(null);
+                setScopeModal(
+                  dataset === 'work_orders'
+                    ? {
+                        integration: 'quickbooks',
+                        title: 'Create QuickBooks Invoices',
+                        description: 'Choose which completed work orders to invoice in QuickBooks.',
+                        datasets: ['work_orders'],
+                        qbDataset: 'invoices',
+                        confirmLabel: 'Create invoices',
+                      }
+                    : {
+                        integration: 'quickbooks',
+                        title: 'Sync Parts → QuickBooks Items',
+                        description: 'Choose which inventory parts to sync as QuickBooks items.',
+                        datasets: ['parts'],
+                        qbDataset: 'items',
+                        confirmLabel: 'Sync items',
+                      }
+                );
+              }}
+              disabled={busy === 'quickbooks'}
+              className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-[var(--bg-muted,#f3f4f6)] text-[var(--text-primary)] border-t border-[var(--border)] disabled:opacity-50"
+            >
+              <span className="w-5 h-5 inline-flex items-center justify-center rounded text-white text-[11px] font-bold" style={{ background: '#2ca01c' }}>💰</span>
+              <span className="font-medium">QuickBooks</span>
+              <span className="ml-auto text-[10px] text-[var(--text-muted)]">{dataset === 'work_orders' ? 'invoices' : 'items'}</span>
+            </button>
+          )}
+          {available.slack && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpenMenu(null);
+                setScopeModal({
+                  integration: 'slack',
+                  title: 'Send Maintenance Digest to Slack',
+                  description: 'Optionally filter to specific work orders or alerts. Leave "All records" selected for a full digest.',
+                  datasets: dataset === 'alerts' ? ['alerts', 'work_orders'] : ['work_orders', 'alerts'],
+                  confirmLabel: 'Send digest',
+                });
+              }}
+              disabled={busy === 'slack'}
+              className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-[var(--bg-muted,#f3f4f6)] text-[var(--text-primary)] border-t border-[var(--border)] disabled:opacity-50"
+            >
+              <span className="w-5 h-5 inline-flex items-center justify-center rounded text-white text-[11px] font-bold" style={{ background: '#4a154b' }}>💬</span>
+              <span className="font-medium">Slack</span>
+              <span className="ml-auto text-[10px] text-[var(--text-muted)]">digest</span>
+            </button>
+          )}
+        </div>,
+        document.body
       )}
-
-      {/* Slack digest */}
-      {mode !== 'export-only' && available.slack && (
-        <button
-          type="button"
-          onClick={() => setScopeModal({
-            integration: 'slack',
-            title: 'Send Maintenance Digest to Slack',
-            description: 'Optionally filter to specific work orders or alerts. Leave "All records" selected for a full digest.',
-            datasets: dataset === 'alerts' ? ['alerts', 'work_orders'] : ['work_orders', 'alerts'],
-            confirmLabel: 'Send digest',
-          })}
-          disabled={busy === 'slack'}
-          className={`${btnBase} text-white`}
-          style={{ background: '#4a154b' }}
-          title="Send a maintenance digest to Slack"
-        >
-          <span>💬</span>
-          <span>{busy === 'slack' ? 'Sending…' : 'Slack'}</span>
-        </button>
-      )}
+      </>)}
 
       {/* Scope picker modal */}
       {scopeModal && (
