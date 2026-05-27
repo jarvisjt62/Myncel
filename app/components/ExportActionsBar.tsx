@@ -189,7 +189,7 @@ export default function ExportActionsBar({
   };
 
   const btnBase =
-    'inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 whitespace-nowrap';
+    'inline-flex items-center justify-center gap-1.5 text-xs px-3 h-9 rounded-lg font-medium transition-colors disabled:opacity-50 whitespace-nowrap flex-shrink-0';
 
   // Robust CSV download that works everywhere — including mobile browsers
   // and the Capacitor / Expo WebView, where a plain <a download="..."> is
@@ -225,7 +225,11 @@ export default function ExportActionsBar({
   };
 
   return (
-    <div ref={wrapRef} className="flex items-center gap-1.5 flex-wrap">
+    <div
+      ref={wrapRef}
+      className="flex items-center gap-2 overflow-x-auto sm:flex-wrap no-scrollbar -mx-1 px-1 sm:mx-0 sm:px-0 sm:overflow-visible"
+      style={{ scrollbarWidth: 'none' }}
+    >
       {/* CSV download — fetches as Blob so it works in every mobile WebView */}
       <button
         type="button"
