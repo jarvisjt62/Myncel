@@ -227,7 +227,7 @@ export default function ExportActionsBar({
   return (
     <div
       ref={wrapRef}
-      className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 lg:mx-0 lg:px-0 lg:flex-wrap lg:overflow-visible"
+      className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pr-3 lg:mx-0 lg:px-0 lg:pr-0 lg:flex-wrap lg:overflow-visible scroll-fade-x"
       style={{ scrollbarWidth: 'none' }}
     >
       {/* CSV download — fetches as Blob so it works in every mobile WebView */}
@@ -281,7 +281,7 @@ export default function ExportActionsBar({
           title={`Create a new Google Sheet with your ${DATASET_LABELS[dataset].toLowerCase()}`}
         >
           <span>📊</span>
-          <span>{busy === 'google_sheets' ? 'Exporting…' : 'Sheets'}</span>
+          <span className="hidden md:inline">{busy === 'google_sheets' ? 'Exporting…' : 'Sheets'}</span>
         </button>
       )}
 
@@ -314,7 +314,7 @@ export default function ExportActionsBar({
           title={dataset === 'work_orders' ? 'Create QuickBooks invoices from completed work orders' : 'Sync parts inventory as QuickBooks items'}
         >
           <span>💰</span>
-          <span>{busy === 'quickbooks' ? 'Creating…' : 'QuickBooks'}</span>
+          <span className="hidden md:inline">{busy === 'quickbooks' ? 'Creating…' : 'QuickBooks'}</span>
         </button>
       )}
 
@@ -335,7 +335,7 @@ export default function ExportActionsBar({
           title="Send a maintenance digest to Slack"
         >
           <span>💬</span>
-          <span>{busy === 'slack' ? 'Sending…' : 'Slack'}</span>
+          <span className="hidden md:inline">{busy === 'slack' ? 'Sending…' : 'Slack'}</span>
         </button>
       )}
 
