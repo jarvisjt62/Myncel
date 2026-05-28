@@ -37,8 +37,8 @@ export default function BackToDashboardBar() {
         : 'Continue setup';
 
   return (
-    <div className="bg-[#f6f9fc] border-b border-[#e6ebf1]">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3">
+    <div className="lg:hidden bg-[#f6f9fc] border-b border-[#e6ebf1]">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
         <Link
           href={target}
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#635bff] hover:text-[#4f46e5] transition-colors"
@@ -49,7 +49,7 @@ export default function BackToDashboardBar() {
           {label}
         </Link>
         <span className="hidden sm:inline text-xs text-[#8898aa]">
-          You&apos;re signed in. Read the {target === '/admin' ? 'docs' : 'handbook'} below or jump back to your workspace.
+          You&apos;re signed in.
         </span>
       </div>
     </div>
