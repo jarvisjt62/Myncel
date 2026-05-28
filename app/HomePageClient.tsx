@@ -805,18 +805,30 @@ export default function HomePageClient() {
               Simple pricing for maintenance teams, with annual billing options for teams ready to save.
             </p>
 
-            <div className="mt-8 inline-flex items-center gap-3 rounded-full border border-[#e6ebf1] bg-white px-4 py-2 shadow-sm">
-              <span className={`text-sm font-semibold ${!annualBilling ? 'text-[#0a2540]' : 'text-[#8898aa]'}`}>Monthly</span>
+            <div className="mt-8 inline-flex items-center gap-3">
+              <span
+                className={`text-sm font-semibold cursor-pointer select-none ${!annualBilling ? 'text-[#0a2540]' : 'text-[#8898aa]'}`}
+                onClick={() => setAnnualBilling(false)}
+              >
+                Monthly
+              </span>
               <button
                 type="button"
+                role="switch"
+                aria-checked={annualBilling}
                 onClick={() => setAnnualBilling(!annualBilling)}
-                className={`relative h-6 w-11 rounded-full transition-colors ${annualBilling ? 'bg-[#635bff]' : 'bg-[#d9e2ec]'}`}
+                className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#635bff] focus:ring-offset-2 ${annualBilling ? 'bg-[#635bff]' : 'bg-[#cbd5e1]'}`}
                 aria-pressed={annualBilling}
                 aria-label="Toggle annual billing"
               >
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${annualBilling ? 'left-5' : 'left-0.5'}`} />
+                <span
+                  className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${annualBilling ? 'translate-x-5' : 'translate-x-0'}`}
+                />
               </button>
-              <span className={`text-sm font-semibold ${annualBilling ? 'text-[#0a2540]' : 'text-[#8898aa]'}`}>
+              <span
+                className={`text-sm font-semibold cursor-pointer select-none ${annualBilling ? 'text-[#0a2540]' : 'text-[#8898aa]'}`}
+                onClick={() => setAnnualBilling(true)}
+              >
                 Yearly
                 <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-600">Save 17%</span>
               </span>

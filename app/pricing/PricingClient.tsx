@@ -187,17 +187,30 @@ export default function PricingClient({ initialCountry, initialCurrency }: Props
               </select>
             </div>
 
-            {/* Annual toggle */}
-            <div className="inline-flex items-center gap-3 bg-white border border-[#e6ebf1] rounded-full px-4 py-2 shadow-sm">
-              <span className={`text-sm font-medium ${!annual ? 'text-[#0a2540]' : 'text-[#8898aa]'}`}>Monthly</span>
+            {/* Annual toggle — standard switch */}
+            <div className="inline-flex items-center gap-3">
+              <span
+                className={`text-sm font-medium cursor-pointer select-none ${!annual ? 'text-[#0a2540]' : 'text-[#8898aa]'}`}
+                onClick={() => setAnnual(false)}
+              >
+                Monthly
+              </span>
               <button
+                type="button"
+                role="switch"
+                aria-checked={annual}
                 onClick={() => setAnnual(!annual)}
-                className={`w-11 h-6 rounded-full relative transition-colors ${annual ? 'bg-[#635bff]' : 'bg-[#e6ebf1]'}`}
+                className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#635bff] focus:ring-offset-2 ${annual ? 'bg-[#635bff]' : 'bg-[#cbd5e1]'}`}
                 aria-label="Toggle annual billing"
               >
-                <div className={`absolute w-5 h-5 bg-white rounded-full top-0.5 transition-all shadow ${annual ? 'left-5' : 'left-0.5'}`} />
+                <span
+                  className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${annual ? 'translate-x-5' : 'translate-x-0'}`}
+                />
               </button>
-              <span className={`text-sm font-medium ${annual ? 'text-[#0a2540]' : 'text-[#8898aa]'}`}>
+              <span
+                className={`text-sm font-medium cursor-pointer select-none ${annual ? 'text-[#0a2540]' : 'text-[#8898aa]'}`}
+                onClick={() => setAnnual(true)}
+              >
                 Annual
                 <span className="ml-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Save 17%</span>
               </span>
