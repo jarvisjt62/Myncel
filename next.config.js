@@ -23,6 +23,33 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
 
+  // Permanent redirects (SEO consolidation).
+  // The legacy /docs/[category]/[slug] tree duplicated handbook content.
+  // We are consolidating end-user tutorials into /handbook (single source of
+  // truth that powers the AI assistant, the PDF/DOCX export, and the in-app
+  // handbook screen). 301 redirects preserve any inbound links and pass
+  // authority to the canonical /handbook/<chapter> URLs. Developer-focused
+  // /docs/api, /docs/iot-guides, /docs/protocols, /docs/edge-gateway,
+  // /docs/telematics, /docs/vehicle-templates, /docs/ai are NOT redirected.
+  async redirects() {
+    const catMap = {
+      'getting-started': 'getting-started',
+      'equipment': 'equipment',
+      'schedules': 'maintenance',
+      'work-orders': 'work-orders',
+      'alerts': 'alerts-notifications',
+      'analytics': 'reports',
+      'inventory': 'parts-inventory',
+      'vehicles': 'vehicles-vessels-uavs',
+    };
+    const out = [];
+    for (const [from, to] of Object.entries(catMap)) {
+      out.push({ source: `/docs/${from}`, destination: `/handbook/${to}`, permanent: true });
+      out.push({ source: `/docs/${from}/:slug*`, destination: `/handbook/${to}`, permanent: true });
+    }
+    return out;
+  },
+
   async headers() {
     return [
       {

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import BackToDashboardBar from '../../components/BackToDashboardBar';
 import { HANDBOOK_CHAPTERS, findChapter, type HandbookSection } from '@/lib/handbook/content';
 import HandbookSidebar from '../HandbookSidebar';
 import HandbookDownloadButton from '../HandbookDownloadButton';
@@ -91,6 +92,7 @@ export default function HandbookChapterPage({ params }: Props) {
   return (
     <>
       <Navbar />
+      <BackToDashboardBar />
       <main className="bg-[#f6f9fc] min-h-screen">
         <div className="max-w-6xl mx-auto px-4 py-10 flex flex-col md:flex-row gap-8">
           <HandbookSidebar activeSlug={chapter.slug} />

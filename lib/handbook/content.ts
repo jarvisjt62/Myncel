@@ -492,6 +492,115 @@ export const HANDBOOK_CHAPTERS: HandbookChapter[] = [
     ],
   },
   // ------------------------------------------------------------------
+  // 2b. PARTS & INVENTORY
+  // ------------------------------------------------------------------
+  {
+    slug: 'parts-inventory',
+    emoji: '🔧',
+    title: 'Parts & Inventory',
+    summary:
+      'Track every spare part, consumable, and tool you keep on hand. This chapter covers adding parts, multi-location stock, low-stock alerts, suppliers, barcode scanning, and how parts auto-deduct from inventory when used on work orders.',
+    sections: [
+      {
+        heading: 'What the Parts dashboard is for',
+        body: [
+          'The Parts tab in Myncel is your spare-parts and consumables inventory. It is where you record what you have on the shelf, how much it cost, where it lives, who supplies it, and how much you have left at any moment. Anything that gets consumed when fixing or maintaining equipment belongs here: bearings, filters, belts, oils, gaskets, fuses, light bulbs, contactors, chemicals, fasteners. Tools that wear out or get assigned to technicians (drill bits, blades, replacement batteries) also fit here.',
+          'The Parts tab is not for tracking the equipment itself — that is the Equipment tab. The relationship between the two is intentional: parts are consumed by equipment via work orders, and Myncel records every consumption so you can answer questions like "which machine is eating the most filters?" or "how much did we spend on bearings last quarter?"',
+        ],
+        callout: {
+          type: 'tip',
+          text: 'You can use Parts even if you do not stock anything. Many service teams use it as a price book — add the parts you typically buy on demand with quantity zero. When a technician records "needed: 1× contactor" on a work order, you still capture the cost without pretending to hold stock.',
+        },
+      },
+      {
+        heading: 'Adding your first part',
+        body: [
+          'Open the Parts tab from the dashboard. Click "+ Add Part" in the top right. Fill in the form: part name (the human-readable name technicians will recognise), part number / SKU (your internal code or the manufacturer\'s code), unit of measure (each, litre, kilogram, metre, box, roll), unit cost, current quantity, and minimum stock level (the threshold below which Myncel will alert you).',
+          'Optionally add a supplier (drop-down — see "Managing suppliers" below), the storage location (text or a structured location if you set those up), a photo, and a description with any notes about specifications or substitutions. Hit Save and the part is on your inventory.',
+        ],
+        bullets: [
+          'Required fields: name, unit of measure, unit cost, quantity, minimum stock.',
+          'Optional but recommended: SKU/part number (lets you scan barcodes), supplier, location, photo.',
+          'You can bulk-import parts via CSV — Settings → Import → Parts. Column mapping is automatic for standard headers.',
+        ],
+      },
+      {
+        heading: 'Multi-location inventory',
+        body: [
+          'If you operate from more than one site (multiple plants, hotels in a chain, hospital wings, vessel bunkers, satellite warehouses), turn on multi-location inventory in Settings → Inventory. Each location gets its own quantity for every part. The same SKU can have 3 in plant A, 12 in plant B, and 0 at the satellite site.',
+          'Transfers between locations are recorded as inventory movements and show up in the part\'s history. Low-stock alerts can be configured per location — useful when a remote site needs more lead-time than your main warehouse.',
+        ],
+      },
+      {
+        heading: 'Barcode scanning (mobile)',
+        body: [
+          'In the Myncel mobile app, every part with a SKU or barcode is scannable from the Parts screen. Tap the scan icon, point your phone at the barcode (1D or 2D), and Myncel jumps straight to that part. From there you can adjust the quantity, view history, or attach the part to an open work order.',
+          'Scanning works offline. Adjustments queue up locally and sync the next time the device sees Wi-Fi or mobile data. The same applies to the on-floor "consume parts" flow during a work order.',
+        ],
+        callout: {
+          type: 'info',
+          text: 'No printed barcodes? Myncel can generate Code-128 or QR labels for every part — Parts → Print Labels. Send to a label printer or print to PDF and apply with sticker paper.',
+        },
+      },
+      {
+        heading: 'Low-stock alerts',
+        body: [
+          'The "minimum stock" field on every part drives Myncel\'s low-stock detection. When any movement (consumption on a work order, manual adjustment, transfer-out) drops the quantity at or below the minimum, Myncel raises a low-stock alert. The alert appears in the Alerts tab, on the Parts dashboard\'s "Low Stock" counter, and (if email/SMS is configured for the relevant role) sends a notification to whoever is responsible for purchasing.',
+          'You can suppress alerts for parts you intentionally let run low (e.g. seasonal items). The history of every alert is kept indefinitely and shows up on reports — handy for proving you flagged a stock-out two weeks before it happened.',
+        ],
+      },
+      {
+        heading: 'Auto-deduction on work orders',
+        body: [
+          'The most powerful Parts feature is automatic consumption. When a technician completes a work order, they can record which parts and quantities were used. Myncel deducts those from inventory immediately, attaches the cost to the work order, and updates the equipment\'s lifetime maintenance cost.',
+          'The same flow works on mobile: technician scans a barcode, types a quantity, taps "Use", and the consumption is recorded. If the device is offline the deduction queues and reconciles on the next sync — including handling the case where two technicians draw from the same part simultaneously.',
+        ],
+        bullets: [
+          'Inventory updates immediately on completion (no nightly batch).',
+          'The work order shows total parts cost separately from labor cost.',
+          'If a part drops below minimum during the deduction, a low-stock alert fires automatically.',
+          'Negative inventory is allowed (e.g. emergency consumption before stock arrived) and flagged in red until reconciled.',
+        ],
+      },
+      {
+        heading: 'Linking parts to equipment',
+        body: [
+          'You can link parts to specific equipment to capture the "this machine uses these spares" relationship. On the equipment page, scroll to "Linked Parts" and add the parts that fit it. Going forward, when a work order is opened on that equipment, the Parts dropdown defaults to the linked parts — saving the technician from scrolling through hundreds of unrelated SKUs.',
+          'Linked parts also drive the equipment-level reports: "what is our annual parts spend on Pump-A12?", "how many filters has Compressor-3 consumed this year?", "which equipment has the highest parts cost per operating hour?"',
+        ],
+      },
+      {
+        heading: 'Managing suppliers',
+        body: [
+          'Suppliers (or vendors) are managed under Settings → Suppliers. Each supplier has a name, contact, lead-time, currency, and optional notes. When adding or editing a part you can associate it with one or more suppliers and a default supplier for purchase.',
+          'Suppliers also feed the (optional) Purchase Orders module — generate a PO for parts below minimum, email it to the supplier, and reconcile against deliveries. Even if you do not formally use POs, having suppliers attached to parts lets you sort the Parts list by lead-time, currency, or vendor for quick re-order planning.',
+        ],
+      },
+      {
+        heading: 'Inventory value & reports',
+        body: [
+          'The Parts dashboard always shows three top-level KPIs: total parts (count of distinct SKUs), low stock (count of SKUs at/below minimum), and inventory value (sum of quantity × unit cost across all locations). Inventory value is also broken down by location, by supplier, and by category in the Reports tab.',
+          'Standard parts reports include: parts consumption over time (by month, quarter, year), top-N parts by cost, top-N parts by frequency, slow-moving inventory (no movement in 90/180/365 days), parts cost per equipment, parts cost per work-order type, and supplier-level spend.',
+        ],
+      },
+      {
+        heading: 'Common workflows',
+        body: [
+          'Three patterns cover 90% of how teams use Parts:',
+        ],
+        bullets: [
+          'Stocked spares: maintain quantity, set minimum, let auto-deduction + low-stock alerts run the cycle.',
+          'Just-in-time purchasing: keep quantity at zero or near-zero, use the part on a work order, generate a PO from the low-stock alert, receive against the PO when stock arrives.',
+          'Project parts: bulk-order a one-off batch (say 200 LED retrofits), record receipt, deduct as the project consumes them, archive the part once the project is done.',
+        ],
+        callout: {
+          type: 'warning',
+          text: 'Do not use Parts to track tools you assign to specific technicians long-term (Makita drills, calibrated multimeters). Those belong in the Equipment tab as low-cost assets, so you can track who has them and when they are due for calibration. Use Parts only for items that are consumed.',
+        },
+      },
+    ],
+  },
+  // ------------------------------------------------------------------
   // 3. WORK ORDERS
   // ------------------------------------------------------------------
   {

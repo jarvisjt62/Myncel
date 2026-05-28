@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
+import BackToDashboardBar from '../../components/BackToDashboardBar'
 
 // Documentation data structure - same as in [slug]/page.tsx
 const docCategories = {
@@ -155,6 +156,7 @@ export default function DocCategoryPage({ params }: { params: { category: string
   return (
     <div className="min-h-screen bg-[var(--bg-surface)]">
       <Navbar />
+      <BackToDashboardBar />
       
       <div className="bg-[#0a2540] py-12">
         <div className="max-w-4xl mx-auto px-6">

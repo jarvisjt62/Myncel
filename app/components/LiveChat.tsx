@@ -518,25 +518,25 @@ export default function LiveChat() {
       {/* Chat Window - Fixed position on RIGHT side */}
       {isOpen && (
         <div 
-          className="fixed bottom-20 right-3 z-[9999] w-[calc(100vw-24px)] max-w-[360px] bg-white rounded-2xl shadow-2xl border border-[#e6ebf1] flex flex-col overflow-hidden sm:bottom-24 sm:right-6 sm:w-[360px]"
+          className="fixed bottom-20 right-3 z-[9999] w-[calc(100vw-24px)] max-w-[360px] max-h-[min(560px,calc(100dvh-100px))] bg-white rounded-2xl shadow-2xl border border-[#e6ebf1] flex flex-col overflow-hidden sm:bottom-24 sm:right-6 sm:w-[360px] sm:max-h-[min(620px,calc(100dvh-140px))]"
         >
           {/* Header */}
-          <div className="bg-[#635bff] text-white p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-[#635bff] text-white p-3 sm:p-4 flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
-              <div>
-                <h3 className="font-semibold">Myncel Support</h3>
-                <p className="text-xs text-purple-200 flex items-center gap-1">
-                  <span className={`w-2 h-2 rounded-full ${mode === 'ai' ? 'bg-green-400' : 'bg-yellow-400'}`} />
+              <div className="min-w-0">
+                <h3 className="font-semibold text-sm sm:text-base truncate">Myncel Support</h3>
+                <p className="text-[11px] sm:text-xs text-purple-200 flex items-center gap-1">
+                  <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${mode === 'ai' ? 'bg-green-400' : 'bg-yellow-400'}`} />
                   {mode === 'ai' ? 'AI Assistant' : 'Live Support'}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0">
               {mode === 'ai' && messages.length > 0 && (
                   <button
                     onClick={handleClearAiChat}
@@ -557,22 +557,22 @@ export default function LiveChat() {
               )}
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
                 aria-label="Minimize chat"
                 title="Minimize"
               >
-                <span className="text-xl leading-none font-semibold -mt-1">−</span>
+                <span className="text-lg sm:text-xl leading-none font-semibold -mt-1">−</span>
               </button>
               <button
                 onClick={() => {
                   setIsOpen(false);
                   setHasNewMessage(false);
                 }}
-                className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
                 aria-label="Close chat"
                 title="Close"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -580,44 +580,44 @@ export default function LiveChat() {
           </div>
 
           {/* Mode Toggle */}
-          <div className="flex border-b border-[#e6ebf1]">
+          <div className="flex border-b border-[#e6ebf1] flex-shrink-0">
             <button
               onClick={switchToAiMode}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${mode === 'ai' ? 'text-[#635bff] border-b-2 border-[#635bff]' : 'text-[#8898aa] hover:text-[#0a2540]'}`}
+              className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${mode === 'ai' ? 'text-[#635bff] border-b-2 border-[#635bff]' : 'text-[#8898aa] hover:text-[#0a2540]'}`}
             >
               🤖 AI Assistant
             </button>
             <button
               onClick={switchToLiveChat}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${mode === 'live' ? 'text-[#635bff] border-b-2 border-[#635bff]' : 'text-[#8898aa] hover:text-[#0a2540]'}`}
+              className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${mode === 'live' ? 'text-[#635bff] border-b-2 border-[#635bff]' : 'text-[#8898aa] hover:text-[#0a2540]'}`}
             >
               💬 Live Support
             </button>
           </div>
 
           {/* Messages */}
-          <div id="chat-messages-container" className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[260px] max-h-[min(400px,55vh)] bg-[#f6f9fc]">
+          <div id="chat-messages-container" className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 min-h-[160px] bg-[#f6f9fc]">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-[#8898aa]">Connecting...</div>
               </div>
             ) : messages.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-[#f0f4ff] rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-[#635bff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="text-center py-4 sm:py-8">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-[#f0f4ff] rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4">
+                  <svg className="w-6 h-6 sm:w-8 sm:h-8 text-[#635bff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </div>
                 {mode === 'ai' ? (
                   <>
-                    <h4 className="font-semibold text-[#0a2540] mb-2">Hi! I'm Myncel AI</h4>
-                    <p className="text-sm text-[#425466] mb-4">Ask me anything about Myncel - I'm here to help!</p>
-                    <div className="space-y-2">
+                    <h4 className="font-semibold text-[#0a2540] mb-1 sm:mb-2 text-sm sm:text-base">Hi! I&apos;m Myncel AI</h4>
+                    <p className="text-xs sm:text-sm text-[#425466] mb-3 sm:mb-4">Ask me anything about Myncel</p>
+                    <div className="space-y-1.5 sm:space-y-2">
                       {['How do I add a machine?', 'What are the pricing plans?', 'How do I invite my team?', 'How does predictive maintenance work?'].map(q => (
                         <button
                           key={q}
                           onClick={() => handleQuickQuestion(q)}
-                          className="block w-full text-left px-3 py-2 bg-white border border-[#e6ebf1] rounded-lg text-sm text-[#425466] hover:border-[#635bff] hover:text-[#635bff] transition-colors"
+                          className="block w-full text-left px-3 py-1.5 sm:py-2 bg-white border border-[#e6ebf1] rounded-lg text-xs sm:text-sm text-[#425466] hover:border-[#635bff] hover:text-[#635bff] transition-colors"
                         >
                           {q}
                         </button>
@@ -626,9 +626,9 @@ export default function LiveChat() {
                   </>
                 ) : (
                   <>
-                    <h4 className="font-semibold text-[#0a2540] mb-2">Live Support</h4>
-                    <p className="text-sm text-[#425466] mb-4">Send a message and our support team will respond shortly.</p>
-                    <p className="text-xs text-[#8898aa]">
+                    <h4 className="font-semibold text-[#0a2540] mb-1 sm:mb-2 text-sm sm:text-base">Live Support</h4>
+                    <p className="text-xs sm:text-sm text-[#425466] mb-3 sm:mb-4">Send a message and our support team will respond shortly.</p>
+                    <p className="text-[11px] sm:text-xs text-[#8898aa]">
                       💡 Tip: Switch to AI Assistant for instant answers!
                     </p>
                   </>
@@ -707,7 +707,7 @@ export default function LiveChat() {
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t border-[#e6ebf1] bg-white">
+          <div className="p-2.5 sm:p-4 border-t border-[#e6ebf1] bg-white flex-shrink-0">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -715,22 +715,22 @@ export default function LiveChat() {
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                 placeholder={mode === 'ai' ? "Ask me anything about Myncel..." : "Type your message..."}
-                className="flex-1 px-4 py-2.5 border border-[#e6ebf1] rounded-xl text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20"
+                className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 border border-[#e6ebf1] rounded-xl text-sm focus:outline-none focus:border-[#635bff] focus:ring-2 focus:ring-[#635bff]/20"
                 disabled={isSending || isLoading}
               />
               <button
                 onClick={handleSend}
                 disabled={!message.trim() || isSending || isLoading || isAiTyping}
-                className="px-4 py-2.5 bg-[#635bff] text-white rounded-xl hover:bg-[#4f46e5] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 sm:px-4 py-2 sm:py-2.5 bg-[#635bff] text-white rounded-xl hover:bg-[#4f46e5] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Send message"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
               </button>
             </div>
-            <p className="text-xs text-[#8898aa] mt-2 text-center">
-              {mode === 'ai' ? '🤖 Powered by AI' : '💬 Support team will respond shortly'} • Or email <a href="mailto:support@myncel.com" className="text-[#635bff] hover:underline">support@myncel.com</a>
+            <p className="text-[10px] sm:text-xs text-[#8898aa] mt-1.5 sm:mt-2 text-center">
+              {mode === 'ai' ? '🤖 Powered by AI' : '💬 Support team will respond shortly'} • <a href="mailto:support@myncel.com" className="text-[#635bff] hover:underline">support@myncel.com</a>
             </p>
           </div>
         </div>

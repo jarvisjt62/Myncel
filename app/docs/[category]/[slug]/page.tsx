@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '../../../components/Navbar'
 import Footer from '../../../components/Footer'
+import BackToDashboardBar from '../../../components/BackToDashboardBar'
 
 // Documentation data structure
 const docCategories = {
@@ -3264,6 +3265,7 @@ export default function DocArticlePage({
   return (
     <div className="min-h-screen bg-[var(--bg-surface)]">
       <Navbar />
+      <BackToDashboardBar />
       
       <div className="max-w-4xl mx-auto px-6 py-12">
         {/* Breadcrumb */}

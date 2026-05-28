@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import BackToDashboardBar from '../components/BackToDashboardBar';
 import { HANDBOOK_CHAPTERS } from '@/lib/handbook/content';
 import HandbookSidebar from './HandbookSidebar';
 import HandbookDownloadButton from './HandbookDownloadButton';
@@ -21,6 +22,7 @@ export default function HandbookHomePage() {
   return (
     <>
       <Navbar />
+      <BackToDashboardBar />
       <main className="bg-[#f6f9fc] min-h-screen">
         {/* Hero */}
         <section className="bg-gradient-to-br from-[#0a2540] to-[#1e3a5f] text-white py-16">
