@@ -28,6 +28,7 @@
  */
 
 import { useIsIOSApp } from '@/lib/use-capacitor-webview';
+import OpenInBrowserButton from './OpenInBrowserButton';
 
 export default function MobilePricingFallback() {
   const isIOSApp = useIsIOSApp();
@@ -85,10 +86,14 @@ export default function MobilePricingFallback() {
             // default browser, not the in-app webview. We pass
             // ?from=app so the website can suppress the in-app
             // detection and show full pricing.
-            <a
-              href="https://www.myncel.com/pricing?from=app"
-              target="_blank"
-              rel="noopener noreferrer"
+            //
+            // Uses OpenInBrowserButton (not a plain <a target="_blank">)
+            // because Capacitor's default link handler swallows _blank
+            // and the button appears dead. OpenInBrowserButton routes
+            // through Capacitor.Plugins.Browser.open() / window.open(_,
+            // '_system') so the URL actually reaches Chrome/Safari.
+            <OpenInBrowserButton
+              url="https://www.myncel.com/pricing?from=app"
               className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-[#635bff] px-5 py-3 text-[15px] font-semibold text-white shadow-sm transition hover:bg-[#5246e5]"
             >
               Open myncel.com in browser
@@ -106,7 +111,7 @@ export default function MobilePricingFallback() {
                 <path d="M7 7h10v10" />
                 <path d="M7 17 17 7" />
               </svg>
-            </a>
+            </OpenInBrowserButton>
           )}
 
           <a

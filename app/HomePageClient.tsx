@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import OpenInBrowserButton from './components/OpenInBrowserButton';
 import { useIsCapacitorWebview, useCapacitorPlatform } from '../lib/use-capacitor-webview';
 
 const platformMetrics = [
@@ -760,10 +761,8 @@ export default function HomePageClient() {
               continues to work in this app.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <a
-                href="https://www.myncel.com/pricing?from=app"
-                target="_blank"
-                rel="noopener noreferrer"
+              <OpenInBrowserButton
+                url="https://www.myncel.com/pricing?from=app"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[#635bff] px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[#5246e5]"
               >
                 Open myncel.com in browser
@@ -781,7 +780,7 @@ export default function HomePageClient() {
                   <path d="M7 7h10v10" />
                   <path d="M7 17 17 7" />
                 </svg>
-              </a>
+              </OpenInBrowserButton>
               <Link
                 href="/contact"
                 className="inline-flex items-center justify-center rounded-full border border-[#0a2540] px-6 py-3 text-base font-semibold text-[#0a2540] transition hover:bg-[#0a2540] hover:text-white"
