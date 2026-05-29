@@ -500,6 +500,25 @@ export default function Navbar() {
               <Link href="/about" onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc]">About</Link>
               <Link href="/contact" onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc]">Contact</Link>
               <Link href="/partners" onClick={() => setMobileOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc]">Partners</Link>
+              {/* Support — opens the same chat widget as the desktop right-edge tab.
+                  On mobile the floating edge tab is hidden because it overlapped
+                  page content, so we surface support here in the mobile drawer
+                  instead. Dispatches a window event LiveChat.tsx listens for. */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false);
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new Event('myncel:open-support'));
+                  }
+                }}
+                className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-[#425466] hover:text-[#0a2540] hover:bg-[#f6f9fc]"
+              >
+                <svg className="w-4 h-4 text-[#635bff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                Support
+              </button>
             </div>
             
             {/* CTA Buttons — session-aware */}

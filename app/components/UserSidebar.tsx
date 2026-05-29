@@ -503,6 +503,33 @@ function UserShellInner({ user, children }: UserSidebarProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           )}
+
+          {/* Support — mobile/tablet only (lg:hidden).
+              On desktop (lg+) users open the chat via the floating purple
+              edge-tab on the right side of the screen (rendered by
+              LiveChat.tsx). On smaller screens that floating tab is hidden
+              because it overlaps content, so the same chat is opened from
+              this sidebar item via a window event the LiveChat component
+              listens for. */}
+          <div className="lg:hidden">
+            <button
+              type="button"
+              onClick={() => {
+                setSidebarOpen(false);
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new Event('myncel:open-support'));
+                }
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all text-[var(--text-secondary)] hover:bg-[var(--bg-surface-2)] hover:text-[var(--text-primary)]"
+            >
+              <span className="text-[var(--text-muted)]">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </span>
+              <span className="flex-1 text-left">Support</span>
+            </button>
+          </div>
         </div>
       </nav>
 

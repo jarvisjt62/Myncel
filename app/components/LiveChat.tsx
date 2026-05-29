@@ -49,7 +49,21 @@ export default function LiveChat() {
       setIsAdminPage(window.location.pathname.startsWith('/admin'));
     }
   }, []);
-  
+
+  // Listen for global "open support chat" requests dispatched from elsewhere
+  // in the app (e.g. the Support nav item in the mobile sidebar). This lets
+  // any component open the chat without holding a React ref to LiveChat.
+  // Usage:  window.dispatchEvent(new Event('myncel:open-support'));
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = () => {
+      setIsOpen(true);
+      setHasNewMessage(false);
+    };
+    window.addEventListener('myncel:open-support', handler);
+    return () => window.removeEventListener('myncel:open-support', handler);
+  }, []);
+
   const isAdmin = isAdminRole || isAdminPage;
 
 
@@ -481,23 +495,32 @@ export default function LiveChat() {
 
   return (
     <>
-      {/* Support Tab — small rectangular edge tab. Tapping it opens the chat
-          window directly. When the chat window is closed/minimized this tab
-          re-appears (we never show a separate circular FAB). */}
+      {/* Support Tab — small rectangular edge tab on the right side of the
+          screen. Tapping it opens the chat window directly. When the chat
+          window is closed/minimized this tab re-appears (we never show a
+          separate circular FAB).
+
+          Visibility: DESKTOP ONLY (lg+). On mobile / tablet the floating
+          edge tab is hidden because it overlaps page content (especially
+          inside the dashboard with its own sidebar). Mobile users open
+          the same chat via the dedicated "Support" item in the dashboard
+          sidebar (see UserSidebar.tsx — it dispatches the
+          'myncel:open-support' window event that this component listens
+          for above). */}
       {!isOpen && (
         <button
           onClick={() => {
             setIsOpen(true);
             setHasNewMessage(false);
           }}
-          className={`fixed right-0 bottom-20 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 z-[9998] bg-[#635bff] text-white py-2 sm:py-3 px-1.5 sm:px-2 rounded-l-lg shadow-md hover:bg-[#4f46e5] transition-all hover:pl-2.5 ${hasNewMessage ? 'animate-pulse' : ''}`}
+          className={`hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-[9998] bg-[#635bff] text-white py-3 px-2 rounded-l-lg shadow-md hover:bg-[#4f46e5] transition-all hover:pl-2.5 ${hasNewMessage ? 'animate-pulse' : ''}`}
           aria-label="Show support chat"
         >
           <div className="flex flex-col items-center gap-1">
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <span className="text-[9px] sm:text-[10px] font-medium leading-tight" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
+            <span className="text-[10px] font-medium leading-tight" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
               Support
             </span>
           </div>
