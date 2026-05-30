@@ -656,6 +656,35 @@ export default function LiveChat() {
           found the post-close circular icon visually disruptive, so the
           Support tab now opens the chat directly and is the ONLY launcher. */}
 
+      {/* Mobile floating launcher bubble — only appears AFTER a session has
+          started (messages.length > 0) AND the panel is currently minimized.
+          This is the "minimize keeps the chat icon visible" behavior the user
+          asked for: tap minimize/close → bubble appears in the corner so they
+          can resume mid-conversation. Tapping Clear (AI) or End (live)
+          empties messages, which makes the bubble disappear automatically.
+          Hidden on lg+ because the right-edge Support tab already serves as
+          the desktop re-open affordance. */}
+      {!isOpen && messages.length > 0 && (
+        <button
+          onClick={() => {
+            setIsOpen(true);
+            setHasNewMessage(false);
+          }}
+          className={`lg:hidden fixed bottom-5 right-5 z-[9998] w-14 h-14 rounded-full bg-[#635bff] text-white shadow-xl hover:bg-[#4f46e5] active:scale-95 transition-all flex items-center justify-center ${hasNewMessage ? 'animate-pulse' : ''}`}
+          aria-label="Resume support chat"
+          title="Resume chat"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          {hasNewMessage && (
+            <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center border-2 border-white">
+              {unreadAdminCount > 0 ? unreadAdminCount : '!'}
+            </span>
+          )}
+        </button>
+      )}
+
       {/* Chat Window
           ============
           Layout strategy:
@@ -675,7 +704,20 @@ export default function LiveChat() {
           className="fixed z-[9999] bg-white rounded-2xl shadow-2xl border border-[#e6ebf1] flex flex-col overflow-hidden
                      left-3 right-3 top-3 bottom-3 max-w-full
                      sm:left-auto sm:top-auto sm:bottom-24 sm:right-6 sm:w-[380px] sm:max-w-[380px] sm:max-h-[min(640px,calc(100dvh-140px))]"
+          style={{
+            // Honor device safe areas (notch / status bar / home indicator).
+            // Without these the panel can sit under the Android status bar
+            // in Capacitor, especially noticeable in landscape where the
+            // top-3 of CSS px gets eaten by the system bar.
+            paddingTop: 'env(safe-area-inset-top, 0px)',
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            paddingLeft: 'env(safe-area-inset-left, 0px)',
+            paddingRight: 'env(safe-area-inset-right, 0px)',
+          }}
         >
+          {/* Inner column — keeps the rounded corners + flex layout working
+              correctly even when the outer div has safe-area padding. */}
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden rounded-2xl">
           {/* Header */}
           <div className="bg-[#635bff] text-white px-3 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -711,12 +753,14 @@ export default function LiveChat() {
                   End
                 </button>
               )}
-              {/* Minimize button — desktop only.
-                  On mobile it's redundant with Close (both call setIsOpen(false))
-                  and just crowded the header. */}
+              {/* Minimize button — visible on every viewport.
+                  Closes the panel but keeps the floating launcher icon on
+                  mobile when there's still an active session, so the user
+                  can re-open the same conversation. On desktop the
+                  right-edge Support tab plays the same role. */}
               <button
                 onClick={() => setIsOpen(false)}
-                className="hidden sm:flex w-8 h-8 rounded-full hover:bg-white/20 items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
                 aria-label="Minimize chat"
                 title="Minimize"
               >
@@ -754,8 +798,16 @@ export default function LiveChat() {
             </button>
           </div>
 
-          {/* Messages */}
-          <div id="chat-messages-container" className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 min-h-[160px] bg-[#f6f9fc]">
+          {/* Messages
+              ---------
+              `min-h-0` is critical here: a flex child's default min-height
+              is `auto` which means it cannot shrink below its content. In
+              landscape on a phone (dvh ~360px) that meant the messages
+              area refused to shrink, the parent's overflow-hidden clipped
+              everything, and the inner scroll never engaged. With
+              `min-h-0` + `flex-1` the area scrolls correctly even when
+              the available vertical space is tiny. */}
+          <div id="chat-messages-container" className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 space-y-3 bg-[#f6f9fc]">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-[#8898aa]">Connecting...</div>
@@ -897,6 +949,7 @@ export default function LiveChat() {
             <p className="text-[10px] sm:text-xs text-[#8898aa] mt-1.5 sm:mt-2 text-center">
               {mode === 'ai' ? '🤖 Powered by AI' : '💬 Support team will respond shortly'} • <a href="mailto:support@myncel.com" className="text-[#635bff] hover:underline">support@myncel.com</a>
             </p>
+          </div>
           </div>
         </div>
       )}
