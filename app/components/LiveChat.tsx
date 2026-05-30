@@ -688,26 +688,27 @@ export default function LiveChat() {
       {/* Chat Window
           ============
           Layout strategy:
-          - On phones in BOTH portrait and landscape (<lg, <1024px) the
-            widget claims the full viewport via `left-3 right-3 top-3
-            bottom-3`. We deliberately use the `lg:` breakpoint here, NOT
-            `sm:` — a typical phone in landscape is 640-900px wide which
-            matches Tailwind's `sm:` and `md:` breakpoints. If we switched
-            to the floating bottom-right card at `sm:` the panel would
-            anchor to `right-6` with a fixed 380px width and end up half
-            off-screen on landscape phones (the bug the user reported).
-          - On lg+ (real tablets / desktop) we use the floating-card
-            behavior anchored to the bottom-right corner.
-          - The mobile floating launcher bubble is also lg:hidden, so on
-            lg+ the right-edge "Support" tab is the canonical re-open
-            affordance.
+          - Phone PORTRAIT (<lg, taller than wide):
+              Anchor to bottom with comfortable side margins. Cap height
+              at ~85vh so there's breathing room above the panel — looks
+              less like a hard takeover and gives the user a clear sense
+              of "this is a sheet, the page is still behind it".
+          - Phone LANDSCAPE (<lg, wider than tall):
+              Anchor to bottom-right and cap width at ~480px so the
+              panel doesn't span the entire screen edge-to-edge. With
+              gesture-nav phones in landscape (~800-900px wide) a full
+              edge-to-edge sheet looked oversized.
+          - lg+ (tablet landscape / desktop):
+              Floating bottom-right card, 380px wide, capped height.
           - env(safe-area-inset-*) padding prevents Android status bar /
             iOS notch / home indicator from clipping the panel inside
             the Capacitor shell. */}
       {isOpen && (
         <div
           className="fixed z-[9999] bg-white rounded-2xl shadow-2xl border border-[#e6ebf1] flex flex-col overflow-hidden
-                     left-3 right-3 top-3 bottom-3 max-w-full
+                     left-3 right-3 bottom-3
+                     portrait:max-h-[80dvh]
+                     landscape:left-auto landscape:top-3 landscape:max-w-[480px]
                      lg:left-auto lg:top-auto lg:bottom-24 lg:right-6 lg:w-[380px] lg:max-w-[380px] lg:max-h-[min(640px,calc(100dvh-140px))]"
           style={{
             // Honor device safe areas (notch / status bar / home indicator).
