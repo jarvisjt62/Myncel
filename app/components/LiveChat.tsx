@@ -4,6 +4,7 @@
 // AI is independent and doesn't require a chat session
 // Live chat creates a session only when user sends a message to support
 import { useState, useEffect, useCallback, useRef } from 'react';
+import type { ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
 
 interface Message {
@@ -20,6 +21,123 @@ declare global {
   interface Window {
     openMyncelChat?: () => void;
   }
+}
+
+/**
+ * Tiny inline-markdown renderer for AI chat replies.
+ *
+ * The AI returns plain text that frequently contains:
+ *   - **bold**
+ *   - *italic*
+ *   - [link text](https://url)
+ *   - bullet lists ("- item" or "* item")
+ *   - numbered lists ("1. item")
+ *   - paragraph breaks (blank lines)
+ *
+ * Previously we rendered this with a single <p>{content}</p> + whitespace-pre-wrap,
+ * which left raw `**` and `[text](url)` visible in the chat bubble. That looked
+ * unprofessional, especially on mobile where the link in particular wrapped
+ * onto multiple lines as ugly raw markdown.
+ *
+ * This renderer is intentionally minimal — no full markdown engine, no
+ * external dependency, no dangerouslySetInnerHTML. It walks the text and
+ * emits React nodes. URLs are rendered as <a target="_blank" rel="noopener">.
+ * Anything we don't recognize falls through as plain text, so it's safe.
+ */
+function renderInlineMarkdown(text: string): ReactNode {
+  // Split into paragraphs on blank lines.
+  const blocks = text.split(/\n{2,}/);
+  return blocks.map((block, blockIdx) => {
+    const lines = block.split('\n');
+    const isBulletList = lines.every(l => /^\s*[-*]\s+/.test(l));
+    const isNumberedList = lines.every(l => /^\s*\d+\.\s+/.test(l));
+
+    if (isBulletList && lines.length > 1) {
+      return (
+        <ul key={blockIdx} className="list-disc pl-5 my-1 space-y-0.5">
+          {lines.map((line, i) => (
+            <li key={i}>{renderInlineSegments(line.replace(/^\s*[-*]\s+/, ''))}</li>
+          ))}
+        </ul>
+      );
+    }
+    if (isNumberedList && lines.length > 1) {
+      return (
+        <ol key={blockIdx} className="list-decimal pl-5 my-1 space-y-0.5">
+          {lines.map((line, i) => (
+            <li key={i}>{renderInlineSegments(line.replace(/^\s*\d+\.\s+/, ''))}</li>
+          ))}
+        </ol>
+      );
+    }
+
+    // Plain paragraph — preserve single line breaks via <br/>.
+    return (
+      <p key={blockIdx} className={blockIdx > 0 ? 'mt-2' : ''}>
+        {lines.map((line, i) => (
+          <span key={i}>
+            {renderInlineSegments(line)}
+            {i < lines.length - 1 && <br />}
+          </span>
+        ))}
+      </p>
+    );
+  });
+}
+
+/**
+ * Render inline markdown segments inside a single line:
+ *   **bold**, *italic*, [text](url), and bare https:// URLs.
+ * Returns an array of React nodes.
+ */
+function renderInlineSegments(line: string): ReactNode[] {
+  // Single regex with alternation: link | bold | italic | bare-url
+  const pattern = /(\[[^\]]+\]\([^)]+\))|(\*\*[^*]+\*\*)|(\*[^*\n]+\*)|(https?:\/\/[^\s)]+)/g;
+  const out: ReactNode[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  let key = 0;
+  while ((m = pattern.exec(line)) !== null) {
+    if (m.index > last) out.push(line.slice(last, m.index));
+    const [full, link, bold, italic, bareUrl] = m;
+    if (link) {
+      const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(link);
+      if (linkMatch) {
+        out.push(
+          <a
+            key={`l${key++}`}
+            href={linkMatch[2]}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#635bff] underline underline-offset-2 hover:text-[#4f46e5] break-words"
+          >
+            {linkMatch[1]}
+          </a>
+        );
+      } else {
+        out.push(full);
+      }
+    } else if (bold) {
+      out.push(<strong key={`b${key++}`} className="font-semibold">{bold.slice(2, -2)}</strong>);
+    } else if (italic) {
+      out.push(<em key={`i${key++}`}>{italic.slice(1, -1)}</em>);
+    } else if (bareUrl) {
+      out.push(
+        <a
+          key={`u${key++}`}
+          href={bareUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[#635bff] underline underline-offset-2 hover:text-[#4f46e5] break-words"
+        >
+          {bareUrl}
+        </a>
+      );
+    }
+    last = m.index + full.length;
+  }
+  if (last < line.length) out.push(line.slice(last));
+  return out;
 }
 
 export default function LiveChat() {
@@ -538,13 +656,28 @@ export default function LiveChat() {
           found the post-close circular icon visually disruptive, so the
           Support tab now opens the chat directly and is the ONLY launcher. */}
 
-      {/* Chat Window - Fixed position on RIGHT side */}
+      {/* Chat Window
+          ============
+          Layout strategy:
+          - On small screens (<sm, ~640px) the widget anchors to the bottom
+            and is allowed to grow up to ~85% of the dynamic viewport. We use
+            `top-3` + `bottom-3` so it claims the full vertical space available
+            in landscape mode (where the previous `max-h-560` left the panel
+            so short that only ~3 message lines were visible).
+          - On sm+ we keep the existing floating-card behavior anchored to
+            the bottom-right corner, but raise the height ceiling so longer
+            AI replies don't get clipped.
+          - inset-x positioning + max-w- caps prevents the panel from going
+            edge-to-edge on tablets / large phones held in landscape, which
+            looks unprofessional. */}
       {isOpen && (
-        <div 
-          className="fixed bottom-20 right-3 z-[9999] w-[calc(100vw-24px)] max-w-[360px] max-h-[min(560px,calc(100dvh-100px))] bg-white rounded-2xl shadow-2xl border border-[#e6ebf1] flex flex-col overflow-hidden sm:bottom-24 sm:right-6 sm:w-[360px] sm:max-h-[min(620px,calc(100dvh-140px))]"
+        <div
+          className="fixed z-[9999] bg-white rounded-2xl shadow-2xl border border-[#e6ebf1] flex flex-col overflow-hidden
+                     left-3 right-3 top-3 bottom-3 max-w-full
+                     sm:left-auto sm:top-auto sm:bottom-24 sm:right-6 sm:w-[380px] sm:max-w-[380px] sm:max-h-[min(640px,calc(100dvh-140px))]"
         >
           {/* Header */}
-          <div className="bg-[#635bff] text-white p-3 sm:p-4 flex items-center justify-between flex-shrink-0">
+          <div className="bg-[#635bff] text-white px-3 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -563,35 +696,38 @@ export default function LiveChat() {
               {mode === 'ai' && messages.length > 0 && (
                   <button
                     onClick={handleClearAiChat}
-                    className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors"
+                    className="text-[11px] sm:text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors"
                     title="Clear chat history"
                   >
-                    Clear Chat
+                    Clear
                   </button>
                 )}
                 {mode === 'live' && messages.length > 0 && (
                 <button
                   onClick={handleEndChat}
-                  className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors"
+                  className="text-[11px] sm:text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors"
                   title="End chat session"
                 >
-                  End Chat
+                  End
                 </button>
               )}
+              {/* Minimize button — desktop only.
+                  On mobile it's redundant with Close (both call setIsOpen(false))
+                  and just crowded the header. */}
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="hidden sm:flex w-8 h-8 rounded-full hover:bg-white/20 items-center justify-center transition-colors"
                 aria-label="Minimize chat"
                 title="Minimize"
               >
-                <span className="text-lg sm:text-xl leading-none font-semibold -mt-1">−</span>
+                <span className="text-xl leading-none font-semibold -mt-1">−</span>
               </button>
               <button
                 onClick={() => {
                   setIsOpen(false);
                   setHasNewMessage(false);
                 }}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
                 aria-label="Close chat"
                 title="Close"
               >
@@ -678,7 +814,13 @@ export default function LiveChat() {
                         msg.senderType === 'SYSTEM' ? 'text-[#8898aa]' : 'text-[#635bff]'
                       }`}>{msg.senderName}</p>
                     )}
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    {msg.senderType === 'USER' ? (
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
+                    ) : (
+                      <div className="text-sm leading-relaxed break-words space-y-1">
+                        {renderInlineMarkdown(msg.content)}
+                      </div>
+                    )}
                     <p className={`text-xs mt-1 ${msg.senderType === 'USER' ? 'text-purple-200' : 'text-[#8898aa]'}`}>
                       {formatTime(msg.createdAt)}
                     </p>
