@@ -160,6 +160,146 @@ export default function LiveChat() {
   // Don't show live chat for system admins (ADMIN, SUPER_ADMIN). OWNER is organization owner - they should see chat.
   const isAdminRole = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN';
   const [isAdminPage, setIsAdminPage] = useState(false);
+
+  // ── Drag-to-reposition state ─────────────────────────────────────────
+  // The widget is draggable on tablet+ (>=lg, where it floats as a card).
+  // Position is { x, y } where x is offset from the LEFT edge and y is
+  // offset from the TOP edge in CSS pixels. `null` means "use the
+  // default bottom-right anchor from the className". State is persisted
+  // to localStorage so the widget remembers where the user moved it
+  // across sessions/page-loads.
+  //
+  // We deliberately do NOT enable drag on phone portrait (it's a bottom
+  // sheet — there's nowhere to drag it that makes sense) or phone
+  // landscape (the panel takes most of the screen height anyway). Drag
+  // only meaningfully matters at lg+ where the panel is a small floating
+  // card and might cover content the user wants to read.
+  const [chatPosition, setChatPosition] = useState<{ x: number; y: number } | null>(null);
+  const dragRef = useRef<{
+    dragging: boolean;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+  }>({ dragging: false, startX: 0, startY: 0, originX: 0, originY: 0 });
+  const chatPanelRef = useRef<HTMLDivElement | null>(null);
+
+  // Restore last position on mount.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = localStorage.getItem('myncel_chat_position');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') {
+          setChatPosition(parsed);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  // Clamp the panel inside the viewport when the window resizes (e.g.
+  // user rotates a tablet, or resizes a desktop browser to make it
+  // smaller than the saved x,y). Without this the panel can end up
+  // partially or fully off-screen with no way to grab it.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleResize = () => {
+      setChatPosition((pos) => {
+        if (!pos) return pos;
+        const panel = chatPanelRef.current;
+        if (!panel) return pos;
+        const w = panel.offsetWidth || 380;
+        const h = panel.offsetHeight || 480;
+        const maxX = Math.max(0, window.innerWidth - w - 8);
+        const maxY = Math.max(0, window.innerHeight - h - 8);
+        const nx = Math.min(Math.max(8, pos.x), maxX);
+        const ny = Math.min(Math.max(8, pos.y), maxY);
+        if (nx === pos.x && ny === pos.y) return pos;
+        return { x: nx, y: ny };
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Pointer-event handlers (work for mouse, touch, and pen — single API
+  // covers desktop, mobile web, and Capacitor WebView).
+  const handleDragPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    // Only allow dragging on lg+ (where the panel is a floating card).
+    // On <lg it's a bottom-sheet / side-panel and dragging it would
+    // break the layout.
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
+    // Don't start a drag on interactive elements inside the header
+    // (close button, minimize button, etc.). Detect by checking if
+    // the event target is inside a <button> or <a>.
+    const target = e.target as HTMLElement | null;
+    if (target && target.closest('button, a, input, select, textarea')) return;
+
+    const panel = chatPanelRef.current;
+    if (!panel) return;
+    const rect = panel.getBoundingClientRect();
+
+    // Capture the starting state.
+    dragRef.current = {
+      dragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      originX: rect.left,
+      originY: rect.top,
+    };
+    // Switch to pixel-positioned mode immediately so the first motion
+    // doesn't fight against the className anchoring.
+    setChatPosition({ x: rect.left, y: rect.top });
+    try {
+      (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+    } catch {
+      /* not all pointer types support capture; safe to ignore */
+    }
+    e.preventDefault();
+  }, []);
+
+  const handleDragPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag.dragging) return;
+    if (typeof window === 'undefined') return;
+    const panel = chatPanelRef.current;
+    const w = panel?.offsetWidth || 380;
+    const h = panel?.offsetHeight || 480;
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+    let x = drag.originX + dx;
+    let y = drag.originY + dy;
+    // Clamp to viewport with an 8px margin so the panel can't be
+    // dragged completely off-screen.
+    x = Math.min(Math.max(8, x), Math.max(8, window.innerWidth - w - 8));
+    y = Math.min(Math.max(8, y), Math.max(8, window.innerHeight - h - 8));
+    setChatPosition({ x, y });
+  }, []);
+
+  const handleDragPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current.dragging) return;
+    dragRef.current.dragging = false;
+    try {
+      (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+    // Persist final position.
+    setChatPosition((pos) => {
+      if (pos && typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('myncel_chat_position', JSON.stringify(pos));
+        } catch {
+          /* ignore quota / privacy mode */
+        }
+      }
+      return pos;
+    });
+  }, []);
+  // ── /Drag-to-reposition state ────────────────────────────────────────
   
   // Check if we're on an admin page
   useEffect(() => {
@@ -689,43 +829,68 @@ export default function LiveChat() {
           ============
           Layout strategy:
           - Phone PORTRAIT (<lg, taller than wide):
-              Anchor to bottom with comfortable side margins. Cap height
-              at ~85vh so there's breathing room above the panel — looks
-              less like a hard takeover and gives the user a clear sense
-              of "this is a sheet, the page is still behind it".
+              Bottom sheet — left-3 right-3 bottom-3, capped at 80dvh.
           - Phone LANDSCAPE (<lg, wider than tall):
-              Anchor to bottom-right and cap width at ~480px so the
-              panel doesn't span the entire screen edge-to-edge. With
-              gesture-nav phones in landscape (~800-900px wide) a full
-              edge-to-edge sheet looked oversized.
+              Right-anchored side panel, max 480px wide. We scope this
+              with `max-lg:landscape:` so the rule ONLY applies below
+              the lg: breakpoint. (Plain `landscape:` would also match
+              desktop monitors held in landscape, which is most of them,
+              and incorrectly override the lg: floating-card rules —
+              that was the cause of the 'widget shows at the top'
+              bug on desktop.)
           - lg+ (tablet landscape / desktop):
-              Floating bottom-right card, 380px wide, capped height.
+              Floating bottom-right card by default, but the user can
+              drag it to any position via pointer events on the header.
+              When `chatPosition` is set we switch to pixel-anchored
+              `style={{left, top}}` and override the className anchors.
           - env(safe-area-inset-*) padding prevents Android status bar /
             iOS notch / home indicator from clipping the panel inside
             the Capacitor shell. */}
       {isOpen && (
         <div
-          className="fixed z-[9999] bg-white rounded-2xl shadow-2xl border border-[#e6ebf1] flex flex-col overflow-hidden
+          ref={chatPanelRef}
+          className={`fixed z-[9999] bg-white rounded-2xl shadow-2xl border border-[#e6ebf1] flex flex-col overflow-hidden
                      left-3 right-3 bottom-3
                      portrait:max-h-[80dvh]
-                     landscape:left-auto landscape:top-3 landscape:max-w-[480px]
-                     lg:left-auto lg:top-auto lg:bottom-24 lg:right-6 lg:w-[380px] lg:max-w-[380px] lg:max-h-[min(640px,calc(100dvh-140px))]"
+                     max-lg:landscape:left-auto max-lg:landscape:top-3 max-lg:landscape:max-w-[480px]
+                     ${chatPosition
+                       ? 'lg:w-[380px] lg:max-w-[380px] lg:max-h-[min(640px,calc(100dvh-32px))]'
+                       : 'lg:left-auto lg:top-auto lg:bottom-24 lg:right-6 lg:w-[380px] lg:max-w-[380px] lg:max-h-[min(640px,calc(100dvh-140px))]'}`}
           style={{
             // Honor device safe areas (notch / status bar / home indicator).
-            // Without these the panel can sit under the Android status bar
-            // in Capacitor, especially noticeable in landscape where the
-            // top-3 of CSS px gets eaten by the system bar.
             paddingTop: 'env(safe-area-inset-top, 0px)',
             paddingBottom: 'env(safe-area-inset-bottom, 0px)',
             paddingLeft: 'env(safe-area-inset-left, 0px)',
             paddingRight: 'env(safe-area-inset-right, 0px)',
+            // Pixel position only kicks in on lg+ where dragging is
+            // enabled. Below lg the className anchors win.
+            ...(chatPosition && typeof window !== 'undefined' && window.innerWidth >= 1024
+              ? {
+                  left: `${chatPosition.x}px`,
+                  top: `${chatPosition.y}px`,
+                  right: 'auto',
+                  bottom: 'auto',
+                }
+              : {}),
           }}
         >
           {/* Inner column — keeps the rounded corners + flex layout working
               correctly even when the outer div has safe-area padding. */}
           <div className="flex flex-col flex-1 min-h-0 overflow-hidden rounded-2xl">
-          {/* Header */}
-          <div className="bg-[#635bff] text-white px-3 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between flex-shrink-0">
+          {/* Header — also acts as the drag handle on lg+.
+              `touch-none` prevents the browser from scrolling the page
+              while the user drags the panel on touch devices.
+              `select-none` prevents text selection while dragging.
+              `lg:cursor-grab` shows the user the header is draggable on
+              mouse-driven viewports (only at lg+ where dragging is
+              actually enabled). */}
+          <div
+            onPointerDown={handleDragPointerDown}
+            onPointerMove={handleDragPointerMove}
+            onPointerUp={handleDragPointerUp}
+            onPointerCancel={handleDragPointerUp}
+            className="bg-[#635bff] text-white px-3 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between flex-shrink-0 select-none lg:cursor-grab lg:active:cursor-grabbing touch-none"
+          >
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
